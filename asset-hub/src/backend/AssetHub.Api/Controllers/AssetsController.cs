@@ -1,0 +1,159 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using AssetHub.Application.Assets.Commands;
+using AssetHub.Application.Assets.Queries;
+using AssetHub.Infrastructure.Billing;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace AssetHub.Api.Controllers;
+
+[ApiController]
+[Route("api/v1/assets")]
+[Authorize]
+public class AssetsController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public AssetsController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state)
+    {
+        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state));
+        return Ok(new { items = result });
+    }
+
+
+
+    [HttpGet("{id}/costs")]
+    public async Task<IActionResult> GetCosts(Guid id, [FromQuery] bool includeSubtree = false)
+    {
+        var result = await _mediator.Send(new AssetHub.Application.Analytics.Queries.GetAssetCostsQuery { AssetId = id, IncludeSubtree = includeSubtree });
+        return Ok(new { Cost = result });
+    }
+
+    [HttpGet("{id}/timeline")]
+    public async Task<IActionResult> GetTimeline(Guid id)
+    {
+        var result = await _mediator.Send(new AssetHub.Application.Analytics.Queries.GetAssetTimelineQuery { AssetId = id });
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/condition-evolution")]
+    public async Task<IActionResult> GetConditionEvolution(Guid id)
+    {
+        var result = await _mediator.Send(new AssetHub.Application.Analytics.Queries.GetAssetConditionEvolutionQuery { AssetId = id });
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/life-projection")]
+    public async Task<IActionResult> GetLifeProjection(Guid id, [FromQuery] decimal endOfLifeThreshold = 20m)
+    {
+        var result = await _mediator.Send(new AssetHub.Application.Analytics.Queries.GetAssetLifeProjectionQuery { AssetId = id, EndOfLifeThreshold = endOfLifeThreshold });
+        return Ok(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateAssetRequest request)
+    {
+        var id = await _mediator.Send(new CreateAssetCommand(
+            request.AssetTemplateId,
+            request.ParentId,
+            request.Code,
+            request.Name,
+            request.InstalledAt,
+            request.CommissionedAt,
+            request.ConditionIndex,
+            request.PropertiesJson,
+            request.GeoJson
+        ));
+        return Created($"/api/v1/assets/{id}", new { id });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateAssetRequest request)
+    {
+        var success = await _mediator.Send(new UpdateAssetCommand(
+            id,
+            request.Name,
+            request.InstalledAt,
+            request.CommissionedAt,
+            request.ConditionIndex,
+            request.PropertiesJson,
+            request.GeoJson
+        ));
+        if (!success) return NotFound();
+        return Ok();
+    }
+    
+    [HttpPatch("{id}/move")]
+    public async Task<IActionResult> Move([FromRoute] Guid id, [FromBody] MoveAssetRequest request)
+    {
+        var success = await _mediator.Send(new MoveAssetCommand(id, request.NewParentId));
+        return Ok();
+    }
+    
+    [HttpPatch("{id}/state")]
+    public async Task<IActionResult> ChangeState([FromRoute] Guid id, [FromBody] ChangeStateRequest request)
+    {
+        var success = await _mediator.Send(new ChangeAssetEnvironmentStateCommand(id, request.ToState, request.Notes));
+        if (!success) return NotFound();
+        return Ok();
+    }
+
+    [HttpGet("geo")]
+    [RequirePlanLimits("geo")]
+    public async Task<IActionResult> GetInBoundingBox([FromQuery] double minLon, [FromQuery] double minLat, [FromQuery] double maxLon, [FromQuery] double maxLat)
+    {
+        var result = await _mediator.Send(new GetAssetsInBoundingBoxQuery(minLon, minLat, maxLon, maxLat));
+        return Ok(result);
+    }
+
+    [HttpGet("geo/nearby")]
+    [RequirePlanLimits("geo")]
+    public async Task<IActionResult> GetNearby([FromQuery] double lon, [FromQuery] double lat, [FromQuery] double radius)
+    {
+        var result = await _mediator.Send(new GetAssetsNearbyQuery(lon, lat, radius));
+        return Ok(result);
+    }
+}
+
+public class CreateAssetRequest
+{
+    public Guid AssetTemplateId { get; set; }
+    public Guid? ParentId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public DateTime? InstalledAt { get; set; }
+    public DateTime? CommissionedAt { get; set; }
+    public decimal? ConditionIndex { get; set; }
+    public string PropertiesJson { get; set; } = "{}";
+    public string? GeoJson { get; set; }
+}
+
+public class UpdateAssetRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public DateTime? InstalledAt { get; set; }
+    public DateTime? CommissionedAt { get; set; }
+    public decimal? ConditionIndex { get; set; }
+    public string PropertiesJson { get; set; } = "{}";
+    public string? GeoJson { get; set; }
+}
+
+public class MoveAssetRequest
+{
+    public Guid? NewParentId { get; set; }
+}
+
+public class ChangeStateRequest
+{
+    public string ToState { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+}

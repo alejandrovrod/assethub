@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/aspire/">
+    <Project Path="aspire/AssetHub.AppHost/AssetHub.AppHost.csproj" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/AssetHub.Api/AssetHub.Api.csproj" />
+    <Project Path="src/backend/AssetHub.Application/AssetHub.Application.csproj" />
+    <Project Path="src/backend/AssetHub.Domain/AssetHub.Domain.csproj" />
+    <Project Path="src/backend/AssetHub.Infrastructure/AssetHub.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/backend/">
+    <Project Path="tests/backend/AssetHub.Api.Tests/AssetHub.Api.Tests.csproj" />
+  </Folder>
+</Solution>

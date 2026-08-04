@@ -1,0 +1,33 @@
+# Node.js / Vite (Frontend)
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# .NET / C# (Backend)
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+*.suo
+*.userprefs
+*.log
+
+# EF Core Migrations (opcional, aunque usualmente se commitean, ignoramos las dbs locales)
+*.db
+*.mdf
+*.ldf
+
+# General / OS
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
