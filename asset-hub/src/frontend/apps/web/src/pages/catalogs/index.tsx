@@ -55,6 +55,17 @@ export default function CatalogsPage() {
     onError: () => toast.error('Error al crear el elemento'),
   })
 
+  const updateItemMutation = useMutation({
+    mutationFn: (data: { catalogCode: string, itemCode: string, request: any }) => 
+      catalogService.updateCatalogItem(data.catalogCode, data.itemCode, data.request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalogItems', selectedCatalog?.code] })
+      setIsItemDialogOpen(false)
+      toast.success('Elemento actualizado exitosamente')
+    },
+    onError: () => toast.error('Error al actualizar el elemento'),
+  })
+
   const deleteItemMutation = useMutation({
     mutationFn: (itemCode: string) => catalogService.deleteCatalogItem(selectedCatalog!.code, itemCode),
     onSuccess: () => {
@@ -76,8 +87,15 @@ export default function CatalogsPage() {
   const handleItemSubmit = (values: CatalogItemFormValues) => {
     if (!selectedCatalog) return
     if (editingItem) {
-      toast.error('La edición de elementos no está soportada por la API actual.')
-      setIsItemDialogOpen(false)
+      updateItemMutation.mutate({
+        catalogCode: selectedCatalog.code,
+        itemCode: editingItem.code,
+        request: {
+          defaultLabel: values.defaultLabel,
+          order: values.order,
+          translations: { es: values.defaultLabel }
+        }
+      })
     } else {
       createItemMutation.mutate({
         code: selectedCatalog.code,
@@ -103,6 +121,11 @@ export default function CatalogsPage() {
 
   const openNewItemDialog = () => {
     setEditingItem(null)
+    setIsItemDialogOpen(true)
+  }
+
+  const openEditItemDialog = (item: CatalogItem) => {
+    setEditingItem(item)
     setIsItemDialogOpen(true)
   }
 
@@ -198,17 +221,27 @@ export default function CatalogsPage() {
                       {catalogItems?.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.code}</TableCell>
-                          <TableCell>{item.translations?.[0]?.label || item.code}</TableCell>
+                          <TableCell>{item.label || item.code}</TableCell>
                           <TableCell className="text-right">{item.order}</TableCell>
                           <TableCell>
-                             <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                onClick={() => deleteItemMutation.mutate(item.code)}
-                              >
-                               <Trash2 className="h-4 w-4" />
-                             </Button>
+                             <div className="flex items-center gap-1">
+                               <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => openEditItemDialog(item)}
+                                >
+                                 <Edit className="h-4 w-4" />
+                               </Button>
+                               <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                  onClick={() => deleteItemMutation.mutate(item.code)}
+                                >
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             </div>
                           </TableCell>
                         </TableRow>
                       ))}

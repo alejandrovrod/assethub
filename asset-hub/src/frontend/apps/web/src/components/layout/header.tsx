@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { ChevronRight } from 'lucide-react'
+import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 
 type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean
@@ -14,6 +15,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const [offset, setOffset] = useState(0)
   const location = useLocation()
   const pathnames = location.pathname.split('/').filter((x) => x)
+  const { customTitle } = useBreadcrumbStore()
 
   useEffect(() => {
     const onScroll = () => {
@@ -55,10 +57,17 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
           ) : (
             pathnames.map((value, index) => {
               const isLast = index === pathnames.length - 1
+              
+              let displayValue = value.replace(/-/g, ' ')
+              // If it's the last part and looks like a long ID (e.g., > 16 chars) and we have a custom title
+              if (isLast && customTitle && value.length > 16) {
+                 displayValue = customTitle
+              }
+
               return (
                 <div key={value} className="flex items-center gap-2">
                   <span className={cn(isLast && "font-medium text-foreground")}>
-                    {value.replace(/-/g, ' ')}
+                    {displayValue}
                   </span>
                   {!isLast && <ChevronRight className="h-4 w-4" />}
                 </div>

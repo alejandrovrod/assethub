@@ -9,6 +9,9 @@ export interface LoginResponse {
   accessToken: string
   refreshToken: string
   expiresIn: number
+  tenantSlug?: string
+  tenantName?: string
+  roles?: string[]
 }
 
 export const authService = {

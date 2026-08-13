@@ -7,6 +7,7 @@ import { AuthenticatedLayout } from "./components/layout/authenticated-layout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/dashboard/index";
 import AssetsPage from "./pages/assets/index";
+import AssetDetailPage from "./pages/assets/detail";
 import AssetsTemplates from "./pages/assets/templates";
 import MaintenanceIncidents from "./pages/maintenance/incidents";
 import MaintenanceTasks from "./pages/maintenance/tasks";
@@ -27,6 +28,7 @@ export default function App() {
           
           <Route path="assets">
             <Route index element={<AssetsPage />} />
+            <Route path=":id" element={<AssetDetailPage />} />
             <Route path="templates" element={<AssetsTemplates />} />
           </Route>
 

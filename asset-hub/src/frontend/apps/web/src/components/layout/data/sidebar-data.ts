@@ -5,18 +5,7 @@ import {
   Users,
   BookOpen,
   Settings,
-  ShieldCheck,
-  Building,
-  UserCog,
-  FileText,
-  Activity,
-  ClipboardList,
-  Tags,
-  UsersRound,
-  FileCheck,
   Command,
-  GalleryVerticalEnd,
-  AudioWaveform,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 

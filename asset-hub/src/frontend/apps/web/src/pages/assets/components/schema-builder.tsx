@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { catalogService, Catalog } from '@/services/catalog.service';
 import {
   DndContext,
   closestCenter,
@@ -26,8 +28,10 @@ interface SchemaField {
   id: string; // React key, immutable
   keyName: string; // The editable JSON property key
   title: string;
-  type: string;
+  type: string; // 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'catalog'
   required: boolean;
+  enumOptions?: string;
+  catalogCode?: string;
 }
 
 interface SchemaBuilderProps {
@@ -38,75 +42,119 @@ interface SchemaBuilderProps {
 function SortableField({ 
   field, 
   onUpdate, 
-  onDelete 
+  onDelete,
+  catalogs
 }: { 
   field: SchemaField, 
   onUpdate: (id: string, updates: Partial<SchemaField>) => void,
-  onDelete: (id: string) => void 
+  onDelete: (id: string) => void,
+  catalogs: Catalog[]
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: field.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 bg-card border rounded-md mb-2 shadow-sm">
-      <div {...attributes} {...listeners} tabIndex={-1} className="cursor-grab text-muted-foreground hover:text-foreground">
-        <GripVertical className="h-5 w-5" />
+    <div ref={setNodeRef} style={style} className="flex flex-col gap-3 p-3 bg-card border rounded-md mb-2 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div {...attributes} {...listeners} tabIndex={-1} className="cursor-grab text-muted-foreground hover:text-foreground">
+          <GripVertical className="h-5 w-5" />
+        </div>
+        
+        <div className="flex-1 grid grid-cols-12 gap-3 items-center">
+          <div className="col-span-3">
+            <Input 
+              value={field.keyName} 
+              onChange={(e) => onUpdate(field.id, { keyName: e.target.value })} 
+              placeholder="Clave (ej: marca)" 
+              className="font-mono text-sm"
+            />
+          </div>
+          <div className="col-span-4">
+            <Input 
+              value={field.title} 
+              onChange={(e) => onUpdate(field.id, { title: e.target.value })} 
+              placeholder="Etiqueta visible" 
+            />
+          </div>
+          <div className="col-span-3">
+            <Select 
+              value={field.type} 
+              onValueChange={(val) => onUpdate(field.id, { type: val })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="string">Texto</SelectItem>
+                <SelectItem value="number">Número</SelectItem>
+                <SelectItem value="boolean">Verdadero/Falso</SelectItem>
+                <SelectItem value="date">Fecha</SelectItem>
+                <SelectItem value="enum">Lista (Fija)</SelectItem>
+                <SelectItem value="catalog">Catálogo (Dinámico)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                checked={field.required} 
+                onCheckedChange={(c) => onUpdate(field.id, { required: !!c })} 
+                id={`req-${field.id}`}
+              />
+              <label htmlFor={`req-${field.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                Req.
+              </label>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(field.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
-      
-      <div className="flex-1 grid grid-cols-12 gap-3 items-center">
-        <div className="col-span-3">
+
+      {field.type === 'enum' && (
+        <div className="pl-8 pr-12">
           <Input 
-            value={field.keyName} 
-            onChange={(e) => onUpdate(field.id, { keyName: e.target.value })} 
-            placeholder="Clave (ej: marca)" 
-            className="font-mono text-sm"
+            value={field.enumOptions || ''} 
+            onChange={(e) => onUpdate(field.id, { enumOptions: e.target.value })} 
+            placeholder="Opciones separadas por coma (Ej: Rojo, Azul, Verde)" 
+            className="text-sm bg-muted/50"
           />
         </div>
-        <div className="col-span-4">
-          <Input 
-            value={field.title} 
-            onChange={(e) => onUpdate(field.id, { title: e.target.value })} 
-            placeholder="Etiqueta visible" 
-          />
-        </div>
-        <div className="col-span-3">
+      )}
+
+      {field.type === 'catalog' && (
+        <div className="pl-8 pr-12">
           <Select 
-            value={field.type} 
-            onValueChange={(val) => onUpdate(field.id, { type: val })}
+            value={field.catalogCode || ''} 
+            onValueChange={(val) => onUpdate(field.id, { catalogCode: val })}
           >
-            <SelectTrigger>
-              <SelectValue />
+            <SelectTrigger className="bg-muted/50">
+              <SelectValue placeholder="Seleccionar catálogo..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="string">Texto</SelectItem>
-              <SelectItem value="number">Número</SelectItem>
-              <SelectItem value="boolean">Verdadero/Falso</SelectItem>
-              <SelectItem value="date">Fecha</SelectItem>
+              {catalogs.length === 0 ? (
+                <SelectItem value="none" disabled>No hay catálogos disponibles</SelectItem>
+              ) : (
+                catalogs.map(c => (
+                  <SelectItem key={c.id} value={c.code}>{c.label}</SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
-        <div className="col-span-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Checkbox 
-              checked={field.required} 
-              onCheckedChange={(c) => onUpdate(field.id, { required: !!c })} 
-              id={`req-${field.id}`}
-            />
-            <label htmlFor={`req-${field.id}`} className="text-sm font-medium leading-none cursor-pointer">
-              Req.
-            </label>
-          </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(field.id)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
 export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
   const [fields, setFields] = useState<SchemaField[]>([]);
+
+  const { data: catalogs = [] } = useQuery({
+    queryKey: ['catalogs'],
+    queryFn: () => catalogService.getCatalogs()
+  });
 
   useEffect(() => {
     try {
@@ -115,12 +163,26 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
         if (schema.type === 'object' && schema.properties) {
           const loadedFields: SchemaField[] = Object.keys(schema.properties).map((key) => {
             const prop = schema.properties[key];
+            let type = prop.type || 'string';
+            let enumOptions = undefined;
+            let catalogCode = undefined;
+
+            if (prop.catalogCode) {
+              type = 'catalog';
+              catalogCode = prop.catalogCode;
+            } else if (prop.enum) {
+              type = 'enum';
+              enumOptions = prop.enum.join(', ');
+            }
+
             return {
               id: `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               keyName: key,
               title: prop.title || key,
-              type: prop.type || 'string',
+              type,
               required: schema.required?.includes(key) || false,
+              enumOptions,
+              catalogCode
             };
           });
           setFields(loadedFields);
@@ -141,10 +203,31 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
     newFields.forEach(f => {
       // Avoid empty keys
       const key = f.keyName.trim() || 'unnamed_field';
-      schema.properties[key] = {
-        type: f.type,
+      
+      const propConfig: any = {
         title: f.title,
       };
+
+      if (f.type === 'enum') {
+        propConfig.type = 'string';
+        const opts = (f.enumOptions || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (opts.length > 0) {
+          propConfig.enum = opts;
+        } else {
+          // Fallback empty array so it is clear
+          propConfig.enum = ['_empty_'];
+        }
+      } else if (f.type === 'catalog') {
+        propConfig.type = 'string';
+        if (f.catalogCode) {
+          propConfig.catalogCode = f.catalogCode;
+        }
+      } else {
+        propConfig.type = f.type;
+      }
+
+      schema.properties[key] = propConfig;
+
       if (f.required) {
         schema.required.push(key);
       }
@@ -215,6 +298,7 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
                 field={field} 
                 onUpdate={updateField} 
                 onDelete={deleteField} 
+                catalogs={catalogs}
               />
             ))}
             {fields.length === 0 && (

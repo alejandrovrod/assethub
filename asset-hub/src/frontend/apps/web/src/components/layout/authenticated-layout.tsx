@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/auth.store'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { CommandMenu } from '@/components/command-menu'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -55,6 +56,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </SidebarInset>
         </SidebarProvider>
       </LayoutProvider>
+      <CommandMenu />
     </SearchProvider>
   )
 }

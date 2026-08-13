@@ -26,7 +26,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowVite", builder =>
     {
-        builder.WithOrigins("http://localhost:5173", "http://localhost:4173")
+        builder.WithOrigins("http://localhost:5173", "http://localhost:4173", "http://localhost:5174")
                .AllowAnyHeader()
                .AllowAnyMethod()
                .AllowCredentials();
@@ -143,6 +143,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseCors("AllowVite");
 

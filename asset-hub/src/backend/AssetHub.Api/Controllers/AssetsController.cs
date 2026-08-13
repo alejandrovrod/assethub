@@ -29,7 +29,20 @@ public class AssetsController : ControllerBase
         return Ok(new { items = result });
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetAssetByIdQuery(id));
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _mediator.Send(new DeleteAssetCommand(id));
+        return NoContent();
+    }
 
     [HttpGet("{id}/costs")]
     public async Task<IActionResult> GetCosts(Guid id, [FromQuery] bool includeSubtree = false)
@@ -81,6 +94,7 @@ public class AssetsController : ControllerBase
     {
         var success = await _mediator.Send(new UpdateAssetCommand(
             id,
+            request.Code,
             request.Name,
             request.InstalledAt,
             request.CommissionedAt,
@@ -105,6 +119,30 @@ public class AssetsController : ControllerBase
         var success = await _mediator.Send(new ChangeAssetEnvironmentStateCommand(id, request.ToState, request.Notes));
         if (!success) return NotFound();
         return Ok();
+    }
+
+    [HttpGet("{id}/attachments")]
+    public async Task<IActionResult> GetAttachments(Guid id)
+    {
+        var result = await _mediator.Send(new GetAssetAttachmentsQuery(id));
+        return Ok(new { items = result });
+    }
+
+    [HttpPost("{id}/attachments")]
+    public async Task<IActionResult> UploadAttachment(Guid id, Microsoft.AspNetCore.Http.IFormFile file)
+    {
+        if (file == null || file.Length == 0) return BadRequest("File is empty");
+
+        using var stream = file.OpenReadStream();
+        var attachmentId = await _mediator.Send(new UploadAssetAttachmentCommand(
+            id,
+            file.FileName,
+            file.ContentType,
+            file.Length,
+            stream
+        ));
+
+        return Ok(new { id = attachmentId });
     }
 
     [HttpGet("geo")]
@@ -139,6 +177,7 @@ public class CreateAssetRequest
 
 public class UpdateAssetRequest
 {
+    public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime? InstalledAt { get; set; }
     public DateTime? CommissionedAt { get; set; }

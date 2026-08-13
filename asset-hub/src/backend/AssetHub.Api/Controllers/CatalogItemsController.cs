@@ -41,6 +41,22 @@ public class CatalogItemsController : ControllerBase
         return Ok(new { id });
     }
 
+    [HttpPut("{itemCode}")]
+    [Authorize(Roles = "admin,Tenant Admin")]
+    public async Task<IActionResult> UpdateItem([FromRoute] string catalogCode, [FromRoute] string itemCode, [FromBody] UpdateCatalogItemRequest request)
+    {
+        var success = await _mediator.Send(new UpdateCatalogItemCommand(
+            catalogCode, 
+            itemCode, 
+            request.DefaultLabel, 
+            request.Order, 
+            request.Translations
+        ));
+        
+        if (!success) return NotFound();
+        return NoContent();
+    }
+
     [HttpDelete("{itemCode}")]
     [Authorize(Roles = "admin,Tenant Admin")]
     public async Task<IActionResult> DeleteItem([FromRoute] string catalogCode, [FromRoute] string itemCode)
@@ -54,6 +70,13 @@ public class CatalogItemsController : ControllerBase
 public class CreateCatalogItemRequest
 {
     public string Code { get; set; } = string.Empty;
+    public string DefaultLabel { get; set; } = string.Empty;
+    public int Order { get; set; }
+    public Dictionary<string, string> Translations { get; set; } = new();
+}
+
+public class UpdateCatalogItemRequest
+{
     public string DefaultLabel { get; set; } = string.Empty;
     public int Order { get; set; }
     public Dictionary<string, string> Translations { get; set; } = new();

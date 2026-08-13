@@ -1,1 +1,59 @@
 @import "@asset-hub/ui/globals.css";
+
+/* RJSF Core shadcn-ui theme adapter */
+.rjsf-tailwind {
+  /* Hide root object title if any */
+  & > .form-group > fieldset > legend {
+    display: none;
+  }
+}
+
+.rjsf-tailwind fieldset {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.rjsf-tailwind .form-group {
+  @apply space-y-2;
+}
+
+.rjsf-tailwind label.control-label {
+  @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 block;
+}
+
+.rjsf-tailwind .required {
+  @apply text-destructive ml-1;
+}
+
+.rjsf-tailwind input.form-control,
+.rjsf-tailwind select.form-control,
+.rjsf-tailwind textarea.form-control {
+  @apply flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.rjsf-tailwind select.form-control {
+  @apply py-1.5;
+}
+
+.rjsf-tailwind .help-block {
+  @apply text-[0.8rem] text-muted-foreground mt-1;
+}
+
+.rjsf-tailwind .text-danger {
+  @apply text-destructive;
+}
+
+.rjsf-tailwind .error-detail {
+  @apply text-[0.8rem] text-destructive mt-1 block;
+}
+
+.rjsf-tailwind .panel-danger {
+  @apply border border-destructive rounded-md p-4 mb-4;
+}
+
+.rjsf-tailwind .panel-heading {
+  @apply text-destructive font-semibold mb-2;
+}
+
+.rjsf-tailwind .list-group {
+  @apply list-disc list-inside text-sm text-destructive;
+}

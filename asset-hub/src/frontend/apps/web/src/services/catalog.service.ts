@@ -13,6 +13,7 @@ export interface CatalogItem {
   catalogId: string
   tenantId?: string
   code: string
+  label: string
   parentItemId?: string
   order: number
   metadataJson?: string
@@ -60,6 +61,10 @@ export const catalogService = {
   createCatalogItem: async (catalogCode: string, request: CreateCatalogItemRequest): Promise<{ id: string }> => {
     const { data } = await apiClient.post<{ id: string }>(`/catalogs/${catalogCode}/items`, request)
     return data
+  },
+
+  updateCatalogItem: async (catalogCode: string, itemCode: string, request: Omit<CreateCatalogItemRequest, 'code'>): Promise<void> => {
+    await apiClient.put(`/catalogs/${catalogCode}/items/${itemCode}`, request)
   },
 
   deleteCatalogItem: async (catalogCode: string, itemCode: string): Promise<void> => {

@@ -12,7 +12,7 @@ using NetTopologySuite.IO;
 
 namespace AssetHub.Application.Assets.Commands;
 
-public record UpdateAssetCommand(Guid AssetId, string Name, DateTime? InstalledAt, DateTime? CommissionedAt, decimal? ConditionIndex, string PropertiesJson, string? GeoJson) : IRequest<bool>;
+public record UpdateAssetCommand(Guid AssetId, string Code, string Name, DateTime? InstalledAt, DateTime? CommissionedAt, decimal? ConditionIndex, string PropertiesJson, string? GeoJson) : IRequest<bool>;
 
 public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand, bool>
 {
@@ -28,6 +28,7 @@ public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand, boo
         var asset = await _dbContext.Assets.Include(a => a.AssetTemplate).FirstOrDefaultAsync(a => a.Id == request.AssetId, cancellationToken);
         if (asset == null) return false;
 
+        asset.Code = request.Code;
         asset.Name = request.Name;
         asset.InstalledAt = request.InstalledAt;
         asset.CommissionedAt = request.CommissionedAt;

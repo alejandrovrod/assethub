@@ -1,11 +1,13 @@
 import { z } from 'zod'
+import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, Controller } from 'react-hook-form'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { assetService, Asset } from '@/services/asset.service'
 import { AssetTemplate } from '@/services/asset-template.service'
 import Form from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
+import { handleServerError } from '@/lib/handle-server-error'
 
 import {
   Sheet,
@@ -22,6 +24,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -31,7 +40,7 @@ import { useState, useEffect } from 'react'
 const formSchema = z.object({
   code: z.string().min(1, 'El código es requerido'),
   name: z.string().min(1, 'El nombre es requerido'),
-  // Add other basic fields if needed
+  parentId: z.string().nullable().optional(),
 })
 
 type AssetFormValues = z.infer<typeof formSchema>
@@ -47,11 +56,18 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
   const queryClient = useQueryClient()
   const [propertiesJson, setPropertiesJson] = useState<any>({})
   
+  const { data: allAssets } = useQuery({
+    queryKey: ['assets'],
+    queryFn: () => assetService.getAssets(),
+    enabled: open
+  })
+
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: '',
       name: '',
+      parentId: null,
     },
   })
 
@@ -61,6 +77,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
       form.reset({
         code: asset.code,
         name: asset.name,
+        parentId: asset.parentId || null,
       })
       try {
         setPropertiesJson(JSON.parse(asset.propertiesJson))
@@ -83,8 +100,8 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
       toast.success('El activo se ha creado exitosamente.')
       onOpenChange(false)
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || error.message)
+    onError: (error: unknown) => {
+      handleServerError(error)
     }
   })
 
@@ -95,8 +112,8 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
       toast.success('El activo se ha actualizado exitosamente.')
       onOpenChange(false)
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || error.message)
+    onError: (error: unknown) => {
+      handleServerError(error)
     }
   })
 
@@ -113,23 +130,18 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
     if (asset) {
       updateMutation.mutate({ id: asset.id, data: payload })
     } else {
-      createMutation.mutate(payload)
+      createMutation.mutate({
+        ...payload,
+        parentId: payload.parentId || undefined
+      })
     }
   }
 
-  // Obtenemos el esquema de la plantilla (string a objeto)
-  let schema = {}
-  let uiSchema = {}
-  try {
-    if (template.schemaJson) schema = JSON.parse(template.schemaJson)
-    if (template.uiSchemaJson) uiSchema = JSON.parse(template.uiSchemaJson)
-  } catch (e) {
-    console.error("Error parsing schema", e)
-  }
+  const { schema, isResolving } = useResolvedSchema(template.schemaJson)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0" aria-describedby={undefined}>
+      <SheetContent className="w-full sm:max-w-full flex flex-col p-0" aria-describedby={undefined}>
         <div className="p-6 pb-2">
           <SheetHeader>
             <SheetTitle>{asset ? 'Editar' : 'Nuevo'} Activo: {template.name}</SheetTitle>
@@ -173,20 +185,48 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                 />
               </div>
 
+              {!asset && (
+                <FormField
+                  control={form.control}
+                  name="parentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Activo Padre (Opcional)</FormLabel>
+                      <Select onValueChange={(val) => field.onChange(val === 'none' ? null : val)} value={field.value || 'none'}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar padre..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">-- Ninguno --</SelectItem>
+                          {allAssets?.map(a => (
+                            <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {/* RJSF rendered form */}
               {Object.keys(schema).length > 0 && (
                 <div className="mt-8 border-t pt-4">
                   <h4 className="text-sm font-medium mb-4">Atributos Dinámicos</h4>
                   <div className="rjsf-tailwind">
+                  {isResolving ? (
+                    <div className="text-center p-4 text-muted-foreground text-sm">Cargando catálogos...</div>
+                  ) : template?.schemaJson && (
                     <Form 
                       schema={schema} 
-                      uiSchema={uiSchema}
                       formData={propertiesJson}
                       validator={validator}
                       onChange={(e) => setPropertiesJson(e.formData)}
-                      // Escondemos el boton submit de RJSF para usar el nuestro
                       children={<></>} 
                     />
+                  )}
                   </div>
                 </div>
               )}

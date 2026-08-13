@@ -64,13 +64,85 @@ public class AssetHierarchyService : IAssetHierarchyService
 
     public async Task MoveAssetHierarchyAsync(Guid assetId, Guid? newParentId, CancellationToken cancellationToken)
     {
-        // Simplificado para ejemplo: 
-        // 1. Prevenir ciclos
-        // 2. Eliminar relaciones viejas de AssetHierarchy donde DescendantId en subárbol y AncestorId fuera del subárbol
-        // 3. Crear nuevas relaciones de AssetHierarchy conectando a nuevos ancestros
-        // 4. Actualizar Path en bloque
-        
-        throw new NotImplementedException("Complejidad omitida temporalmente");
+        var asset = await _dbContext.Assets.FindAsync(new object[] { assetId }, cancellationToken);
+        if (asset == null) return;
+
+        if (assetId == newParentId)
+            throw new InvalidOperationException("Asset cannot be its own parent");
+
+        // 1. Prevent cycles
+        if (newParentId.HasValue)
+        {
+            bool isDescendant = await _dbContext.AssetHierarchies
+                .AnyAsync(h => h.AncestorId == assetId && h.DescendantId == newParentId.Value, cancellationToken);
+            if (isDescendant)
+                throw new InvalidOperationException("Cannot move asset to one of its descendants");
+        }
+
+        // Get all descendants in the subtree (including the asset itself)
+        var subtreeNodes = await _dbContext.AssetHierarchies
+            .Where(h => h.AncestorId == assetId)
+            .Select(h => new { h.DescendantId, h.Depth })
+            .ToListAsync(cancellationToken);
+
+        var subtreeIds = subtreeNodes.Select(s => s.DescendantId).ToList();
+
+        // 2. Disconnect A's subtree from A's old ancestors
+        var oldRelations = await _dbContext.AssetHierarchies
+            .Where(h => subtreeIds.Contains(h.DescendantId) && !subtreeIds.Contains(h.AncestorId))
+            .ToListAsync(cancellationToken);
+
+        _dbContext.AssetHierarchies.RemoveRange(oldRelations);
+
+        // Update ParentId
+        asset.ParentId = newParentId;
+
+        // 3. Connect A's subtree to new ancestors and update path
+        var oldBasePath = asset.Path;
+        string newBasePath;
+
+        if (newParentId.HasValue)
+        {
+            var newParent = await _dbContext.Assets.FindAsync(new object[] { newParentId.Value }, cancellationToken);
+            if (newParent == null) throw new InvalidOperationException("New parent not found");
+
+            var newAncestors = await _dbContext.AssetHierarchies
+                .Where(h => h.DescendantId == newParentId.Value)
+                .Select(h => new { h.AncestorId, h.Depth })
+                .ToListAsync(cancellationToken);
+
+            foreach (var newAncestor in newAncestors)
+            {
+                foreach (var subtreeNode in subtreeNodes)
+                {
+                    _dbContext.AssetHierarchies.Add(new AssetHierarchy
+                    {
+                        AncestorId = newAncestor.AncestorId,
+                        DescendantId = subtreeNode.DescendantId,
+                        Depth = newAncestor.Depth + subtreeNode.Depth + 1
+                    });
+                }
+            }
+            newBasePath = $"{newParent.Path}{assetId}/";
+        }
+        else
+        {
+            newBasePath = $"/{assetId}/";
+        }
+
+        var subtreeAssets = await _dbContext.Assets
+            .Where(a => subtreeIds.Contains(a.Id))
+            .ToListAsync(cancellationToken);
+
+        foreach (var a in subtreeAssets)
+        {
+            if (a.Path.StartsWith(oldBasePath))
+            {
+                a.Path = newBasePath + a.Path.Substring(oldBasePath.Length);
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task SoftDeleteSubtreeAsync(Guid assetId, CancellationToken cancellationToken)

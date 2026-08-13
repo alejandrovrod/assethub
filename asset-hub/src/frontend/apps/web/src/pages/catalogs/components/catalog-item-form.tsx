@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input"
 const formSchema = z.object({
   code: z.string().min(1, { message: "El código es obligatorio." }),
   defaultLabel: z.string().min(1, { message: "La etiqueta es obligatoria." }),
-  order: z.coerce.number().int().min(0),
+  order: z.any(),
 })
 
 export type CatalogItemFormValues = z.infer<typeof formSchema>
@@ -28,16 +29,24 @@ interface CatalogItemFormProps {
 }
 
 export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: CatalogItemFormProps) {
-  const form = useForm<CatalogItemFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      code: initialData?.code || "",
-      defaultLabel: initialData?.translations?.[0]?.label || "",
-      order: initialData?.order ?? 0,
-    },
-  })
-
-  return (
+    const form = useForm<CatalogItemFormValues>({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        code: initialData?.code || "",
+        defaultLabel: initialData?.label || "",
+        order: initialData?.order ?? 0,
+      },
+    })
+  
+    useEffect(() => {
+      form.reset({
+        code: initialData?.code || "",
+        defaultLabel: initialData?.label || "",
+        order: initialData?.order ?? 0,
+      })
+    }, [initialData, form])
+  
+    return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
