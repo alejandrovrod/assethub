@@ -9,12 +9,30 @@ export interface AssetTemplate {
   description: string
   schemaJson: string
   allowedChildTemplateIds: string[]
-  lifecycleStates: any // We can refine this later if needed
+  lifecycleStates: LifecycleConfig
   maintenanceChecklist: string
   version: number
   isActive: boolean
 }
 
+export interface LifecycleConfig {
+  initialState: string
+  transitions: Record<string, string[]>
+  states: Record<string, StateConfig>
+  nodes?: any
+  edges?: any
+}
+
+export interface StateConfig {
+  color?: string
+  icon?: string
+  allowedRoles?: string[]
+  requiresFields?: string[]
+  onEnterAction?: string
+  associatedModule?: string
+  maxHoursInState?: number
+  isTerminal?: boolean
+}
 export interface CreateAssetTemplateRequest {
   businessEntityTypeId: string
   code: string
@@ -22,7 +40,7 @@ export interface CreateAssetTemplateRequest {
   description: string
   schemaJson: string
   allowedChildTemplateIds: string[]
-  lifecycleStates: any
+  lifecycleStates: LifecycleConfig
   maintenanceChecklist: string
 }
 
@@ -31,13 +49,21 @@ export interface UpdateAssetTemplateRequest {
   description: string
   schemaJson: string
   allowedChildTemplateIds: string[]
-  lifecycleStates: any
+  lifecycleStates: LifecycleConfig
   maintenanceChecklist: string
 }
 
+export interface CloneAssetTemplateRequest {
+  sourceTemplateId: string
+  newCode: string
+  newName: string
+}
+
 export const assetTemplateService = {
-  getTemplates: async (): Promise<AssetTemplate[]> => {
-    const { data } = await apiClient.get<{ items: AssetTemplate[] }>('/asset-templates')
+  getTemplates: async (search?: string): Promise<AssetTemplate[]> => {
+    const params = new URLSearchParams()
+    if (search) params.append('SearchTerm', search)
+    const { data } = await apiClient.get<{ items: AssetTemplate[] }>(`/asset-templates?${params.toString()}`)
     return data.items
   },
 
@@ -53,5 +79,10 @@ export const assetTemplateService = {
 
   deleteTemplate: async (id: string): Promise<void> => {
     await apiClient.delete(`/asset-templates/${id}`)
+  },
+
+  cloneTemplate: async (request: CloneAssetTemplateRequest): Promise<{ id: string }> => {
+    const { data } = await apiClient.post<{ id: string }>('/asset-templates/clone', request)
+    return data
   }
 }

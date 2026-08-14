@@ -357,6 +357,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TargetModulesJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
@@ -475,6 +478,49 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("BusinessEntityTypes", "tenant");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.IncidentTemplates.IncidentTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LifecycleStates")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SchemaJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code", "Version", "TenantId")
+                        .IsUnique();
+
+                    b.ToTable("IncidentTemplates", "tenant");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Incidents.Incident", b =>
                 {
                     b.Property<Guid>("Id")
@@ -496,11 +542,18 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<string>("GeoType")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("IncidentTemplateId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<Guid?>("PriorityId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PropertiesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ReportedAt")
                         .HasColumnType("datetime2");
@@ -525,6 +578,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasKey("Id");
 
                     b.HasIndex("AssetId");
+
+                    b.HasIndex("IncidentTemplateId");
 
                     b.HasIndex("TenantId", "AssetId");
 
@@ -1219,7 +1274,13 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AssetHub.Domain.IncidentTemplates.IncidentTemplate", "IncidentTemplate")
+                        .WithMany()
+                        .HasForeignKey("IncidentTemplateId");
+
                     b.Navigation("Asset");
+
+                    b.Navigation("IncidentTemplate");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Incidents.IncidentAttachment", b =>

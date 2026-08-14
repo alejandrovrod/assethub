@@ -23,9 +23,9 @@ public class AssetTemplatesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> Get([FromQuery] string? searchTerm)
     {
-        var result = await _mediator.Send(new GetAssetTemplatesQuery());
+        var result = await _mediator.Send(new GetAssetTemplatesQuery(searchTerm));
         return Ok(new { items = result });
     }
 
@@ -57,7 +57,8 @@ public class AssetTemplatesController : ControllerBase
             request.SchemaJson,
             request.AllowedChildTemplateIds,
             request.LifecycleStates,
-            request.MaintenanceChecklist
+            request.MaintenanceChecklist,
+            request.CreateNewVersion
         ));
 
         return Ok(new { id = newId });
@@ -71,6 +72,25 @@ public class AssetTemplatesController : ControllerBase
         if (!success) return NotFound();
         return NoContent();
     }
+
+    [HttpPost("clone")]
+    [Authorize(Roles = "admin,Tenant Admin")]
+    public async Task<IActionResult> Clone([FromBody] CloneAssetTemplateRequest request)
+    {
+        var id = await _mediator.Send(new CloneAssetTemplateCommand(
+            request.SourceTemplateId,
+            request.NewCode,
+            request.NewName
+        ));
+        return Created($"/api/v1/asset-templates/{id}", new { id });
+    }
+}
+
+public class CloneAssetTemplateRequest
+{
+    public Guid SourceTemplateId { get; set; }
+    public string NewCode { get; set; } = string.Empty;
+    public string NewName { get; set; } = string.Empty;
 }
 
 public class CreateAssetTemplateRequest
@@ -93,4 +113,5 @@ public class UpdateAssetTemplateRequest
     public List<Guid> AllowedChildTemplateIds { get; set; } = new();
     public LifecycleConfig LifecycleStates { get; set; } = new();
     public string MaintenanceChecklist { get; set; } = string.Empty;
+    public bool CreateNewVersion { get; set; } = false;
 }

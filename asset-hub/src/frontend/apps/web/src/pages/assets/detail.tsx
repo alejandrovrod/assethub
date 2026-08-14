@@ -15,8 +15,10 @@ import validator from '@rjsf/validator-ajv8'
 import { Pencil, Check, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
+import { AssetTimeline } from './components/timeline'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +31,15 @@ export default function AssetDetailPage() {
   const [editName, setEditName] = useState('')
   const [editCode, setEditCode] = useState('')
   const [isEditingDynamic, setIsEditingDynamic] = useState(false)
+
+  // State Transition Modal
+  const [transitionDialogOpen, setTransitionDialogOpen] = useState(false)
+  const [pendingTargetState, setPendingTargetState] = useState<string | null>(null)
+  const [transitionData, setTransitionData] = useState<Record<string, string>>({})
+
+  // Module Delegation
+  const [moduleDelegationOpen, setModuleDelegationOpen] = useState(false)
+  const [targetModule, setTargetModule] = useState<string | null>(null)
 
   const { data: asset, isLoading } = useQuery({
     queryKey: ['asset', id],
@@ -95,10 +106,13 @@ export default function AssetDetailPage() {
   })
 
   const stateMutation = useMutation({
-    mutationFn: (toState: string) => assetService.changeState(id!, toState),
+    mutationFn: (args: { toState: string, transitionData?: Record<string, string> }) => assetService.changeState(id!, args.toState, args.transitionData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
       toast.success('Estado cambiado exitosamente')
+      setTransitionDialogOpen(false)
+      setPendingTargetState(null)
+      setTransitionData({})
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.title || 'Error al cambiar de estado')
@@ -152,14 +166,36 @@ export default function AssetDetailPage() {
   }
 
   // Parse Lifecycle
-  let lifecycle = { transitions: {} as Record<string, string[]> }
+  let lifecycle = { transitions: {} as Record<string, string[]>, states: {} as Record<string, any> }
   try {
     lifecycle = typeof asset.lifecycleStates === 'string' 
       ? JSON.parse(asset.lifecycleStates) 
       : (asset.lifecycleStates || lifecycle)
   } catch (e) {}
 
-  const availableTransitions = lifecycle.transitions[asset.state] || []
+  const availableTransitions = lifecycle.transitions?.[asset.state] || []
+  const currentStateConfig = lifecycle.states?.[asset.state] || {}
+
+  const handleStateChangeClick = (nextState: string) => {
+    const nextStateConfig = lifecycle.states?.[nextState] || {}
+    
+    if (nextStateConfig.associatedModule) {
+      setPendingTargetState(nextState)
+      setTargetModule(nextStateConfig.associatedModule)
+      setModuleDelegationOpen(true)
+      return;
+    }
+
+    const requiresFields = nextStateConfig.requiresFields || []
+    
+    if (requiresFields.length > 0) {
+      setPendingTargetState(nextState)
+      setTransitionData({})
+      setTransitionDialogOpen(true)
+    } else {
+      stateMutation.mutate({ toState: nextState })
+    }
+  }
 
   const onSubmit = ({ formData: newFormData }: any) => {
     updateMutation.mutate({ propertiesJson: JSON.stringify(newFormData) })
@@ -186,7 +222,7 @@ export default function AssetDetailPage() {
                 <Badge variant="outline" className="text-sm font-normal">
                   {asset.code}
                 </Badge>
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined}>
                   {asset.state}
                 </Badge>
                 <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8">
@@ -211,7 +247,7 @@ export default function AssetDetailPage() {
                 className="w-32"
                 placeholder="Código"
               />
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined}>
                 {asset.state}
               </Badge>
               <Button 
@@ -242,34 +278,43 @@ export default function AssetDetailPage() {
         </div>
 
         {/* TRANSITIONS BAR */}
-        <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
-          <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
-            Cambiar estado a:
-          </span>
-          {availableTransitions.length === 0 ? (
-            <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
-          ) : (
-            availableTransitions.map((nextState: string) => (
-              <Button 
-                key={nextState} 
-                variant="outline" 
-                size="sm"
-                className="h-8"
-                onClick={() => stateMutation.mutate(nextState)}
-                disabled={stateMutation.isPending}
-              >
-                {nextState}
-              </Button>
-            ))
-          )}
-        </div>
+        {!currentStateConfig.isTerminal && (
+          <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
+              Cambiar estado a:
+            </span>
+            {availableTransitions.length === 0 ? (
+              <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
+            ) : (
+              availableTransitions.map((nextState: string) => (
+                <Button 
+                  key={nextState} 
+                  variant="outline" 
+                  size="sm"
+                  className="h-8"
+                  onClick={() => handleStateChangeClick(nextState)}
+                  disabled={stateMutation.isPending}
+                >
+                  {nextState}
+                </Button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* LEFT COL - MAIN DATA */}
         <div className="md:col-span-2 flex flex-col gap-6">
-          <Card>
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="details">Detalles</TabsTrigger>
+              <TabsTrigger value="timeline">Bitácora</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details" className="flex flex-col gap-6">
+              <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle>Información del Activo</CardTitle>
@@ -296,7 +341,21 @@ export default function AssetDetailPage() {
                   {Object.keys(formData).map(key => {
                     const fieldSchema = (schema as any)?.properties?.[key]
                     const title = fieldSchema?.title || key
-                    const value = formData[key]
+                    let value = formData[key]
+                    
+                    // Si es un catálogo (tiene oneOf), buscar el título (etiqueta) correspondiente al ID
+                    if (value && fieldSchema?.oneOf && !Array.isArray(value)) {
+                      const matchedOption = fieldSchema.oneOf.find((opt: any) => opt.const === value)
+                      if (matchedOption?.title) {
+                        value = matchedOption.title
+                      }
+                    } else if (value && fieldSchema?.type === 'array' && fieldSchema?.items?.oneOf && Array.isArray(value)) {
+                      value = value.map(val => {
+                        const matchedOption = fieldSchema.items.oneOf.find((opt: any) => opt.const === val)
+                        return matchedOption?.title || val
+                      }).join(', ')
+                    }
+
                     return (
                       <div key={key}>
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -308,6 +367,12 @@ export default function AssetDetailPage() {
               )}
             </CardContent>
           </Card>
+          </TabsContent>
+
+          <TabsContent value="timeline">
+            <AssetTimeline assetId={id!} />
+          </TabsContent>
+        </Tabs>
         </div>
 
         {/* RIGHT COL - ATTACHMENTS & METADATA */}
@@ -494,6 +559,93 @@ export default function AssetDetailPage() {
                 </div>
               </Form>
             </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cambiar Padre</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={selectedParentId} onValueChange={setSelectedParentId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione nuevo padre" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Ninguno (Activo Raíz)</SelectItem>
+                {allAssets?.filter(a => a.id !== asset.id && a.parentId !== asset.id).map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={() => moveMutation.mutate(selectedParentId === 'none' ? null : selectedParentId)}
+              disabled={moveMutation.isPending || (selectedParentId === (asset.parentId || 'none'))}
+            >
+              {moveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Mover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={transitionDialogOpen} onOpenChange={setTransitionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Completar información requerida</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para cambiar al estado <strong>{pendingTargetState}</strong>, se requiere la siguiente información:
+            </p>
+            {pendingTargetState && (lifecycle.states?.[pendingTargetState]?.requiresFields || []).map((field: string) => (
+              <div key={field}>
+                <label className="text-sm font-medium capitalize">{field.replace('_', ' ')}</label>
+                <Input 
+                  value={transitionData[field] || ''}
+                  onChange={(e) => setTransitionData({ ...transitionData, [field]: e.target.value })}
+                  placeholder={`Ingrese ${field.replace('_', ' ')}`}
+                  className="mt-1"
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransitionDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={() => pendingTargetState && stateMutation.mutate({ toState: pendingTargetState, transitionData })}
+              disabled={stateMutation.isPending || (pendingTargetState && (lifecycle.states?.[pendingTargetState]?.requiresFields || []).some((f: string) => !transitionData[f]))}
+            >
+              {stateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirmar Cambio'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Sheet open={moduleDelegationOpen} onOpenChange={setModuleDelegationOpen}>
+        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle>Módulo: {targetModule === 'incidents' ? 'Incidencias' : targetModule === 'work_orders' ? 'Órdenes de Trabajo' : targetModule}</SheetTitle>
+            <SheetDescription>
+              Creando registro en módulo externo para avanzar al estado <strong>{pendingTargetState}</strong>.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-6 flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg mt-6">
+             <p className="text-muted-foreground mb-4 px-4">
+               Aquí se cargaría el componente remoto de <strong>{targetModule}</strong> embebido para este activo.
+             </p>
+             <Button onClick={() => {
+                toast.success(`Registro creado en el módulo ${targetModule}`);
+                setModuleDelegationOpen(false);
+                if (pendingTargetState) {
+                  stateMutation.mutate({ toState: pendingTargetState, transitionData: { source_module: targetModule || 'unknown' } });
+                }
+             }}>
+                Simular Creación y Continuar
+             </Button>
           </div>
         </SheetContent>
       </Sheet>

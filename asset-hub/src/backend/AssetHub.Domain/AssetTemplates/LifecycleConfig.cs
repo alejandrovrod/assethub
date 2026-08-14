@@ -6,8 +6,22 @@ public class LifecycleConfig
 {
     public string InitialState { get; set; } = string.Empty;
     public Dictionary<string, List<string>> Transitions { get; set; } = new();
+    
+    // Configuración avanzada de estados (Colores, roles, campos requeridos)
+    public Dictionary<string, StateConfig> States { get; set; } = new();
 
     // UI metadata to preserve visual canvas state (ReactFlow)
     public System.Text.Json.JsonElement? Nodes { get; set; }
     public System.Text.Json.JsonElement? Edges { get; set; }
+}
+
+public class StateConfig
+{
+    public string Color { get; set; } = "#94a3b8"; // Default slate-400
+    public string Icon { get; set; } = string.Empty;
+    public List<string> AllowedRoles { get; set; } = new();
+    public List<string> RequiresFields { get; set; } = new();
+    public string OnEnterAction { get; set; } = string.Empty;
+    public int? MaxHoursInState { get; set; }
+    public bool IsTerminal { get; set; } = false;
 }

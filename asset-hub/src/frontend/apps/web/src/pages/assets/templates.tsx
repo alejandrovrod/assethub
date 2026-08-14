@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Edit, Trash2 } from 'lucide-react'
+import { Plus, Loader2, Edit, Trash2, Copy } from 'lucide-react'
 import { assetTemplateService } from '@/services/asset-template.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -18,7 +18,7 @@ export default function AssetsTemplates() {
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ['asset-templates'],
-    queryFn: assetTemplateService.getTemplates,
+    queryFn: () => assetTemplateService.getTemplates(),
   })
 
   const deleteMutation = useMutation({
@@ -30,6 +30,15 @@ export default function AssetsTemplates() {
     onError: () => toast.error('Error al eliminar la plantilla')
   })
 
+  const cloneMutation = useMutation({
+    mutationFn: assetTemplateService.cloneTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asset-templates'] })
+      toast.success('Plantilla clonada exitosamente')
+    },
+    onError: () => toast.error('Error al clonar la plantilla')
+  })
+
   const handleCreate = () => {
     setEditingTemplate(null)
     setIsFormOpen(true)
@@ -38,6 +47,15 @@ export default function AssetsTemplates() {
   const handleEdit = (template: any) => {
     setEditingTemplate(template)
     setIsFormOpen(true)
+  }
+
+  const handleClone = (template: any) => {
+    const newCode = window.prompt('Ingresá el nuevo código para la plantilla clonada:', `${template.code}_COPY`)
+    if (!newCode) return
+    const newName = window.prompt('Ingresá el nuevo nombre para la plantilla clonada:', `${template.name} (Copia)`)
+    if (!newName) return
+    
+    cloneMutation.mutate({ sourceTemplateId: template.id, newCode, newName })
   }
 
   return (
@@ -101,6 +119,15 @@ export default function AssetsTemplates() {
                           onClick={() => handleEdit(template)}
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          title="Clonar plantilla"
+                          onClick={() => handleClone(template)}
+                        >
+                          <Copy className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 

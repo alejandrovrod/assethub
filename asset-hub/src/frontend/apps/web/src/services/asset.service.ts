@@ -7,6 +7,10 @@ export interface Asset {
   parentId?: string
   code: string
   name: string
+  state: string
+  stateColor?: string
+  path?: string
+  pathNames?: string
   installedAt?: string
   commissionedAt?: string
   conditionIndex?: number
@@ -17,6 +21,37 @@ export interface Asset {
   
   // Includes
   assetTemplate?: AssetTemplate
+  children?: AssetSummaryDto[]
+  lifecycleStates?: any // Or import LifecycleConfig and use it
+}
+
+export interface AssetSummaryDto {
+  id: string
+  code: string
+  name: string
+  state: string
+  stateColor?: string
+}
+
+export interface AdvancedSearchRequest {
+  searchTerm?: string
+  templateId?: string
+  state?: string
+  ancestorId?: string
+  catalogFilters?: Record<string, string>
+  rootOnly?: boolean
+}
+
+export interface CatalogItemFilterDto {
+  catalogItemId: string
+  code: string
+  label: string
+}
+
+export interface SearchFilterDto {
+  attributeKey: string
+  attributeLabel: string
+  options: CatalogItemFilterDto[]
 }
 
 export interface CreateAssetRequest {
@@ -52,6 +87,7 @@ export interface AssetDetail {
   code: string
   name: string
   state: string
+  stateColor?: string
   conditionIndex?: number
   propertiesJson: string
   commissionedAt?: string
@@ -68,12 +104,33 @@ export interface AssetAttachment {
   createdAt: string
 }
 
+export interface AssetEvent {
+  id: string
+  assetId: string
+  eventType: string
+  fromState: string
+  toState: string
+  notes?: string
+  at: string
+  userId: string
+}
+
 export const assetService = {
-  getAssets: async (q?: string, templateId?: string, state?: string) => {
+  getAssets: async (q?: string, templateId?: string, state?: string, ancestorId?: string) => {
     const { data } = await apiClient.get<{ items: Asset[] }>('/assets', {
-      params: { q, templateId, state }
+      params: { q, templateId, state, ancestorId }
     })
     return data.items
+  },
+  
+  advancedSearch: async (request: AdvancedSearchRequest) => {
+    const { data } = await apiClient.post<{ items: Asset[] }>('/assets/search', request)
+    return data.items
+  },
+
+  getSearchFilters: async () => {
+    const { data } = await apiClient.get<SearchFilterDto[]>('/assets/search-filters')
+    return data
   },
   
   createAsset: async (request: CreateAssetRequest) => {
@@ -95,8 +152,12 @@ export const assetService = {
     await apiClient.delete(`/assets/${id}`)
   },
 
-  changeState: async (id: string, toState: string, notes?: string) => {
-    const { data } = await apiClient.patch(`/assets/${id}/state`, { toState, notes })
+  changeState: async (id: string, toState: string, transitionData?: Record<string, string>): Promise<void> => {
+    await apiClient.patch(`/assets/${id}/state`, { toState, transitionData })
+  },
+
+  getAssetEvents: async (id: string): Promise<AssetEvent[]> => {
+    const { data } = await apiClient.get<AssetEvent[]>(`/assets/${id}/events`)
     return data
   },
 

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using AssetHub.Application.Incidents.Commands;
+using AssetHub.Application.Incidents.Queries;
 using AssetHub.Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,28 @@ public class IncidentsController : ControllerBase
     public IncidentsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state)
+    {
+        var result = await _mediator.Send(new SearchIncidentsQuery(q, state));
+        return Ok(new { items = result });
+    }
+
+    [HttpPost("search")]
+    public async Task<IActionResult> AdvancedSearch([FromBody] AssetHub.Api.Controllers.AdvancedSearchRequest request)
+    {
+        var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters));
+        return Ok(new { items = result });
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetIncidentByIdQuery(id));
+        if (result == null) return NotFound();
+        return Ok(result);
     }
 
     [HttpPost]

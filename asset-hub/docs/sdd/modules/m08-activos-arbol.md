@@ -13,7 +13,7 @@ CRUD de activos organizados en árbol: `ParentId` + materialized `Path` + closur
 | CU-8.5 | Gestor | Cambia el estado del activo respetando `LifecycleStates` del template; queda `AssetLifecycleEvents` |
 | CU-8.6 | Gestor/Técnico | Sube adjuntos (foto, doc, plano) al activo |
 | CU-8.7 | Gestor | Elimina (soft-delete) un activo; cascada lógica a su subárbol |
-| CU-8.8 | Lectura | Busca activos por código, nombre, template, estado |
+| CU-8.8 | Lectura | Búsqueda avanzada de activos: código, nombre, template, estado, y filtrado jerárquico (descendientes de un `AncestorId`) |
 
 ## Reglas de negocio
 
@@ -37,3 +37,4 @@ CRUD de activos organizados en árbol: `ParentId` + materialized `Path` + closur
 - CA-8.7: Given activo con 5 descendientes, When DELETE, Then los 6 quedan `IsDeleted=true` y no aparecen en listados.
 - CA-8.8: Given adjunto de 2 MB tipo `photo`, When POST adjuntos, Then 201 con `BlobUri`; Given tipo no permitido, Then 400.
 - CA-8.9: Given `ConditionIndex=120`, When PATCH, Then 400 por rango.
+- CA-8.10: Given un árbol jerárquico, When GET search con `AncestorId`, Then retorna solo los activos descendientes del mismo usando la tabla `AssetHierarchy`.

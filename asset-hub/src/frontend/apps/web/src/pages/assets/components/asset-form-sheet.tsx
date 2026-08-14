@@ -155,7 +155,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
           <UiForm {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-6 mt-4">
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="code"
@@ -183,33 +183,33 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                     </FormItem>
                   )}
                 />
-              </div>
 
-              {!asset && (
-                <FormField
-                  control={form.control}
-                  name="parentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Activo Padre (Opcional)</FormLabel>
-                      <Select onValueChange={(val) => field.onChange(val === 'none' ? null : val)} value={field.value || 'none'}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar padre..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">-- Ninguno --</SelectItem>
-                          {allAssets?.map(a => (
-                            <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+                {!asset && (
+                  <FormField
+                    control={form.control}
+                    name="parentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Activo Padre (Opcional)</FormLabel>
+                        <Select onValueChange={(val) => field.onChange(val === 'none' ? null : val)} value={field.value || 'none'}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar padre..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">-- Ninguno --</SelectItem>
+                            {allAssets?.map(a => (
+                              <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
 
               {/* RJSF rendered form */}
               {Object.keys(schema).length > 0 && (

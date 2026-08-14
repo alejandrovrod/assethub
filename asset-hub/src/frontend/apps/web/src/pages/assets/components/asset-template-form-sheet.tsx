@@ -235,6 +235,20 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="maintenanceChecklist"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Checklist de Mantenimiento Preventivo (JSON)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Ej: { &quot;tasks&quot;: [&quot;Revisar aceite&quot;, &quot;Revisar filtros&quot;] }" {...field} className="font-mono text-sm h-32" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                 </div>
               </div>
             </div>

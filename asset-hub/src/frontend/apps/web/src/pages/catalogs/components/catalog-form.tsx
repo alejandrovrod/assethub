@@ -12,11 +12,13 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { Catalog } from "@/services/catalog.service"
 
 const formSchema = z.object({
   code: z.string().min(2, { message: "El código debe tener al menos 2 caracteres." }),
   label: z.string().min(2, { message: "La etiqueta debe tener al menos 2 caracteres." }),
+  targetModules: z.array(z.string()).optional(),
 })
 
 export type CatalogFormValues = z.infer<typeof formSchema>
@@ -34,6 +36,7 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
     defaultValues: {
       code: initialData?.code || "",
       label: initialData?.label || "",
+      targetModules: initialData?.targetModules || [],
     },
   })
 
@@ -63,6 +66,61 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
               <FormControl>
                 <Input placeholder="Ej: Tipo de Activo" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="targetModules"
+          render={() => (
+            <FormItem>
+              <div className="mb-4">
+                <FormLabel className="text-base">Módulos</FormLabel>
+                <FormDescription>
+                  Seleccione en qué módulos de la aplicación debe estar disponible este catálogo.
+                </FormDescription>
+              </div>
+              <FormField
+                control={form.control}
+                name="targetModules"
+                render={({ field }) => {
+                  const modules = [
+                    { id: "Assets", label: "Activos" },
+                    { id: "Incidents", label: "Incidencias" },
+                    { id: "Tasks", label: "Tareas" },
+                  ];
+
+                  return (
+                    <div className="space-y-3">
+                      {modules.map((module) => (
+                        <FormItem
+                          key={module.id}
+                          className="flex flex-row items-start space-x-3 space-y-0"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(module.id)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...(field.value || []), module.id])
+                                  : field.onChange(
+                                      field.value?.filter(
+                                        (value) => value !== module.id
+                                      )
+                                    )
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {module.label}
+                          </FormLabel>
+                        </FormItem>
+                      ))}
+                    </div>
+                  )
+                }}
+              />
               <FormMessage />
             </FormItem>
           )}

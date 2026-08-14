@@ -58,7 +58,7 @@ export function useResolvedSchema(rawSchemaJson: string) {
               delete prop.enum;
               delete prop.enumNames;
               prop.oneOf = items.map((item: any) => ({
-                const: item.code,
+                const: item.id,
                 title: item.label || item.Label || item.code
               }));
             } else {

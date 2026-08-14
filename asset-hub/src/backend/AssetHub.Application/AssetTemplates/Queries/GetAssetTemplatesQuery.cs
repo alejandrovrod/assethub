@@ -9,8 +9,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AssetHub.Application.AssetTemplates.Queries;
-
-public record GetAssetTemplatesQuery() : IRequest<List<AssetTemplateDto>>;
+public record GetAssetTemplatesQuery(string? SearchTerm = null) : IRequest<List<AssetTemplateDto>>;
 
 public record AssetTemplateDto(Guid Id, Guid BusinessEntityTypeId, string Code, string Name, string Description, string SchemaJson, List<Guid> AllowedChildTemplateIds, LifecycleConfig LifecycleStates, string MaintenanceChecklist, int Version, bool IsActive);
 
@@ -30,9 +29,16 @@ public class GetAssetTemplatesQueryHandler : IRequestHandler<GetAssetTemplatesQu
     {
         var tenantId = _tenantResolver.GetCurrentTenantId();
         
-        var templates = await _dbContext.AssetTemplates
-            .Where(t => t.TenantId == tenantId)
-            .ToListAsync(cancellationToken);
+        var query = _dbContext.AssetTemplates
+            .Where(t => t.TenantId == tenantId);
+
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var search = request.SearchTerm.ToLower();
+            query = query.Where(t => t.Name.ToLower().Contains(search) || t.Code.ToLower().Contains(search));
+        }
+
+        var templates = await query.ToListAsync(cancellationToken);
 
         return templates.Select(t => new AssetTemplateDto(
             t.Id,

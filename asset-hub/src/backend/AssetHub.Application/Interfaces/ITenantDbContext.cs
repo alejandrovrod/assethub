@@ -14,6 +14,7 @@ public interface ITenantDbContext
     DbSet<CatalogItemTranslation> CatalogItemTranslations { get; }
     DbSet<BusinessEntityType> BusinessEntityTypes { get; }
     DbSet<AssetTemplate> AssetTemplates { get; }
+    DbSet<AssetHub.Domain.IncidentTemplates.IncidentTemplate> IncidentTemplates { get; }
 
     DbSet<AssetHub.Domain.Assets.Asset> Assets { get; }
     DbSet<AssetHub.Domain.Assets.AssetConditionHistory> AssetConditionHistories { get; }

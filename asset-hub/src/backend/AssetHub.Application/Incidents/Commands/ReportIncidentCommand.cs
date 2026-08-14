@@ -19,6 +19,9 @@ public class ReportIncidentCommand : IRequest<Guid>
     public Guid TypeId { get; set; }
     public Guid? PriorityId { get; set; }
     
+    public Guid? IncidentTemplateId { get; set; }
+    public string PropertiesJson { get; set; } = "{}";
+    
     public string? GeoJson { get; set; }
     
     public List<AttachmentDto> Attachments { get; set; } = new();
@@ -84,10 +87,21 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
             AssetId = request.AssetId,
             TypeId = request.TypeId,
             PriorityId = request.PriorityId,
-            State = "reported",
+            IncidentTemplateId = request.IncidentTemplateId,
+            PropertiesJson = string.IsNullOrWhiteSpace(request.PropertiesJson) ? "{}" : request.PropertiesJson,
+            State = "reported", // Podríamos obtener el initial state de la plantilla si existe
             Geo = geo,
             GeoType = geoType
         };
+
+        if (request.IncidentTemplateId.HasValue)
+        {
+            var template = await _db.IncidentTemplates.FirstOrDefaultAsync(t => t.Id == request.IncidentTemplateId.Value, cancellationToken);
+            if (template != null && template.LifecycleStates != null && !string.IsNullOrEmpty(template.LifecycleStates.InitialState))
+            {
+                incident.State = template.LifecycleStates.InitialState;
+            }
+        }
 
         _db.Incidents.Add(incident);
 

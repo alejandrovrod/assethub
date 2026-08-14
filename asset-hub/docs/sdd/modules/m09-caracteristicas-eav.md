@@ -10,7 +10,7 @@ Atributos dinámicos por activo según el `SchemaJson` de su template: modelo EA
 | CU-9.2 | Gestor | Actualiza un atributo individual o en lote |
 | CU-9.3 | Sistema | Valida cada valor contra el schema: tipo, obligatoriedad, rango, catálogo, formato |
 | CU-9.4 | Lectura | Consulta características de un activo con labels traducidos (M5) |
-| CU-9.5 | Gestor | Filtra/busca activos por valor de atributo (p.ej. `material = 'hormigón'`) |
+| CU-9.5 | Gestor | Búsqueda dinámica basada en atributos: filtra activos cruzando EAV (ej. filtros dinámicos que varían por negocio usando catálogos `ValueCatalogItemId`) |
 | CU-9.6 | TenantAdmin | Evoluciona el schema (M7 v2); los valores existentes no se rompen |
 
 ## Reglas de negocio
@@ -33,3 +33,4 @@ Atributos dinámicos por activo según el `SchemaJson` de su template: modelo EA
 - CA-9.6: Given 3 atributos inválidos de 5, When PUT lote, Then 400 con exactamente 3 errores por atributo; ninguno se persiste.
 - CA-9.7: Given 200 activos con `material='hormigón'`, When GET filtro por atributo, Then devuelve solo esos, usando índice por `ValueType`.
 - CA-9.8: Given template actualizado a v2 con atributo nuevo, When se consultan activos viejos, Then sus valores v1 siguen intactos y el atributo nuevo aparece vacío.
+- CA-9.9: Given una búsqueda dinámica, When se envían múltiples filtros de catálogo, Then intersecta los valores usando `ValueCatalogItemId` devolviendo los activos coincidentes.

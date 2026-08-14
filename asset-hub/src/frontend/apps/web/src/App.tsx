@@ -10,6 +10,8 @@ import AssetsPage from "./pages/assets/index";
 import AssetDetailPage from "./pages/assets/detail";
 import AssetsTemplates from "./pages/assets/templates";
 import MaintenanceIncidents from "./pages/maintenance/incidents";
+import IncidentDetailPage from "./pages/maintenance/incident-detail";
+import IncidentTemplates from "./pages/maintenance/incident-templates/index";
 import MaintenanceTasks from "./pages/maintenance/tasks";
 import StaffEmployees from "./pages/staff/employees";
 import StaffTeams from "./pages/staff/teams";
@@ -34,6 +36,8 @@ export default function App() {
 
           <Route path="maintenance">
             <Route path="incidents" element={<MaintenanceIncidents />} />
+            <Route path="incidents/:id" element={<IncidentDetailPage />} />
+            <Route path="incident-templates" element={<IncidentTemplates />} />
             <Route path="tasks" element={<MaintenanceTasks />} />
           </Route>
 

@@ -23,10 +23,30 @@ public class AssetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state, [FromQuery] Guid? ancestorId)
     {
-        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state));
+        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state, null, ancestorId));
         return Ok(new { items = result });
+    }
+
+    [HttpPost("search")]
+    public async Task<IActionResult> AdvancedSearch([FromBody] AdvancedSearchRequest request)
+    {
+        var result = await _mediator.Send(new SearchAssetsQuery(
+            request.SearchTerm, 
+            request.TemplateId, 
+            request.State, 
+            request.CatalogFilters, 
+            request.AncestorId,
+            request.RootOnly));
+        return Ok(new { items = result });
+    }
+
+    [HttpGet("search-filters")]
+    public async Task<IActionResult> GetSearchFilters()
+    {
+        var result = await _mediator.Send(new GetActiveSearchFiltersQuery());
+        return Ok(result);
     }
 
     [HttpGet("{id}")]
@@ -34,6 +54,13 @@ public class AssetsController : ControllerBase
     {
         var result = await _mediator.Send(new GetAssetByIdQuery(id));
         if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/events")]
+    public async Task<IActionResult> GetEvents(Guid id)
+    {
+        var result = await _mediator.Send(new GetAssetLifecycleEventsQuery(id));
         return Ok(result);
     }
 
@@ -116,7 +143,7 @@ public class AssetsController : ControllerBase
     [HttpPatch("{id}/state")]
     public async Task<IActionResult> ChangeState([FromRoute] Guid id, [FromBody] ChangeStateRequest request)
     {
-        var success = await _mediator.Send(new ChangeAssetEnvironmentStateCommand(id, request.ToState, request.Notes));
+        var success = await _mediator.Send(new ChangeAssetEnvironmentStateCommand(id, request.ToState, request.Notes, request.TransitionData));
         if (!success) return NotFound();
         return Ok();
     }
@@ -162,6 +189,16 @@ public class AssetsController : ControllerBase
     }
 }
 
+public class AdvancedSearchRequest
+{
+    public string? SearchTerm { get; set; }
+    public Guid? TemplateId { get; set; }
+    public string? State { get; set; }
+    public Guid? AncestorId { get; set; }
+    public Dictionary<string, Guid>? CatalogFilters { get; set; }
+    public bool? RootOnly { get; set; }
+}
+
 public class CreateAssetRequest
 {
     public Guid AssetTemplateId { get; set; }
@@ -195,4 +232,5 @@ public class ChangeStateRequest
 {
     public string ToState { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public Dictionary<string, string>? TransitionData { get; set; }
 }

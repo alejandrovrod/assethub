@@ -1,13 +1,216 @@
-export default function MaintenanceIncidents() {
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Plus, Loader2, Eye } from 'lucide-react'
+import { incidentService } from '@/services/incident.service'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
+import { ReportIncidentSheet } from './components/report-incident-sheet'
+import { useNavigate } from 'react-router'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Check, ChevronsUpDown, Filter } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { assetService } from '@/services/asset.service'
 
-      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h3 className="text-2xl font-bold tracking-tight">Próximamente</h3>
-          <p className="text-sm text-muted-foreground">Esta pantalla está en construcción.</p>
-        </div>
-      </div>
+export default function MaintenanceIncidents() {
+  const navigate = useNavigate()
+  const [isReportOpen, setIsReportOpen] = useState(false)
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [catalogFilters, setCatalogFilters] = useState<Record<string, string>>({})
+
+  const { data: incidents, isLoading } = useQuery({
+    queryKey: ['incidents', searchTerm, catalogFilters],
+    queryFn: () => incidentService.advancedSearch({
+      searchTerm: searchTerm || undefined,
+      catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined
+    }),
+  })
+
+  const { data: searchFilters, isLoading: isLoadingFilters } = useQuery({
+    queryKey: ['asset-filters'],
+    queryFn: () => assetService.getSearchFilters()
+  })
+
+  const handleCreate = () => {
+    setIsReportOpen(true)
+  }
+
+  const handleView = (id: string) => {
+    navigate(`/maintenance/incidents/${id}`)
+  }
+
+  return (
+    <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
+      <Card className="flex flex-1 flex-col overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <div>
+            <CardTitle>Incidencias</CardTitle>
+            <CardDescription>
+              Gestioná las incidencias reportadas en los activos.
+            </CardDescription>
+          </div>
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Reportar Incidencia
+          </Button>
+        </CardHeader>
+        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+          <div className="flex flex-1 gap-6 overflow-hidden min-h-0 mt-4 p-4 pt-0">
+            {/* Sidebar de Búsqueda y Filtros */}
+            <div className="w-64 flex flex-col gap-6 overflow-hidden min-h-0 shrink-0">
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Filter className="h-4 w-4" /> Búsqueda
+                </h3>
+                <Input 
+                  placeholder="Título o activo..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              <ScrollArea className="flex-1 min-h-0 pr-4">
+                {isLoadingFilters ? (
+                  <div className="text-sm text-muted-foreground">Cargando filtros...</div>
+                ) : searchFilters?.map((filter) => (
+                  <div key={filter.attributeKey} className="mb-6">
+                    <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between"
+                        >
+                          <span className="truncate">
+                            {catalogFilters[filter.attributeKey]
+                              ? filter.options.find(
+                                  (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
+                                )?.label
+                              : "Todos"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar opción..." />
+                          <CommandList>
+                            <CommandEmpty>No se encontró la opción.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                onSelect={() => {
+                                  const newFilters = { ...catalogFilters }
+                                  delete newFilters[filter.attributeKey]
+                                  setCatalogFilters(newFilters)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                Todos
+                              </CommandItem>
+                              {filter.options.map((opt) => (
+                                <CommandItem
+                                  key={opt.catalogItemId}
+                                  onSelect={() => {
+                                    setCatalogFilters({ ...catalogFilters, [filter.attributeKey]: opt.catalogItemId })
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      catalogFilters[filter.attributeKey] === opt.catalogItemId
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  {opt.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+
+            {/* Grilla de Incidencias */}
+            <div className="flex-1 rounded-lg border shadow-sm p-4 overflow-auto">
+              <ScrollArea className="h-full">
+                {isLoading ? (
+                  <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : incidents?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-48 text-center">
+                    <p className="text-muted-foreground mb-4">No hay incidencias reportadas.</p>
+                  </div>
+                ) : (
+                  <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Activo</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Reportado el</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {incidents?.map((incident) => (
+                    <TableRow key={incident.id}>
+                      <TableCell className="font-medium">{incident.title}</TableCell>
+                      <TableCell>{incident.assetName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{incident.state}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(incident.createdAt), 'PPp', { locale: es })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleView(incident.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                  </Table>
+                )}
+              </ScrollArea>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ReportIncidentSheet
+        open={isReportOpen}
+        onOpenChange={setIsReportOpen}
+        onSuccess={(id) => {
+          setIsReportOpen(false)
+          handleView(id)
+        }}
+      />
     </div>
   )
 }

@@ -26,6 +26,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<CatalogItemTranslation> CatalogItemTranslations { get; set; } = null!;
     public DbSet<BusinessEntityType> BusinessEntityTypes { get; set; } = null!;
     public DbSet<AssetTemplate> AssetTemplates { get; set; } = null!;
+    public DbSet<AssetHub.Domain.IncidentTemplates.IncidentTemplate> IncidentTemplates { get; set; } = null!;
     
     public DbSet<AssetHub.Domain.Assets.Asset> Assets { get; set; } = null!;
     public DbSet<AssetHub.Domain.Assets.AssetConditionHistory> AssetConditionHistories { get; set; } = null!;
@@ -119,6 +120,15 @@ public class TenantDbContext : DbContext, ITenantDbContext
              .WithMany()
              .HasForeignKey(t => t.BusinessEntityTypeId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.IncidentTemplates.IncidentTemplate>(b =>
+        {
+            b.HasKey(t => t.Id);
+            b.HasQueryFilter(t => t.TenantId == CurrentTenantId);
+            b.HasIndex(t => new { t.Code, t.Version, t.TenantId }).IsUnique();
+
+            b.Property(t => t.LifecycleStates).HasConversion(lifecycleConfigConverter);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Assets.Asset>(b =>

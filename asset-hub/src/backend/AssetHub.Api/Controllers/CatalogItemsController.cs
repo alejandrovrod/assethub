@@ -48,6 +48,7 @@ public class CatalogItemsController : ControllerBase
         var success = await _mediator.Send(new UpdateCatalogItemCommand(
             catalogCode, 
             itemCode, 
+            request.NewCode,
             request.DefaultLabel, 
             request.Order, 
             request.Translations
@@ -77,6 +78,7 @@ public class CreateCatalogItemRequest
 
 public class UpdateCatalogItemRequest
 {
+    public string? NewCode { get; set; }
     public string DefaultLabel { get; set; } = string.Empty;
     public int Order { get; set; }
     public Dictionary<string, string> Translations { get; set; } = new();

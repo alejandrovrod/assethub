@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AssetHub.Application.Catalogs.Commands;
 
-public record UpdateCatalogItemCommand(string CatalogCode, string Code, string DefaultLabel, int Order, Dictionary<string, string> Translations, Guid? ParentItemId = null) : IRequest<bool>;
+public record UpdateCatalogItemCommand(string CatalogCode, string Code, string? NewCode, string DefaultLabel, int Order, Dictionary<string, string> Translations, Guid? ParentItemId = null) : IRequest<bool>;
 
 public class UpdateCatalogItemCommandHandler : IRequestHandler<UpdateCatalogItemCommand, bool>
 {
@@ -40,6 +40,15 @@ public class UpdateCatalogItemCommandHandler : IRequestHandler<UpdateCatalogItem
 
         item.Order = request.Order;
         item.ParentItemId = request.ParentItemId;
+        
+        if (!string.IsNullOrWhiteSpace(request.NewCode) && item.Code != request.NewCode)
+        {
+            var codeExists = await _dbContext.CatalogItems.AnyAsync(ci => ci.CatalogId == catalog.Id && ci.Code == request.NewCode && ci.TenantId == tenantId, cancellationToken);
+            if (codeExists)
+                throw new InvalidOperationException($"Ya existe un ítem con el código {request.NewCode} en este catálogo.");
+                
+            item.Code = request.NewCode;
+        }
 
         var existingTranslations = item.Translations.ToList();
 

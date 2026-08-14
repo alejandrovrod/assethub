@@ -9,10 +9,11 @@ using AssetHub.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NJsonSchema;
+using System.Text.Json;
 
 namespace AssetHub.Application.AssetTemplates.Commands;
 
-public record UpdateAssetTemplateCommand(Guid Id, string Name, string Description, string SchemaJson, List<Guid> AllowedChildTemplateIds, LifecycleConfig LifecycleStates, string MaintenanceChecklist) : IRequest<Guid>;
+public record UpdateAssetTemplateCommand(Guid Id, string Name, string Description, string SchemaJson, List<Guid> AllowedChildTemplateIds, LifecycleConfig LifecycleStates, string MaintenanceChecklist, bool CreateNewVersion = false) : IRequest<Guid>;
 
 public class UpdateAssetTemplateCommandHandler : IRequestHandler<UpdateAssetTemplateCommand, Guid>
 {
@@ -41,16 +42,16 @@ public class UpdateAssetTemplateCommandHandler : IRequestHandler<UpdateAssetTemp
             throw new InvalidTemplateSchemaException($"SchemaJson inválido: {ex.Message}");
         }
 
+        await ValidateCatalogsAsync(request.SchemaJson, existing.TenantId, cancellationToken);
+
         if (request.LifecycleStates == null || string.IsNullOrWhiteSpace(request.LifecycleStates.InitialState))
         {
             throw new InvalidOperationException("El estado inicial de LifecycleStates es obligatorio.");
         }
-
-        var usages = await _usageChecker.GetUsageCountAsync(existing.Id);
         
-        if (usages > 0)
+        if (request.CreateNewVersion)
         {
-            // Clonar y versionar
+            // Clonar y versionar (Solo si se solicita explicitamente)
             existing.IsActive = false; // Desactivar la versión anterior
 
             var clone = new AssetTemplate
@@ -74,7 +75,7 @@ public class UpdateAssetTemplateCommandHandler : IRequestHandler<UpdateAssetTemp
         }
         else
         {
-            // Pisar si no está en uso
+            // Pisar directamente (comportamiento por defecto)
             existing.Name = request.Name;
             existing.Description = request.Description;
             existing.SchemaJson = request.SchemaJson;
@@ -84,6 +85,56 @@ public class UpdateAssetTemplateCommandHandler : IRequestHandler<UpdateAssetTemp
             
             await _dbContext.SaveChangesAsync(cancellationToken);
             return existing.Id;
+        }
+    }
+
+    private async Task ValidateCatalogsAsync(string schemaJson, Guid tenantId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(schemaJson)) return;
+        
+        var codes = new List<string>();
+        using var doc = JsonDocument.Parse(schemaJson);
+        ExtractCatalogCodes(doc.RootElement, codes);
+        
+        if (codes.Any())
+        {
+            var distinctCodes = codes.Distinct().ToList();
+            var existingCatalogs = await _dbContext.Catalogs
+                .Where(c => (c.TenantId == tenantId || c.IsSystem) && distinctCodes.Contains(c.Code))
+                .Select(c => c.Code)
+                .ToListAsync(cancellationToken);
+                
+            var missing = distinctCodes.Except(existingCatalogs).ToList();
+            if (missing.Any())
+            {
+                throw new InvalidOperationException($"Los siguientes catálogos no existen o no son accesibles: {string.Join(", ", missing)}");
+            }
+        }
+    }
+
+    private void ExtractCatalogCodes(JsonElement element, List<string> codes)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            if (element.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "catalog")
+            {
+                if (element.TryGetProperty("catalogCode", out var codeProp))
+                {
+                    codes.Add(codeProp.GetString()!);
+                }
+            }
+            
+            foreach (var prop in element.EnumerateObject())
+            {
+                ExtractCatalogCodes(prop.Value, codes);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                ExtractCatalogCodes(item, codes);
+            }
         }
     }
 }

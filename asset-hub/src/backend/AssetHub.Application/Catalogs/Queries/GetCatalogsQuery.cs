@@ -11,7 +11,7 @@ namespace AssetHub.Application.Catalogs.Queries;
 
 public record GetCatalogsQuery() : IRequest<List<CatalogDto>>;
 
-public record CatalogDto(Guid Id, string Code, string Label, bool IsGlobal);
+public record CatalogDto(Guid Id, string Code, string Label, bool IsGlobal, List<string> TargetModules);
 
 public class GetCatalogsQueryHandler : IRequestHandler<GetCatalogsQuery, List<CatalogDto>>
 {
@@ -32,7 +32,10 @@ public class GetCatalogsQueryHandler : IRequestHandler<GetCatalogsQuery, List<Ca
             c.Id, 
             c.Code, 
             c.Label, 
-            c.TenantId == null
+            c.TenantId == null,
+            string.IsNullOrEmpty(c.TargetModulesJson) 
+                ? new List<string>() 
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(c.TargetModulesJson) ?? new List<string>()
         )).ToList();
     }
 }

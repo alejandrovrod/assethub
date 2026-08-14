@@ -14,10 +14,14 @@ public class Incident
     
     public Guid AssetId { get; set; }
     public Asset? Asset { get; set; }
-    
     public Guid TypeId { get; set; }
     public Guid? PriorityId { get; set; }
     
+    public Guid? IncidentTemplateId { get; set; }
+    public IncidentTemplates.IncidentTemplate? IncidentTemplate { get; set; }
+
+    public string PropertiesJson { get; set; } = "{}";
+
     public string State { get; set; } = "reported"; // reported, triaged, assigned, in_progress, resolved, closed, cancelled
     
     public Geometry? Geo { get; set; }

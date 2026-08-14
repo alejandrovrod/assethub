@@ -45,6 +45,16 @@ export default function CatalogsPage() {
     onError: () => toast.error('Error al crear el catálogo'),
   })
 
+  const updateCatalogMutation = useMutation({
+    mutationFn: (data: { id: string, request: any }) => catalogService.updateCatalog(data.id, data.request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalogs'] })
+      setIsCatalogDialogOpen(false)
+      toast.success('Catálogo actualizado exitosamente')
+    },
+    onError: () => toast.error('Error al actualizar el catálogo'),
+  })
+
   const createItemMutation = useMutation({
     mutationFn: (data: { code: string, request: any }) => catalogService.createCatalogItem(data.code, data.request),
     onSuccess: () => {
@@ -77,10 +87,19 @@ export default function CatalogsPage() {
   // Handlers
   const handleCatalogSubmit = (values: CatalogFormValues) => {
     if (editingCatalog) {
-      toast.error('La edición de catálogos no está soportada por la API actual.')
-      setIsCatalogDialogOpen(false)
+      updateCatalogMutation.mutate({
+        id: editingCatalog.id,
+        request: {
+          label: values.label,
+          targetModules: values.targetModules,
+        }
+      })
     } else {
-      createCatalogMutation.mutate(values)
+      createCatalogMutation.mutate({
+        code: values.code,
+        label: values.label,
+        targetModules: values.targetModules,
+      })
     }
   }
 
@@ -91,6 +110,7 @@ export default function CatalogsPage() {
         catalogCode: selectedCatalog.code,
         itemCode: editingItem.code,
         request: {
+          newCode: values.code !== editingItem.code ? values.code : undefined,
           defaultLabel: values.defaultLabel,
           order: values.order,
           translations: { es: values.defaultLabel }

@@ -59,6 +59,10 @@ export const sidebarData: SidebarData = {
               url: '/maintenance/incidents',
             },
             {
+              title: 'Plantillas de Incidencias',
+              url: '/maintenance/incident-templates',
+            },
+            {
               title: 'Tareas',
               url: '/maintenance/tasks',
             },

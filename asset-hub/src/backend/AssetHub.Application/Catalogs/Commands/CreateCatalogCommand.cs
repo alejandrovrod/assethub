@@ -6,9 +6,11 @@ using AssetHub.Domain.Catalogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
+using System.Text.Json;
+
 namespace AssetHub.Application.Catalogs.Commands;
 
-public record CreateCatalogCommand(string Code, string Label, bool IsSystem = false) : IRequest<Guid>;
+public record CreateCatalogCommand(string Code, string Label, List<string>? TargetModules = null, bool IsSystem = false) : IRequest<Guid>;
 
 public class CreateCatalogCommandHandler : IRequestHandler<CreateCatalogCommand, Guid>
 {
@@ -34,6 +36,7 @@ public class CreateCatalogCommandHandler : IRequestHandler<CreateCatalogCommand,
             TenantId = tenantId,
             Code = request.Code,
             Label = request.Label,
+            TargetModulesJson = request.TargetModules != null ? JsonSerializer.Serialize(request.TargetModules) : null,
             IsSystem = request.IsSystem
         };
 

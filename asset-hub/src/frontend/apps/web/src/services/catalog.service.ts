@@ -6,6 +6,7 @@ export interface Catalog {
   code: string
   label: string
   isSystem: boolean
+  targetModules?: string[]
 }
 
 export interface CatalogItem {
@@ -31,10 +32,23 @@ export interface CatalogItemTranslation {
 export interface CreateCatalogRequest {
   code: string
   label: string
+  targetModules?: string[]
+}
+
+export interface UpdateCatalogRequest {
+  label: string
+  targetModules?: string[]
 }
 
 export interface CreateCatalogItemRequest {
   code: string
+  defaultLabel: string
+  order: number
+  translations: Record<string, string>
+}
+
+export interface UpdateCatalogItemRequest {
+  newCode?: string
   defaultLabel: string
   order: number
   translations: Record<string, string>
@@ -51,6 +65,10 @@ export const catalogService = {
     return data
   },
 
+  updateCatalog: async (id: string, request: UpdateCatalogRequest): Promise<void> => {
+    await apiClient.put(`/catalogs/${id}`, request)
+  },
+
   getCatalogItems: async (catalogCode: string, locale: string = 'es'): Promise<CatalogItem[]> => {
     const { data } = await apiClient.get<{ items: CatalogItem[] }>(`/catalogs/${catalogCode}/items`, {
       params: { locale }
@@ -63,7 +81,7 @@ export const catalogService = {
     return data
   },
 
-  updateCatalogItem: async (catalogCode: string, itemCode: string, request: Omit<CreateCatalogItemRequest, 'code'>): Promise<void> => {
+  updateCatalogItem: async (catalogCode: string, itemCode: string, request: UpdateCatalogItemRequest): Promise<void> => {
     await apiClient.put(`/catalogs/${catalogCode}/items/${itemCode}`, request)
   },
 

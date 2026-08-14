@@ -56,7 +56,7 @@ export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: 
             <FormItem>
               <FormLabel>Código</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: LAPTOP" {...field} disabled={!!initialData} />
+                <Input placeholder="Ej: LAPTOP" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

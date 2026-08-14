@@ -77,7 +77,8 @@ public class CreateAssetTemplateCommandHandler : IRequestHandler<CreateAssetTemp
             throw new InvalidTemplateSchemaException($"SchemaJson inválido: {ex.Message}");
         }
 
-        // TODO: Validar extrayendo referencias a catálogos en el schema y verificándolas
+        // Validar extrayendo referencias a catálogos en el schema y verificándolas
+        await ValidateCatalogsAsync(request.SchemaJson, tenantId, cancellationToken);
 
         // Validar Lifecycle
         if (request.LifecycleStates == null || string.IsNullOrWhiteSpace(request.LifecycleStates.InitialState))
@@ -104,5 +105,55 @@ public class CreateAssetTemplateCommandHandler : IRequestHandler<CreateAssetTemp
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return template.Id;
+    }
+
+    private async Task ValidateCatalogsAsync(string schemaJson, Guid tenantId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(schemaJson)) return;
+        
+        var codes = new List<string>();
+        using var doc = JsonDocument.Parse(schemaJson);
+        ExtractCatalogCodes(doc.RootElement, codes);
+        
+        if (codes.Any())
+        {
+            var distinctCodes = codes.Distinct().ToList();
+            var existingCatalogs = await _dbContext.Catalogs
+                .Where(c => (c.TenantId == tenantId || c.IsSystem) && distinctCodes.Contains(c.Code))
+                .Select(c => c.Code)
+                .ToListAsync(cancellationToken);
+                
+            var missing = distinctCodes.Except(existingCatalogs).ToList();
+            if (missing.Any())
+            {
+                throw new InvalidOperationException($"Los siguientes catálogos no existen o no son accesibles: {string.Join(", ", missing)}");
+            }
+        }
+    }
+
+    private void ExtractCatalogCodes(JsonElement element, List<string> codes)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            if (element.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "catalog")
+            {
+                if (element.TryGetProperty("catalogCode", out var codeProp))
+                {
+                    codes.Add(codeProp.GetString()!);
+                }
+            }
+            
+            foreach (var prop in element.EnumerateObject())
+            {
+                ExtractCatalogCodes(prop.Value, codes);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                ExtractCatalogCodes(item, codes);
+            }
+        }
     }
 }
