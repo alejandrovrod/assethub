@@ -1,4 +1,4 @@
-import { api } from '@/lib/api'
+import { apiClient as api } from '@/lib/api-client'
 
 export interface IncidentAttachment {
   id: string
@@ -58,6 +58,17 @@ export interface ChangeIncidentStateDto {
   propertiesJson?: string
 }
 
+export interface IncidentTimelineEvent {
+  id: string
+  eventType: string
+  fromState: string
+  toState: string
+  notes?: string
+  propertiesJson?: string
+  at: string
+  userId: string
+}
+
 export interface AdvancedSearchIncidentsDto {
   searchTerm?: string
   state?: string
@@ -70,26 +81,31 @@ export const incidentService = {
     if (q) params.append('q', q)
     if (state) params.append('state', state)
     
-    const { data } = await api.get<{ items: IncidentSummary[] }>(`/v1/incidents?${params.toString()}`)
+    const { data } = await api.get<{ items: IncidentSummary[] }>(`/incidents?${params.toString()}`)
     return data.items
   },
 
   advancedSearch: async (payload: AdvancedSearchIncidentsDto) => {
-    const { data } = await api.post<{ items: IncidentSummary[] }>('/v1/incidents/search', payload)
+    const { data } = await api.post<{ items: IncidentSummary[] }>('/incidents/search', payload)
     return data.items
   },
 
   getById: async (id: string) => {
-    const { data } = await api.get<IncidentDetail>(`/v1/incidents/${id}`)
+    const { data } = await api.get<IncidentDetail>(`/incidents/${id}`)
     return data
   },
 
   report: async (payload: ReportIncidentDto) => {
-    const { data } = await api.post<{ id: string }>('/v1/incidents', payload)
+    const { data } = await api.post<{ id: string }>('/incidents', payload)
     return data.id
   },
 
   changeState: async (id: string, payload: ChangeIncidentStateDto) => {
-    await api.patch(`/v1/incidents/${id}/state`, payload)
+    await api.patch(`/incidents/${id}/state`, payload)
+  },
+
+  getTimeline: async (id: string) => {
+    const { data } = await api.get<{ items: IncidentTimelineEvent[] }>(`/incidents/${id}/timeline`)
+    return data.items
   }
 }

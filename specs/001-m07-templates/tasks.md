@@ -22,3 +22,10 @@
 - `[x]` TASK-12: Create/Update UI components in `src/pages/assets/templates.tsx` (Table & Form).
 - `[x]` TASK-13: Implement JSON-schema client-side validation logic in the editor form.
 - `[x]` TASK-15: Add "Clone" button to the templates table UI and implement clone service call.
+
+## Phase 5: Bugfixes & UI Polish
+- `[x]` BUGFIX-1: Fix React state race condition in `lifecycle-canvas.tsx` by replacing `selectedNode` object with `selectedNodeId` to prevent the configuration sidebar from unmounting during edits.
+
+## Phase 6: Tareas Menores (Prompts Últimos 2 Días)
+- [x] PROMPT-1: Actualizar los nombres de los catálogos en base al JSON de tipoCatalogos (Tipos de Activos, Proyectos, Gpos, etc).
+- [x] PROMPT-2: Modificar UI de catálogos para permitir la edición del campo Code solo cuando el elemento es nuevo (deshabilitarlo en edición).

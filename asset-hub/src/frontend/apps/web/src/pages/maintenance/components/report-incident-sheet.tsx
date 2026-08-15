@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -17,7 +17,9 @@ import { incidentTemplateService } from '@/services/incident-template.service'
 import { assetService } from '@/services/asset.service'
 import { toast } from 'sonner'
 import FormSchema from '@rjsf/core'
-import validator from '@rjsf/validator-ajv8'
+import { customValidator as validator } from '@/lib/rjsf-validator'
+import { useResolvedSchema } from '@/hooks/use-resolved-schema'
+import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Título es requerido').max(200),
@@ -73,14 +75,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
     enabled: !!selectedTemplateId,
   })
 
-  const schema = useMemo(() => {
-    if (!selectedTemplate?.schemaJson) return null
-    try {
-      return JSON.parse(selectedTemplate.schemaJson)
-    } catch {
-      return null
-    }
-  }, [selectedTemplate])
+  const { schema, isResolving } = useResolvedSchema(selectedTemplate?.schemaJson || '')
 
   useEffect(() => {
     if (open) {
@@ -224,14 +219,20 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
                   <ClipboardList className="h-4 w-4 text-primary" />
                   <h4 className="text-sm font-semibold text-primary">Propiedades Adicionales</h4>
                 </div>
-                <div className="p-4 rjsf-theme-default">
-                  <FormSchema
-                    schema={schema}
-                    validator={validator}
-                    formData={schemaData}
-                    onChange={(e) => setSchemaData(e.formData)}
-                    children={<></>} // Hide default submit button
-                  />
+                <div className="p-4 rjsf-tailwind">
+                  {isResolving ? (
+                    <div className="text-sm text-muted-foreground">Cargando catálogos...</div>
+                  ) : (
+                    <FormSchema 
+                      schema={schema} 
+                      validator={validator} 
+                      formData={schemaData} 
+                      onChange={e => setSchemaData(e.formData)} 
+                      widgets={{ FileWidget: FileUploadWidget }}
+                      tagName="div"
+                      children={<></>}
+                    />
+                  )}
                 </div>
               </Card>
             )}

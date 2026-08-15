@@ -228,7 +228,11 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                       <FormItem>
                         <FormLabel>Flujo de Estados (Máquina de Estados)</FormLabel>
                         <FormControl>
-                          <LifecycleCanvas value={field.value} onChange={field.onChange} />
+                          <LifecycleCanvas 
+                            value={field.value} 
+                            onChange={field.onChange} 
+                            schemaJson={form.watch('schemaJson')}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

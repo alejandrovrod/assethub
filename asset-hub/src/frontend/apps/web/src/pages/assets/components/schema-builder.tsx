@@ -91,6 +91,8 @@ function SortableField({
                 <SelectItem value="date">Fecha</SelectItem>
                 <SelectItem value="enum">Lista (Fija)</SelectItem>
                 <SelectItem value="catalog">Catálogo (Dinámico)</SelectItem>
+                <SelectItem value="file">Archivo / Foto (Único)</SelectItem>
+                <SelectItem value="files">Archivos / Fotos (Múltiples)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -167,7 +169,15 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
             let enumOptions = undefined;
             let catalogCode = undefined;
 
-            if (prop.catalogCode) {
+            if (prop.type === 'array' && prop.items?.format === 'data-url') {
+              type = 'files';
+            } else if (prop.format === 'data-url') {
+              type = 'file';
+            } else if (prop.type === 'string' && prop.format === 'date') {
+              type = 'date';
+            } else if (prop.type === 'date') {
+              type = 'date'; // Handle legacy broken schemas
+            } else if (prop.catalogCode) {
               type = 'catalog';
               catalogCode = prop.catalogCode;
             } else if (prop.enum) {
@@ -222,6 +232,18 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
         if (f.catalogCode) {
           propConfig.catalogCode = f.catalogCode;
         }
+      } else if (f.type === 'file') {
+        propConfig.type = 'string';
+        propConfig.format = 'data-url';
+      } else if (f.type === 'files') {
+        propConfig.type = 'array';
+        propConfig.items = {
+          type: 'string',
+          format: 'data-url'
+        };
+      } else if (f.type === 'date') {
+        propConfig.type = 'string';
+        propConfig.format = 'date';
       } else {
         propConfig.type = f.type;
       }

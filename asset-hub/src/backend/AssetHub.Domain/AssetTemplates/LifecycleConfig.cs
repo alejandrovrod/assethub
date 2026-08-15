@@ -24,4 +24,18 @@ public class StateConfig
     public string OnEnterAction { get; set; } = string.Empty;
     public int? MaxHoursInState { get; set; }
     public bool IsTerminal { get; set; } = false;
+    public string AssociatedModule { get; set; } = string.Empty;
+    public List<ChildStateDependency> ChildStateDependencies { get; set; } = new();
+}
+
+public class ChildStateDependency
+{
+    // "Any" or "All"
+    public string ConditionType { get; set; } = "Any"; 
+    
+    // Lista de estados que el hijo(s) debe tener para cumplir la condición
+    public List<string> ChildStates { get; set; } = new();
+    
+    // Estado al que debe transicionar el padre si se cumple
+    public string TargetState { get; set; } = string.Empty;
 }

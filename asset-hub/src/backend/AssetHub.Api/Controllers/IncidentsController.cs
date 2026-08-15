@@ -32,8 +32,13 @@ public class IncidentsController : ControllerBase
     [HttpPost("search")]
     public async Task<IActionResult> AdvancedSearch([FromBody] AssetHub.Api.Controllers.AdvancedSearchRequest request)
     {
-        var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters));
-        return Ok(new { items = result });
+        request ??= new AssetHub.Api.Controllers.AdvancedSearchRequest();
+        try {
+            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters));
+            return Ok(new { items = result });
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = ex.ToString() });
+        }
     }
 
     [HttpGet("{id}")]
@@ -65,5 +70,12 @@ public class IncidentsController : ControllerBase
         command.IncidentId = id;
         await _mediator.Send(command);
         return NoContent();
+    }
+
+    [HttpGet("{id}/timeline")]
+    public async Task<IActionResult> GetTimeline(Guid id)
+    {
+        var result = await _mediator.Send(new GetIncidentTimelineQuery(id));
+        return Ok(new { items = result });
     }
 }

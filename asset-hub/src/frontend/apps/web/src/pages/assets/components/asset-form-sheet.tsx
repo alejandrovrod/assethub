@@ -6,8 +6,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { assetService, Asset } from '@/services/asset.service'
 import { AssetTemplate } from '@/services/asset-template.service'
 import Form from '@rjsf/core'
-import validator from '@rjsf/validator-ajv8'
+import { customValidator as validator } from '@/lib/rjsf-validator'
 import { handleServerError } from '@/lib/handle-server-error'
+import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 
 import {
   Sheet,
@@ -219,13 +220,15 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                   {isResolving ? (
                     <div className="text-center p-4 text-muted-foreground text-sm">Cargando catálogos...</div>
                   ) : template?.schemaJson && (
-                    <Form 
-                      schema={schema} 
-                      formData={propertiesJson}
-                      validator={validator}
-                      onChange={(e) => setPropertiesJson(e.formData)}
-                      children={<></>} 
-                    />
+                    <Form
+                    schema={schema || {}}
+                    validator={validator}
+                    formData={propertiesJson}
+                    onChange={(e) => setPropertiesJson(e.formData)}
+                    widgets={{ FileWidget: FileUploadWidget }}
+                    tagName="div"
+                    children={<></>}
+                  />
                   )}
                   </div>
                 </div>

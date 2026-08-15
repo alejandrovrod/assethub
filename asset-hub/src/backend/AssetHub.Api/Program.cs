@@ -81,6 +81,7 @@ builder.Services.AddScoped<ICatalogUsageChecker, AssetHub.Infrastructure.Catalog
 builder.Services.AddScoped<IEntityTypeUsageChecker, AssetHub.Infrastructure.EntityTypes.DummyEntityTypeUsageChecker>();
 builder.Services.AddScoped<IAssetTemplateUsageChecker, AssetHub.Infrastructure.AssetTemplates.DummyAssetTemplateUsageChecker>();
 builder.Services.AddScoped<IAssetHierarchyService, AssetHub.Infrastructure.Services.AssetHierarchyService>();
+builder.Services.AddScoped<IFileStorageService, AssetHub.Infrastructure.Storage.LocalDiskFileStorageService>();
 
 var app = builder.Build();
 

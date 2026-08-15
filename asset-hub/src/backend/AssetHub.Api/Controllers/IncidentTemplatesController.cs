@@ -45,8 +45,8 @@ public class IncidentTemplatesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateIncidentTemplateCommand command)
     {
-        if (id != command.Id) return BadRequest();
-        await _mediator.Send(command);
+        var commandWithId = command with { Id = id };
+        await _mediator.Send(commandWithId);
         return NoContent();
     }
 

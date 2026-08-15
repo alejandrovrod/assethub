@@ -37,6 +37,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
 
     public DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Incidents.IncidentLifecycleEvent> IncidentLifecycleEvents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Incidents.PreventivePlan> PreventivePlans { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; set; } = null!;
@@ -186,6 +187,12 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasKey(ia => ia.Id);
             b.HasQueryFilter(ia => ia.TenantId == CurrentTenantId);
             b.HasIndex(ia => new { ia.TenantId, ia.IncidentId });
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Incidents.IncidentLifecycleEvent>(b =>
+        {
+            b.HasKey(e => e.Id);
+            b.HasIndex(e => new { e.IncidentId });
         });
 
         modelBuilder.Entity<AssetHub.Domain.Incidents.PreventivePlan>(b =>

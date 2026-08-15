@@ -3,7 +3,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { assetService } from "../../../services/asset.service"
 import { Card, CardContent } from "../../../components/ui/card"
-import { Loader2, ArrowRight, User, Clock } from "lucide-react"
+import { Loader2, ArrowLeft, User, FileText } from "lucide-react"
 
 export function AssetTimeline({ assetId }: { assetId: string }) {
   const { data: events, isLoading, error } = useQuery({
@@ -36,46 +36,63 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
   }
 
   return (
-    <div className="relative border-l border-muted-foreground/30 ml-4 pl-6 py-4 space-y-6">
+    <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
       {events.map((evt) => (
-        <div key={evt.id} className="relative">
-          <div className="absolute -left-[35px] top-1 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm">{evt.fromState || 'Creado'}</span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-semibold text-sm">{evt.toState}</span>
+        <div key={evt.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-200 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+            <FileText className="h-4 w-4" />
+          </div>
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card border rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-sm text-foreground capitalize">Cambio de estado</span>
+              <time className="text-xs text-muted-foreground">{format(new Date(evt.at), 'PPp', { locale: es })}</time>
+            </div>
+            
+            <div className="text-sm text-muted-foreground mb-2">
+              {evt.fromState && evt.toState ? (
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-normal transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                    {evt.fromState}
+                  </span>
+                  <ArrowLeft className="h-3 w-3 rotate-180 text-muted-foreground" />
+                  <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-normal transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
+                    {evt.toState}
+                  </span>
                 </div>
-                <div className="flex items-center text-xs text-muted-foreground gap-1">
-                  <Clock className="h-3 w-3" />
-                  {format(new Date(evt.at), "dd MMM yyyy, HH:mm", { locale: es })}
+              ) : (
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-normal transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
+                    {evt.toState}
+                  </span>
                 </div>
-              </div>
-              
-              <div className="flex items-center text-xs text-muted-foreground gap-1 mb-3">
-                <User className="h-3 w-3" />
-                <span>{evt.userId === '00000000-0000-0000-0000-000000000000' ? 'Sistema / Autenticado' : evt.userId}</span>
-              </div>
+              )}
+            </div>
 
-              {evt.notes && (
-                <div className="bg-muted/30 p-3 rounded-md text-sm border">
-                  {evt.notes.startsWith('{') ? (
-                    <div className="space-y-1">
+            <div className="flex items-center text-xs text-muted-foreground gap-1 mt-2">
+              <User className="h-3 w-3" />
+              <span>{evt.userId === '00000000-0000-0000-0000-000000000000' ? 'Sistema / Autenticado' : evt.userId}</span>
+            </div>
+
+            {evt.notes && (
+              <div className="mt-3 bg-muted/50 rounded-md p-3 text-xs border">
+                {evt.notes.startsWith('{') ? (
+                  <>
+                    <p className="font-semibold mb-1 border-b pb-1">Datos ingresados:</p>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
                       {Object.entries(JSON.parse(evt.notes)).map(([key, value]) => (
-                        <div key={key}>
-                          <span className="font-medium">{key}:</span> {String(value)}
+                        <div key={key} className="flex justify-between gap-4">
+                          <span className="text-muted-foreground truncate">{key}:</span>
+                          <span className="font-medium text-right break-all">{String(value)}</span>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap">{evt.notes}</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </>
+                ) : (
+                  <p className="whitespace-pre-wrap">{evt.notes}</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       ))}
     </div>

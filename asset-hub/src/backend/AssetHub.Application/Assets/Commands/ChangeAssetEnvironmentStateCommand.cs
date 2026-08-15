@@ -8,20 +8,23 @@ using AssetHub.Domain.Assets;
 using AssetHub.Application.Assets.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AssetHub.Application.Assets.Commands;
 
-public record ChangeAssetEnvironmentStateCommand(Guid AssetId, string ToState, string? Notes, System.Collections.Generic.Dictionary<string, string>? TransitionData = null) : IRequest<bool>;
+public record ChangeAssetEnvironmentStateCommand(Guid AssetId, string ToState, string? Notes, System.Collections.Generic.Dictionary<string, JsonElement>? TransitionData = null) : IRequest<bool>;
 
 public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeAssetEnvironmentStateCommand, bool>
 {
     private readonly ITenantDbContext _dbContext;
     private readonly IMediator _mediator;
+    private readonly ILogger<ChangeAssetEnvironmentStateCommandHandler> _logger;
 
-    public ChangeAssetEnvironmentStateCommandHandler(ITenantDbContext dbContext, IMediator mediator)
+    public ChangeAssetEnvironmentStateCommandHandler(ITenantDbContext dbContext, IMediator mediator, ILogger<ChangeAssetEnvironmentStateCommandHandler> logger)
     {
         _dbContext = dbContext;
         _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task<bool> Handle(ChangeAssetEnvironmentStateCommand request, CancellationToken cancellationToken)
@@ -66,13 +69,34 @@ public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeA
                     if (targetConfig.RequiresFields != null && targetConfig.RequiresFields.Count > 0)
                     {
                         if (request.TransitionData == null)
-                            throw new InvalidOperationException($"Faltan campos requeridos para transicionar a {request.ToState}");
+                        {
+                            _logger.LogWarning("Validación falló: TransitionData es null pero se requieren campos: {Fields}", string.Join(", ", targetConfig.RequiresFields));
+                            throw new ArgumentException("Faltan campos requeridos para cambiar de estado.");
+                        }
+
+                        _logger.LogInformation("Validando campos requeridos para transición a {ToState}. Campos esperados: {ExpectedFields}. Datos recibidos: {ReceivedKeys}", 
+                            request.ToState, 
+                            string.Join(", ", targetConfig.RequiresFields), 
+                            string.Join(", ", request.TransitionData.Keys));
 
                         foreach (var field in targetConfig.RequiresFields)
                         {
-                            if (!request.TransitionData.ContainsKey(field) || string.IsNullOrWhiteSpace(request.TransitionData[field]))
+                            if (!request.TransitionData.ContainsKey(field))
                             {
-                                throw new InvalidOperationException($"El campo {field} es requerido para cambiar al estado {request.ToState}");
+                                _logger.LogWarning("Validación falló: TransitionData no contiene la llave '{Field}'.", field);
+                                throw new ArgumentException($"El campo '{field}' es requerido para cambiar al estado {request.ToState}");
+                            }
+
+                            var element = request.TransitionData[field];
+                            _logger.LogInformation("Campo '{Field}' recibido con ValueKind: {ValueKind}, valor: {Value}", field, element.ValueKind, element.ToString());
+
+                            if (element.ValueKind == JsonValueKind.Null || 
+                                element.ValueKind == JsonValueKind.Undefined ||
+                                (element.ValueKind == JsonValueKind.Array && element.GetArrayLength() == 0) ||
+                                (element.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(element.GetString())))
+                            {
+                                _logger.LogWarning("Validación falló: El campo '{Field}' está vacío o es null.", field);
+                                throw new ArgumentException($"El campo '{field}' es requerido para cambiar al estado {request.ToState}");
                             }
                         }
                     }
@@ -96,7 +120,7 @@ public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeA
             
             foreach (var kvp in request.TransitionData)
             {
-                currentProps[kvp.Key] = kvp.Value;
+                currentProps[kvp.Key] = JsonNode.Parse(kvp.Value.GetRawText());
             }
             asset.PropertiesJson = currentProps.ToJsonString();
         }

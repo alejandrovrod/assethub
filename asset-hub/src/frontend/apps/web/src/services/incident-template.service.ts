@@ -1,4 +1,4 @@
-import { api } from '@/lib/api'
+import { apiClient as api } from '@/lib/api-client'
 import { LifecycleConfig } from './asset-template.service'
 
 export interface IncidentTemplate {
@@ -42,25 +42,25 @@ export const incidentTemplateService = {
     if (q) params.append('q', q)
     if (includeInactive) params.append('includeInactive', 'true')
     
-    const { data } = await api.get<{ items: IncidentTemplateSummary[] }>(`/v1/incident-templates?${params.toString()}`)
+    const { data } = await api.get<{ items: IncidentTemplateSummary[] }>(`/incident-templates?${params.toString()}`)
     return data.items
   },
 
   getById: async (id: string) => {
-    const { data } = await api.get<IncidentTemplate>(`/v1/incident-templates/${id}`)
+    const { data } = await api.get<IncidentTemplate>(`/incident-templates/${id}`)
     return data
   },
 
   create: async (payload: CreateIncidentTemplateDto) => {
-    const { data } = await api.post<{ id: string }>('/v1/incident-templates', payload)
+    const { data } = await api.post<{ id: string }>('/incident-templates', payload)
     return data.id
   },
 
   update: async (id: string, payload: UpdateIncidentTemplateDto) => {
-    await api.put(`/v1/incident-templates/${id}`, payload)
+    await api.put(`/incident-templates/${id}`, payload)
   },
 
   delete: async (id: string) => {
-    await api.delete(`/v1/incident-templates/${id}`)
+    await api.delete(`/incident-templates/${id}`)
   }
 }

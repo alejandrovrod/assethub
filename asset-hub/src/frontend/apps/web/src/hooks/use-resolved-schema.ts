@@ -39,6 +39,13 @@ export function useResolvedSchema(rawSchemaJson: string) {
 
       for (const key of Object.keys(resolvedSchema.properties)) {
         const prop = resolvedSchema.properties[key];
+        
+        // Auto-fix legacy broken date types
+        if (prop.type === 'date') {
+          prop.type = 'string';
+          prop.format = 'date';
+        }
+
         if (prop.catalogCode) {
           keysToUpdate.push({ key, catalogCode: prop.catalogCode });
           catalogPromises.push(catalogService.getCatalogItems(prop.catalogCode));

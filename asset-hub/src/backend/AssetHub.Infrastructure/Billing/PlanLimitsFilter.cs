@@ -34,7 +34,7 @@ public class PlanLimitsFilter : IAsyncActionFilter
         // 1. Validar módulos habilitados (Simulado para el mock. En real leería del Plan real).
         // var plan = ObtenerPlan(tenant.PlanId);
         // var enabledModules = JsonSerializer.Deserialize<List<string>>(plan.EnabledModules);
-        var enabledModules = new[] { "core", "maintenance" }; // Dummy
+        var enabledModules = new[] { "core", "maintenance", "incidents" }; // Dummy
         
         foreach (var req in _requiredModules)
         {
@@ -80,6 +80,8 @@ public class RequirePlanLimitsAttribute : TypeFilterAttribute
     public RequirePlanLimitsAttribute(string requiredModule, string? limitToCheck = null) 
         : base(typeof(PlanLimitsFilter))
     {
-        Arguments = new object[] { new[] { requiredModule }, limitToCheck };
+        Arguments = limitToCheck == null 
+            ? new object[] { new[] { requiredModule } } 
+            : new object[] { new[] { requiredModule }, limitToCheck };
     }
 }

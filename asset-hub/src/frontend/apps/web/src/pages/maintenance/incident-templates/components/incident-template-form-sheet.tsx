@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,7 +12,7 @@ import { incidentTemplateService } from '@/services/incident-template.service'
 import { toast } from 'sonner'
 import { LifecycleCanvas } from '@/pages/assets/components/lifecycle-canvas'
 import { SchemaBuilder } from '@/pages/assets/components/schema-builder'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 
 const formSchema = z.object({
   code: z.string().min(1, 'Código es requerido').max(50),
@@ -129,27 +129,32 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[800px] w-[90vw] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{templateId ? 'Editar Plantilla' : 'Nueva Plantilla'}</SheetTitle>
-          <SheetDescription>
-            Configurá los detalles básicos, propiedades dinámicas y ciclo de vida de la incidencia.
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent className="sm:max-w-[800px] w-[90vw] flex flex-col p-0" aria-describedby={undefined}>
+        <div className="p-6 pb-2 border-b shrink-0">
+          <SheetHeader>
+            <SheetTitle>{templateId ? 'Editar Plantilla de Incidencia' : 'Nueva Plantilla de Incidencia'}</SheetTitle>
+            <SheetDescription>
+              Configurá los detalles básicos, propiedades dinámicas y ciclo de vida de la incidencia.
+            </SheetDescription>
+          </SheetHeader>
+        </div>
 
         {isLoadingTemplate ? (
-          <div className="py-8 text-center">Cargando plantilla...</div>
+          <div className="flex-1 flex items-center justify-center">
+            Cargando plantilla...
+          </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
-              <Tabs defaultValue="general">
-                <TabsList className="w-full justify-start">
-                  <TabsTrigger value="general">General</TabsTrigger>
-                  <TabsTrigger value="schema">Propiedades (Schema)</TabsTrigger>
-                  <TabsTrigger value="lifecycle">Ciclo de Vida</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="general" className="space-y-4 pt-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6">
+                {Object.keys(form.formState.errors).length > 0 && (
+                  <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+                    <strong>Error de Validación:</strong>
+                    <pre className="mt-2 text-xs">{JSON.stringify(form.formState.errors, null, 2)}</pre>
+                  </div>
+                )}
+                <div className="flex flex-col gap-6 pb-6">
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -158,7 +163,12 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
                         <FormItem>
                           <FormLabel>Código</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ej: FIRE_ALARM" {...field} />
+                            <Input 
+                              placeholder="Ej: FALLA_MECANICA" 
+                              readOnly={!!template} 
+                              className={template ? "bg-muted cursor-not-allowed text-muted-foreground" : ""}
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -171,14 +181,14 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
                         <FormItem>
                           <FormLabel>Nombre</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ej: Alarma de Incendio" {...field} />
+                            <Input placeholder="Ej: Falla Mecánica General" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="description"
@@ -186,61 +196,60 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
                       <FormItem>
                         <FormLabel>Descripción</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Describa el propósito de esta plantilla..." {...field} />
+                          <Textarea placeholder="Breve descripción de la plantilla..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </TabsContent>
 
-                <TabsContent value="schema" className="pt-4 h-[500px]">
-                  <FormField
-                    control={form.control}
-                    name="schemaJson"
-                    render={({ field }) => (
-                      <FormItem className="h-full flex flex-col">
-                        <FormLabel>Schema de Propiedades (React JSON Schema Form)</FormLabel>
-                        <FormControl className="flex-1">
-                          <SchemaBuilder 
+                  <div className="space-y-6 pt-4 border-t">
+                    <h4 className="text-sm font-medium">Configuración Visual (Schema & Ciclo de Vida)</h4>
+                    
+                    <FormField
+                      control={form.control}
+                      name="schemaJson"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Esquema de Atributos</FormLabel>
+                          <FormControl>
+                            <SchemaBuilder value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lifecycleStates"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Flujo de Estados (Máquina de Estados)</FormLabel>
+                          <FormControl>
+                            <LifecycleCanvas 
                             value={field.value} 
                             onChange={field.onChange} 
+                            schemaJson={form.watch('schemaJson')}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <TabsContent value="lifecycle" className="pt-4 h-[500px]">
-                  <FormField
-                    control={form.control}
-                    name="lifecycleStates"
-                    render={({ field }) => (
-                      <FormItem className="h-full flex flex-col">
-                        <FormLabel>Configuración de Estados</FormLabel>
-                        <FormControl className="flex-1">
-                          <LifecycleCanvas 
-                            value={field.value} 
-                            onChange={field.onChange} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
 
-              <SheetFooter className="mt-8">
+              <div className="p-6 border-t bg-background shrink-0 flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
                   {isPending ? 'Guardando...' : 'Guardar Plantilla'}
                 </Button>
-              </SheetFooter>
+              </div>
             </form>
           </Form>
         )}
@@ -248,3 +257,4 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
     </Sheet>
   )
 }
+

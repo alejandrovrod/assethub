@@ -9,5 +9,5 @@ public record AssetStateChangedEvent(
     string FromState,
     string ToState,
     string TemplateName,
-    Dictionary<string, string>? TransitionData = null
+    Dictionary<string, System.Text.Json.JsonElement>? TransitionData = null
 ) : INotification;

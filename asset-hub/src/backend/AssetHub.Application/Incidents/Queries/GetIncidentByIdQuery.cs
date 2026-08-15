@@ -19,6 +19,7 @@ public record IncidentDetailDto(
     Guid? IncidentTemplateId,
     string PropertiesJson,
     string State,
+    DateTime ReportedAt,
     DateTime? ResolvedAt,
     DateTime? ClosedAt,
     List<IncidentDetailDto.AttachmentDto> Attachments
@@ -74,6 +75,7 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             incident.IncidentTemplateId,
             incident.PropertiesJson,
             incident.State,
+            incident.ReportedAt,
             incident.ResolvedAt,
             incident.ClosedAt,
             attachments

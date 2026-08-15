@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Application.Incidents.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,10 +18,12 @@ public class ChangeIncidentStateCommand : IRequest<Unit>
 public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentStateCommand, Unit>
 {
     private readonly ITenantDbContext _db;
+    private readonly IMediator _mediator;
 
-    public ChangeIncidentStateCommandHandler(ITenantDbContext db)
+    public ChangeIncidentStateCommandHandler(ITenantDbContext db, IMediator mediator)
     {
         _db = db;
+        _mediator = mediator;
     }
 
     public async Task<Unit> Handle(ChangeIncidentStateCommand request, CancellationToken cancellationToken)
@@ -32,50 +35,77 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
         if (incident == null)
             throw new ArgumentException("Incident not found");
 
-        if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null)
+        string fromState = incident.State;
+        bool isTerminal = false;
+
+        if (request.TargetState != incident.State)
         {
-            var config = incident.IncidentTemplate.LifecycleStates;
-            
-            if (config.States != null && !config.States.ContainsKey(request.TargetState))
+            if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null)
             {
-                throw new Exception($"Invalid state transition: state {request.TargetState} is not defined in template");
-            }
-            
-            if (config.Transitions != null && config.Transitions.TryGetValue(incident.State, out var allowedTransitions))
-            {
-                if (allowedTransitions != null && !allowedTransitions.Contains(request.TargetState))
+                var config = incident.IncidentTemplate.LifecycleStates;
+                
+                if (config.States != null && !config.States.ContainsKey(request.TargetState))
                 {
-                    throw new Exception($"Transition from {incident.State} to {request.TargetState} is not allowed");
+                    throw new Exception($"Invalid state transition: state {request.TargetState} is not defined in template");
                 }
+                
+                if (config.Transitions != null && config.Transitions.TryGetValue(incident.State, out var allowedTransitions))
+                {
+                    if (allowedTransitions != null && !allowedTransitions.Contains(request.TargetState))
+                    {
+                        throw new Exception($"Transition from {incident.State} to {request.TargetState} is not allowed");
+                    }
+                }
+                
+                if (config.States != null && config.States.TryGetValue(request.TargetState, out var stateConfig))
+                {
+                    isTerminal = stateConfig.IsTerminal;
+                }
+            }
+            else
+            {
+                // Regla RN-11.2: reported->triaged->assigned->in_progress->resolved->closed. cancelled from anywhere.
+                if (request.TargetState != "cancelled")
+                {
+                    bool isValid = false;
+                    switch (incident.State)
+                    {
+                        case "reported":
+                            if (request.TargetState == "triaged") isValid = true;
+                            break;
+                        case "triaged":
+                            if (request.TargetState == "assigned") isValid = true;
+                            break;
+                        case "assigned":
+                            if (request.TargetState == "in_progress") isValid = true;
+                            break;
+                        case "in_progress":
+                            if (request.TargetState == "resolved") isValid = true;
+                            break;
+                        case "resolved":
+                            if (request.TargetState == "closed") isValid = true;
+                            break;
+                    }
+
+                    if (!isValid)
+                        throw new InvalidOperationException($"Invalid transition from {incident.State} to {request.TargetState}");
+                }
+                
+                isTerminal = request.TargetState == "resolved" || request.TargetState == "closed" || request.TargetState == "cancelled";
             }
         }
-        else
+        else 
         {
-            // Regla RN-11.2: reported->triaged->assigned->in_progress->resolved->closed. cancelled from anywhere.
-            if (request.TargetState != "cancelled")
+            // Even if same state, calculate isTerminal
+            if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null && 
+                incident.IncidentTemplate.LifecycleStates.States != null && 
+                incident.IncidentTemplate.LifecycleStates.States.TryGetValue(request.TargetState, out var stateConfig))
             {
-                bool isValid = false;
-                switch (incident.State)
-                {
-                    case "reported":
-                        if (request.TargetState == "triaged") isValid = true;
-                        break;
-                    case "triaged":
-                        if (request.TargetState == "assigned") isValid = true;
-                        break;
-                    case "assigned":
-                        if (request.TargetState == "in_progress") isValid = true;
-                        break;
-                    case "in_progress":
-                        if (request.TargetState == "resolved") isValid = true;
-                        break;
-                    case "resolved":
-                        if (request.TargetState == "closed") isValid = true;
-                        break;
-                }
-
-                if (!isValid)
-                    throw new InvalidOperationException($"Invalid transition from {incident.State} to {request.TargetState}");
+                isTerminal = stateConfig.IsTerminal;
+            }
+            else
+            {
+                isTerminal = request.TargetState == "resolved" || request.TargetState == "closed" || request.TargetState == "cancelled";
             }
         }
 
@@ -92,7 +122,34 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
         if (request.TargetState == "closed")
             incident.ClosedAt = DateTime.UtcNow;
 
+        if (fromState != request.TargetState)
+        {
+            _db.IncidentLifecycleEvents.Add(new AssetHub.Domain.Incidents.IncidentLifecycleEvent
+            {
+                Id = Guid.NewGuid(),
+                IncidentId = incident.Id,
+                EventType = "cambio de estado",
+                FromState = fromState,
+                ToState = request.TargetState,
+                Notes = $"Transición a {request.TargetState}",
+                PropertiesJson = request.PropertiesJson ?? "{}",
+                At = DateTime.UtcNow,
+                UserId = Guid.Empty // Sistema por ahora
+            });
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
+        
+        if (fromState != request.TargetState)
+        {
+            await _mediator.Publish(new IncidentStateChangedEvent(
+                incident.Id,
+                incident.AssetId,
+                fromState,
+                request.TargetState,
+                isTerminal
+            ), cancellationToken);
+        }
         
         return Unit.Value;
     }

@@ -23,6 +23,12 @@ export interface LifecycleConfig {
   edges?: any
 }
 
+export interface ChildStateDependency {
+  conditionType: 'Any' | 'All'
+  childStates: string[]
+  targetState: string
+}
+
 export interface StateConfig {
   color?: string
   icon?: string
@@ -32,6 +38,7 @@ export interface StateConfig {
   associatedModule?: string
   maxHoursInState?: number
   isTerminal?: boolean
+  childStateDependencies?: ChildStateDependency[]
 }
 export interface CreateAssetTemplateRequest {
   businessEntityTypeId: string

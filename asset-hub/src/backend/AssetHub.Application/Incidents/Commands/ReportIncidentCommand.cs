@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Assets.Commands;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Incidents;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.IO;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace AssetHub.Application.Incidents.Commands;
 
@@ -39,11 +42,15 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
 {
     private readonly ITenantDbContext _db;
     private readonly ITenantResolver _tenantResolver;
+    private readonly IMediator _mediator;
+    private readonly ILogger<ReportIncidentCommandHandler> _logger;
 
-    public ReportIncidentCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver)
+    public ReportIncidentCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver, IMediator mediator, ILogger<ReportIncidentCommandHandler> logger)
     {
         _db = db;
         _tenantResolver = tenantResolver;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task<Guid> Handle(ReportIncidentCommand request, CancellationToken cancellationToken)
@@ -54,16 +61,16 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
         if (!assetExists)
             throw new ArgumentException("Asset not found");
             
-        var typeExists = await _db.CatalogItems.AnyAsync(c => c.Id == request.TypeId, cancellationToken);
-        if (!typeExists)
-            throw new ArgumentException("Type catalog item not found");
+        // var typeExists = await _db.CatalogItems.AnyAsync(c => c.Id == request.TypeId, cancellationToken);
+        // if (!typeExists && request.TypeId != Guid.Empty)
+        //     throw new ArgumentException("Type catalog item not found");
             
-        if (request.PriorityId.HasValue)
-        {
-            var priorityExists = await _db.CatalogItems.AnyAsync(c => c.Id == request.PriorityId.Value, cancellationToken);
-            if (!priorityExists)
-                throw new ArgumentException("Priority catalog item not found");
-        }
+        // if (request.PriorityId.HasValue && request.PriorityId.Value != Guid.Empty)
+        // {
+        //     var priorityExists = await _db.CatalogItems.AnyAsync(c => c.Id == request.PriorityId.Value, cancellationToken);
+        //     if (!priorityExists)
+        //         throw new ArgumentException("Priority catalog item not found");
+        // }
         
         NetTopologySuite.Geometries.Geometry? geo = null;
         string? geoType = null;
@@ -119,7 +126,77 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
             });
         }
 
+        _db.IncidentLifecycleEvents.Add(new IncidentLifecycleEvent
+        {
+            Id = Guid.NewGuid(),
+            IncidentId = incident.Id,
+            EventType = "reportado",
+            FromState = string.Empty,
+            ToState = incident.State,
+            Notes = "Incidencia reportada",
+            PropertiesJson = incident.PropertiesJson,
+            At = DateTime.UtcNow,
+            UserId = Guid.Empty // Sistema por ahora, hasta que inyectemos usuario
+        });
+
         await _db.SaveChangesAsync(cancellationToken);
+
+        // --- Flujo Dual: Lock the asset and propagate upward ---
+        // After saving the incident, transition the affected asset to its "incidents-locked" state.
+        // The resulting AssetStateChangedEvent will be handled by ParentStatePropagationHandler
+        // which already implements upward propagation recursively.
+        await TryLockAssetForIncidentAsync(request.AssetId, cancellationToken);
+
         return incident.Id;
+    }
+
+    private async Task TryLockAssetForIncidentAsync(Guid assetId, CancellationToken cancellationToken)
+    {
+        var asset = await _db.Assets
+            .Include(a => a.AssetTemplate)
+            .FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
+
+        if (asset?.AssetTemplate?.LifecycleStates == null)
+        {
+            _logger.LogWarning("[ReportIncident] Asset {AssetId} has no lifecycle template. Skipping asset lock.", assetId);
+            return;
+        }
+
+        var lifecycle = asset.AssetTemplate.LifecycleStates;
+
+        // Find a state reachable from the current state that has AssociatedModule = "incidents"
+        if (!lifecycle.Transitions.TryGetValue(asset.State, out var reachableStates) || reachableStates == null)
+        {
+            _logger.LogWarning("[ReportIncident] No transitions defined from state '{State}' for asset {AssetId}.", asset.State, assetId);
+            return;
+        }
+
+        var lockedState = reachableStates.FirstOrDefault(s =>
+            lifecycle.States.TryGetValue(s, out var cfg) &&
+            string.Equals(cfg.AssociatedModule, "incidents", StringComparison.OrdinalIgnoreCase));
+
+        if (lockedState == null)
+        {
+            _logger.LogWarning(
+                "[ReportIncident] No reachable state with AssociatedModule='incidents' from '{State}' for asset {AssetId}. Skipping lock.",
+                asset.State, assetId);
+            return;
+        }
+
+        _logger.LogInformation(
+            "[ReportIncident] Locking asset {AssetId} from '{From}' → '{To}' due to new incident.",
+            assetId, asset.State, lockedState);
+
+        try
+        {
+            await _mediator.Send(
+                new ChangeAssetEnvironmentStateCommand(assetId, lockedState, "Bloqueado automáticamente por incidencia reportada."),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Non-fatal: log but don't fail the incident creation
+            _logger.LogError(ex, "[ReportIncident] Failed to lock asset {AssetId}. Incident was still created.", assetId);
+        }
     }
 }

@@ -31,3 +31,6 @@ pnpm-debug.log*
 Thumbs.db
 *.bak
 *.tmp
+
+# Uploaded files
+asset-hub/src/backend/AssetHub.Api/wwwroot/uploads/

@@ -32,6 +32,7 @@ public class AssetsController : ControllerBase
     [HttpPost("search")]
     public async Task<IActionResult> AdvancedSearch([FromBody] AdvancedSearchRequest request)
     {
+        request ??= new AdvancedSearchRequest();
         var result = await _mediator.Send(new SearchAssetsQuery(
             request.SearchTerm, 
             request.TemplateId, 
@@ -232,5 +233,5 @@ public class ChangeStateRequest
 {
     public string ToState { get; set; } = string.Empty;
     public string? Notes { get; set; }
-    public Dictionary<string, string>? TransitionData { get; set; }
+    public Dictionary<string, System.Text.Json.JsonElement>? TransitionData { get; set; }
 }

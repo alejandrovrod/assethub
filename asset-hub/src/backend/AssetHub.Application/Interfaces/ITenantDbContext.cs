@@ -25,6 +25,7 @@ public interface ITenantDbContext
     
     DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; }
     DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; }
+    DbSet<AssetHub.Domain.Incidents.IncidentLifecycleEvent> IncidentLifecycleEvents { get; }
     DbSet<AssetHub.Domain.Incidents.PreventivePlan> PreventivePlans { get; }
     
     DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; }

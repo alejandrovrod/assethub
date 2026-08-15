@@ -14,3 +14,7 @@
 - `[x]` TASK-7: Actualizar `asset.service.ts` agregando los métodos y tipos para consumir la nueva búsqueda y los filtros activos.
 - `[x]` TASK-8: Crear y cablear la barra lateral (Sidebar) de filtros dinámicos en la vista principal de activos (`assets/index.tsx`).
 - `[x]` TASK-9: Actualizar la grilla/lista de activos para reflejar la ruta jerárquica (Breadcrumbs o columna de Padre) de los resultados obtenidos.
+
+## Phase 4: Bugfixes & UI Polish
+- `[x]` BUGFIX-1: Fix React Query cache invalidation issue in `detail.tsx` where navigating between parents and children showed stale states. Added `invalidateQueries(['assets'])` to `changeStateMutation` and `updateMutation`.
+- `[x]` UI-1: Add State Badges to the parent and children list elements in the Hierarchy section of `detail.tsx` using the `StateColor` and `State` properties from `AssetDto`.

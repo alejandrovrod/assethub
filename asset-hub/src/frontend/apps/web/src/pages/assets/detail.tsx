@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, ArrowLeft, Save, FileText, Image as ImageIcon, Download, GitBranch, Link as LinkIcon, Network } from 'lucide-react'
 import { assetService, AssetAttachment } from '@/services/asset.service'
+import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
+import { ImageLightbox } from '@/components/widgets/image-lightbox'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import Form from '@rjsf/core'
-import validator from '@rjsf/validator-ajv8'
+import { customValidator as validator } from '@/lib/rjsf-validator'
 import { Pencil, Check, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
@@ -96,6 +98,7 @@ export default function AssetDetailPage() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
+      queryClient.invalidateQueries({ queryKey: ['assets'] })
       toast.success('Activo actualizado exitosamente')
       setIsEditingDynamic(false)
       setIsEditingGeneral(false)
@@ -109,6 +112,7 @@ export default function AssetDetailPage() {
     mutationFn: (args: { toState: string, transitionData?: Record<string, string> }) => assetService.changeState(id!, args.toState, args.transitionData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
+      queryClient.invalidateQueries({ queryKey: ['assets'] })
       toast.success('Estado cambiado exitosamente')
       setTransitionDialogOpen(false)
       setPendingTargetState(null)
@@ -148,6 +152,35 @@ export default function AssetDetailPage() {
     }
   }
 
+  // Parse Lifecycle safely before early returns
+  let lifecycle = { transitions: {} as Record<string, string[]>, states: {} as Record<string, any> }
+  if (asset) {
+    try {
+      lifecycle = typeof asset.lifecycleStates === 'string' 
+        ? JSON.parse(asset.lifecycleStates) 
+        : (asset.lifecycleStates || lifecycle)
+    } catch (e) {}
+  }
+
+  const availableTransitions = asset ? (lifecycle.transitions?.[asset.state] || []) : []
+  const currentStateConfig = asset ? (lifecycle.states?.[asset.state] || {}) : {}
+
+  const transitionSchema = useMemo(() => {
+    if (!lifecycle || !pendingTargetState || !schema) return null
+    const targetConfig = lifecycle.states?.[pendingTargetState]
+    if (targetConfig?.requiresFields && targetConfig.requiresFields.length > 0) {
+      const subSchema: any = { type: 'object', properties: {}, required: [] }
+      for (const field of targetConfig.requiresFields) {
+        if ((schema as any)?.properties?.[field]) {
+          subSchema.properties[field] = (schema as any).properties[field]
+          subSchema.required.push(field)
+        }
+      }
+      return subSchema
+    }
+    return targetConfig?.propertiesSchema || null
+  }, [lifecycle, pendingTargetState, schema])
+
   if (isLoading) {
     return (
       <div className="flex flex-1 justify-center items-center p-8">
@@ -165,16 +198,7 @@ export default function AssetDetailPage() {
     )
   }
 
-  // Parse Lifecycle
-  let lifecycle = { transitions: {} as Record<string, string[]>, states: {} as Record<string, any> }
-  try {
-    lifecycle = typeof asset.lifecycleStates === 'string' 
-      ? JSON.parse(asset.lifecycleStates) 
-      : (asset.lifecycleStates || lifecycle)
-  } catch (e) {}
 
-  const availableTransitions = lifecycle.transitions?.[asset.state] || []
-  const currentStateConfig = lifecycle.states?.[asset.state] || {}
 
   const handleStateChangeClick = (nextState: string) => {
     const nextStateConfig = lifecycle.states?.[nextState] || {}
@@ -278,7 +302,14 @@ export default function AssetDetailPage() {
         </div>
 
         {/* TRANSITIONS BAR */}
-        {!currentStateConfig.isTerminal && (
+        {currentStateConfig.associatedModule ? (
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg p-2 shadow-sm">
+            <span className="text-sm font-medium px-2 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Activo bloqueado. Gestión delegada al módulo: <span className="uppercase">{currentStateConfig.associatedModule}</span>
+            </span>
+          </div>
+        ) : !currentStateConfig.isTerminal && (
           <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
               Cambiar estado a:
@@ -356,10 +387,17 @@ export default function AssetDetailPage() {
                       }).join(', ')
                     }
 
+                    const isDataUrl = fieldSchema?.format === 'data-url' || fieldSchema?.items?.format === 'data-url';
+                    const valuesArray = Array.isArray(value) ? value : (value ? [value] : []);
+
                     return (
                       <div key={key}>
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                        <p className="mt-1">{value?.toString() || '-'}</p>
+                        {isDataUrl && valuesArray.length > 0 ? (
+                          <ImageLightbox urls={valuesArray as string[]} />
+                        ) : (
+                          <p className="mt-1">{value?.toString() || '-'}</p>
+                        )}
                       </div>
                     )
                   })}
@@ -445,10 +483,15 @@ export default function AssetDetailPage() {
                     onClick={() => navigate(`/assets/${parentAsset.id}`)}
                   >
                     <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                    <div>
+                    <div className="flex-1">
                       <div className="font-medium">{parentAsset.name}</div>
                       <div className="text-xs text-muted-foreground">{parentAsset.code}</div>
                     </div>
+                    {parentAsset.state && (
+                      <Badge variant="secondary" style={parentAsset.stateColor ? { backgroundColor: parentAsset.stateColor, color: '#fff' } : undefined} className="text-[10px]">
+                        {parentAsset.state}
+                      </Badge>
+                    )}
                   </div>
                 ) : (
                   <span className="text-muted-foreground italic">Ninguno (Activo raíz)</span>
@@ -466,10 +509,15 @@ export default function AssetDetailPage() {
                         onClick={() => navigate(`/assets/${child.id}`)}
                       >
                         <GitBranch className="h-4 w-4 text-muted-foreground" />
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">{child.name}</div>
                           <div className="text-xs text-muted-foreground">{child.code}</div>
                         </div>
+                        {child.state && (
+                          <Badge variant="secondary" style={child.stateColor ? { backgroundColor: child.stateColor, color: '#fff' } : undefined} className="text-[10px]">
+                            {child.state}
+                          </Badge>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -546,6 +594,7 @@ export default function AssetDetailPage() {
                 formData={formData}
                 onChange={e => setFormData(e.formData)}
                 onSubmit={onSubmit}
+                widgets={{ FileWidget: FileUploadWidget }}
               >
                 <div className="flex justify-end mt-6 gap-2 border-t pt-4">
                   <Button variant="outline" type="button" onClick={() => setIsEditingDynamic(false)}>
@@ -601,23 +650,33 @@ export default function AssetDetailPage() {
             <p className="text-sm text-muted-foreground">
               Para cambiar al estado <strong>{pendingTargetState}</strong>, se requiere la siguiente información:
             </p>
-            {pendingTargetState && (lifecycle.states?.[pendingTargetState]?.requiresFields || []).map((field: string) => (
-              <div key={field}>
-                <label className="text-sm font-medium capitalize">{field.replace('_', ' ')}</label>
-                <Input 
-                  value={transitionData[field] || ''}
-                  onChange={(e) => setTransitionData({ ...transitionData, [field]: e.target.value })}
-                  placeholder={`Ingrese ${field.replace('_', ' ')}`}
-                  className="mt-1"
+            {pendingTargetState && lifecycle.states?.[pendingTargetState]?.requiresFields?.filter((f: string) => !(schema as any)?.properties?.[f]).length > 0 && (
+              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
+                <strong>Error de configuración en la Plantilla:</strong> Esta transición requiere los campos: 
+                <span className="font-mono bg-destructive/10 px-1 mx-1 rounded">
+                  {lifecycle.states?.[pendingTargetState]?.requiresFields?.filter((f: string) => !(schema as any)?.properties?.[f]).join(', ')}
+                </span>
+                que no existen en el esquema del activo.
+              </div>
+            )}
+            {transitionSchema && (
+              <div className="rjsf-tailwind">
+                <Form
+                  schema={transitionSchema}
+                  validator={validator}
+                  formData={transitionData}
+                  onChange={(e) => setTransitionData(e.formData)}
+                  widgets={{ FileWidget: FileUploadWidget }}
+                  children={<></>}
                 />
               </div>
-            ))}
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTransitionDialogOpen(false)}>Cancelar</Button>
             <Button 
               onClick={() => pendingTargetState && stateMutation.mutate({ toState: pendingTargetState, transitionData })}
-              disabled={stateMutation.isPending || (pendingTargetState && (lifecycle.states?.[pendingTargetState]?.requiresFields || []).some((f: string) => !transitionData[f]))}
+              disabled={stateMutation.isPending || (transitionSchema && transitionSchema.required && transitionSchema.required.some((f: string) => !transitionData[f]))}
             >
               {stateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirmar Cambio'}
             </Button>

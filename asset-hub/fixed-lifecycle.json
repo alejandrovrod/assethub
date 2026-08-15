@@ -1,0 +1,323 @@
+{
+  "initialState": "Recibiendo",
+  "transitions": {
+    "Recibiendo": [
+      "Revisando"
+    ],
+    "Revisando": [
+      "Arreglando",
+      "Verificando"
+    ],
+    "Arreglando": [
+      "Revisando"
+    ],
+    "Verificando": [
+      "Terminando"
+    ],
+    "Terminando": []
+  },
+  "states": {
+    "Recibiendo": {
+      "color": "#f94343",
+      "isTerminal": false,
+      "requiresFields": [
+        "Condiciones",
+        "Fecha",
+        "Hora",
+        "Persona Que Recibe",
+        "Persona Que Encargada de Revision"
+      ],
+      "allowedRoles": [],
+      "onEnterAction": "NOTIFY_MANAGER",
+      "associatedModule": "",
+      "childStateDependencies": []
+    },
+    "Revisando": {
+      "color": "#ae875b",
+      "isTerminal": false,
+      "requiresFields": [
+        "Condiciones del Activo",
+        "Ya se arreglo"
+      ],
+      "allowedRoles": [],
+      "onEnterAction": "",
+      "associatedModule": "",
+      "childStateDependencies": []
+    },
+    "Arreglando": {
+      "color": "#99ff00",
+      "isTerminal": false,
+      "requiresFields": [
+        "Hora de Inicio de Arreglo",
+        "Hora de Fin de Arreglo"
+      ],
+      "allowedRoles": [],
+      "onEnterAction": "",
+      "associatedModule": "",
+      "childStateDependencies": []
+    },
+    "Verificando": {
+      "color": "#995fc8",
+      "isTerminal": false,
+      "requiresFields": [
+        "Dictamen de verificacion"
+      ],
+      "allowedRoles": [],
+      "onEnterAction": "",
+      "associatedModule": "",
+      "childStateDependencies": []
+    },
+    "Terminando": {
+      "color": "#76fd08",
+      "isTerminal": true,
+      "requiresFields": [],
+      "allowedRoles": [],
+      "onEnterAction": "",
+      "associatedModule": "",
+      "childStateDependencies": []
+    }
+  },
+  "nodes": [
+    {
+      "id": "Recibiendo",
+      "data": {
+        "label": "Recibiendo",
+        "stateConfig": {
+          "color": "#f94343",
+          "isTerminal": false,
+          "requiresFields": [
+            "Condiciones",
+            "Fecha",
+            "Hora",
+            "Persona Que Recibe",
+            "Persona Que Encargada de Revision"
+          ],
+          "allowedRoles": [],
+          "onEnterAction": "NOTIFY_MANAGER",
+          "associatedModule": "",
+          "childStateDependencies": []
+        }
+      },
+      "position": {
+        "x": 7.787667229285262,
+        "y": -100.98632939500271
+      },
+      "style": {
+        "backgroundColor": "#94a3b8",
+        "border": "2px solid #f94343",
+        "borderRadius": "8px",
+        "padding": "10px",
+        "color": "#000",
+        "fontWeight": "bold"
+      },
+      "width": 150,
+      "height": 42,
+      "selected": false,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": 7.787667229285262,
+        "y": -100.98632939500271
+      }
+    },
+    {
+      "id": "Revisando",
+      "data": {
+        "label": "Revisando",
+        "stateConfig": {
+          "color": "#ae875b",
+          "isTerminal": false,
+          "requiresFields": [
+            "Condiciones del Activo",
+            "Ya se arreglo"
+          ],
+          "allowedRoles": [],
+          "onEnterAction": "",
+          "associatedModule": "",
+          "childStateDependencies": []
+        }
+      },
+      "position": {
+        "x": 204.5433876698819,
+        "y": 6.947474238272491
+      },
+      "style": {
+        "backgroundColor": "#94a3b8",
+        "border": "2px solid #ae875b",
+        "borderRadius": "8px",
+        "padding": "10px",
+        "color": "#000",
+        "fontWeight": "bold"
+      },
+      "width": 150,
+      "height": 42,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 204.5433876698819,
+        "y": 6.947474238272491
+      },
+      "dragging": false
+    },
+    {
+      "id": "Arreglando",
+      "data": {
+        "label": "Arreglando",
+        "stateConfig": {
+          "color": "#99ff00",
+          "isTerminal": false,
+          "requiresFields": [
+            "Hora de Inicio de Arreglo",
+            "Hora de Fin de Arreglo"
+          ],
+          "allowedRoles": [],
+          "onEnterAction": "",
+          "associatedModule": "",
+          "childStateDependencies": []
+        }
+      },
+      "position": {
+        "x": -76.77399662428797,
+        "y": 129.465750421964
+      },
+      "style": {
+        "backgroundColor": "#94a3b8",
+        "border": "2px solid #99ff00",
+        "borderRadius": "8px",
+        "padding": "10px",
+        "color": "#000",
+        "fontWeight": "bold"
+      },
+      "width": 150,
+      "height": 42,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -76.77399662428797,
+        "y": 129.465750421964
+      },
+      "dragging": false
+    },
+    {
+      "id": "Verificando",
+      "data": {
+        "label": "Verificando",
+        "stateConfig": {
+          "color": "#995fc8",
+          "isTerminal": false,
+          "requiresFields": [
+            "Dictamen de verificacion"
+          ],
+          "allowedRoles": [],
+          "onEnterAction": "",
+          "associatedModule": "",
+          "childStateDependencies": []
+        }
+      },
+      "position": {
+        "x": 198,
+        "y": 150.05555419921876
+      },
+      "style": {
+        "backgroundColor": "#94a3b8",
+        "border": "2px solid #995fc8",
+        "borderRadius": "8px",
+        "padding": "10px",
+        "color": "#000",
+        "fontWeight": "bold"
+      },
+      "width": 150,
+      "height": 42,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 198,
+        "y": 150.05555419921876
+      },
+      "dragging": false
+    },
+    {
+      "id": "Terminando",
+      "data": {
+        "label": "Terminando",
+        "stateConfig": {
+          "color": "#76fd08",
+          "isTerminal": true,
+          "requiresFields": [],
+          "allowedRoles": [],
+          "onEnterAction": "",
+          "associatedModule": "",
+          "childStateDependencies": []
+        }
+      },
+      "position": {
+        "x": 223.31752407387148,
+        "y": 244.3396075545096
+      },
+      "style": {
+        "backgroundColor": "#94a3b8",
+        "border": "2px solid #76fd08",
+        "borderRadius": "8px",
+        "padding": "10px",
+        "color": "#000",
+        "fontWeight": "bold"
+      },
+      "width": 150,
+      "height": 42,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 223.31752407387148,
+        "y": 244.3396075545096
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "Recibiendo",
+      "sourceHandle": null,
+      "target": "Revisando",
+      "targetHandle": null,
+      "markerEnd": {
+        "type": "arrowclosed"
+      },
+      "id": "reactflow__edge-Recibiendo-Revisando"
+    },
+    {
+      "source": "Revisando",
+      "sourceHandle": null,
+      "target": "Arreglando",
+      "targetHandle": null,
+      "markerEnd": {
+        "type": "arrowclosed"
+      },
+      "id": "reactflow__edge-Revisando-Arreglando"
+    },
+    {
+      "source": "Arreglando",
+      "sourceHandle": null,
+      "target": "Revisando",
+      "targetHandle": null,
+      "markerEnd": {
+        "type": "arrowclosed"
+      },
+      "id": "reactflow__edge-Arreglando-Revisando"
+    },
+    {
+      "source": "Revisando",
+      "sourceHandle": null,
+      "target": "Verificando",
+      "targetHandle": null,
+      "markerEnd": {
+        "type": "arrowclosed"
+      },
+      "id": "reactflow__edge-Revisando-Verificando"
+    },
+    {
+      "source": "Verificando",
+      "sourceHandle": null,
+      "target": "Terminando",
+      "targetHandle": null,
+      "markerEnd": {
+        "type": "arrowclosed"
+      },
+      "id": "reactflow__edge-Verificando-Terminando"
+    }
+  ]
+}
