@@ -190,7 +190,7 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
         try
         {
             await _mediator.Send(
-                new ChangeAssetEnvironmentStateCommand(assetId, lockedState, "Bloqueado automáticamente por incidencia reportada."),
+                new ChangeAssetEnvironmentStateCommand(assetId, lockedState, "Bloqueado automáticamente por incidencia reportada.", IsAutomatedTransition: true),
                 cancellationToken);
         }
         catch (Exception ex)

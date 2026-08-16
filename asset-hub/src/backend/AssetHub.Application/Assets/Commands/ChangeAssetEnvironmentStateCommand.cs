@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Assets;
+using AssetHub.Domain.AssetTemplates;
 using AssetHub.Application.Assets.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,12 @@ using Microsoft.Extensions.Logging;
 
 namespace AssetHub.Application.Assets.Commands;
 
-public record ChangeAssetEnvironmentStateCommand(Guid AssetId, string ToState, string? Notes, System.Collections.Generic.Dictionary<string, JsonElement>? TransitionData = null) : IRequest<bool>;
+public record ChangeAssetEnvironmentStateCommand(
+    Guid AssetId,
+    string ToState,
+    string? Notes,
+    System.Collections.Generic.Dictionary<string, JsonElement>? TransitionData = null,
+    bool IsAutomatedTransition = false) : IRequest<bool>;
 
 public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeAssetEnvironmentStateCommand, bool>
 {
@@ -66,7 +72,9 @@ public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeA
                     }
 
                     // Validación de Campos Requeridos
-                    if (targetConfig.RequiresFields != null && targetConfig.RequiresFields.Count > 0)
+                    // Las transiciones automáticas (propagación de estados, bloqueo por incidencia)
+                    // no tienen datos de formulario del usuario, así que omitimos esta validación.
+                    if (!request.IsAutomatedTransition && targetConfig.RequiresFields != null && targetConfig.RequiresFields.Count > 0)
                     {
                         if (request.TransitionData == null)
                         {
@@ -99,6 +107,14 @@ public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeA
                                 throw new ArgumentException($"El campo '{field}' es requerido para cambiar al estado {request.ToState}");
                             }
                         }
+                    }
+
+                    // Validación de consistencia con hijos directos.
+                    // Si el estado destino tiene reglas que lo sacarían automáticamente porque
+                    // un hijo está en mal estado, no permitimos el cambio manual.
+                    if (!request.IsAutomatedTransition)
+                    {
+                        await ValidateChildStateConsistencyAsync(asset, request.ToState, targetConfig, cancellationToken);
                     }
 
                     // Trigger Acciones Automáticas (mock logs)
@@ -154,5 +170,54 @@ public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeA
         ), cancellationToken);
 
         return true;
+    }
+
+    private async Task ValidateChildStateConsistencyAsync(Asset asset, string targetState, StateConfig targetConfig, CancellationToken cancellationToken)
+    {
+        if (targetConfig.ChildStateDependencies == null || !targetConfig.ChildStateDependencies.Any())
+        {
+            return;
+        }
+
+        var children = await _dbContext.Assets
+            .Where(a => a.ParentId == asset.Id && !a.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        if (!children.Any())
+        {
+            return;
+        }
+
+        foreach (var rule in targetConfig.ChildStateDependencies)
+        {
+            if (string.IsNullOrWhiteSpace(rule.TargetState) || rule.TargetState == targetState)
+            {
+                continue;
+            }
+
+            bool conditionMet = false;
+
+            if (rule.ConditionType.Equals("Any", StringComparison.OrdinalIgnoreCase))
+            {
+                conditionMet = children.Any(c => rule.ChildStates.Contains(c.State));
+            }
+            else if (rule.ConditionType.Equals("All", StringComparison.OrdinalIgnoreCase))
+            {
+                conditionMet = children.All(c => rule.ChildStates.Contains(c.State));
+            }
+
+            if (conditionMet)
+            {
+                var offendingStates = children
+                    .Where(c => rule.ChildStates.Contains(c.State))
+                    .Select(c => $"{c.Name} ({c.State})")
+                    .Distinct();
+
+                throw new InvalidOperationException(
+                    $"No se puede cambiar el activo a '{targetState}' porque tiene hijos en estados inconsistentes: {string.Join(", ", offendingStates)}. " +
+                    $"Regla: cuando {rule.ConditionType.ToLowerInvariant()} hijo(s) está(n) en {string.Join(", ", rule.ChildStates)}, " +
+                    $"el padre debe ir a '{rule.TargetState}'.");
+            }
+        }
     }
 }

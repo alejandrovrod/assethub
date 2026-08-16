@@ -24,6 +24,26 @@ interface LifecycleCanvasProps {
   schemaJson?: string;
 }
 
+// Input for a comma-separated list of states. Keeps a local text draft so the
+// user can actually type commas; the parsed array is committed on every change
+// and the draft is normalized (canonical "a, b" form) on blur.
+function ChildStatesInput({ value, onChange }: { value: string[]; onChange: (states: string[]) => void }) {
+  const [text, setText] = useState(value.join(', '));
+
+  return (
+    <Input
+      className="h-8 text-xs"
+      placeholder="Ej: Activo, Instalado_Activo"
+      value={text}
+      onChange={e => {
+        setText(e.target.value);
+        onChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean));
+      }}
+      onBlur={() => setText(value.join(', '))}
+    />
+  );
+}
+
 export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvasProps) {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -556,14 +576,12 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                         </div>
 
                         <div>
-                          <label className="text-[11px] uppercase text-muted-foreground font-semibold mb-1 block">Estados del Hijo (comas)</label>
-                          <Input 
-                            className="h-8 text-xs" 
-                            placeholder="Ej: Falla, En Reparación"
-                            value={(dep.childStates || []).join(', ')} 
-                            onChange={e => {
+                          <label className="text-[11px] uppercase text-muted-foreground font-semibold mb-1 block">Estados de los hijos (separados por comas)</label>
+                          <ChildStatesInput 
+                            value={dep.childStates || []}
+                            onChange={states => {
                               const currentDeps = ((nodes.find(n => n.id === selectedNodeId) || {}).data?.stateConfig?.childStateDependencies || []).map((d: any, i: number) => 
-                                i === idx ? { ...d, childStates: e.target.value.split(',').map(s => s.trim()).filter(Boolean) } : d
+                                i === idx ? { ...d, childStates: states } : d
                               );
                               updateSelectedNodeConfig('childStateDependencies', currentDeps);
                             }}

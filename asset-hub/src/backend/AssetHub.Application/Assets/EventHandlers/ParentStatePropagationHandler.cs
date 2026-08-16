@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,33 +34,62 @@ public class ParentStatePropagationHandler : INotificationHandler<AssetStateChan
             return; // No parent, nothing to propagate
         }
 
-        // 2. Load the Parent and its template
+        // 2. Walk up the ancestor chain. We can't rely on each level publishing a new
+        // AssetStateChangedEvent: if an intermediate ancestor doesn't transition, the
+        // chain would stop and higher ancestors would never be re-evaluated.
+        var visited = new HashSet<Guid> { childAsset.Id }; // Cycle guard
+        var parentId = childAsset.ParentId.Value;
+
+        while (visited.Add(parentId))
+        {
+            var result = await EvaluateParentAsync(parentId, cancellationToken);
+
+            if (result.TransitionTriggered)
+            {
+                // The command publishes a new AssetStateChangedEvent which continues the chain
+                break;
+            }
+
+            if (!result.NextParentId.HasValue)
+            {
+                break;
+            }
+
+            parentId = result.NextParentId.Value;
+        }
+    }
+
+    // Evaluates the ChildStateDependencies of a single parent asset.
+    // Returns whether a transition was triggered and the id of the next ancestor up the chain.
+    private async Task<(bool TransitionTriggered, Guid? NextParentId)> EvaluateParentAsync(Guid parentId, CancellationToken cancellationToken)
+    {
+        // Load the Parent and its template
         var parentAsset = await _dbContext.Assets
             .Include(a => a.AssetTemplate)
-            .FirstOrDefaultAsync(a => a.Id == childAsset.ParentId.Value, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == parentId, cancellationToken);
 
         if (parentAsset?.AssetTemplate?.LifecycleStates?.States == null)
         {
-            return;
+            return (false, parentAsset?.ParentId);
         }
 
-        // 3. Get the Parent's current state configuration
+        // Get the Parent's current state configuration
         if (!parentAsset.AssetTemplate.LifecycleStates.States.TryGetValue(parentAsset.State, out var currentStateConfig))
         {
-            return; // Parent state not found in config
+            return (false, parentAsset.ParentId); // Parent state not found in config
         }
 
         if (currentStateConfig.ChildStateDependencies == null || !currentStateConfig.ChildStateDependencies.Any())
         {
-            return; // No dependencies configured for the parent's current state
+            return (false, parentAsset.ParentId); // No dependencies configured for the parent's current state
         }
 
-        // 4. Load all children of this parent to evaluate rules
+        // Load all children of this parent to evaluate rules
         var allChildren = await _dbContext.Assets
             .Where(a => a.ParentId == parentAsset.Id && !a.IsDeleted)
             .ToListAsync(cancellationToken);
 
-        // 5. Evaluate the rules in order
+        // Evaluate the rules in order
         foreach (var rule in currentStateConfig.ChildStateDependencies)
         {
             bool conditionMet = false;
@@ -82,20 +112,24 @@ public class ParentStatePropagationHandler : INotificationHandler<AssetStateChan
                 if (allowedTransitions.TryGetValue(parentAsset.State, out var possibleTransitions) &&
                     possibleTransitions.Contains(rule.TargetState))
                 {
-                    // 6. Trigger the state change
+                    // Trigger the state change
                     // We dispatch a new command so it goes through all normal validations and logs
                     var command = new ChangeAssetEnvironmentStateCommand(
-                        parentAsset.Id, 
-                        rule.TargetState, 
-                        $"Transición automática propagada por dependencia de estado de sub-activos."
+                        parentAsset.Id,
+                        rule.TargetState,
+                        $"Transición automática propagada por dependencia de estado de sub-activos.",
+                        TransitionData: null,
+                        IsAutomatedTransition: true
                     );
-                    
+
                     await _mediator.Send(command, cancellationToken);
-                    
+
                     // Stop evaluating after the first rule matches
-                    break; 
+                    return (true, parentAsset.ParentId);
                 }
             }
         }
+
+        return (false, parentAsset.ParentId);
     }
 }

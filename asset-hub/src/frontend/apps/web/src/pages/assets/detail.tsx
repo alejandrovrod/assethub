@@ -228,6 +228,32 @@ export default function AssetDetailPage() {
   const parentAsset = allAssets?.find(a => a.id === asset?.parentId)
   const childAssets = allAssets?.filter(a => a.parentId === id) || []
 
+  // Determine which available transitions would be inconsistent with the current state of children.
+  const getTransitionBlockReason = (nextState: string): string | null => {
+    const targetConfig = lifecycle.states?.[nextState]
+    if (!targetConfig?.childStateDependencies?.length || childAssets.length === 0) return null
+
+    for (const dep of targetConfig.childStateDependencies) {
+      const conditionType = (dep.conditionType || dep.ConditionType || 'Any').toLowerCase()
+      const childStates = dep.childStates || dep.ChildStates || []
+      const targetState = dep.targetState || dep.TargetState || ''
+      if (!targetState || targetState === nextState) continue
+
+      const matching = childAssets.filter(c => childStates.includes(c.state))
+      const conditionMet =
+        conditionType === 'any'
+          ? matching.length > 0
+          : childAssets.length > 0 && matching.length === childAssets.length
+
+      if (conditionMet) {
+        const label = conditionType === 'any' ? 'al menos un hijo' : 'todos los hijos'
+        const offending = matching.map(c => `${c.name} (${c.state})`).join(', ')
+        return `${label} está en ${childStates.join(', ')}: ${offending}. El padre debería estar en ${targetState}.`
+      }
+    }
+    return null
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0 w-full">
       
@@ -317,18 +343,22 @@ export default function AssetDetailPage() {
             {availableTransitions.length === 0 ? (
               <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
             ) : (
-              availableTransitions.map((nextState: string) => (
-                <Button 
-                  key={nextState} 
-                  variant="outline" 
-                  size="sm"
-                  className="h-8"
-                  onClick={() => handleStateChangeClick(nextState)}
-                  disabled={stateMutation.isPending}
-                >
-                  {nextState}
-                </Button>
-              ))
+              availableTransitions.map((nextState: string) => {
+                const blockReason = getTransitionBlockReason(nextState)
+                return (
+                  <Button 
+                    key={nextState} 
+                    variant="outline" 
+                    size="sm"
+                    className="h-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleStateChangeClick(nextState)}
+                    disabled={stateMutation.isPending || !!blockReason}
+                    title={blockReason || `Cambiar a ${nextState}`}
+                  >
+                    {nextState}
+                  </Button>
+                )
+              })
             )}
           </div>
         )}
