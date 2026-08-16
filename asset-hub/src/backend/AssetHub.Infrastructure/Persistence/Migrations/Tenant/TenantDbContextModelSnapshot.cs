@@ -667,60 +667,6 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("IncidentLifecycleEvents", "tenant");
                 });
 
-            modelBuilder.Entity("AssetHub.Domain.Incidents.PreventivePlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AssetId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AssetTemplateId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConditionRuleJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CronExpression")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("IntervalDays")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastRunAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("NextRunAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("AssetTemplateId");
-
-                    b.HasIndex("TenantId", "NextRunAt");
-
-                    b.ToTable("PreventivePlans", "tenant");
-                });
-
             modelBuilder.Entity("AssetHub.Domain.Maintenance.MaintenanceOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -817,6 +763,166 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("TenantId", "MaintenanceOrderId");
 
                     b.ToTable("MaintenanceParts", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetTemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AutoAssign")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ConditionRuleJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CronExpression")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("DefaultAssignedEmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DefaultAssignedTeamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DueDateOffsetDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GeneratedEntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastRunAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("NextRunAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetTemplateId");
+
+                    b.HasIndex("TenantId", "NextRunAt");
+
+                    b.ToTable("PreventivePlans", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlanExecutionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExecutedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("GeneratedEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("GeneratedEntityType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Occurrence")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PreventivePlanId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PreventivePlanId");
+
+                    b.HasIndex("TenantId", "AssetId");
+
+                    b.HasIndex("TenantId", "PreventivePlanId", "Occurrence");
+
+                    b.HasIndex("TenantId", "PreventivePlanId", "AssetId", "Occurrence")
+                        .IsUnique();
+
+                    b.ToTable("PreventivePlanExecutionLogs", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("RelatedEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "CreatedAt");
+
+                    b.HasIndex("TenantId", "UserId", "IsRead");
+
+                    b.ToTable("Notifications", "tenant");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Staff.Employee", b =>
@@ -1126,6 +1232,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -1138,10 +1247,16 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid?>("IncidentId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsIndependent")
                         .HasColumnType("bit");
 
                     b.Property<Guid?>("MaintenanceOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PreventivePlanId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("PriorityCatalogItemId")
@@ -1179,6 +1294,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("MaintenanceOrderId");
 
+                    b.HasIndex("PreventivePlanId");
+
                     b.HasIndex("PriorityCatalogItemId");
 
                     b.HasIndex("TaskRecurrenceId");
@@ -1189,7 +1306,21 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("TenantId", "AssignedEmployeeId");
 
-                    b.HasIndex("TenantId", "State");
+                    b.HasIndex("TenantId", "AssignedTeamId");
+
+                    b.HasIndex("TenantId", "DueAt");
+
+                    b.HasIndex("TenantId", "IncidentId");
+
+                    b.HasIndex("TenantId", "IsDeleted");
+
+                    b.HasIndex("TenantId", "MaintenanceOrderId");
+
+                    b.HasIndex("TenantId", "PreventivePlanId");
+
+                    b.HasIndex("TenantId", "TaskRecurrenceId");
+
+                    b.HasIndex("TenantId", "State", "IsDeleted");
 
                     b.ToTable("WorkTasks", "tenant");
                 });
@@ -1345,21 +1476,6 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("AssetHub.Domain.Incidents.PreventivePlan", b =>
-                {
-                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId");
-
-                    b.HasOne("AssetHub.Domain.AssetTemplates.AssetTemplate", "AssetTemplate")
-                        .WithMany()
-                        .HasForeignKey("AssetTemplateId");
-
-                    b.Navigation("Asset");
-
-                    b.Navigation("AssetTemplate");
-                });
-
             modelBuilder.Entity("AssetHub.Domain.Maintenance.MaintenanceOrder", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
@@ -1372,7 +1488,7 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .WithMany()
                         .HasForeignKey("IncidentId");
 
-                    b.HasOne("AssetHub.Domain.Incidents.PreventivePlan", "PreventivePlan")
+                    b.HasOne("AssetHub.Domain.Maintenance.PreventivePlan", "PreventivePlan")
                         .WithMany()
                         .HasForeignKey("PreventivePlanId");
 
@@ -1400,6 +1516,34 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("CatalogItem");
 
                     b.Navigation("MaintenanceOrder");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlan", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.AssetTemplates.AssetTemplate", "AssetTemplate")
+                        .WithMany()
+                        .HasForeignKey("AssetTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("AssetTemplate");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlanExecutionLog", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Maintenance.PreventivePlan", "PreventivePlan")
+                        .WithMany()
+                        .HasForeignKey("PreventivePlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PreventivePlan");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Staff.Employee", b =>
@@ -1446,7 +1590,7 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("AssetHub.Domain.Tasks.TaskComment", b =>
                 {
                     b.HasOne("AssetHub.Domain.Tasks.WorkTask", "WorkTask")
-                        .WithMany()
+                        .WithMany("TaskComments")
                         .HasForeignKey("WorkTaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1485,19 +1629,28 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasOne("AssetHub.Domain.Staff.Employee", "AssignedEmployee")
                         .WithMany()
-                        .HasForeignKey("AssignedEmployeeId");
+                        .HasForeignKey("AssignedEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Staff.Team", "AssignedTeam")
                         .WithMany()
-                        .HasForeignKey("AssignedTeamId");
+                        .HasForeignKey("AssignedTeamId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Incidents.Incident", "Incident")
                         .WithMany()
-                        .HasForeignKey("IncidentId");
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Maintenance.MaintenanceOrder", "MaintenanceOrder")
                         .WithMany()
-                        .HasForeignKey("MaintenanceOrderId");
+                        .HasForeignKey("MaintenanceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.Maintenance.PreventivePlan", "PreventivePlan")
+                        .WithMany()
+                        .HasForeignKey("PreventivePlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Catalogs.CatalogItem", "PriorityCatalogItem")
                         .WithMany()
@@ -1507,7 +1660,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasOne("AssetHub.Domain.Tasks.TaskRecurrence", "TaskRecurrence")
                         .WithMany()
-                        .HasForeignKey("TaskRecurrenceId");
+                        .HasForeignKey("TaskRecurrenceId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Catalogs.CatalogItem", "TaskTypeCatalogItem")
                         .WithMany()
@@ -1524,6 +1678,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Incident");
 
                     b.Navigation("MaintenanceOrder");
+
+                    b.Navigation("PreventivePlan");
 
                     b.Navigation("PriorityCatalogItem");
 
@@ -1557,6 +1713,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("AssetHub.Domain.Tasks.WorkTask", b =>
                 {
                     b.Navigation("StatusHistory");
+
+                    b.Navigation("TaskComments");
                 });
 #pragma warning restore 612, 618
         }

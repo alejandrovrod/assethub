@@ -13,6 +13,7 @@ import MaintenanceIncidents from "./pages/maintenance/incidents";
 import IncidentDetailPage from "./pages/maintenance/incident-detail";
 import IncidentTemplates from "./pages/maintenance/incident-templates/index";
 import MaintenanceTasks from "./pages/maintenance/tasks";
+import PreventivePlansPage from "./pages/maintenance/preventive-plans/index";
 import StaffEmployees from "./pages/staff/employees";
 import StaffTeams from "./pages/staff/teams";
 import CatalogsPage from "./pages/catalogs/index";
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="incidents/:id" element={<IncidentDetailPage />} />
             <Route path="incident-templates" element={<IncidentTemplates />} />
             <Route path="tasks" element={<MaintenanceTasks />} />
+            <Route path="preventive-plans" element={<PreventivePlansPage />} />
           </Route>
 
           <Route path="staff">

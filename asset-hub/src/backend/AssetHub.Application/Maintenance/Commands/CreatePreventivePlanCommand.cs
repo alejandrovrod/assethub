@@ -2,12 +2,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
-using AssetHub.Domain.Incidents;
+using AssetHub.Domain.Maintenance;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Cronos;
 
-namespace AssetHub.Application.Incidents.Commands;
+namespace AssetHub.Application.Maintenance.Commands;
 
 public class CreatePreventivePlanCommand : IRequest<Guid>
 {
@@ -15,10 +14,18 @@ public class CreatePreventivePlanCommand : IRequest<Guid>
     public string? Description { get; set; }
     public Guid? AssetTemplateId { get; set; }
     public Guid? AssetId { get; set; }
-    
-    public string? CronExpression { get; set; }
-    public int? IntervalDays { get; set; }
+
+    public string GeneratedEntityType { get; set; } = PreventivePlanConstants.GeneratedEntityTypeWorkTask;
+    public string CronExpression { get; set; } = string.Empty;
+
+    public int DueDateOffsetDays { get; set; } = 7;
     public string? ConditionRuleJson { get; set; }
+
+    public Guid? DefaultAssignedEmployeeId { get; set; }
+    public Guid? DefaultAssignedTeamId { get; set; }
+    public bool AutoAssign { get; set; }
+
+    public DateTime? EndsAt { get; set; }
 }
 
 public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventivePlanCommand, Guid>
@@ -36,29 +43,35 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
     {
         var tenantId = _tenantResolver.GetCurrentTenantId();
 
-        if ((request.AssetTemplateId.HasValue && request.AssetId.HasValue) || 
+        if ((request.AssetTemplateId.HasValue && request.AssetId.HasValue) ||
             (!request.AssetTemplateId.HasValue && !request.AssetId.HasValue))
         {
             throw new ArgumentException("A preventive plan must target either a TemplateId or an AssetId, but not both.");
         }
 
-        DateTime? nextRunAt = null;
-
-        if (!string.IsNullOrWhiteSpace(request.CronExpression))
+        if (!new[] {
+            PreventivePlanConstants.GeneratedEntityTypeWorkTask,
+            PreventivePlanConstants.GeneratedEntityTypeMaintenanceOrder,
+            PreventivePlanConstants.GeneratedEntityTypeBoth
+        }.Contains(request.GeneratedEntityType))
         {
-            try
-            {
-                var expression = CronExpression.Parse(request.CronExpression);
-                nextRunAt = expression.GetNextOccurrence(DateTime.UtcNow);
-            }
-            catch (Exception ex)
-            {
-                throw new ArgumentException($"Invalid CronExpression: {ex.Message}");
-            }
+            throw new ArgumentException($"Invalid GeneratedEntityType: {request.GeneratedEntityType}");
         }
-        else if (request.IntervalDays.HasValue && request.IntervalDays.Value > 0)
+
+        if (request.DueDateOffsetDays < 0)
         {
-            nextRunAt = DateTime.UtcNow.AddDays(request.IntervalDays.Value);
+            throw new ArgumentException("DueDateOffsetDays must be greater than or equal to 0.");
+        }
+
+        DateTime? nextRunAt;
+        try
+        {
+            var expression = CronExpression.Parse(request.CronExpression);
+            nextRunAt = expression.GetNextOccurrence(DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Invalid CronExpression: {ex.Message}");
         }
 
         var plan = new PreventivePlan
@@ -69,10 +82,15 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
             Description = request.Description,
             AssetTemplateId = request.AssetTemplateId,
             AssetId = request.AssetId,
+            GeneratedEntityType = request.GeneratedEntityType,
             CronExpression = request.CronExpression,
-            IntervalDays = request.IntervalDays,
+            DueDateOffsetDays = request.DueDateOffsetDays,
             ConditionRuleJson = request.ConditionRuleJson,
+            DefaultAssignedEmployeeId = request.DefaultAssignedEmployeeId,
+            DefaultAssignedTeamId = request.DefaultAssignedTeamId,
+            AutoAssign = request.AutoAssign,
             NextRunAt = nextRunAt,
+            EndsAt = request.EndsAt,
             IsActive = true
         };
 

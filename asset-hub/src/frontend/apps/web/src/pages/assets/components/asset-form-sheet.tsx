@@ -34,9 +34,9 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
+import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
 
 const formSchema = z.object({
   code: z.string().min(1, 'El código es requerido'),
@@ -142,19 +142,30 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-full flex flex-col p-0" aria-describedby={undefined}>
-        <div className="p-6 pb-2">
-          <SheetHeader>
-            <SheetTitle>{asset ? 'Editar' : 'Nuevo'} Activo: {template.name}</SheetTitle>
-            <SheetDescription>
-              Complete los datos generales y los atributos específicos de {template.name}.
-            </SheetDescription>
-          </SheetHeader>
-        </div>
-
-        <ScrollArea className="flex-1 px-6">
-          <UiForm {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-6 mt-4">
+      <SheetContent className={formSheetContentClass} aria-describedby={undefined}>
+        <UiForm {...form}>
+          <FormSheetLayout
+            onSubmit={form.handleSubmit(onSubmit)}
+            header={
+              <SheetHeader className="p-6 pb-4">
+                <SheetTitle>{asset ? 'Editar' : 'Nuevo'} Activo: {template.name}</SheetTitle>
+                <SheetDescription>
+                  Complete los datos generales y los atributos específicos de {template.name}.
+                </SheetDescription>
+              </SheetHeader>
+            }
+            footer={
+              <>
+                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar Activo'}
+                </Button>
+              </>
+            }
+          >
+            <div className="space-y-4">
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField
@@ -234,17 +245,9 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t mt-6">
-                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar Activo'}
-                </Button>
-              </div>
-            </form>
-          </UiForm>
-        </ScrollArea>
+            </div>
+          </FormSheetLayout>
+        </UiForm>
       </SheetContent>
     </Sheet>
   )

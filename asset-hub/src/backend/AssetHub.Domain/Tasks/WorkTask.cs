@@ -31,6 +31,7 @@ public class WorkTask
     public DateTime? DueDate { get; set; }
 
     public ICollection<TaskStatusHistory> StatusHistory { get; set; } = new List<TaskStatusHistory>();
+    public ICollection<TaskComment> TaskComments { get; set; } = new List<TaskComment>();
     
     public bool IsIndependent { get; set; }
     
@@ -54,4 +55,10 @@ public class WorkTask
     // Generator
     public Guid? TaskRecurrenceId { get; set; }
     public TaskRecurrence? TaskRecurrence { get; set; }
+
+    public Guid? PreventivePlanId { get; set; }
+    public PreventivePlan? PreventivePlan { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }

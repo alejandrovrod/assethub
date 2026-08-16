@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,6 +12,7 @@ import { assetTemplateService } from '@/services/asset-template.service'
 import { toast } from 'sonner'
 import { SchemaBuilder } from './schema-builder'
 import { LifecycleCanvas } from './lifecycle-canvas'
+import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
 
 const formSchema = z.object({
   code: z.string().min(1, 'Código es requerido').max(50),
@@ -137,24 +138,36 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-3xl md:max-w-5xl lg:max-w-[85vw] xl:max-w-[90vw] overflow-hidden flex flex-col p-0">
-        <SheetHeader className="p-6 pb-4 border-b">
-          <SheetTitle>{template ? 'Editar Plantilla' : 'Nueva Plantilla'}</SheetTitle>
-          <SheetDescription>
-            Configurá los datos básicos y el esquema JSON de atributos para la plantilla de activo.
-          </SheetDescription>
-        </SheetHeader>
-        
+      <SheetContent className={`${formSheetContentClass} w-full sm:max-w-3xl md:max-w-5xl lg:max-w-[85vw] xl:max-w-[90vw]`}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, (err) => console.log("FORM ERRORS:", err))} className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6">
-              {Object.keys(form.formState.errors).length > 0 && (
-                <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-                  <strong>Error de Validación:</strong>
-                  <pre className="mt-2 text-xs">{JSON.stringify(form.formState.errors, null, 2)}</pre>
-                </div>
-              )}
-              <div className="flex flex-col gap-6 pb-6">
+          <FormSheetLayout
+            onSubmit={form.handleSubmit(onSubmit, (err) => console.log('FORM ERRORS:', err))}
+            header={
+              <SheetHeader className="p-6 pb-4">
+                <SheetTitle>{template ? 'Editar Plantilla' : 'Nueva Plantilla'}</SheetTitle>
+                <SheetDescription>
+                  Configurá los datos básicos y el esquema JSON de atributos para la plantilla de activo.
+                </SheetDescription>
+              </SheetHeader>
+            }
+            footer={
+              <>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? 'Guardando...' : 'Guardar Plantilla'}
+                </Button>
+              </>
+            }
+          >
+            {Object.keys(form.formState.errors).length > 0 && (
+              <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+                <strong>Error de Validación:</strong>
+                <pre className="mt-2 text-xs">{JSON.stringify(form.formState.errors, null, 2)}</pre>
+              </div>
+            )}
+            <div className="flex flex-col gap-6">
                 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -254,18 +267,8 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                   />
 
                 </div>
-              </div>
             </div>
-
-            <SheetFooter className="p-6 border-t mt-auto">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Guardando...' : 'Guardar Plantilla'}
-              </Button>
-            </SheetFooter>
-          </form>
+          </FormSheetLayout>
         </Form>
       </SheetContent>
     </Sheet>

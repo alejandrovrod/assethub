@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Application.Tasks.Helpers;
 using AssetHub.Domain.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -33,43 +34,18 @@ public class ChangeWorkTaskStateCommandHandler : IRequestHandler<ChangeWorkTaskS
         if (task == null)
             throw new ArgumentException("Task not found");
 
-        // Validate permissions: in a real app, verify user is AssignedEmployee, Team Lead, or has 'tasks.manage' permission.
-        // For MVP, we skip the deep role check.
-
         var oldState = task.State;
         var newState = request.NewState;
 
         if (oldState == newState)
             return Unit.Value;
 
-        if (newState == "cancelled" && (oldState == "done" || oldState == "cancelled"))
-            throw new InvalidOperationException("Invalid state transition");
-
-        bool valid = false;
-        switch (oldState)
+        if (!TaskStateTransitionValidator.IsValidTransition(oldState, newState))
         {
-            case "todo":
-                valid = newState == "in_progress" || newState == "cancelled";
-                break;
-            case "in_progress":
-                valid = newState == "review" || newState == "blocked" || newState == "cancelled";
-                break;
-            case "blocked":
-                valid = newState == "in_progress" || newState == "cancelled";
-                break;
-            case "review":
-                valid = newState == "done" || newState == "in_progress" || newState == "cancelled";
-                break;
-            case "done":
-            case "cancelled":
-                valid = false;
-                break;
+            throw new InvalidOperationException(TaskStateTransitionValidator.GetErrorMessage(oldState, newState));
         }
 
-        if (!valid)
-            throw new InvalidOperationException($"Cannot transition from {oldState} to {newState}"); // Should be 409
-
-        // Update times
+        // Update timestamps
         if (oldState == "todo" && newState == "in_progress")
         {
             task.StartedAt = DateTime.UtcNow;

@@ -1,0 +1,64 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using AssetHub.Application.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace AssetHub.Application.Tasks.Commands;
+
+public class UpdateWorkTaskCommand : IRequest
+{
+    public Guid WorkTaskId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public DateTime? DueAt { get; set; }
+    public Guid TaskTypeCatalogItemId { get; set; }
+    public Guid PriorityCatalogItemId { get; set; }
+    public Guid? AssignedEmployeeId { get; set; }
+    public Guid? AssignedTeamId { get; set; }
+}
+
+public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskCommand>
+{
+    private readonly ITenantDbContext _db;
+
+    public UpdateWorkTaskCommandHandler(ITenantDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task Handle(UpdateWorkTaskCommand request, CancellationToken cancellationToken)
+    {
+        var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
+        if (task == null)
+            throw new ArgumentException("WorkTask not found");
+
+        if (task.State == "done" || task.State == "cancelled")
+            throw new InvalidOperationException("Cannot edit a task in a terminal state");
+
+        if (request.AssignedEmployeeId.HasValue)
+        {
+            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.AssignedEmployeeId.Value, cancellationToken);
+            if (emp == null || !emp.IsActive)
+                throw new ArgumentException("Assigned employee not found or inactive");
+        }
+
+        if (request.AssignedTeamId.HasValue)
+        {
+            var team = await _db.Teams.FirstOrDefaultAsync(t => t.Id == request.AssignedTeamId.Value, cancellationToken);
+            if (team == null || team.IsDeleted)
+                throw new ArgumentException("Assigned team not found");
+        }
+
+        task.Title = request.Title;
+        task.Description = request.Description;
+        task.DueAt = request.DueAt;
+        task.TaskTypeCatalogItemId = request.TaskTypeCatalogItemId;
+        task.PriorityCatalogItemId = request.PriorityCatalogItemId;
+        task.AssignedEmployeeId = request.AssignedEmployeeId;
+        task.AssignedTeamId = request.AssignedTeamId;
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+}

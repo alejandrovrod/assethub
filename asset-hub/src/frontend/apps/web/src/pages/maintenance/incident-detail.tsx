@@ -16,6 +16,7 @@ import { customValidator as validator } from '@/lib/rjsf-validator'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
+import { IncidentTasksWidget } from './components/incident-tasks-widget'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { handleServerError } from '@/lib/handle-server-error'
@@ -433,6 +434,8 @@ export default function IncidentDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {id && <IncidentTasksWidget incidentId={id} />}
         </div>
       </div>
 

@@ -26,8 +26,9 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; }
     DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; }
     DbSet<AssetHub.Domain.Incidents.IncidentLifecycleEvent> IncidentLifecycleEvents { get; }
-    DbSet<AssetHub.Domain.Incidents.PreventivePlan> PreventivePlans { get; }
-    
+    DbSet<AssetHub.Domain.Maintenance.PreventivePlan> PreventivePlans { get; }
+    DbSet<AssetHub.Domain.Maintenance.PreventivePlanExecutionLog> PreventivePlanExecutionLogs { get; }
+
     DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; }
     DbSet<AssetHub.Domain.Maintenance.MaintenancePart> MaintenanceParts { get; }
     
@@ -41,6 +42,8 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Tasks.TaskStatusHistory> TaskStatusHistories { get; }
     DbSet<AssetHub.Domain.Tasks.TaskEvidence> TaskEvidences { get; }
     DbSet<AssetHub.Domain.Tasks.TaskComment> TaskComments { get; }
+
+    DbSet<AssetHub.Domain.Notifications.Notification> Notifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

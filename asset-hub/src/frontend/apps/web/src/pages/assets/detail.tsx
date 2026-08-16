@@ -21,6 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 import { AssetTimeline } from './components/timeline'
+import { PreventivePlanAssetWidget } from '@/pages/maintenance/preventive-plans/components/preventive-plan-asset-widget'
+import { AssetTasksWidget } from '@/pages/maintenance/components/asset-tasks-widget'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -462,6 +464,10 @@ export default function AssetDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.assetTemplateId} />
+
+          <AssetTasksWidget assetId={asset.id} />
 
           {/* HIERARCHY */}
           <Card>

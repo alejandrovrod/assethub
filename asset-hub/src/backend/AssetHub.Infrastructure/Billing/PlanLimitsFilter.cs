@@ -1,21 +1,26 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Tenancy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AssetHub.Infrastructure.Billing;
 
 public class PlanLimitsFilter : IAsyncActionFilter
 {
+    private readonly IPlatformDbContext _platformDb;
     private readonly string[] _requiredModules;
     private readonly string? _limitToCheck;
 
-    public PlanLimitsFilter(string[] requiredModules, string? limitToCheck = null)
+    public PlanLimitsFilter(IPlatformDbContext platformDb, string[] requiredModules, string? limitToCheck = null)
     {
+        _platformDb = platformDb;
         _requiredModules = requiredModules;
         _limitToCheck = limitToCheck;
     }
@@ -31,11 +36,9 @@ public class PlanLimitsFilter : IAsyncActionFilter
             return;
         }
 
-        // 1. Validar módulos habilitados (Simulado para el mock. En real leería del Plan real).
-        // var plan = ObtenerPlan(tenant.PlanId);
-        // var enabledModules = JsonSerializer.Deserialize<List<string>>(plan.EnabledModules);
-        var enabledModules = new[] { "core", "maintenance", "incidents" }; // Dummy
-        
+        // 1. Validar módulos habilitados desde el plan del tenant.
+        var enabledModules = await GetEnabledModulesAsync(tenant);
+
         foreach (var req in _requiredModules)
         {
             if (!enabledModules.Contains(req))
@@ -71,6 +74,25 @@ public class PlanLimitsFilter : IAsyncActionFilter
         }
 
         await next();
+    }
+
+    private async Task<IEnumerable<string>> GetEnabledModulesAsync(Tenant tenant)
+    {
+        if (tenant.PlanId == Guid.Empty)
+        {
+            // TODO-M4: Remove this fallback once M4 (Payments & Subscriptions) is implemented.
+            // Tenants without a PlanId should not exist after signup assigns a default plan.
+            // Fallback for unassigned tenants: allow all operational modules.
+            return new[] { "core", "maintenance", "incidents", "preventive-plans", "tasks", "employees", "geo", "reports" };
+        }
+
+        var plan = await _platformDb.Plans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == tenant.PlanId);
+        if (plan == null || string.IsNullOrWhiteSpace(plan.EnabledModules))
+        {
+            return Enumerable.Empty<string>();
+        }
+
+        return JsonSerializer.Deserialize<List<string>>(plan.EnabledModules) ?? new List<string>();
     }
 }
 

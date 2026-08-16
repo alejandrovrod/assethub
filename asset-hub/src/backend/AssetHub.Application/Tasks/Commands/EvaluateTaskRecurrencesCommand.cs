@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Application.Tasks.Helpers;
 using AssetHub.Domain.Tasks;
 using Cronos;
 using MediatR;
@@ -19,10 +20,12 @@ public class EvaluateTaskRecurrencesCommand : IRequest<Unit>
 public class EvaluateTaskRecurrencesCommandHandler : IRequestHandler<EvaluateTaskRecurrencesCommand, Unit>
 {
     private readonly ITenantDbContext _db;
+    private readonly ITenantResolver _tenantResolver;
 
-    public EvaluateTaskRecurrencesCommandHandler(ITenantDbContext db)
+    public EvaluateTaskRecurrencesCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver)
     {
         _db = db;
+        _tenantResolver = tenantResolver;
     }
 
     public async Task<Unit> Handle(EvaluateTaskRecurrencesCommand request, CancellationToken cancellationToken)
@@ -51,14 +54,16 @@ public class EvaluateTaskRecurrencesCommandHandler : IRequestHandler<EvaluateTas
                 var cmd = JsonSerializer.Deserialize<CreateWorkTaskCommand>(recurrence.TaskTemplateJson);
                 if (cmd != null)
                 {
+                    var (defaultTaskTypeId, defaultPriorityId) = await TaskCatalogDefaults.EnsureDefaultCatalogsAsync(_db, recurrence.TenantId, cancellationToken);
+
                     _db.WorkTasks.Add(new WorkTask
                     {
                         Id = Guid.NewGuid(),
                         TenantId = recurrence.TenantId,
                         Title = cmd.Title,
                         Description = cmd.Description,
-                        TaskTypeCatalogItemId = cmd.TaskTypeCatalogItemId,
-                        PriorityCatalogItemId = cmd.PriorityCatalogItemId,
+                        TaskTypeCatalogItemId = cmd.TaskTypeCatalogItemId ?? defaultTaskTypeId,
+                        PriorityCatalogItemId = cmd.PriorityCatalogItemId ?? defaultPriorityId,
                         State = "todo",
                         DueAt = cmd.DueAt, // Could be adjusted relative to NextRunAt
                         IsIndependent = cmd.IsIndependent,

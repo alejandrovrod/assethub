@@ -38,10 +38,13 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; set; } = null!;
     public DbSet<AssetHub.Domain.Incidents.IncidentLifecycleEvent> IncidentLifecycleEvents { get; set; } = null!;
-    public DbSet<AssetHub.Domain.Incidents.PreventivePlan> PreventivePlans { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Maintenance.PreventivePlan> PreventivePlans { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Maintenance.PreventivePlanExecutionLog> PreventivePlanExecutionLogs { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; set; } = null!;
     public DbSet<AssetHub.Domain.Maintenance.MaintenancePart> MaintenanceParts { get; set; } = null!;
+
+    public DbSet<AssetHub.Domain.Notifications.Notification> Notifications { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Staff.Employee> Employees { get; set; } = null!;
     public DbSet<AssetHub.Domain.Staff.EmployeeAvailability> EmployeeAvailabilities { get; set; } = null!;
@@ -195,11 +198,33 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasIndex(e => new { e.IncidentId });
         });
 
-        modelBuilder.Entity<AssetHub.Domain.Incidents.PreventivePlan>(b =>
+        modelBuilder.Entity<AssetHub.Domain.Maintenance.PreventivePlan>(b =>
         {
             b.HasKey(p => p.Id);
             b.HasQueryFilter(p => p.TenantId == CurrentTenantId && !p.IsDeleted);
             b.HasIndex(p => new { p.TenantId, p.NextRunAt });
+
+            b.HasOne(p => p.Asset).WithMany().HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(p => p.AssetTemplate).WithMany().HasForeignKey(p => p.AssetTemplateId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Maintenance.PreventivePlanExecutionLog>(b =>
+        {
+            b.HasKey(e => e.Id);
+            b.HasQueryFilter(e => e.TenantId == CurrentTenantId);
+            b.HasIndex(e => new { e.TenantId, e.PreventivePlanId, e.Occurrence });
+            b.HasIndex(e => new { e.TenantId, e.PreventivePlanId, e.AssetId, e.Occurrence }).IsUnique();
+            b.HasIndex(e => new { e.TenantId, e.AssetId });
+
+            b.HasOne(e => e.PreventivePlan).WithMany().HasForeignKey(e => e.PreventivePlanId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Notifications.Notification>(b =>
+        {
+            b.HasKey(n => n.Id);
+            b.HasQueryFilter(n => n.TenantId == CurrentTenantId);
+            b.HasIndex(n => new { n.TenantId, n.UserId, n.IsRead });
+            b.HasIndex(n => new { n.TenantId, n.CreatedAt });
         });
 
         modelBuilder.Entity<AssetHub.Domain.Maintenance.MaintenanceOrder>(b =>
@@ -248,14 +273,29 @@ public class TenantDbContext : DbContext, ITenantDbContext
         modelBuilder.Entity<AssetHub.Domain.Tasks.WorkTask>(b =>
         {
             b.HasKey(t => t.Id);
-            b.HasQueryFilter(t => t.TenantId == CurrentTenantId);
-            b.HasIndex(t => new { t.TenantId, t.State });
+            b.HasQueryFilter(t => t.TenantId == CurrentTenantId && !t.IsDeleted);
+            b.HasIndex(t => new { t.TenantId, t.State, t.IsDeleted });
+            b.HasIndex(t => new { t.TenantId, t.IsDeleted });
+            b.HasMany(t => t.TaskComments).WithOne(c => c.WorkTask).HasForeignKey(c => c.WorkTaskId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(t => t.StatusHistory).WithOne(h => h.WorkTask).HasForeignKey(h => h.WorkTaskId).OnDelete(DeleteBehavior.Cascade);
             b.HasIndex(t => new { t.TenantId, t.AssetId });
+            b.HasIndex(t => new { t.TenantId, t.IncidentId });
+            b.HasIndex(t => new { t.TenantId, t.MaintenanceOrderId });
+            b.HasIndex(t => new { t.TenantId, t.PreventivePlanId });
+            b.HasIndex(t => new { t.TenantId, t.TaskRecurrenceId });
             b.HasIndex(t => new { t.TenantId, t.AssignedEmployeeId });
-            
+            b.HasIndex(t => new { t.TenantId, t.AssignedTeamId });
+            b.HasIndex(t => new { t.TenantId, t.DueAt });
+
             b.HasOne(t => t.Asset).WithMany().HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.Incident).WithMany().HasForeignKey(t => t.IncidentId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.MaintenanceOrder).WithMany().HasForeignKey(t => t.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.TaskTypeCatalogItem).WithMany().HasForeignKey(t => t.TaskTypeCatalogItemId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.PriorityCatalogItem).WithMany().HasForeignKey(t => t.PriorityCatalogItemId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.PreventivePlan).WithMany().HasForeignKey(t => t.PreventivePlanId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.TaskRecurrence).WithMany().HasForeignKey(t => t.TaskRecurrenceId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.AssignedEmployee).WithMany().HasForeignKey(t => t.AssignedEmployeeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.AssignedTeam).WithMany().HasForeignKey(t => t.AssignedTeamId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Tasks.TaskRecurrence>(b =>

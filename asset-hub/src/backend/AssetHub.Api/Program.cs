@@ -6,6 +6,7 @@ using AssetHub.Infrastructure.Billing;
 using AssetHub.Infrastructure.Middleware;
 using AssetHub.Infrastructure.Persistence;
 using AssetHub.Infrastructure.Security;
+using AssetHub.Api.Configuration;
 using AssetHub.Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -74,6 +75,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<ITenantResolver, TenantResolver>();
+builder.Services.Configure<SchedulerSettings>(builder.Configuration.GetSection(SchedulerSettings.SectionName));
 builder.Services.AddScoped<IBillingProvider, ManualBillingProvider>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IUsageTracker, UsageTracker>();

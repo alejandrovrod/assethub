@@ -66,6 +66,10 @@ export const sidebarData: SidebarData = {
               title: 'Tareas',
               url: '/maintenance/tasks',
             },
+            {
+              title: 'Planes de Mantenimiento',
+              url: '/maintenance/preventive-plans',
+            },
           ],
         },
         {
