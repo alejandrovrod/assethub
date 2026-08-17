@@ -7,6 +7,8 @@ using AssetHub.Domain.Staff;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
+using AssetHub.Application.Staff.Helpers;
+
 namespace AssetHub.Application.Staff.Commands;
 
 public class CreateEmployeeCommand : IRequest<Guid>
@@ -33,6 +35,9 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
     public async Task<Guid> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
         var tenantId = _tenantResolver.GetCurrentTenantId();
+
+        // Ensure role catalog exists for this tenant (lazy init)
+        await StaffCatalogDefaults.EnsureRoleCatalogAsync(_db, tenantId.Value, cancellationToken);
 
         var roleExists = await _db.CatalogItems.AnyAsync(ci => ci.Id == request.RoleCatalogItemId, cancellationToken);
         if (!roleExists)

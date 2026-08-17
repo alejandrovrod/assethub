@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Pencil, Trash2, UserCheck, UserX } from 'lucide-react'
+import { Plus, Loader2, Pencil, Trash2, UserCheck, UserX, Users, Mail, Phone, Shield, User } from 'lucide-react'
 import { employeeService, type EmployeeSummary, type CreateEmployeeDto, type UpdateEmployeeDto } from '@/services/employee.service'
 import { catalogService, type CatalogItem } from '@/services/catalog.service'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { Separator } from '@/components/ui/separator'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
+
+const ROLE_CATALOG_CODE = 'employee-role'
 
 export default function StaffEmployees() {
   const queryClient = useQueryClient()
@@ -35,8 +38,8 @@ export default function StaffEmployees() {
   })
 
   const { data: roles } = useQuery({
-    queryKey: ['catalog-items', 'roles'],
-    queryFn: () => catalogService.getCatalogItems('roles', 'es').catch(() => [] as CatalogItem[]),
+    queryKey: ['catalog-items', ROLE_CATALOG_CODE],
+    queryFn: () => catalogService.getCatalogItems(ROLE_CATALOG_CODE, 'es').catch(() => [] as CatalogItem[]),
   })
 
   const deleteMutation = useMutation({
@@ -241,7 +244,7 @@ function EmployeeFormSheet({
     mutationFn: (payload: CreateEmployeeDto) => employeeService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] })
-      toast.success('Empleado creado')
+      toast.success('Empleado creado exitosamente')
       onOpenChange(false)
     },
     onError: () => toast.error('Error al crear empleado'),
@@ -276,54 +279,151 @@ function EmployeeFormSheet({
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending
+  const isValid = firstName.trim() && lastName.trim() && email.trim() && roleCatalogItemId
 
   return (
     <Sheet open={open} onOpenChange={(val) => { onOpenChange(val); if (val) resetForm() }}>
-      <SheetContent className="sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? 'Editar Empleado' : 'Nuevo Empleado'}</SheetTitle>
+      <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 h-full">
+        <SheetHeader className="p-6 pb-4 border-b shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 text-primary rounded-lg">
+              <User className="h-5 w-5" />
+            </div>
+            <div>
+              <SheetTitle className="text-xl">
+                {isEditing ? 'Editar Empleado' : 'Nuevo Empleado'}
+              </SheetTitle>
+              <SheetDescription>
+                {isEditing
+                  ? 'Modifica los datos del empleado.'
+                  : 'Registra un nuevo miembro del equipo de trabajo.'}
+              </SheetDescription>
+            </div>
+          </div>
         </SheetHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Nombre</Label>
-            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Nombre" />
-          </div>
-          <div className="space-y-2">
-            <Label>Apellido</Label>
-            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Apellido" />
-          </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@empresa.com" />
-          </div>
-          <div className="space-y-2">
-            <Label>Teléfono</Label>
-            <Input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="(opcional)" />
-          </div>
-          <div className="space-y-2">
-            <Label>Rol</Label>
-            <Select value={roleCatalogItemId} onValueChange={setRoleCatalogItemId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar rol" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <ScrollArea className="flex-1 px-6 py-6">
+          <div className="space-y-6">
+            {/* Personal Information Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>Information personal</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emp-firstName">Nombre <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="emp-firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Juan"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emp-lastName">Apellido <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="emp-lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Pérez"
+                  />
+                </div>
+              </div>
+            </div>
 
-        <SheetFooter>
-          <Button onClick={handleSubmit} disabled={isPending || !firstName || !lastName || !email || !roleCatalogItemId}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {isEditing ? 'Guardar' : 'Crear'}
+            <Separator />
+
+            {/* Contact Information Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <span>Contacto</span>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emp-email">Email <span className="text-destructive">*</span></Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="emp-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="juan.perez@empresa.com"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emp-phone">Teléfono</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="emp-phone"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+52 55 1234 5678"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Role Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                <span>Rol y permisos</span>
+              </div>
+              <div className="space-y-2">
+                <Label>Rol <span className="text-destructive">*</span></Label>
+                <Select value={roleCatalogItemId} onValueChange={setRoleCatalogItemId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar rol del empleado..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {roles.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No hay roles disponibles. Crea roles en el módulo de Catálogos con código "employee-role".
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+
+        <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
           </Button>
-        </SheetFooter>
+          <Button
+            onClick={handleSubmit}
+            disabled={isPending || !isValid}
+            className="min-w-[140px]"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : isEditing ? (
+              'Guardar cambios'
+            ) : (
+              'Crear empleado'
+            )}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )

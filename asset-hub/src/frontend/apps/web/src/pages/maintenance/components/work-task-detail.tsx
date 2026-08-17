@@ -4,6 +4,7 @@ import {
   X,
   Calendar,
   User,
+  Users,
   History,
   MessageSquare,
   Package,
@@ -23,6 +24,8 @@ import {
   STATE_LABELS,
 } from '@/services/work-task.service'
 import { catalogService } from '@/services/catalog.service'
+import { AsyncCombobox } from '@/components/ui/async-combobox'
+import { apiClient as api } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -44,8 +47,8 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Link } from 'react-router'
 
-const PRIORITY_CATALOG_CODE = 'work-task-priority'
-const TASK_TYPE_CATALOG_CODE = 'work-task-type'
+const PRIORITY_CATALOG_CODE = 'priority'
+const TASK_TYPE_CATALOG_CODE = 'tasktype'
 
 const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   todo: 'secondary',
@@ -65,6 +68,9 @@ interface WorkTaskDetailProps {
   task: WorkTaskSummary
   onClose: () => void
 }
+
+interface EmployeeOption { id: string; name: string }
+interface TeamOption { id: string; name: string }
 
 export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const queryClient = useQueryClient()
@@ -101,6 +107,8 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const [taskTypeCatalogItemId, setTaskTypeCatalogItemId] = useState('')
   const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
   const [assignedTeamId, setAssignedTeamId] = useState('')
+  const [assignedEmployeeName, setAssignedEmployeeName] = useState('')
+  const [assignedTeamName, setAssignedTeamName] = useState('')
 
   useEffect(() => {
     if (detail) {
@@ -110,8 +118,10 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
       setTaskTypeCatalogItemId(detail.taskTypeCatalogItemId)
       setAssignedEmployeeId(detail.assignedEmployeeId || '')
       setAssignedTeamId(detail.assignedTeamId || '')
+      setAssignedEmployeeName(task.assignedEmployeeName || '')
+      setAssignedTeamName(task.assignedTeamName || '')
     }
-  }, [detail])
+  }, [detail, task])
 
   const updateMutation = useMutation({
     mutationFn: () =>
@@ -283,25 +293,77 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" /> Asignación (MVP)
+                    <User className="h-4 w-4" /> Asignación
                   </h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="wt-employee">ID Empleado</Label>
-                      <Input
-                        id="wt-employee"
-                        value={assignedEmployeeId}
-                        onChange={(e) => setAssignedEmployeeId(e.target.value)}
-                        placeholder="Empleado asignado"
+                      <Label className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-3.5 w-3.5" />
+                        Empleado asignado
+                      </Label>
+                      <AsyncCombobox<EmployeeOption>
+                        fetcher={async (query) => {
+                          const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
+                            params: { search: query, isActive: true },
+                          })
+                          return data.items.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
+                        }}
+                        labelKey="name"
+                        valueKey="id"
+                        placeholder="Buscar empleado..."
+                        searchPlaceholder="Escriba para buscar..."
+                        emptyText="No se encontraron empleados."
+                        onSelect={(item) => {
+                          setAssignedEmployeeId(item.id)
+                          setAssignedEmployeeName(item.name)
+                        }}
+                        renderTrigger={(onClick) => (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            onClick={onClick}
+                            className="w-full justify-between font-normal"
+                          >
+                            {assignedEmployeeId ? assignedEmployeeName || assignedEmployeeId : 'Buscar empleado...'}
+                            <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        )}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="wt-team">ID Equipo</Label>
-                      <Input
-                        id="wt-team"
-                        value={assignedTeamId}
-                        onChange={(e) => setAssignedTeamId(e.target.value)}
-                        placeholder="Equipo asignado"
+                      <Label className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
+                        Equipo asignado
+                      </Label>
+                      <AsyncCombobox<TeamOption>
+                        fetcher={async (query) => {
+                          const { data } = await api.get<{ items: TeamOption[] }>('/teams', {
+                            params: { search: query },
+                          })
+                          return data.items
+                        }}
+                        labelKey="name"
+                        valueKey="id"
+                        placeholder="Buscar equipo..."
+                        searchPlaceholder="Escriba para buscar..."
+                        emptyText="No se encontraron equipos."
+                        onSelect={(item) => {
+                          setAssignedTeamId(item.id)
+                          setAssignedTeamName(item.name)
+                        }}
+                        renderTrigger={(onClick) => (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            onClick={onClick}
+                            className="w-full justify-between font-normal"
+                          >
+                            {assignedTeamId ? assignedTeamName || assignedTeamId : 'Buscar equipo...'}
+                            <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        )}
                       />
                     </div>
                   </div>

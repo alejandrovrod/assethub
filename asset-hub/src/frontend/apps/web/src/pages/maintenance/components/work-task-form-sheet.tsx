@@ -22,8 +22,8 @@ import { assetService } from '@/services/asset.service'
 import { preventivePlanService } from '@/services/preventive-plan.service'
 import { apiClient as api } from '@/lib/api-client'
 
-const TASK_TYPE_CATALOG_CODE = 'work-task-type'
-const PRIORITY_CATALOG_CODE = 'work-task-priority'
+const TASK_TYPE_CATALOG_CODE = 'tasktype'
+const PRIORITY_CATALOG_CODE = 'priority'
 
 interface EmployeeOption { id: string; name: string }
 interface TeamOption { id: string; name: string }

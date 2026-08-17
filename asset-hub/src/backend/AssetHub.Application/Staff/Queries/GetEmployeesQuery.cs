@@ -7,6 +7,8 @@ using AssetHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
+using AssetHub.Application.Staff.Helpers;
+
 namespace AssetHub.Application.Staff.Queries;
 
 public class GetEmployeesQuery : IRequest<GetEmployeesResult>
@@ -41,14 +43,20 @@ public class EmployeeSummaryDto
 public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, GetEmployeesResult>
 {
     private readonly ITenantDbContext _db;
+    private readonly ITenantResolver _tenantResolver;
 
-    public GetEmployeesQueryHandler(ITenantDbContext db)
+    public GetEmployeesQueryHandler(ITenantDbContext db, ITenantResolver tenantResolver)
     {
         _db = db;
+        _tenantResolver = tenantResolver;
     }
 
     public async Task<GetEmployeesResult> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
     {
+        // Ensure role catalog exists for this tenant (lazy init on first page load)
+        var tenantId = _tenantResolver.GetCurrentTenantId();
+        await StaffCatalogDefaults.EnsureRoleCatalogAsync(_db, tenantId.Value, cancellationToken);
+
         var query = _db.Employees
             .AsNoTracking()
             .Include(e => e.RoleCatalogItem)
