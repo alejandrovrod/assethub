@@ -148,7 +148,32 @@ As a technician, I want to see tasks grouped by state in a Kanban board so that 
 ## Assumptions
 
 - The existing `WorkTask`, `TaskStatusHistory`, `TaskComment`, and `Notification` entities are sufficient and will be extended as needed.
-- Task type and priority catalog items will be created automatically if they do not exist, using the same default catalog approach established for preventive plans.
+- Task type and priority catalog items will be created **manually** by the user via the Catalogs module (M5), associating them to the **Tareas** module. The task form filters available catalogs by `TargetModulesJson` containing `"tasks"`.
 - In-app notifications are sufficient for the first release; email or push notifications are out of scope.
-- State transitions for work tasks are `todo → in_progress → done` and `todo → cancelled`; additional transitions may be added later.
+- State transitions for work tasks follow the machine defined in M15: `backlog`→`todo`→`in_progress`→(`blocked`)→`review`→`done`; `cancelled` from any state. Simplified transitions (`todo`→`in_progress`→`done`) are acceptable for the first release.
 - File attachments for tasks are out of scope for this release; only text comments are included.
+- The Staff module (M13) must have functional queries and CRUD endpoints before task assignment UI can be completed. Domain entities already exist; API and UI are pending.
+
+## Staff Module Dependency (M13)
+
+The task assignment feature depends on the Staff module providing:
+
+| Endpoint | Purpose |
+|----------|--------|
+| `GET /api/v1/employees` | Populate employee assignment dropdown |
+| `GET /api/v1/teams` | Populate team assignment dropdown |
+| `GET /api/v1/employees/{id}` | Display assigned employee details |
+| `GET /api/v1/teams/{id}` | Display assigned team details |
+
+These endpoints do NOT exist yet. They must be implemented as part of or before the task form integration.
+
+## Catalog Module Integration (M5)
+
+The task form requires catalogs associated to the `tasks` module:
+
+| Catalog | Purpose | Example Items |
+|---------|---------|---------------|
+| Priority | Task urgency classification | Crítica, Alta, Media, Baja |
+| Task Type | Classification of work type | Preventiva, Correctiva, Inspección, Emergencia |
+
+These catalogs are created **manually** by the user from the catalog administration UI. The `TargetModulesJson` field of the `Catalog` entity must include `"tasks"` for these catalogs to appear in the task form.

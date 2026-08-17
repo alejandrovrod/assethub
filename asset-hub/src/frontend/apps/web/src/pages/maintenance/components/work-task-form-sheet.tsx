@@ -349,10 +349,10 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task }: Props) 
                         <FormControl>
                           <AsyncCombobox<EmployeeOption>
                             fetcher={async (query) => {
-                              const { data } = await api.get<{ items: EmployeeOption[] }>('/employees', {
-                                params: { q: query },
+                              const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
+                                params: { search: query, isActive: true },
                               })
-                              return data.items
+                              return data.items.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
                             }}
                             labelKey="name"
                             valueKey="id"
@@ -395,7 +395,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task }: Props) 
                           <AsyncCombobox<TeamOption>
                             fetcher={async (query) => {
                               const { data } = await api.get<{ items: TeamOption[] }>('/teams', {
-                                params: { q: query },
+                                params: { search: query },
                               })
                               return data.items
                             }}

@@ -34,3 +34,17 @@ CRUD genérico de catálogos e items que alimenta a todos los módulos (priorida
 - CA-5.6: Given item sin uso, When DELETE, Then `IsDeleted=true` y deja de aparecer en listados (soft-delete).
 - CA-5.7: Given usuario sin `catalogs.manage`, When POST item, Then 403.
 - CA-5.8: Given catálogo `IsSystem`, When TenantAdmin intenta eliminarlo, Then 403/409 indicando catálogo de sistema.
+
+## Módulos disponibles para asociación
+
+La propiedad `TargetModulesJson` de `Catalog` almacena un array JSON con los módulos donde el catálogo está disponible. Los módulos soportados son:
+
+| Módulo | Clave | Descripción |
+|---|---|---|
+| Activos | `assets` | Catálogos para clasificación de activos (tipos, marcas, estados) |
+| Incidencias | `incidents` | Catálogos para incidencias (tipos, prioridades, severidades) |
+| Tareas | `tasks` | Catálogos para tareas de trabajo (tipos de tarea, prioridades) |
+| Mantenimiento | `maintenance` | Catálogos para órdenes de mantenimiento (repuestos, tipos) |
+| Personal | `staff` | Catálogos para empleados (oficios, habilidades, roles) |
+
+> **Nota**: Los catálogos de Prioridad y Tipo de Tarea se crean manualmente desde la UI de catálogos, no por seed automático. El usuario debe asociarlos al módulo **Tareas** para que aparezcan en los formularios de edición de tareas.

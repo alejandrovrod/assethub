@@ -116,15 +116,18 @@ See [research.md](./research.md) for detailed rationale.
 Key decisions:
 
 1. **State transitions**: Use a simple server-side state machine: `todo → in_progress → done`, `todo → cancelled`, `in_progress → cancelled`. Additional transitions can be added later.
-2. **Catalog defaults**: Reuse the `PreventivePlanCatalogDefaults` helper pattern to auto-create `tasktype` and `priority` catalog items if missing.
+2. **Catalogs are manual**: Priority and Task Type catalogs are created manually by the user via the Catalogs module (M5). The task form filters catalogs by `TargetModulesJson` containing `"tasks"`. No auto-creation seed.
 3. **Task creation context**: The task form accepts optional `assetId`, `incidentId`, `maintenanceOrderId`, `preventivePlanId`, or `taskRecurrenceId`. When provided, the form pre-selects the related entity and disables conflicting fields.
 4. **Notifications**: Reuse the existing `Notification` entity and event-driven notification handlers for assignment and due-date reminders.
 5. **History**: Every state change creates a `TaskStatusHistory` record with timestamp, user, from-state, and to-state.
 
 ## Phase Dependencies
 
+- **Staff module queries (M13)** must be implemented FIRST: `GET /employees` and `GET /teams` are required for task assignment dropdowns. Domain entities exist; API queries and frontend are pending.
 - **Backend foundation** (DbSets, DTOs, queries) must be complete before frontend list/detail.
 - **Backend CRUD endpoints** must be complete before frontend form integration.
+- **Catalog association**: The `tasks` module must appear in the catalog module selector so users can associate Priority/TaskType catalogs to it.
 - **Asset/Incident task widgets** can be built in parallel with the main Tasks page once the `GetWorkTasks` endpoint exists.
 - **Kanban view** can be built after the list view works.
 - **Comments and notifications** can be built after core task CRUD is complete.
+- **State synchronization** (task → incident/order) can be added after core task state transitions work.

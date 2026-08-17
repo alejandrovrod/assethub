@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using AssetHub.Application.Staff.Commands;
+using AssetHub.Application.Staff.Queries;
 using AssetHub.Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -21,11 +22,34 @@ public class EmployeesController : ControllerBase
         _mediator = mediator;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetEmployees([FromQuery] GetEmployeesQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetEmployeeById(Guid id)
+    {
+        var result = await _mediator.Send(new GetEmployeeByIdQuery { EmployeeId = id });
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeCommand command)
     {
         var id = await _mediator.Send(command);
-        return CreatedAtAction(nameof(CreateEmployee), new { id }, new { id });
+        return CreatedAtAction(nameof(GetEmployeeById), new { id }, new { id });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateEmployee(Guid id, [FromBody] UpdateEmployeeCommand command)
+    {
+        command.EmployeeId = id;
+        await _mediator.Send(command);
+        return NoContent();
     }
 
     [HttpPatch("{id}/link-user")]

@@ -89,6 +89,8 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
                     { id: "Assets", label: "Activos" },
                     { id: "Incidents", label: "Incidencias" },
                     { id: "Tasks", label: "Tareas" },
+                    { id: "Maintenance", label: "Mantenimiento" },
+                    { id: "Staff", label: "Personal" },
                   ];
 
                   return (

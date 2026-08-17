@@ -34,3 +34,45 @@ Gestión de empleados (con o sin usuario del sistema), equipos con líderes, hab
 - CA-13.6: Given empleado sin asignaciones, When desactivar, Then `IsActive=false` y soft-delete; no aparece en listas de asignación.
 - CA-13.7: Given equipo con 4 miembros y 1 líder, When GET equipo, Then devuelve miembros con flag `IsLead`.
 - CA-13.8: Given usuario sin `employees.manage`, When POST empleado, Then 403.
+
+## Estado de implementación
+
+### ✅ Implementado
+
+| Capa | Componente | Estado |
+|------|-----------|--------|
+| Domain | `Employee` (FirstName, LastName, Email, Phone, RoleCatalogItemId, SkillsJson, UserId, IsActive, IsDeleted) | Completo |
+| Domain | `Team` (Name, Description, IsDeleted, Members collection) | Completo |
+| Domain | `TeamMember` (TeamId, EmployeeId, IsLead) | Completo |
+| Domain | `EmployeeAvailability` (DayOfWeek, StartTime, EndTime, IsAvailable) | Completo |
+| Application | `CreateEmployeeCommand` (con validación de RoleCatalogItemId) | Completo |
+| Application | `CreateTeamCommand` (con validación de miembros y al menos 1 requerido) | Completo |
+| Application | `DeactivateEmployeeCommand` | Completo |
+| Application | `LinkUserToEmployeeCommand` | Completo |
+| Application | `SetEmployeeAvailabilityCommand` | Completo |
+| API | `EmployeesController` (POST, PATCH link-user, PUT availability, DELETE) | Parcial |
+| API | `TeamsController` (POST) | Mínimo |
+| Frontend | `staff/employees.tsx` — placeholder "Próximamente" | Placeholder |
+| Frontend | `staff/teams.tsx` — placeholder "Próximamente" | Placeholder |
+
+### ❌ Pendiente
+
+| Capa | Componente | Prioridad |
+|------|-----------|----------|
+| Application | `GetEmployeesQuery` — listado paginado con búsqueda y filtro por estado | P1 |
+| Application | `GetEmployeeByIdQuery` — detalle con skills, disponibilidad y equipos | P1 |
+| Application | `UpdateEmployeeCommand` — editar nombre, email, teléfono, rol, skills | P1 |
+| Application | `GetTeamsQuery` — listado con count de miembros | P1 |
+| Application | `GetTeamByIdQuery` — detalle con miembros | P1 |
+| Application | `UpdateTeamCommand` — editar nombre, descripción, agregar/quitar miembros | P1 |
+| Application | `DeleteTeamCommand` — soft-delete con validación de asignaciones abiertas | P2 |
+| API | `EmployeesController` — endpoints GET (listar, detalle) y PUT (editar) | P1 |
+| API | `TeamsController` — endpoints GET, PUT, DELETE | P1 |
+| Frontend | UI funcional de Empleados (tabla, búsqueda, modal CRUD) | P1 |
+| Frontend | UI funcional de Equipos (tabla, gestión de miembros, modal CRUD) | P1 |
+
+### Dependencias
+
+- M5 (Catálogos): Oficios y habilidades se consumen desde catálogos asociados al módulo `staff`.
+- M14 (Tareas) y M12 (Mantenimiento): Requieren empleados/equipos funcionales para asignación.
+- La desactivación de empleado (CU-13.6) requiere consultar tareas/órdenes abiertas asignadas.

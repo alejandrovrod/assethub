@@ -35,3 +35,48 @@ Tareas operativas (`install`, `repair`, `inspect`, `remove`, `other`) ligadas a 
 - CA-14.7: Given el job ejecutado dos veces el mismo día, When corre la 2ª, Then no hay duplicados.
 - CA-14.8: Given plan preventivo vencido, When el job corre, Then se genera tarea ligada al activo/plan una sola vez.
 - CA-14.9: Given cron inválido en recurrencia, When POST, Then 400.
+
+## Catálogos requeridos (M5)
+
+Los catálogos de Prioridad y Tipo de Tarea se crean **manualmente** desde la UI de catálogos (M5). El usuario debe:
+
+1. Crear un catálogo con código `PRIORITY` (o el que prefiera), asociarlo al módulo **Tareas**
+2. Agregar items: Crítica, Alta, Media, Baja (u otros según necesidad)
+3. Crear un catálogo con código `TASK_TYPE`, asociarlo al módulo **Tareas**
+4. Agregar items: Preventiva, Correctiva, Inspección, Emergencia (u otros)
+
+Los formularios de edición de tarea filtran los catálogos disponibles por `TargetModulesJson` conteniendo `"tasks"`.
+
+## Sincronización de estados con M11 y M12
+
+Cuando una tarea está vinculada a una Incidencia (M11) o una Orden de Mantenimiento (M12), los cambios de estado de la tarea pueden propagarse:
+
+| Estado Tarea | Efecto en Incidencia (M11) | Efecto en Orden (M12) |
+|-------------|---------------------------|----------------------|
+| `todo` | Sin cambio | Sin cambio |
+| `in_progress` | Incidencia → `in_progress` (si estaba en `triaged`/`assigned`) | Orden → `in_progress` (si estaba en `scheduled`) |
+| `done` | Incidencia → `resolved` **solo si todas sus tareas están done** | Orden → `done` **solo si todas sus tareas están done** |
+| `cancelled` | Sin cambio automático | Sin cambio automático |
+
+> **RN-14.8**: La sincronización es unidireccional (tarea → padre). Cambiar el estado de la incidencia u orden NO cambia automáticamente las tareas hijas.
+
+> **RN-14.9**: La propagación solo ocurre cuando TODAS las tareas del padre están en estado terminal (`done` o `cancelled`) y al menos una está `done`.
+
+## Estado de implementación
+
+### ✅ Implementado
+
+| Componente | Estado |
+|-----------|--------|
+| Domain: `WorkTask` con FKs a CatalogItem (tipo, prioridad), Employee, Team, Asset, Incident, MaintenanceOrder, PreventivePlan, TaskRecurrence | Completo |
+| Domain: `TaskStatusHistory`, `TaskComment`, `TaskRecurrence`, `TaskEvidence` | Completo |
+| Backend: CRUD básico de tareas (crear, editar, cambiar estado, asignar) | En progreso |
+| Backend: Queries de listado y detalle | En progreso |
+
+### ❌ Pendiente
+
+| Componente | Prioridad |
+|-----------|----------|
+| Frontend: Formulario de edición con selects de Prioridad (catálogo), Tipo (catálogo), Empleado, Equipo | P1 |
+| Backend/Frontend: Sincronización de estados tarea → incidencia / orden | P2 |
+| Validación: que catálogos seleccionados pertenezcan al módulo `tasks` | P1 |
