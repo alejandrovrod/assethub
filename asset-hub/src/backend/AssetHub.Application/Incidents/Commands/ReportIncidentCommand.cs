@@ -26,6 +26,7 @@ public class ReportIncidentCommand : IRequest<Guid>
     public string PropertiesJson { get; set; } = "{}";
     
     public string? GeoJson { get; set; }
+    public string? TargetAssetState { get; set; }
     
     public List<AttachmentDto> Attachments { get; set; } = new();
 
@@ -72,6 +73,18 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
         //         throw new ArgumentException("Priority catalog item not found");
         // }
         
+        // Cleanup mock UUIDs from frontend
+        if (request.PriorityId == Guid.Empty)
+        {
+            request.PriorityId = null;
+        }
+
+        if (request.TypeId == Guid.Empty)
+        {
+            var defaultType = await EnsureDefaultIncidentTypeAsync(tenantId.Value, cancellationToken);
+            request.TypeId = defaultType.Id;
+        }
+
         NetTopologySuite.Geometries.Geometry? geo = null;
         string? geoType = null;
         if (!string.IsNullOrWhiteSpace(request.GeoJson))
@@ -145,12 +158,55 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
         // After saving the incident, transition the affected asset to its "incidents-locked" state.
         // The resulting AssetStateChangedEvent will be handled by ParentStatePropagationHandler
         // which already implements upward propagation recursively.
-        await TryLockAssetForIncidentAsync(request.AssetId, cancellationToken);
+        await TryLockAssetForIncidentAsync(request.AssetId, request.TargetAssetState, cancellationToken);
 
         return incident.Id;
     }
 
-    private async Task TryLockAssetForIncidentAsync(Guid assetId, CancellationToken cancellationToken)
+    private async Task<AssetHub.Domain.Catalogs.CatalogItem> EnsureDefaultIncidentTypeAsync(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var catalog = await _db.Catalogs.FirstOrDefaultAsync(c => c.Code == "incident-types" && c.TenantId == tenantId, cancellationToken);
+        if (catalog == null)
+        {
+            catalog = new AssetHub.Domain.Catalogs.Catalog
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                Code = "incident-types",
+                Label = "Tipos de Incidencias",
+                IsSystem = true
+            };
+            _db.Catalogs.Add(catalog);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        var defaultType = await _db.CatalogItems.FirstOrDefaultAsync(c => c.CatalogId == catalog.Id && c.Code == "general", cancellationToken);
+        if (defaultType == null)
+        {
+            defaultType = new AssetHub.Domain.Catalogs.CatalogItem
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                CatalogId = catalog.Id,
+                Code = "general",
+                MetadataJson = "{\"color\":\"#6b7280\"}",
+                Translations = new List<AssetHub.Domain.Catalogs.CatalogItemTranslation>
+                {
+                    new AssetHub.Domain.Catalogs.CatalogItemTranslation
+                    {
+                        Locale = "es",
+                        Label = "General"
+                    }
+                }
+            };
+            _db.CatalogItems.Add(defaultType);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        return defaultType;
+    }
+
+    private async Task TryLockAssetForIncidentAsync(Guid assetId, string? targetAssetState, CancellationToken cancellationToken)
     {
         var asset = await _db.Assets
             .Include(a => a.AssetTemplate)
@@ -171,9 +227,35 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
             return;
         }
 
-        var lockedState = reachableStates.FirstOrDefault(s =>
-            lifecycle.States.TryGetValue(s, out var cfg) &&
-            string.Equals(cfg.AssociatedModule, "incidents", StringComparison.OrdinalIgnoreCase));
+        string? lockedState = null;
+
+        if (!string.IsNullOrWhiteSpace(targetAssetState))
+        {
+            if (!reachableStates.Contains(targetAssetState))
+            {
+                _logger.LogWarning(
+                    "[ReportIncident] Requested target asset state '{TargetState}' is not reachable from '{State}' for asset {AssetId}.",
+                    targetAssetState, asset.State, assetId);
+                throw new InvalidOperationException($"El estado '{targetAssetState}' no es alcanzable desde el estado actual del activo.");
+            }
+
+            if (!lifecycle.States.TryGetValue(targetAssetState, out var targetCfg) ||
+                !string.Equals(targetCfg.AssociatedModule, "incidents", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "[ReportIncident] Requested target asset state '{TargetState}' does not have AssociatedModule='incidents' for asset {AssetId}.",
+                    targetAssetState, assetId);
+                throw new InvalidOperationException($"El estado '{targetAssetState}' no está configurado para delegar al módulo de incidencias.");
+            }
+
+            lockedState = targetAssetState;
+        }
+        else
+        {
+            lockedState = reachableStates.FirstOrDefault(s =>
+                lifecycle.States.TryGetValue(s, out var cfg) &&
+                string.Equals(cfg.AssociatedModule, "incidents", StringComparison.OrdinalIgnoreCase));
+        }
 
         if (lockedState == null)
         {

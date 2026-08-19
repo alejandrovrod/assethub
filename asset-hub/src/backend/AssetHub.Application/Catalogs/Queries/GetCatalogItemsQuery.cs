@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AssetHub.Application.Catalogs.Queries;
 
-public record GetCatalogItemsQuery(string CatalogCode, string Locale = "es") : IRequest<List<CatalogItemDto>>;
+public record GetCatalogItemsQuery(string CatalogCode, string Locale = "es", string? Search = null) : IRequest<List<CatalogItemDto>>;
 
 public record CatalogItemDto(Guid Id, string Code, string Label, int Order, Guid? ParentItemId, bool IsOverride);
 
@@ -24,10 +24,18 @@ public class GetCatalogItemsQueryHandler : IRequestHandler<GetCatalogItemsQuery,
 
     public async Task<List<CatalogItemDto>> Handle(GetCatalogItemsQuery request, CancellationToken cancellationToken)
     {
-        var items = await _dbContext.CatalogItems
+        var query = _dbContext.CatalogItems
             .Include(ci => ci.Translations)
-            .Where(ci => ci.Catalog!.Code == request.CatalogCode)
-            .ToListAsync(cancellationToken);
+            .Where(ci => ci.Catalog!.Code == request.CatalogCode);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var term = request.Search.Trim().ToLowerInvariant();
+            query = query.Where(ci => ci.Translations.Any(t =>
+                t.Locale == request.Locale && t.Label.ToLower().Contains(term)));
+        }
+
+        var items = await query.ToListAsync(cancellationToken);
 
         // Agrupar por Code para procesar overrides.
         // Si hay un item con TenantId != null, pisa al que tiene TenantId == null

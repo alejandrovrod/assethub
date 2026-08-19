@@ -36,9 +36,14 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: (id: string) => void
+  assetId?: string
+  hideAssetSelector?: boolean
+  targetAssetState?: string
+  title?: string
+  description?: string
 }
 
-export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
+export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hideAssetSelector, targetAssetState, title, description }: Props) {
   const queryClient = useQueryClient()
   
   const [schemaData, setSchemaData] = useState<any>({})
@@ -60,7 +65,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
     defaultValues: {
       title: '',
       description: '',
-      assetId: '',
+      assetId: assetId ?? '',
       incidentTemplateId: '',
       typeId: '00000000-0000-0000-0000-000000000000', // Mock UUIDs
       priorityId: '00000000-0000-0000-0000-000000000000',
@@ -79,15 +84,27 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
 
   useEffect(() => {
     if (open) {
-      form.reset()
+      form.reset({
+        title: '',
+        description: '',
+        assetId: assetId ?? '',
+        incidentTemplateId: '',
+        typeId: '00000000-0000-0000-0000-000000000000',
+        priorityId: '00000000-0000-0000-0000-000000000000',
+      })
       setSchemaData({})
     }
-  }, [open, form])
+  }, [open, form, assetId])
 
   const reportMutation = useMutation({
     mutationFn: incidentService.report,
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] })
+      if (assetId) {
+        queryClient.invalidateQueries({ queryKey: ['asset', assetId] })
+        queryClient.invalidateQueries({ queryKey: ['incidents', 'asset', assetId] })
+        queryClient.invalidateQueries({ queryKey: ['assets'] })
+      }
       toast.success('Incidencia reportada exitosamente')
       onSuccess?.(id)
     },
@@ -100,6 +117,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
       typeId: values.typeId || '00000000-0000-0000-0000-000000000000',
       priorityId: values.priorityId || '00000000-0000-0000-0000-000000000000',
       propertiesJson: Object.keys(schemaData).length > 0 ? JSON.stringify(schemaData) : undefined,
+      targetAssetState,
       attachments: [],
     }
 
@@ -115,9 +133,9 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <SheetTitle className="text-xl">Reportar Incidencia</SheetTitle>
+              <SheetTitle className="text-xl">{title ?? 'Reportar Incidencia'}</SheetTitle>
               <SheetDescription>
-                Creá una nueva incidencia asignada a un activo.
+                {description ?? 'Creá una nueva incidencia asignada a un activo.'}
               </SheetDescription>
             </div>
           </div>
@@ -156,33 +174,55 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess }: Props) {
             />
 
             <div className="grid grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="assetId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2 text-muted-foreground">
-                      <Box className="h-4 w-4" />
-                      Activo
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="h-10">
-                          <SelectValue placeholder="Seleccione un activo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {assets?.map((asset: any) => (
-                          <SelectItem key={asset.id} value={asset.id}>
-                            {asset.name} ({asset.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!hideAssetSelector ? (
+                <FormField
+                  control={form.control}
+                  name="assetId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-muted-foreground">
+                        <Box className="h-4 w-4" />
+                        Activo
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Seleccione un activo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {assets?.map((asset: any) => (
+                            <SelectItem key={asset.id} value={asset.id}>
+                              {asset.name} ({asset.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="assetId"
+                  render={({ field }) => {
+                    const selectedAsset = assets?.find((a: any) => a.id === field.value)
+                    return (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2 text-muted-foreground">
+                          <Box className="h-4 w-4" />
+                          Activo
+                        </FormLabel>
+                        <FormControl>
+                          <Input value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.code})` : field.value} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )
+                  }}
+                />
+              )}
 
               <FormField
                 control={form.control}

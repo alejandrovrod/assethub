@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using AssetHub.Domain.AssetTemplates;
 using AssetHub.Domain.Assets;
+using AssetHub.Domain.Tasks;
 
 namespace AssetHub.Domain.Maintenance;
 
@@ -17,6 +19,9 @@ public class PreventivePlan
 
     public Guid? AssetId { get; set; }
     public Asset? Asset { get; set; }
+
+    public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
+    public ICollection<MaintenanceOrder> MaintenanceOrders { get; set; } = new List<MaintenanceOrder>();
 
     public string GeneratedEntityType { get; set; } = PreventivePlanConstants.GeneratedEntityTypeWorkTask;
     public string CronExpression { get; set; } = string.Empty;

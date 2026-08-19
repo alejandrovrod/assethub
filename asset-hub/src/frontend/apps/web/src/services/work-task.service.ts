@@ -14,6 +14,7 @@ export interface WorkTaskSummary {
   incidentId?: string
   incidentTitle?: string
   maintenanceOrderId?: string
+  maintenanceOrderTitle?: string
   preventivePlanId?: string
   preventivePlanName?: string
   assignedEmployeeId?: string
@@ -144,8 +145,8 @@ export const workTaskService = {
     await api.put(`/work-tasks/${id}`, payload)
   },
 
-  changeState: async (id: string, state: WorkTaskState): Promise<{ state: WorkTaskState }> => {
-    const { data } = await api.put<{ state: WorkTaskState }>(`/work-tasks/${id}/state`, { state })
+  changeState: async (id: string, state: WorkTaskState): Promise<WorkTaskDetail> => {
+    const { data } = await api.put<WorkTaskDetail>(`/work-tasks/${id}/state`, { state })
     return data
   },
 

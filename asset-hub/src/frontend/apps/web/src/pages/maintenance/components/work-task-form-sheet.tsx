@@ -53,6 +53,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
   prefill?: Prefill
   task?: WorkTaskSummary
+  onSuccess?: () => void
 }
 
 function toIsoDate(date: Date | undefined): string | undefined {
@@ -70,7 +71,7 @@ function parseDate(value: string | undefined): Date | undefined {
   }
 }
 
-export function WorkTaskFormSheet({ open, onOpenChange, prefill, task }: Props) {
+export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!task
   const [assignedEmployeeName, setAssignedEmployeeName] = useState(task?.assignedEmployeeName ?? '')
@@ -168,6 +169,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task }: Props) 
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
       toast.success('Tarea creada exitosamente')
       onOpenChange(false)
+      onSuccess?.()
     },
     onError: (error: any) => {
       const message = error?.response?.data?.title || error?.message || 'Error al crear la tarea'
@@ -181,6 +183,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task }: Props) 
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
       toast.success('Tarea actualizada exitosamente')
       onOpenChange(false)
+      onSuccess?.()
     },
     onError: (error: any) => {
       const message = error?.response?.data?.title || error?.message || 'Error al actualizar la tarea'

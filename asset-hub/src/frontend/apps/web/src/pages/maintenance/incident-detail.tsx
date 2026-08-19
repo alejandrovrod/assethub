@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, Link } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, ArrowLeft, AlertTriangle, Pencil, Save, Image as ImageIcon, FileText, Download, ArrowRight, Clock, User } from 'lucide-react'
 import { incidentService, IncidentAttachment, IncidentTimelineEvent } from '@/services/incident.service'
@@ -26,7 +26,6 @@ export default function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState<any>({})
   const [isEditingDynamic, setIsEditingDynamic] = useState(false)
@@ -145,6 +144,17 @@ export default function IncidentDetailPage() {
     }
   }
 
+  const getTransitionBlockReason = (targetState: string): string | null => {
+    if (targetState !== 'closed') return null
+    if (incident?.maintenanceOrder && incident.maintenanceOrder.state !== 'done' && incident.maintenanceOrder.state !== 'cancelled') {
+      return 'No se puede cerrar: Hay una orden de mantenimiento correctiva activa.'
+    }
+    if (incident?.workTasks?.some(t => t.state !== 'done' && t.state !== 'cancelled')) {
+      return 'No se puede cerrar: Hay tareas abiertas asociadas a esta incidencia.'
+    }
+    return null
+  }
+
   const handleTransitionSubmit = () => {
     if (!pendingTargetState) return
     stateMutation.mutate({
@@ -194,18 +204,22 @@ export default function IncidentDetailPage() {
           {availableTransitions.length === 0 ? (
             <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
           ) : (
-            availableTransitions.map((targetState: string) => (
-              <Button 
-                key={targetState} 
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={() => handleStateClick(targetState)}
-                disabled={stateMutation.isPending}
-              >
-                {targetState}
-              </Button>
-            ))
+            availableTransitions.map((targetState: string) => {
+              const blockReason = getTransitionBlockReason(targetState)
+              return (
+                <Button 
+                  key={targetState} 
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => handleStateClick(targetState)}
+                  disabled={stateMutation.isPending || !!blockReason}
+                  title={blockReason || `Cambiar a ${targetState}`}
+                >
+                  {targetState}
+                </Button>
+              )
+            })
           )}
         </div>
       </div>
@@ -392,48 +406,36 @@ export default function IncidentDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg">Adjuntos</CardTitle>
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => fileInputRef.current?.click()}>
-                Subir
-              </Button>
-              <input type="file" className="hidden" ref={fileInputRef} />
-            </CardHeader>
-            <CardContent>
-              {!incident.attachments || incident.attachments.length === 0 ? (
-                <div 
-                  className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed rounded-lg bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
+          {incident.maintenanceOrder && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Orden Generada</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  to={`/maintenance/orders?selected=${incident.maintenanceOrder.id}`}
+                  className="flex items-center justify-between p-2 rounded-md border bg-muted/20 hover:bg-muted/40 transition-colors"
                 >
-                  <ImageIcon className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
-                    Haz clic para subir un archivo
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    (Evidencia fotográfica)
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {incident.attachments.map((att: IncidentAttachment) => (
-                    <div key={att.id} className="flex items-center justify-between p-2 border rounded-md bg-card">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        {att.contentType?.startsWith('image') ? <ImageIcon className="h-5 w-5 text-blue-500 shrink-0" /> : <FileText className="h-5 w-5 text-orange-500 shrink-0" />}
-                        <div className="flex flex-col overflow-hidden">
-                          <span className="text-sm font-medium truncate" title={att.fileName}>{att.fileName}</span>
-                          <span className="text-xs text-muted-foreground">{(att.sizeBytes / 1024).toFixed(1)} KB</span>
-                        </div>
-                      </div>
-                      <a href={att.fileUrl} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
-                        <Download className="h-4 w-4" />
-                      </a>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate" title={incident.maintenanceOrder.title}>
+                      {incident.maintenanceOrder.title}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      {incident.maintenanceOrder.scheduledStart && (
+                        <span>Prog. {format(new Date(incident.maintenanceOrder.scheduledStart), 'dd MMM', { locale: es })}</span>
+                      )}
+                      {incident.maintenanceOrder.assignedEmployeeName && (
+                        <span>· {incident.maintenanceOrder.assignedEmployeeName}</span>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </div>
+                  <Badge variant="outline" className="text-xs shrink-0 capitalize">
+                    {incident.maintenanceOrder.state}
+                  </Badge>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
           {id && <IncidentTasksWidget incidentId={id} />}
         </div>

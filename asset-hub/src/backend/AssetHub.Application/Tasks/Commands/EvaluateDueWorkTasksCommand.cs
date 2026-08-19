@@ -42,8 +42,7 @@ public class EvaluateDueWorkTasksCommandHandler : IRequestHandler<EvaluateDueWor
             .Include(t => t.AssignedEmployee)
             .Where(t =>
                 t.TenantId == tenantId &&
-                t.State != "done" &&
-                t.State != "cancelled" &&
+                !WorkTaskStates.TerminalStates.Contains(t.State) &&
                 t.DueAt.HasValue &&
                 t.DueAt.Value <= threshold &&
                 t.AssignedEmployeeId.HasValue &&

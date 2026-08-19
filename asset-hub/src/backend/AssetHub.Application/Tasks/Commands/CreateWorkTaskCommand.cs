@@ -58,6 +58,18 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
         if (request.IsIndependent && hasAnyLink)
             throw new ArgumentException("An independent task cannot be linked to other entities");
 
+        var parentLinkCount = new[]
+        {
+            request.MaintenanceOrderId,
+            request.IncidentId,
+            request.PreventivePlanId,
+            request.AssetId,
+            request.TaskRecurrenceId
+        }.Count(id => id.HasValue);
+
+        if (parentLinkCount > 1)
+            throw new ArgumentException("A task can only be linked to one parent entity (Asset, Incident, MaintenanceOrder, PreventivePlan or TaskRecurrence)");
+
         // Ensure default catalog items if not provided
         Guid taskTypeCatalogItemId;
         Guid priorityCatalogItemId;
@@ -96,7 +108,7 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
             Description = request.Description,
             TaskTypeCatalogItemId = taskTypeCatalogItemId,
             PriorityCatalogItemId = priorityCatalogItemId,
-            State = "todo",
+            State = WorkTaskStates.Todo,
             DueAt = request.DueAt,
             IsIndependent = request.IsIndependent,
             AssetId = request.AssetId,

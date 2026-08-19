@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Maintenance;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,9 +29,8 @@ public class DeactivateEmployeeCommandHandler : IRequestHandler<DeactivateEmploy
         if (emp == null)
             throw new ArgumentException("Employee not found");
 
-        var activeStates = new[] { "draft", "approved", "scheduled", "in_progress" };
         var openOrders = await _db.MaintenanceOrders
-            .Where(o => o.AssignedEmployeeId == request.EmployeeId && activeStates.Contains(o.State))
+            .Where(o => o.AssignedEmployeeId == request.EmployeeId && MaintenanceOrderStates.ActiveStates.Contains(o.State))
             .Select(o => o.Id)
             .ToListAsync(cancellationToken);
 

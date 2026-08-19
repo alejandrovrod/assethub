@@ -55,8 +55,14 @@ Cuando una tarea está vinculada a una Incidencia (M11) o una Orden de Mantenimi
 |-------------|---------------------------|----------------------|
 | `todo` | Sin cambio | Sin cambio |
 | `in_progress` | Incidencia → `in_progress` (si estaba en `triaged`/`assigned`) | Orden → `in_progress` (si estaba en `scheduled`) |
-| `done` | Incidencia → `resolved` **solo si todas sus tareas están done** | Orden → `done` **solo si todas sus tareas están done** |
+| `done` | Incidencia → `resolved` **solo si todas sus tareas están done** (mediante la completitud de la Orden) | Orden → `done` **solo si todas sus tareas están done** |
 | `cancelled` | Sin cambio automático | Sin cambio automático |
+
+## UI/UX y Navegación
+
+- **Deep-linking:** Las tareas en los listados pueden abrirse directamente mediante el parámetro de URL `?selected={taskId}`.
+- **Edición integrada:** La edición de las tareas (ej. título, estado) ocurre de manera integrada dentro del panel lateral de detalles (`WorkTaskDetail`), eliminando la necesidad de ventanas modales (`WorkTaskFormSheet` queda reservado solo para creación).
+- **Contexto visible:** La cabecera del panel de detalles de la tarea muestra siempre la entidad padre (ej. Título de la Orden de Mantenimiento) garantizando contexto durante la navegación de las pestañas internas.
 
 > **RN-14.8**: La sincronización es unidireccional (tarea → padre). Cambiar el estado de la incidencia u orden NO cambia automáticamente las tareas hijas.
 

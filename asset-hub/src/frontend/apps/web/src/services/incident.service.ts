@@ -34,6 +34,23 @@ export interface IncidentDetail {
   resolvedAt?: string
   closedAt?: string
   attachments: IncidentAttachment[]
+  maintenanceOrder?: {
+    id: string
+    title: string
+    state: string
+    assignedEmployeeId?: string
+    assignedEmployeeName?: string
+    scheduledStart?: string
+    scheduledEnd?: string
+  }
+  workTasks?: {
+    id: string
+    title: string
+    state: string
+    assignedEmployeeId?: string
+    assignedEmployeeName?: string
+    dueAt?: string
+  }[]
 }
 
 export interface ReportIncidentDto {
@@ -45,6 +62,7 @@ export interface ReportIncidentDto {
   incidentTemplateId?: string
   propertiesJson?: string
   geoJson?: string
+  targetAssetState?: string
   attachments: {
     fileUrl: string
     fileName: string
@@ -73,13 +91,15 @@ export interface AdvancedSearchIncidentsDto {
   searchTerm?: string
   state?: string
   catalogFilters?: Record<string, string>
+  assetId?: string
 }
 
 export const incidentService = {
-  search: async (q?: string, state?: string) => {
+  search: async (q?: string, state?: string, assetId?: string) => {
     const params = new URLSearchParams()
     if (q) params.append('q', q)
     if (state) params.append('state', state)
+    if (assetId) params.append('assetId', assetId)
     
     const { data } = await api.get<{ items: IncidentSummary[] }>(`/incidents?${params.toString()}`)
     return data.items

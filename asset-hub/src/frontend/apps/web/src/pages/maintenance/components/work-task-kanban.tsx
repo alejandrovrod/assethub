@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Calendar, User, Clock, AlertCircle, GripVertical } from 'lucide-react'
@@ -54,6 +56,7 @@ function isOverdue(dueAt?: string): boolean {
 
 export function WorkTaskKanban({ tasks, onStateChange }: Props) {
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   const grouped = useMemo(() => {
     const map: Record<WorkTaskState, WorkTaskSummary[]> = {
@@ -88,6 +91,13 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
     const taskId = e.dataTransfer.getData('text/plain')
     if (taskId) {
       onStateChange(taskId, state)
+      if (state === 'done') {
+        const task = tasks.find(t => t.id === taskId)
+        if (task?.maintenanceOrderId) {
+          queryClient.invalidateQueries({ queryKey: ['maintenance-order', task.maintenanceOrderId] })
+        }
+        toast.success('Tarea completada')
+      }
     }
     setDraggingId(null)
   }

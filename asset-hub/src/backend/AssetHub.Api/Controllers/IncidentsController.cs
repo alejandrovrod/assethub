@@ -17,15 +17,31 @@ public class IncidentsController : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public IncidentsController(IMediator mediator)
+    public IncidentsController(IMediator mediator, AssetHub.Application.Interfaces.ITenantDbContext db)
     {
         _mediator = mediator;
+        _db = db;
+    }
+
+    private readonly AssetHub.Application.Interfaces.ITenantDbContext _db;
+
+    [HttpGet("fix")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Fix()
+    {
+        var incidents = _db.Incidents.Where(i => i.State == "Resuelta" || i.State == "Cancelada" || i.State == "Cancelado" || i.State == "Cerrada" || i.State == "Closed" || i.State == "Resolved").ToList();
+        foreach (var i in incidents)
+        {
+            i.ClosedAt = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync(default);
+        return Ok(new { fixedCount = incidents.Count });
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId)
     {
-        var result = await _mediator.Send(new SearchIncidentsQuery(q, state));
+        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId));
         return Ok(new { items = result });
     }
 
@@ -34,7 +50,7 @@ public class IncidentsController : ControllerBase
     {
         request ??= new AssetHub.Api.Controllers.AdvancedSearchRequest();
         try {
-            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters));
+            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters, request.AssetId));
             return Ok(new { items = result });
         } catch (Exception ex) {
             return StatusCode(500, new { error = ex.ToString() });

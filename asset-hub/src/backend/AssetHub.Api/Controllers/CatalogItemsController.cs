@@ -21,9 +21,9 @@ public class CatalogItemsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetItems([FromRoute] string catalogCode, [FromQuery] string locale = "es")
+    public async Task<IActionResult> GetItems([FromRoute] string catalogCode, [FromQuery] string locale = "es", [FromQuery] string? search = null)
     {
-        var result = await _mediator.Send(new GetCatalogItemsQuery(catalogCode, locale));
+        var result = await _mediator.Send(new GetCatalogItemsQuery(catalogCode, locale, search));
         return Ok(new { items = result });
     }
 

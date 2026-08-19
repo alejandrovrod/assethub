@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using NetTopologySuite.Geometries;
 using AssetHub.Domain.Assets;
+using AssetHub.Domain.Maintenance;
+using AssetHub.Domain.Tasks;
 
 namespace AssetHub.Domain.Incidents;
 
@@ -22,8 +25,11 @@ public class Incident
 
     public string PropertiesJson { get; set; } = "{}";
 
-    public string State { get; set; } = "reported"; // reported, triaged, assigned, in_progress, resolved, closed, cancelled
+    public string State { get; set; } = IncidentStates.Reported;
     
+    public ICollection<MaintenanceOrder> MaintenanceOrders { get; set; } = new List<MaintenanceOrder>();
+    public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
+
     public Geometry? Geo { get; set; }
     public string? GeoType { get; set; }
     

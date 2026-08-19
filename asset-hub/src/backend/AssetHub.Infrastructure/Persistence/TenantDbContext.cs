@@ -144,6 +144,11 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasIndex(a => new { a.TenantId, a.ParentId });
 
             b.HasOne(a => a.Parent).WithMany().HasForeignKey(a => a.ParentId).OnDelete(DeleteBehavior.Restrict);
+
+            b.HasMany(a => a.Incidents).WithOne(i => i.Asset).HasForeignKey(i => i.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.MaintenanceOrders).WithOne(m => m.Asset).HasForeignKey(m => m.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.WorkTasks).WithOne(t => t.Asset).HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.PreventivePlans).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Assets.AssetAttachment>(b =>
@@ -183,6 +188,14 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasQueryFilter(i => i.TenantId == CurrentTenantId && !i.IsDeleted);
             b.HasIndex(i => new { i.TenantId, i.State });
             b.HasIndex(i => new { i.TenantId, i.AssetId });
+
+            b.HasOne(i => i.Asset).WithMany(a => a.Incidents).HasForeignKey(i => i.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(i => i.IncidentTemplate).WithMany().HasForeignKey(i => i.IncidentTemplateId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<CatalogItem>().WithMany().HasForeignKey(i => i.TypeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<CatalogItem>().WithMany().HasForeignKey(i => i.PriorityId).OnDelete(DeleteBehavior.Restrict);
+
+            b.HasMany(i => i.MaintenanceOrders).WithOne(m => m.Incident).HasForeignKey(m => m.IncidentId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(i => i.WorkTasks).WithOne(t => t.Incident).HasForeignKey(t => t.IncidentId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Incidents.IncidentAttachment>(b =>
@@ -204,8 +217,14 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasQueryFilter(p => p.TenantId == CurrentTenantId && !p.IsDeleted);
             b.HasIndex(p => new { p.TenantId, p.NextRunAt });
 
-            b.HasOne(p => p.Asset).WithMany().HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(p => p.Asset).WithMany(a => a.PreventivePlans).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(p => p.AssetTemplate).WithMany().HasForeignKey(p => p.AssetTemplateId).OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne<AssetHub.Domain.Staff.Employee>().WithMany().HasForeignKey(p => p.DefaultAssignedEmployeeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<AssetHub.Domain.Staff.Team>().WithMany().HasForeignKey(p => p.DefaultAssignedTeamId).OnDelete(DeleteBehavior.Restrict);
+
+            b.HasMany(p => p.MaintenanceOrders).WithOne(m => m.PreventivePlan).HasForeignKey(m => m.PreventivePlanId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(p => p.WorkTasks).WithOne(t => t.PreventivePlan).HasForeignKey(t => t.PreventivePlanId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Maintenance.PreventivePlanExecutionLog>(b =>
@@ -233,6 +252,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasQueryFilter(m => m.TenantId == CurrentTenantId && !m.IsDeleted);
             b.HasIndex(m => new { m.TenantId, m.State });
             b.HasIndex(m => new { m.TenantId, m.AssetId });
+            b.HasOne(m => m.AssignedEmployee).WithMany().HasForeignKey(m => m.AssignedEmployeeId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Maintenance.MaintenancePart>(b =>
@@ -287,12 +307,12 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasIndex(t => new { t.TenantId, t.AssignedTeamId });
             b.HasIndex(t => new { t.TenantId, t.DueAt });
 
-            b.HasOne(t => t.Asset).WithMany().HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
-            b.HasOne(t => t.Incident).WithMany().HasForeignKey(t => t.IncidentId).OnDelete(DeleteBehavior.Restrict);
-            b.HasOne(t => t.MaintenanceOrder).WithMany().HasForeignKey(t => t.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.Asset).WithMany(a => a.WorkTasks).HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.Incident).WithMany(i => i.WorkTasks).HasForeignKey(t => t.IncidentId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.MaintenanceOrder).WithMany(m => m.WorkTasks).HasForeignKey(t => t.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.TaskTypeCatalogItem).WithMany().HasForeignKey(t => t.TaskTypeCatalogItemId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.PriorityCatalogItem).WithMany().HasForeignKey(t => t.PriorityCatalogItemId).OnDelete(DeleteBehavior.Restrict);
-            b.HasOne(t => t.PreventivePlan).WithMany().HasForeignKey(t => t.PreventivePlanId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.PreventivePlan).WithMany(p => p.WorkTasks).HasForeignKey(t => t.PreventivePlanId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.TaskRecurrence).WithMany().HasForeignKey(t => t.TaskRecurrenceId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.AssignedEmployee).WithMany().HasForeignKey(t => t.AssignedEmployeeId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.AssignedTeam).WithMany().HasForeignKey(t => t.AssignedTeamId).OnDelete(DeleteBehavior.Restrict);

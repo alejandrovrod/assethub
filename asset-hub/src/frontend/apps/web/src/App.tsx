@@ -14,6 +14,7 @@ import IncidentDetailPage from "./pages/maintenance/incident-detail";
 import IncidentTemplates from "./pages/maintenance/incident-templates/index";
 import MaintenanceTasks from "./pages/maintenance/tasks";
 import PreventivePlansPage from "./pages/maintenance/preventive-plans/index";
+import MaintenanceOrders from "./pages/maintenance/orders/index";
 import StaffEmployees from "./pages/staff/employees";
 import StaffTeams from "./pages/staff/teams";
 import CatalogsPage from "./pages/catalogs/index";
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="incident-templates" element={<IncidentTemplates />} />
             <Route path="tasks" element={<MaintenanceTasks />} />
             <Route path="preventive-plans" element={<PreventivePlansPage />} />
+            <Route path="orders" element={<MaintenanceOrders />} />
           </Route>
 
           <Route path="staff">

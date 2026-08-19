@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { PreventivePlanFormSheet } from './components/preventive-plan-form-sheet'
 import { PreventivePlanExecutionLog } from './components/preventive-plan-execution-log'
 import { PreventivePlanCalendar } from './components/preventive-plan-calendar'
+import { PreventivePlanGeneratedItems } from './components/preventive-plan-generated-items'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -303,6 +304,7 @@ export default function PreventivePlansPage() {
                 <TabsList className="mx-4 mt-4 w-fit">
                   <TabsTrigger value="calendar">Calendario</TabsTrigger>
                   <TabsTrigger value="logs">Bitácora</TabsTrigger>
+                  <TabsTrigger value="generated">Generados</TabsTrigger>
                   <TabsTrigger value="details">Detalle</TabsTrigger>
                 </TabsList>
                 <TabsContent value="calendar" className="flex-1 overflow-auto px-4 pb-4">
@@ -310,6 +312,9 @@ export default function PreventivePlansPage() {
                 </TabsContent>
                 <TabsContent value="logs" className="flex-1 overflow-auto px-4 pb-4">
                   <PreventivePlanExecutionLog planId={selectedPlan.id} />
+                </TabsContent>
+                <TabsContent value="generated" className="flex-1 overflow-hidden px-4 pb-4">
+                  <PreventivePlanGeneratedItems planId={selectedPlan.id} />
                 </TabsContent>
                 <TabsContent value="details" className="flex-1 overflow-auto px-4 pb-4">
                   <div className="space-y-3 pt-2">

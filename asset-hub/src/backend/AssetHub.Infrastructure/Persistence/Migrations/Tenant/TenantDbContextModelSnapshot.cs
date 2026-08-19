@@ -581,6 +581,10 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("IncidentTemplateId");
 
+                    b.HasIndex("PriorityId");
+
+                    b.HasIndex("TypeId");
+
                     b.HasIndex("TenantId", "AssetId");
 
                     b.HasIndex("TenantId", "State");
@@ -722,6 +726,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("AssetId");
 
+                    b.HasIndex("AssignedEmployeeId");
+
                     b.HasIndex("IncidentId");
 
                     b.HasIndex("PreventivePlanId");
@@ -830,6 +836,10 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("AssetId");
 
                     b.HasIndex("AssetTemplateId");
+
+                    b.HasIndex("DefaultAssignedEmployeeId");
+
+                    b.HasIndex("DefaultAssignedTeamId");
 
                     b.HasIndex("TenantId", "NextRunAt");
 
@@ -1440,14 +1450,26 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("AssetHub.Domain.Incidents.Incident", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
-                        .WithMany()
+                        .WithMany("Incidents")
                         .HasForeignKey("AssetId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("AssetHub.Domain.IncidentTemplates.IncidentTemplate", "IncidentTemplate")
                         .WithMany()
-                        .HasForeignKey("IncidentTemplateId");
+                        .HasForeignKey("IncidentTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.Catalogs.CatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("PriorityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.Catalogs.CatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("TypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Asset");
 
@@ -1479,20 +1501,29 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("AssetHub.Domain.Maintenance.MaintenanceOrder", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
-                        .WithMany()
+                        .WithMany("MaintenanceOrders")
                         .HasForeignKey("AssetId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AssetHub.Domain.Incidents.Incident", "Incident")
+                    b.HasOne("AssetHub.Domain.Staff.Employee", "AssignedEmployee")
                         .WithMany()
-                        .HasForeignKey("IncidentId");
+                        .HasForeignKey("AssignedEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.Incidents.Incident", "Incident")
+                        .WithMany("MaintenanceOrders")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Maintenance.PreventivePlan", "PreventivePlan")
-                        .WithMany()
-                        .HasForeignKey("PreventivePlanId");
+                        .WithMany("MaintenanceOrders")
+                        .HasForeignKey("PreventivePlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Asset");
+
+                    b.Navigation("AssignedEmployee");
 
                     b.Navigation("Incident");
 
@@ -1521,13 +1552,23 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlan", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
-                        .WithMany()
+                        .WithMany("PreventivePlans")
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.AssetTemplates.AssetTemplate", "AssetTemplate")
                         .WithMany()
                         .HasForeignKey("AssetTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.Staff.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultAssignedEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetHub.Domain.Staff.Team", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultAssignedTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Asset");
@@ -1623,7 +1664,7 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
             modelBuilder.Entity("AssetHub.Domain.Tasks.WorkTask", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
-                        .WithMany()
+                        .WithMany("WorkTasks")
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -1638,17 +1679,17 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Incidents.Incident", "Incident")
-                        .WithMany()
+                        .WithMany("WorkTasks")
                         .HasForeignKey("IncidentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Maintenance.MaintenanceOrder", "MaintenanceOrder")
-                        .WithMany()
+                        .WithMany("WorkTasks")
                         .HasForeignKey("MaintenanceOrderId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetHub.Domain.Maintenance.PreventivePlan", "PreventivePlan")
-                        .WithMany()
+                        .WithMany("WorkTasks")
                         .HasForeignKey("PreventivePlanId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -1692,7 +1733,15 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                 {
                     b.Navigation("ConditionHistory");
 
+                    b.Navigation("Incidents");
+
                     b.Navigation("LifecycleEvents");
+
+                    b.Navigation("MaintenanceOrders");
+
+                    b.Navigation("PreventivePlans");
+
+                    b.Navigation("WorkTasks");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Catalogs.CatalogItem", b =>
@@ -1700,9 +1749,25 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Translations");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.Incidents.Incident", b =>
+                {
+                    b.Navigation("MaintenanceOrders");
+
+                    b.Navigation("WorkTasks");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Maintenance.MaintenanceOrder", b =>
                 {
                     b.Navigation("Parts");
+
+                    b.Navigation("WorkTasks");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlan", b =>
+                {
+                    b.Navigation("MaintenanceOrders");
+
+                    b.Navigation("WorkTasks");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Staff.Team", b =>

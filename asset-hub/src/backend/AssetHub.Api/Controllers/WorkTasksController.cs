@@ -99,11 +99,12 @@ public class WorkTasksController : ControllerBase
     }
 
     [HttpPut("{id}/state")]
-    public async Task<IActionResult> ChangeState(Guid id, [FromBody] ChangeWorkTaskStateCommand command)
+    public async Task<ActionResult<WorkTaskDetailDto>> ChangeState(Guid id, [FromBody] ChangeWorkTaskStateCommand command)
     {
         command.WorkTaskId = id;
         await _mediator.Send(command);
-        return NoContent();
+        var result = await _mediator.Send(new GetWorkTaskByIdQuery(id));
+        return Ok(result);
     }
 
     [HttpGet("{id}/history")]

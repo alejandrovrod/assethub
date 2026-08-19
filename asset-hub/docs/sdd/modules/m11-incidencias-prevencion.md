@@ -19,6 +19,7 @@ Gestión de incidencias sobre activos (reporte con foto/geo, triaje, ciclo de es
 
 - RN-11.1: Tenant-scoped (R1, R2); tipos y prioridades vienen de catálogos (M5), nunca hardcodeados.
 - RN-11.2: Máquina de estados: `reported`→`triaged`→`assigned`→`in_progress`→`resolved`→`closed`; `cancelled` desde cualquiera. Transiciones inválidas → 409.
+  - *Automatización:* Cuando una Orden de Mantenimiento hija se completa (`done`), la incidencia asociada pasará automáticamente a `resolved`.
 - RN-11.3: Al convertir a orden, la incidencia queda enlazada (`MaintenanceOrders.IncidentId`) y pasa a `assigned`/`in_progress`.
 - RN-11.4: Un plan preventivo apunta a `TemplateId` (aplica a todos sus activos) o a `AssetId` específico, nunca a ambos.
 - RN-11.5: `NextRunAt` (UTC, R5) se calcula al crear/actualizar el plan y tras cada ejecución; cron inválido → 400.
@@ -29,6 +30,7 @@ Gestión de incidencias sobre activos (reporte con foto/geo, triaje, ciclo de es
 ## Criterios de aceptación
 
 - CA-11.1: Given activo válido y foto, When POST incidencia, Then 201 con estado `reported`, adjuntos y geo persistidos.
+- CA-11.1b: En el panel de detalles de la incidencia de la interfaz gráfica, la sección de **Adjuntos no debe mostrarse** (los adjuntos de progreso se manejarán desde las tareas de mantenimiento).
 - CA-11.2: Given prioridad de catálogo inexistente, When POST, Then 400 con detalle.
 - CA-11.3: Given incidencia `reported`, When se intenta pasar a `resolved` directo, Then 409 por transición inválida.
 - CA-11.4: Given incidencia `triaged`, When convertir a orden, Then existe `MaintenanceOrders` con `Kind=corrective` e `IncidentId` enlazado.

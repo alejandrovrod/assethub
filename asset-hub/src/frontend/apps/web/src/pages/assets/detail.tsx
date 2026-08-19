@@ -23,6 +23,9 @@ import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 import { AssetTimeline } from './components/timeline'
 import { PreventivePlanAssetWidget } from '@/pages/maintenance/preventive-plans/components/preventive-plan-asset-widget'
 import { AssetTasksWidget } from '@/pages/maintenance/components/asset-tasks-widget'
+import { AssetIncidentsWidget } from '@/pages/maintenance/components/asset-incidents-widget'
+import { AssetMaintenanceOrdersWidget } from '@/pages/maintenance/components/asset-maintenance-orders-widget'
+import { ReportIncidentSheet } from '@/pages/maintenance/components/report-incident-sheet'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -259,25 +262,26 @@ export default function AssetDetailPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0 w-full">
       
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/assets')}>
+      {/* HEADER - 3 columns: info | metadata | transitions */}
+      <div className="flex items-start justify-between gap-4">
+        {/* Left: Asset info */}
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/assets')} className="shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           {!isEditingGeneral ? (
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl font-bold tracking-tight truncate">
                   {asset.name}
                 </h1>
-                <Badge variant="outline" className="text-sm font-normal">
+                <Badge variant="outline" className="text-sm font-normal shrink-0">
                   {asset.code}
                 </Badge>
-                <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined}>
+                <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined} className="shrink-0">
                   {asset.state}
                 </Badge>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8">
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8 shrink-0">
                   <Pencil className="h-4 w-4" />
                 </Button>
               </div>
@@ -286,14 +290,14 @@ export default function AssetDetailPage() {
               </p>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <Input 
+            <div className="flex items-center gap-3 flex-wrap">
+              <Input
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 className="w-64"
                 placeholder="Nombre"
               />
-              <Input 
+              <Input
                 value={editCode}
                 onChange={e => setEditCode(e.target.value)}
                 className="w-32"
@@ -302,25 +306,25 @@ export default function AssetDetailPage() {
               <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined}>
                 {asset.state}
               </Badge>
-              <Button 
-                variant="default" 
-                size="icon" 
+              <Button
+                variant="default"
+                size="icon"
                 onClick={() => {
                   updateMutation.mutate({ code: editCode, name: editName })
-                }} 
+                }}
                 className="ml-2 h-8 w-8"
                 disabled={updateMutation.isPending}
               >
                 {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => {
                   setEditName(asset.name)
                   setEditCode(asset.code)
                   setIsEditingGeneral(false)
-                }} 
+                }}
                 className="h-8 w-8"
               >
                 <X className="h-4 w-4" />
@@ -329,16 +333,30 @@ export default function AssetDetailPage() {
           )}
         </div>
 
-        {/* TRANSITIONS BAR */}
+        {/* Center: Metadata */}
+        <div className="flex items-center gap-4 shrink-0 border rounded-lg px-4 py-2 bg-card shadow-sm">
+          <div className="text-sm">
+            <span className="text-muted-foreground block text-xs">ID Interno</span>
+            <code className="text-xs break-all">{asset.id}</code>
+          </div>
+          {asset.installedAt && (
+            <div className="text-sm border-l pl-4">
+              <span className="text-muted-foreground block text-xs">Instalado</span>
+              <span className="text-xs">{new Date(asset.installedAt).toLocaleDateString()}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Transitions bar */}
         {currentStateConfig.associatedModule ? (
-          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg p-2 shadow-sm">
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg p-2 shadow-sm shrink-0">
             <span className="text-sm font-medium px-2 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               Activo bloqueado. Gestión delegada al módulo: <span className="uppercase">{currentStateConfig.associatedModule}</span>
             </span>
           </div>
         ) : !currentStateConfig.isTerminal && (
-          <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
+          <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm shrink-0">
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
               Cambiar estado a:
             </span>
@@ -348,9 +366,9 @@ export default function AssetDetailPage() {
               availableTransitions.map((nextState: string) => {
                 const blockReason = getTransitionBlockReason(nextState)
                 return (
-                  <Button 
-                    key={nextState} 
-                    variant="outline" 
+                  <Button
+                    key={nextState}
+                    variant="outline"
                     size="sm"
                     className="h-8 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => handleStateChangeClick(nextState)}
@@ -445,25 +463,11 @@ export default function AssetDetailPage() {
         </Tabs>
         </div>
 
-        {/* RIGHT COL - ATTACHMENTS & METADATA */}
+        {/* RIGHT COL */}
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Metadatos</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-4">
-              <div>
-                <span className="text-muted-foreground block mb-1">ID Interno</span>
-                <code className="bg-muted px-2 py-1 rounded text-xs break-all">{asset.id}</code>
-              </div>
-              {asset.installedAt && (
-                <div>
-                  <span className="text-muted-foreground block mb-1">Fecha Instalación</span>
-                  <span>{new Date(asset.installedAt).toLocaleDateString()}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <AssetIncidentsWidget assetId={asset.id} />
+          
+          <AssetMaintenanceOrdersWidget assetId={asset.id} />
 
           <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.assetTemplateId} />
 
@@ -720,30 +724,53 @@ export default function AssetDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Sheet open={moduleDelegationOpen} onOpenChange={setModuleDelegationOpen}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
-          <SheetHeader>
-            <SheetTitle>Módulo: {targetModule === 'incidents' ? 'Incidencias' : targetModule === 'work_orders' ? 'Órdenes de Trabajo' : targetModule}</SheetTitle>
-            <SheetDescription>
-              Creando registro en módulo externo para avanzar al estado <strong>{pendingTargetState}</strong>.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="py-6 flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg mt-6">
-             <p className="text-muted-foreground mb-4 px-4">
-               Aquí se cargaría el componente remoto de <strong>{targetModule}</strong> embebido para este activo.
-             </p>
-             <Button onClick={() => {
-                toast.success(`Registro creado en el módulo ${targetModule}`);
-                setModuleDelegationOpen(false);
-                if (pendingTargetState) {
-                  stateMutation.mutate({ toState: pendingTargetState, transitionData: { source_module: targetModule || 'unknown' } });
-                }
-             }}>
-                Simular Creación y Continuar
-             </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {targetModule === 'incidents' ? (
+        <ReportIncidentSheet
+          open={moduleDelegationOpen}
+          onOpenChange={(open) => {
+            setModuleDelegationOpen(open)
+            if (!open) setPendingTargetState(null)
+          }}
+          assetId={id}
+          hideAssetSelector
+          targetAssetState={pendingTargetState ?? undefined}
+          title="Módulo: Incidencias"
+          description={`Creando registro en módulo externo para avanzar al estado ${pendingTargetState ?? ''}.`}
+          onSuccess={() => {
+            setModuleDelegationOpen(false)
+            setPendingTargetState(null)
+            queryClient.invalidateQueries({ queryKey: ['asset', id] })
+            queryClient.invalidateQueries({ queryKey: ['incidents', 'asset', id] })
+            queryClient.invalidateQueries({ queryKey: ['assets'] })
+            toast.success('Incidencia creada y activo bloqueado exitosamente')
+          }}
+        />
+      ) : (
+        <Sheet open={moduleDelegationOpen} onOpenChange={setModuleDelegationOpen}>
+          <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>Módulo: {targetModule === 'work_orders' ? 'Órdenes de Trabajo' : targetModule}</SheetTitle>
+              <SheetDescription>
+                Creando registro en módulo externo para avanzar al estado <strong>{pendingTargetState}</strong>.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="py-6 flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg mt-6">
+               <p className="text-muted-foreground mb-4 px-4">
+                 Aquí se cargaría el componente remoto de <strong>{targetModule}</strong> embebido para este activo.
+               </p>
+               <Button onClick={() => {
+                  toast.success(`Registro creado en el módulo ${targetModule}`);
+                  setModuleDelegationOpen(false);
+                  if (pendingTargetState) {
+                    stateMutation.mutate({ toState: pendingTargetState, transitionData: { source_module: targetModule || 'unknown' } });
+                  }
+               }}>
+                  Simular Creación y Continuar
+               </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }

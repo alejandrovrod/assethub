@@ -43,7 +43,7 @@ public class RecordMaintenanceCostsCommandHandler : IRequestHandler<RecordMainte
         if (order == null)
             throw new ArgumentException("Maintenance order not found");
             
-        if (order.State == "verified")
+        if (order.State == MaintenanceOrderStates.Verified)
             throw new InvalidOperationException("Cannot record costs on a verified maintenance order");
             
         order.LaborCost = request.LaborCost;

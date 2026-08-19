@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Maintenance.Events;
 using AssetHub.Application.Maintenance.Helpers;
+using AssetHub.Domain.Assets;
 using AssetHub.Domain.Maintenance;
 using AssetHub.Domain.Tasks;
 using Cronos;
@@ -102,6 +103,26 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
                         AssetId = asset.Id,
                         Status = PreventivePlanConstants.ExecutionStatusSkipped,
                         Message = conditionResult.Reason
+                    });
+                    result.SkippedAssets++;
+                    continue;
+                }
+
+                var executionGuardResult = await PreventivePlanExecutionGuard.CanExecuteForAssetAsync(_db, asset, plan.TenantId, cancellationToken);
+                if (!executionGuardResult.CanExecute)
+                {
+                    _logger.LogInformation("Plan {PlanId} skipped for asset {AssetId}: {Reason}",
+                        plan.Id, asset.Id, executionGuardResult.Reason);
+                    _db.PreventivePlanExecutionLogs.Add(new PreventivePlanExecutionLog
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = plan.TenantId,
+                        PreventivePlanId = plan.Id,
+                        ExecutedAt = now,
+                        Occurrence = occurrence,
+                        AssetId = asset.Id,
+                        Status = PreventivePlanConstants.ExecutionStatusSkipped,
+                        Message = executionGuardResult.Reason
                     });
                     result.SkippedAssets++;
                     continue;
@@ -282,8 +303,8 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
             {
                 Id = Guid.NewGuid(),
                 TenantId = plan.TenantId,
-                Kind = "preventive",
-                State = "draft",
+                Kind = MaintenanceOrderKinds.Preventive,
+                State = MaintenanceOrderStates.Draft,
                 Title = plan.Name,
                 Description = plan.Description,
                 AssetId = asset.Id,

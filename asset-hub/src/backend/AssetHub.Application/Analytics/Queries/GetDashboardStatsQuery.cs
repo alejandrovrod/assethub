@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -70,7 +71,7 @@ public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQu
         // Consideramos tareas cerradas (done, cancelled) y evaluamos si CompletedAt <= DueDate
         // Si no tiene DueDate, no aplica SLA.
         var closedTasks = await _db.WorkTasks
-            .Where(t => t.State == "done" || t.State == "cancelled")
+            .Where(t => WorkTaskStates.TerminalStates.Contains(t.State))
             .Where(t => t.DueDate != null && t.CompletedAt != null)
             .Select(t => new { t.DueDate, t.CompletedAt })
             .ToListAsync(cancellationToken);

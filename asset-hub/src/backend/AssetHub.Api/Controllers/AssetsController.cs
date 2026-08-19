@@ -198,6 +198,7 @@ public class AdvancedSearchRequest
     public Guid? AncestorId { get; set; }
     public Dictionary<string, Guid>? CatalogFilters { get; set; }
     public bool? RootOnly { get; set; }
+    public Guid? AssetId { get; set; }
 }
 
 public class CreateAssetRequest

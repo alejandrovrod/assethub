@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using AssetHub.Domain.Assets;
 using AssetHub.Domain.Incidents;
+using AssetHub.Domain.Tasks;
 
 namespace AssetHub.Domain.Maintenance;
 
@@ -10,8 +11,10 @@ public class MaintenanceOrder
     public Guid Id { get; set; }
     public Guid TenantId { get; set; }
     
-    public string Kind { get; set; } = string.Empty; // corrective, preventive
-    public string State { get; set; } = "draft"; // draft, approved, scheduled, in_progress, done, verified, cancelled
+    public string Kind { get; set; } = MaintenanceOrderKinds.Corrective;
+    public string State { get; set; } = MaintenanceOrderStates.Draft;
+    
+    public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
     
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -26,6 +29,7 @@ public class MaintenanceOrder
     public Incident? Incident { get; set; }
     
     public Guid? AssignedEmployeeId { get; set; }
+    public AssetHub.Domain.Staff.Employee? AssignedEmployee { get; set; }
     
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }

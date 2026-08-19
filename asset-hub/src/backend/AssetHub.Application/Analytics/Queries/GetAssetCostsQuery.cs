@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Maintenance;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,7 +47,7 @@ public class GetAssetCostsQueryHandler : IRequestHandler<GetAssetCostsQuery, dec
 
         // RN-16.2: Costo acumulado = Σ(LaborCost + parts) de órdenes done/verified
         var cost = await query
-            .Where(o => o.State == "done" || o.State == "verified")
+            .Where(o => o.State == MaintenanceOrderStates.Done || o.State == MaintenanceOrderStates.Verified)
             .SumAsync(o => o.LaborCost + o.Parts.Sum(p => p.Quantity * p.UnitCost), cancellationToken);
 
         return cost;

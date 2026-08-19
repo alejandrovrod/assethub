@@ -42,33 +42,37 @@ public class IncidentClosedEventHandler : INotificationHandler<IncidentStateChan
         var config = asset.AssetTemplate.LifecycleStates;
         if (config == null) return;
 
-        // Liberar el activo llevándolo a su estado inicial
         string initialState = config.InitialState;
         
         if (string.IsNullOrEmpty(initialState))
             return;
 
-        if (asset.State == initialState)
-            return; // Already in initial state
+        // Quitamos la restricción de que aborte si ya está en estado inicial.
+        // Siempre forzamos el disparo del evento para reevaluar la jerarquía del abuelo.
 
-        _logger.LogInformation("Liberando activo {AssetId} hacia estado {State} tras cerrar incidencia {IncidentId}", 
+        _logger.LogInformation("Liberando/Re-evaluando activo {AssetId} hacia estado {State} tras cerrar incidencia {IncidentId}", 
             asset.Id, initialState, notification.IncidentId);
 
         var fromState = asset.State;
-        asset.State = initialState;
-
-        _db.AssetLifecycleEvents.Add(new Domain.Assets.AssetLifecycleEvent
+        
+        // Solo actualizamos la base de datos si el estado realmente cambia
+        if (asset.State != initialState)
         {
-            AssetId = asset.Id,
-            EventType = "auto_revert",
-            FromState = fromState,
-            ToState = initialState,
-            Notes = $"Liberación automática tras cerrar incidencia {notification.IncidentId}",
-            At = DateTime.UtcNow,
-            UserId = Guid.Empty // Sistema
-        });
+            asset.State = initialState;
 
-        await _db.SaveChangesAsync(cancellationToken);
+            _db.AssetLifecycleEvents.Add(new Domain.Assets.AssetLifecycleEvent
+            {
+                AssetId = asset.Id,
+                EventType = "auto_revert",
+                FromState = fromState,
+                ToState = initialState,
+                Notes = $"Liberación automática tras cerrar incidencia {notification.IncidentId}",
+                At = DateTime.UtcNow,
+                UserId = Guid.Empty // Sistema
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+        }
         
         // Disparar evento para propagación al padre y OnEnterAction
         await _mediator.Publish(new AssetStateChangedEvent(

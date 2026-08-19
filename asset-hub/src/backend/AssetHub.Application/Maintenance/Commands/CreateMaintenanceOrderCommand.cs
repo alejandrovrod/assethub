@@ -10,11 +10,11 @@ namespace AssetHub.Application.Maintenance.Commands;
 
 public class CreateMaintenanceOrderCommand : IRequest<Guid>
 {
-    public string Kind { get; set; } = "corrective"; // corrective, preventive
+    public string Kind { get; set; } = MaintenanceOrderKinds.Corrective;
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public Guid AssetId { get; set; }
-    
+
     public Guid? PreventivePlanId { get; set; }
     public Guid? IncidentId { get; set; }
 }
@@ -38,7 +38,7 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
         if (!assetExists)
             throw new ArgumentException("Asset not found");
 
-        if (request.Kind != "corrective" && request.Kind != "preventive")
+        if (request.Kind != MaintenanceOrderKinds.Corrective && request.Kind != MaintenanceOrderKinds.Preventive)
             throw new ArgumentException("Invalid Kind. Must be corrective or preventive.");
 
         if (request.PreventivePlanId.HasValue && request.IncidentId.HasValue)
@@ -49,7 +49,7 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
             Id = Guid.NewGuid(),
             TenantId = tenantId.Value,
             Kind = request.Kind,
-            State = "draft",
+            State = MaintenanceOrderStates.Draft,
             Title = request.Title,
             Description = request.Description,
             AssetId = request.AssetId,

@@ -101,6 +101,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     queryFn: () => catalogService.getCatalogItems(TASK_TYPE_CATALOG_CODE, 'es'),
   })
 
+  const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueAt, setDueAt] = useState('')
   const [priorityCatalogItemId, setPriorityCatalogItemId] = useState('')
@@ -112,6 +113,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
   useEffect(() => {
     if (detail) {
+      setTitle(detail.title || task.title || '')
       setDescription(detail.description || '')
       setDueAt(detail.dueAt ? detail.dueAt.slice(0, 10) : '')
       setPriorityCatalogItemId(detail.priorityCatalogItemId)
@@ -126,7 +128,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const updateMutation = useMutation({
     mutationFn: () =>
       workTaskService.update(task.id, {
-        title: detail?.title || task.title,
+        title: title || detail?.title || task.title,
         description,
         dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
         priorityCatalogItemId,
@@ -144,9 +146,9 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
   const stateMutation = useMutation({
     mutationFn: (state: WorkTaskState) => workTaskService.changeState(task.id, state),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(['work-task', task.id], data)
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['work-task', task.id] })
       queryClient.invalidateQueries({ queryKey: ['work-task-history', task.id] })
       toast.success('Estado actualizado')
     },
@@ -201,9 +203,13 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     <Card className="flex flex-col overflow-hidden w-[45%] h-full">
       <CardHeader className="flex flex-row items-start justify-between border-b pb-4">
         <div className="min-w-0 flex-1">
-          <CardTitle className="text-lg truncate" title={displayedTask.title}>
-            {displayedTask.title}
-          </CardTitle>
+          <Input
+            className="text-lg font-semibold h-9 px-2 -ml-2 border-transparent hover:border-input focus-visible:border-input bg-transparent"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={state === 'done' || state === 'cancelled'}
+            placeholder="Título de la tarea"
+          />
           <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge variant={STATE_VARIANTS[state]}>{STATE_LABELS[state]}</Badge>
             {displayedTask.dueAt && (
@@ -213,6 +219,47 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
               </span>
             )}
           </CardDescription>
+
+          <div className="mt-4 border rounded-md p-2 bg-muted/10">
+            {(!displayedTask.maintenanceOrderId && !displayedTask.incidentId && !displayedTask.preventivePlanId) && (
+              <Badge variant="secondary" className="w-fit mb-2">Tarea Independiente</Badge>
+            )}
+
+            <div className="grid gap-1 text-sm">
+              <RelatedLink
+                icon={<FileText className="h-4 w-4" />}
+                label="Orden de mantenimiento"
+                name={displayedTask.maintenanceOrderTitle}
+                id={displayedTask.maintenanceOrderId}
+                to={displayedTask.maintenanceOrderId ? `/maintenance/orders?selected=${displayedTask.maintenanceOrderId}` : undefined}
+                isPrimary={!!displayedTask.maintenanceOrderId}
+              />
+              <RelatedLink
+                icon={<AlertTriangle className="h-4 w-4" />}
+                label="Incidencia"
+                name={displayedTask.incidentTitle}
+                id={displayedTask.incidentId}
+                to={displayedTask.incidentId ? `/maintenance/incidents/${displayedTask.incidentId}` : undefined}
+                isPrimary={!displayedTask.maintenanceOrderId && !!displayedTask.incidentId}
+              />
+              <RelatedLink
+                icon={<ClipboardList className="h-4 w-4" />}
+                label="Plan preventivo"
+                name={displayedTask.preventivePlanName}
+                id={displayedTask.preventivePlanId}
+                to={displayedTask.preventivePlanId ? `/maintenance/preventive-plans?selected=${displayedTask.preventivePlanId}` : undefined}
+                isPrimary={!displayedTask.maintenanceOrderId && !displayedTask.incidentId && !!displayedTask.preventivePlanId}
+              />
+              <RelatedLink
+                icon={<Package className="h-4 w-4" />}
+                label="Activo"
+                name={displayedTask.assetName}
+                id={displayedTask.assetId}
+                to={displayedTask.assetId ? `/assets/${displayedTask.assetId}` : undefined}
+                isPrimary={!displayedTask.maintenanceOrderId && !displayedTask.incidentId && !displayedTask.preventivePlanId && !!displayedTask.assetId}
+              />
+            </div>
+          </div>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -392,42 +439,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <LinkIcon className="h-4 w-4" /> Relacionados
-                  </h4>
-                  <div className="grid gap-2 text-sm">
-                    <RelatedLink
-                      icon={<Package className="h-4 w-4" />}
-                      label="Activo"
-                      name={displayedTask.assetName}
-                      id={displayedTask.assetId}
-                      to={displayedTask.assetId ? `/assets/${displayedTask.assetId}` : undefined}
-                    />
-                    <RelatedLink
-                      icon={<AlertTriangle className="h-4 w-4" />}
-                      label="Incidencia"
-                      name={displayedTask.incidentTitle}
-                      id={displayedTask.incidentId}
-                      to={displayedTask.incidentId ? `/maintenance/incidents/${displayedTask.incidentId}` : undefined}
-                    />
-                    <RelatedLink
-                      icon={<FileText className="h-4 w-4" />}
-                      label="Orden de mantenimiento"
-                      id={displayedTask.maintenanceOrderId}
-                    />
-                    <RelatedLink
-                      icon={<ClipboardList className="h-4 w-4" />}
-                      label="Plan preventivo"
-                      name={displayedTask.preventivePlanName}
-                      id={displayedTask.preventivePlanId}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
+                <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSave}
                     disabled={updateMutation.isPending || assignMutation.isPending}
@@ -527,27 +539,30 @@ function RelatedLink({
   name,
   id,
   to,
+  isPrimary,
 }: {
   icon: React.ReactNode
   label: string
   name?: string
   id?: string
   to?: string
+  isPrimary?: boolean
 }) {
   if (!id) return null
   const display = name || id
 
   return (
-    <div className="flex items-center gap-2">
-      {icon}
-      <span className="text-muted-foreground w-32 shrink-0">{label}</span>
+    <div className={`flex items-center gap-2 ${isPrimary ? 'bg-muted/50 p-2 rounded-md border' : 'p-2'}`}>
+      <div className={isPrimary ? 'text-primary' : 'text-muted-foreground'}>{icon}</div>
+      <span className="text-muted-foreground w-36 shrink-0">{label}</span>
       {to ? (
-        <Link to={to} className="text-sm font-medium hover:underline truncate">
+        <Link to={to} className={`text-sm truncate hover:underline ${isPrimary ? 'font-semibold text-foreground' : 'font-medium'}`}>
           {display}
         </Link>
       ) : (
-        <span className="text-sm truncate">{display}</span>
+        <span className={`text-sm truncate ${isPrimary ? 'font-semibold text-foreground' : ''}`}>{display}</span>
       )}
+      {isPrimary && <Badge variant="outline" className="ml-auto text-[10px] uppercase h-5">Origen</Badge>}
     </div>
   )
 }

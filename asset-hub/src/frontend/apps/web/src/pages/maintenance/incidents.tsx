@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { ReportIncidentSheet } from './components/report-incident-sheet'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Input } from '@/components/ui/input'
@@ -24,12 +24,15 @@ export default function MaintenanceIncidents() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [catalogFilters, setCatalogFilters] = useState<Record<string, string>>({})
+  const [searchParams] = useSearchParams()
+  const assetId = searchParams.get('assetId') || undefined
 
   const { data: incidents, isLoading } = useQuery({
-    queryKey: ['incidents', searchTerm, catalogFilters],
+    queryKey: ['incidents', searchTerm, catalogFilters, assetId],
     queryFn: () => incidentService.advancedSearch({
       searchTerm: searchTerm || undefined,
-      catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined
+      catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined,
+      assetId
     }),
   })
 

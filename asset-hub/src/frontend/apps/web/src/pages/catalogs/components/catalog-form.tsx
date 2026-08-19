@@ -90,6 +90,7 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
                     { id: "Incidents", label: "Incidencias" },
                     { id: "Tasks", label: "Tareas" },
                     { id: "Maintenance", label: "Mantenimiento" },
+                    { id: "Orders", label: "Órdenes" },
                     { id: "Staff", label: "Personal" },
                   ];
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using AssetHub.Domain.Tasks;
 
 namespace AssetHub.Application.Tasks.Helpers;
 
@@ -7,19 +8,19 @@ public static class TaskStateTransitionValidator
 {
     private static readonly HashSet<(string From, string To)> AllowedTransitions = new()
     {
-        ("todo", "in_progress"),
-        ("todo", "cancelled"),
-        ("in_progress", "done"),
-        ("in_progress", "cancelled"),
+        (WorkTaskStates.Todo, WorkTaskStates.InProgress),
+        (WorkTaskStates.Todo, WorkTaskStates.Cancelled),
+        (WorkTaskStates.InProgress, WorkTaskStates.Done),
+        (WorkTaskStates.InProgress, WorkTaskStates.Cancelled),
     };
 
-    public static readonly HashSet<string> TerminalStates = new() { "done", "cancelled" };
+    public static readonly HashSet<string> TerminalStates = WorkTaskStates.TerminalStates;
 
     public static bool IsValidTransition(string? fromState, string toState)
     {
         if (string.IsNullOrWhiteSpace(fromState))
         {
-            return toState == "todo";
+            return toState == WorkTaskStates.Todo;
         }
 
         if (TerminalStates.Contains(fromState))
@@ -34,7 +35,7 @@ public static class TaskStateTransitionValidator
     {
         if (string.IsNullOrWhiteSpace(fromState))
         {
-            return "A new task must start in 'todo' state.";
+            return $"A new task must start in '{WorkTaskStates.Todo}' state.";
         }
 
         if (TerminalStates.Contains(fromState))

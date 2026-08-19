@@ -1,0 +1,399 @@
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  X,
+  Calendar,
+  User,
+  Package,
+  Wrench,
+  FileText,
+  Loader2,
+  Save,
+  Check,
+  Clock,
+} from 'lucide-react'
+import {
+  maintenanceOrderService,
+  type MaintenanceOrderSummary,
+  type MaintenanceOrderState,
+  STATE_LABELS,
+  KIND_LABELS,
+  ALLOWED_TRANSITIONS,
+} from '@/services/maintenance-order.service'
+import { AsyncCombobox } from '@/components/ui/async-combobox'
+import { apiClient as api } from '@/lib/api-client'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { Link } from 'react-router'
+import { MaintenanceOrderPartsEditor } from './maintenance-order-parts-editor'
+import { MaintenanceOrderTasksWidget } from './maintenance-order-tasks-widget'
+
+const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  draft: 'outline',
+  approved: 'secondary',
+  scheduled: 'default',
+  in_progress: 'default',
+  done: 'default',
+  verified: 'default',
+  cancelled: 'destructive',
+}
+
+interface MaintenanceOrderDetailProps {
+  order: MaintenanceOrderSummary
+  onClose: () => void
+}
+
+export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetailProps) {
+  const queryClient = useQueryClient()
+
+  const { data: detail, isLoading: isLoadingDetail } = useQuery({
+    queryKey: ['maintenance-order', order.id],
+    queryFn: () => maintenanceOrderService.getById(order.id),
+  })
+
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [scheduledStart, setScheduledStart] = useState('')
+  const [scheduledEnd, setScheduledEnd] = useState('')
+  const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
+  const [assignedEmployeeName, setAssignedEmployeeName] = useState('')
+
+  useEffect(() => {
+    if (detail) {
+      setTitle(detail.title)
+      setDescription(detail.description || '')
+      setScheduledStart(detail.scheduledStart ? detail.scheduledStart.slice(0, 16) : '')
+      setScheduledEnd(detail.scheduledEnd ? detail.scheduledEnd.slice(0, 16) : '')
+      setAssignedEmployeeId(detail.assignedEmployeeId || '')
+      setAssignedEmployeeName(detail.assignedEmployeeName || '')
+    }
+  }, [detail])
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      maintenanceOrderService.update(order.id, {
+        title,
+        description,
+        scheduledStart: scheduledStart ? new Date(scheduledStart).toISOString() : undefined,
+        scheduledEnd: scheduledEnd ? new Date(scheduledEnd).toISOString() : undefined,
+        assignedEmployeeId: assignedEmployeeId || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
+      toast.success('Orden actualizada')
+    },
+    onError: () => toast.error('Error al actualizar la orden'),
+  })
+
+  const stateMutation = useMutation({
+    mutationFn: (action: 'approve' | 'schedule' | 'verify' | 'start' | 'complete' | 'cancel') => {
+      if (action === 'approve') return maintenanceOrderService.approve(order.id)
+      if (action === 'verify') return maintenanceOrderService.verify(order.id)
+      if (action === 'start') return maintenanceOrderService.start(order.id)
+      if (action === 'complete') return maintenanceOrderService.complete(order.id)
+      if (action === 'cancel') return maintenanceOrderService.cancel(order.id)
+      return maintenanceOrderService.schedule(order.id, {
+        assignedEmployeeId: assignedEmployeeId || order.assignedEmployeeId,
+        scheduledStart: scheduledStart || order.scheduledStart,
+        scheduledEnd: scheduledEnd || order.scheduledEnd,
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
+      toast.success('Estado actualizado')
+    },
+    onError: () => toast.error('Error al cambiar el estado'),
+  })
+
+  const displayedOrder = detail || order
+  const state = displayedOrder.state
+  const allowedActions = ALLOWED_TRANSITIONS[state] || []
+
+  // Compute task progress
+  const tasks = detail?.tasks || []
+  const totalTasks = tasks.length
+  const completedTasks = tasks.filter(t => t.state === 'done' || t.state === 'cancelled').length
+  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100
+  const isReadyToComplete = totalTasks === 0 || completedTasks === totalTasks
+
+  return (
+    <Card className="flex flex-col overflow-hidden w-[45%] h-full">
+      <CardHeader className="flex flex-row items-start justify-between border-b pb-4">
+        <div className="min-w-0 flex-1">
+          <CardTitle className="text-lg truncate" title={displayedOrder.title}>
+            {displayedOrder.title}
+          </CardTitle>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <Badge variant="outline">{KIND_LABELS[displayedOrder.kind]}</Badge>
+            <Badge variant={STATE_VARIANTS[state]}>{STATE_LABELS[state]}</Badge>
+            {displayedOrder.scheduledStart && (
+              <span className="text-xs flex items-center gap-1 text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {format(new Date(displayedOrder.scheduledStart), 'dd MMM HH:mm', { locale: es })}
+              </span>
+            )}
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+
+      <CardContent className="flex-1 overflow-auto p-4 space-y-5">
+        {isLoadingDetail ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            {/* Title and description */}
+            <div className="space-y-2">
+              <Label htmlFor="mo-title">Título</Label>
+              <Input
+                id="mo-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={state === 'verified'}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mo-description">Descripción</Label>
+              <Textarea
+                id="mo-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Sin descripción"
+                rows={3}
+                disabled={state === 'verified'}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Schedule */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Programación
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mo-start">Inicio</Label>
+                  <Input
+                    id="mo-start"
+                    type="datetime-local"
+                    value={scheduledStart}
+                    onChange={(e) => setScheduledStart(e.target.value)}
+                    disabled={state === 'verified'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mo-end">Fin</Label>
+                  <Input
+                    id="mo-end"
+                    type="datetime-local"
+                    value={scheduledEnd}
+                    onChange={(e) => setScheduledEnd(e.target.value)}
+                    disabled={state === 'verified'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Assignment */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-muted-foreground">
+                <User className="h-3.5 w-3.5" />
+                Empleado asignado
+              </Label>
+              <AsyncCombobox<{ id: string; name: string }>
+                fetcher={async (query) => {
+                  const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
+                    params: { search: query, isActive: true },
+                  })
+                  return data.items.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
+                }}
+                labelKey="name"
+                valueKey="id"
+                placeholder="Buscar empleado..."
+                searchPlaceholder="Escriba para buscar..."
+                emptyText="No se encontraron empleados."
+                onSelect={(item) => {
+                  setAssignedEmployeeId(item.id)
+                  setAssignedEmployeeName(item.name)
+                }}
+                renderTrigger={(onClick) => (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    onClick={onClick}
+                    className="w-full justify-between font-normal"
+                    disabled={state === 'verified'}
+                  >
+                    {assignedEmployeeId ? assignedEmployeeName || assignedEmployeeId : 'Buscar empleado...'}
+                    <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Related */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Wrench className="h-4 w-4" /> Relacionados
+              </h4>
+              <div className="grid gap-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  <span className="text-muted-foreground w-32 shrink-0">Activo</span>
+                  <Link to={`/assets/${displayedOrder.assetId}`} className="text-sm font-medium hover:underline truncate">
+                    {displayedOrder.assetName || displayedOrder.assetId}
+                  </Link>
+                </div>
+                {displayedOrder.preventivePlanId && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-muted-foreground w-32 shrink-0">Plan preventivo</span>
+                    <Link to={`/maintenance/preventive-plans`} className="text-sm font-medium hover:underline truncate">
+                      {displayedOrder.preventivePlanName || displayedOrder.preventivePlanId}
+                    </Link>
+                  </div>
+                )}
+                {displayedOrder.incidentId && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="text-muted-foreground w-32 shrink-0">Incidencia</span>
+                    <Link to={`/maintenance/incidents/${displayedOrder.incidentId}`} className="text-sm font-medium hover:underline truncate">
+                      {displayedOrder.incidentTitle || displayedOrder.incidentId}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* State transitions */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Cambiar estado</h4>
+              <div className="flex flex-wrap gap-2">
+                {allowedActions.length === 0 ? (
+                  <span className="text-sm text-muted-foreground">No hay transiciones disponibles</span>
+                ) : (
+                  <>
+                    {allowedActions.includes('approved') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stateMutation.mutate('approve')}
+                        disabled={stateMutation.isPending}
+                      >
+                        <Check className="h-4 w-4 mr-1" /> Aprobar
+                      </Button>
+                    )}
+                    {allowedActions.includes('scheduled') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stateMutation.mutate('schedule')}
+                        disabled={stateMutation.isPending}
+                      >
+                        <Calendar className="h-4 w-4 mr-1" /> Programar
+                      </Button>
+                    )}
+                    {allowedActions.includes('in_progress') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stateMutation.mutate('start')}
+                        disabled={stateMutation.isPending}
+                      >
+                        <Clock className="h-4 w-4 mr-1" /> Iniciar
+                      </Button>
+                    )}
+                    {allowedActions.includes('done') && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => stateMutation.mutate('complete')}
+                          disabled={stateMutation.isPending || !isReadyToComplete}
+                        >
+                          <Check className="h-4 w-4 mr-1" /> Completar
+                        </Button>
+                        {!isReadyToComplete && (
+                          <span className="text-xs text-muted-foreground">Faltan tareas ({completedTasks}/{totalTasks})</span>
+                        )}
+                        {isReadyToComplete && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
+                            Listo para completar
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {allowedActions.includes('verified') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stateMutation.mutate('verify')}
+                        disabled={stateMutation.isPending}
+                      >
+                        <Check className="h-4 w-4 mr-1" /> Verificar
+                      </Button>
+                    )}
+                    {allowedActions.includes('cancelled') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive"
+                        onClick={() => stateMutation.mutate('cancel')}
+                        disabled={stateMutation.isPending}
+                      >
+                        <X className="h-4 w-4 mr-1" /> Cancelar
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Parts */}
+            <MaintenanceOrderPartsEditor
+              orderId={order.id}
+              state={state}
+            />
+
+            {/* Child tasks */}
+            <MaintenanceOrderTasksWidget orderId={order.id} />
+
+            {/* Save */}
+            <div className="flex justify-end">
+              <Button
+                onClick={() => updateMutation.mutate()}
+                disabled={updateMutation.isPending || state === 'verified'}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Guardar cambios
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}

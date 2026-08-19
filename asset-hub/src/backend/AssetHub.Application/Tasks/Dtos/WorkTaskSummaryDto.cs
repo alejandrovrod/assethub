@@ -19,6 +19,9 @@ public class WorkTaskSummaryDto
     public Guid? PreventivePlanId { get; set; }
     public string? PreventivePlanName { get; set; }
 
+    public Guid? MaintenanceOrderId { get; set; }
+    public string? MaintenanceOrderTitle { get; set; }
+
     public Guid? AssignedEmployeeId { get; set; }
     public string? AssignedEmployeeName { get; set; }
 

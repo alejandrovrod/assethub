@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router'
 import { Plus, Loader2, Pencil, Trash2, LayoutList, Kanban, Calendar, User, AlertCircle } from 'lucide-react'
 import { workTaskService, type WorkTaskSummary, type WorkTaskState, STATE_LABELS } from '@/services/work-task.service'
 import { Button } from '@/components/ui/button'
@@ -51,8 +52,10 @@ const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructi
 
 export default function MaintenanceTasks() {
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedTaskId = searchParams.get('selected')
+
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState<WorkTaskSummary | undefined>()
   const [selectedTask, setSelectedTask] = useState<WorkTaskSummary | undefined>()
   const [searchTerm, setSearchTerm] = useState('')
   const [stateFilter, setStateFilter] = useState<WorkTaskState | 'all'>('all')
@@ -70,28 +73,47 @@ export default function MaintenanceTasks() {
 
   const items = data?.items || []
 
+  useEffect(() => {
+    if (selectedTaskId) {
+      if (!selectedTask || selectedTask.id !== selectedTaskId) {
+        const found = items.find((t) => t.id === selectedTaskId)
+        if (found) {
+          setSelectedTask(found)
+        } else {
+          workTaskService.getById(selectedTaskId)
+            .then((task) => setSelectedTask(task as WorkTaskSummary))
+            .catch(console.error)
+        }
+      }
+    } else {
+      setSelectedTask(undefined)
+    }
+  }, [selectedTaskId, items, selectedTask])
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => workTaskService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
       toast.success('Tarea eliminada')
-      if (selectedTask?.id) setSelectedTask(undefined)
+      if (selectedTask?.id) {
+        setSearchParams((prev) => {
+          prev.delete('selected')
+          return prev
+        }, { replace: true })
+      }
     },
     onError: () => toast.error('Error al eliminar la tarea'),
   })
 
   const handleCreate = () => {
-    setEditingTask(undefined)
-    setIsFormOpen(true)
-  }
-
-  const handleEdit = (task: WorkTaskSummary) => {
-    setEditingTask(task)
     setIsFormOpen(true)
   }
 
   const handleRowClick = (task: WorkTaskSummary) => {
-    setSelectedTask(task)
+    setSearchParams((prev) => {
+      prev.set('selected', task.id)
+      return prev
+    })
   }
 
   const tasksByState: Record<WorkTaskState, WorkTaskSummary[]> = {
@@ -209,15 +231,6 @@ export default function MaintenanceTasks() {
                           <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <TooltipProvider>
                               <div className="flex items-center justify-end gap-1">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(task)}>
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Editar</TooltipContent>
-                                </Tooltip>
-
                                 <AlertDialog>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -320,7 +333,13 @@ export default function MaintenanceTasks() {
         {selectedTask && (
           <WorkTaskDetail
             task={selectedTask}
-            onClose={() => setSelectedTask(undefined)}
+            onClose={() => {
+              setSelectedTask(undefined)
+              setSearchParams((prev) => {
+                prev.delete('selected')
+                return prev
+              }, { replace: true })
+            }}
           />
         )}
       </div>
@@ -328,7 +347,6 @@ export default function MaintenanceTasks() {
       <WorkTaskFormSheet
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
-        task={editingTask}
       />
     </div>
   )

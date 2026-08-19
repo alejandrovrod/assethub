@@ -22,7 +22,9 @@ public record IncidentDetailDto(
     DateTime ReportedAt,
     DateTime? ResolvedAt,
     DateTime? ClosedAt,
-    List<IncidentDetailDto.AttachmentDto> Attachments
+    List<IncidentDetailDto.AttachmentDto> Attachments,
+    IncidentDetailDto.MaintenanceOrderDto? MaintenanceOrder,
+    List<IncidentDetailDto.WorkTaskDto> WorkTasks
 )
 {
     public record AttachmentDto(
@@ -31,6 +33,25 @@ public record IncidentDetailDto(
         string FileName,
         string ContentType,
         long SizeBytes
+    );
+
+    public record MaintenanceOrderDto(
+        Guid Id,
+        string Title,
+        string State,
+        Guid? AssignedEmployeeId,
+        string? AssignedEmployeeName,
+        DateTime? ScheduledStart,
+        DateTime? ScheduledEnd
+    );
+
+    public record WorkTaskDto(
+        Guid Id,
+        string Title,
+        string State,
+        Guid? AssignedEmployeeId,
+        string? AssignedEmployeeName,
+        DateTime? DueAt
     );
 }
 
@@ -64,6 +85,33 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             ))
             .ToListAsync(cancellationToken);
 
+        var order = await _db.MaintenanceOrders
+            .Include(o => o.AssignedEmployee)
+            .Where(o => o.IncidentId == incident.Id && o.Kind == "corrective")
+            .Select(o => new IncidentDetailDto.MaintenanceOrderDto(
+                o.Id,
+                o.Title,
+                o.State,
+                o.AssignedEmployeeId,
+                o.AssignedEmployee != null ? $"{o.AssignedEmployee.FirstName} {o.AssignedEmployee.LastName}" : null,
+                o.ScheduledStart,
+                o.ScheduledEnd
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var tasks = await _db.WorkTasks
+            .Include(t => t.AssignedEmployee)
+            .Where(t => t.IncidentId == incident.Id)
+            .Select(t => new IncidentDetailDto.WorkTaskDto(
+                t.Id,
+                t.Title,
+                t.State,
+                t.AssignedEmployeeId,
+                t.AssignedEmployee != null ? $"{t.AssignedEmployee.FirstName} {t.AssignedEmployee.LastName}" : null,
+                t.DueAt
+            ))
+            .ToListAsync(cancellationToken);
+
         return new IncidentDetailDto(
             incident.Id,
             incident.Title,
@@ -78,7 +126,9 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             incident.ReportedAt,
             incident.ResolvedAt,
             incident.ClosedAt,
-            attachments
+            attachments,
+            order,
+            tasks
         );
     }
 }

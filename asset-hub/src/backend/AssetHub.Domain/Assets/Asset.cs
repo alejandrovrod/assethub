@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using NetTopologySuite.Geometries;
 using AssetHub.Domain.AssetTemplates;
+using AssetHub.Domain.Incidents;
+using AssetHub.Domain.Maintenance;
+using AssetHub.Domain.Tasks;
 
 namespace AssetHub.Domain.Assets;
 
@@ -11,6 +15,10 @@ public class Asset
     
     public ICollection<AssetLifecycleEvent> LifecycleEvents { get; set; } = new List<AssetLifecycleEvent>();
     public ICollection<AssetConditionHistory> ConditionHistory { get; set; } = new List<AssetConditionHistory>();
+    public ICollection<Incident> Incidents { get; set; } = new List<Incident>();
+    public ICollection<MaintenanceOrder> MaintenanceOrders { get; set; } = new List<MaintenanceOrder>();
+    public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
+    public ICollection<PreventivePlan> PreventivePlans { get; set; } = new List<PreventivePlan>();
     public Guid AssetTemplateId { get; set; }
     public AssetTemplate? AssetTemplate { get; set; }
 

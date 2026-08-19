@@ -1,0 +1,325 @@
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react'
+import {
+  maintenanceOrderService,
+  type MaintenanceOrderSummary,
+  type MaintenanceOrderState,
+  type MaintenanceOrderKind,
+  STATE_LABELS,
+  KIND_LABELS,
+} from '@/services/maintenance-order.service'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { MaintenanceOrderDetail } from './components/maintenance-order-detail'
+import { MaintenanceOrderFormSheet } from './components/maintenance-order-form-sheet'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+const STATE_OPTIONS: { value: MaintenanceOrderState | 'all'; label: string }[] = [
+  { value: 'all', label: 'Todas' },
+  { value: 'draft', label: 'Borrador' },
+  { value: 'approved', label: 'Aprobada' },
+  { value: 'scheduled', label: 'Programada' },
+  { value: 'in_progress', label: 'En progreso' },
+  { value: 'done', label: 'Completada' },
+  { value: 'verified', label: 'Verificada' },
+  { value: 'cancelled', label: 'Cancelada' },
+]
+
+const KIND_OPTIONS: { value: MaintenanceOrderKind | 'all'; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'corrective', label: 'Correctiva' },
+  { value: 'preventive', label: 'Preventiva' },
+]
+
+const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  draft: 'outline',
+  approved: 'secondary',
+  scheduled: 'default',
+  in_progress: 'default',
+  done: 'default',
+  verified: 'default',
+  cancelled: 'destructive',
+}
+
+export default function MaintenanceOrders() {
+  const queryClient = useQueryClient()
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<MaintenanceOrderSummary | undefined>()
+  const [selectedOrder, setSelectedOrder] = useState<MaintenanceOrderSummary | undefined>()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [stateFilter, setStateFilter] = useState<MaintenanceOrderState | 'all'>('all')
+  const [kindFilter, setKindFilter] = useState<MaintenanceOrderKind | 'all'>('all')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedOrderId = searchParams.get('selected')
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['maintenance-orders', stateFilter, kindFilter, searchTerm],
+    queryFn: () =>
+      maintenanceOrderService.getAll({
+        state: stateFilter === 'all' ? undefined : stateFilter,
+        kind: kindFilter === 'all' ? undefined : kindFilter,
+        search: searchTerm || undefined,
+        pageSize: 100,
+      }),
+  })
+
+  const items = data?.items || []
+
+  useEffect(() => {
+    if (selectedOrderId && items.length > 0) {
+      const order = items.find((o) => o.id === selectedOrderId)
+      if (order && order.id !== selectedOrder?.id) {
+        setSelectedOrder(order)
+      }
+    }
+  }, [selectedOrderId, items, selectedOrder?.id])
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => maintenanceOrderService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
+      toast.success('Orden eliminada')
+      if (selectedOrder?.id) {
+        setSelectedOrder(undefined)
+        searchParams.delete('selected')
+        setSearchParams(searchParams)
+      }
+    },
+    onError: () => toast.error('Error al eliminar la orden'),
+  })
+
+  const handleCreate = () => {
+    setEditingOrder(undefined)
+    setIsFormOpen(true)
+  }
+
+  const handleEdit = (order: MaintenanceOrderSummary) => {
+    setEditingOrder(order)
+    setIsFormOpen(true)
+  }
+
+  const handleRowClick = (order: MaintenanceOrderSummary) => {
+    setSelectedOrder(order)
+    searchParams.set('selected', order.id)
+    setSearchParams(searchParams)
+  }
+
+  const handleCloseDetail = () => {
+    setSelectedOrder(undefined)
+    searchParams.delete('selected')
+    setSearchParams(searchParams)
+  }
+
+  return (
+    <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
+      <div className="flex gap-4 flex-1 overflow-hidden">
+        {/* Main list */}
+        <Card className={`flex flex-1 flex-col overflow-hidden ${selectedOrder ? 'max-w-[55%]' : ''}`}>
+          <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+            <div>
+              <CardTitle>Órdenes de Mantenimiento</CardTitle>
+              <CardDescription>
+                Seguimiento de órdenes de mantenimiento, costos y verificación.
+              </CardDescription>
+            </div>
+            <Button onClick={handleCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva orden
+            </Button>
+          </CardHeader>
+
+          <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-b">
+            <Input
+              placeholder="Buscar por título..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-xs"
+            />
+            <Select
+              value={kindFilter}
+              onValueChange={(value) => setKindFilter(value as MaintenanceOrderKind | 'all')}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {KIND_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={stateFilter}
+              onValueChange={(value) => setStateFilter(value as MaintenanceOrderState | 'all')}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="flex-1">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Activo</TableHead>
+                  <TableHead>Programado</TableHead>
+                  <TableHead>Costo</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ) : items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No hay órdenes de mantenimiento.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  items.map((order) => (
+                    <TableRow
+                      key={order.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleRowClick(order)}
+                    >
+                      <TableCell className="font-medium">{order.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{KIND_LABELS[order.kind]}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={STATE_VARIANTS[order.state]}>{STATE_LABELS[order.state]}</Badge>
+                      </TableCell>
+                      <TableCell>{order.assetName || '—'}</TableCell>
+                      <TableCell>
+                        {order.scheduledStart ? (
+                          <span className="text-xs">{format(new Date(order.scheduledStart), 'dd MMM', { locale: es })}</span>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {order.laborCost > 0 && (
+                          <span className="text-sm font-medium">${order.laborCost.toFixed(2)}</span>
+                        )}
+                        {order.partsCount > 0 && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({order.partsCount} parte{order.partsCount > 1 ? 's' : ''})
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(order)}
+                            disabled={order.state === 'verified'}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                disabled={order.state === 'verified'}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Eliminar orden</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  ¿Estás seguro de eliminar esta orden? Esta acción no se puede deshacer.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteMutation.mutate(order.id)}
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </Card>
+
+        {/* Detail panel */}
+        {selectedOrder && (
+          <MaintenanceOrderDetail
+            order={selectedOrder}
+            onClose={handleCloseDetail}
+          />
+        )}
+      </div>
+
+      <MaintenanceOrderFormSheet
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        order={editingOrder}
+        onSuccess={() => {
+          setIsFormOpen(false)
+          setEditingOrder(undefined)
+          queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
+        }}
+      />
+    </div>
+  )
+}

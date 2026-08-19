@@ -42,7 +42,8 @@ public class ChangeWorkTaskStateTests
         var handler = new ChangeWorkTaskStateCommandHandler(
             db,
             new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid()),
-            new WorkTaskTestHelper.FakeTenantResolver(tenantId));
+            new WorkTaskTestHelper.FakeTenantResolver(tenantId),
+            new WorkTaskTestHelper.FakeMediator());
 
         await handler.Handle(new ChangeWorkTaskStateCommand { WorkTaskId = task.Id, NewState = "in_progress" }, CancellationToken.None);
 
@@ -69,7 +70,8 @@ public class ChangeWorkTaskStateTests
         var handler = new ChangeWorkTaskStateCommandHandler(
             db,
             new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid()),
-            new WorkTaskTestHelper.FakeTenantResolver(tenantId));
+            new WorkTaskTestHelper.FakeTenantResolver(tenantId),
+            new WorkTaskTestHelper.FakeMediator());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(
             new ChangeWorkTaskStateCommand { WorkTaskId = task.Id, NewState = "done" },
@@ -94,7 +96,8 @@ public class ChangeWorkTaskStateTests
         var handler = new ChangeWorkTaskStateCommandHandler(
             db,
             new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid()),
-            new WorkTaskTestHelper.FakeTenantResolver(tenantId));
+            new WorkTaskTestHelper.FakeTenantResolver(tenantId),
+            new WorkTaskTestHelper.FakeMediator());
 
         await handler.Handle(new ChangeWorkTaskStateCommand { WorkTaskId = task.Id, NewState = "done" }, CancellationToken.None);
 

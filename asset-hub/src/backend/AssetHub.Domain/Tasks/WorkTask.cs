@@ -15,7 +15,7 @@ public class WorkTask
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     
-    public string State { get; set; } = "todo"; // todo, in_progress, done, cancelled
+    public string State { get; set; } = WorkTaskStates.Todo;
     
     public Guid TaskTypeCatalogItemId { get; set; }
     public CatalogItem? TaskTypeCatalogItem { get; set; }

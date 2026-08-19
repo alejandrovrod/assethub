@@ -11,6 +11,7 @@ using AssetHub.Domain.Maintenance;
 using AssetHub.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace AssetHub.Api.Tests.PreventivePlans;
@@ -119,7 +120,7 @@ public class EvaluatePreventivePlanTests
         await db.SaveChangesAsync();
 
         var mediator = new PreventivePlanTestHelper.CapturingMediator();
-        var handler = new EvaluatePreventivePlanCommandHandler(db, mediator);
+        var handler = new EvaluatePreventivePlanCommandHandler(db, mediator, NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
 
         var result = await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
@@ -144,7 +145,7 @@ public class EvaluatePreventivePlanTests
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
 
-        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator());
+        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator(), NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
 
         var result = await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
@@ -166,7 +167,7 @@ public class EvaluatePreventivePlanTests
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
 
-        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator());
+        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator(), NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
 
         var result = await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
@@ -191,7 +192,7 @@ public class EvaluatePreventivePlanTests
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
 
-        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator());
+        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator(), NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
 
         var result = await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
@@ -216,7 +217,7 @@ public class EvaluatePreventivePlanTests
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
 
-        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator());
+        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator(), NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
 
         await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
         plan.NextRunAt = occurrence;
@@ -242,7 +243,7 @@ public class EvaluatePreventivePlanTests
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
 
-        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator());
+        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator(), NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
 
         var result = await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
@@ -266,7 +267,7 @@ public class EvaluatePreventivePlanTests
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
 
-        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator());
+        var handler = new EvaluatePreventivePlanCommandHandler(db, new PreventivePlanTestHelper.CapturingMediator(), NullLogger<EvaluatePreventivePlanCommandHandler>.Instance);
         await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
         var task = await db.WorkTasks.FirstAsync();

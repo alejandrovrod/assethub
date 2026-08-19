@@ -20,7 +20,7 @@ public record IncidentSummaryDto(
     DateTime? ClosedAt
 );
 
-public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null) : IRequest<List<IncidentSummaryDto>>;
+public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AssetId = null) : IRequest<List<IncidentSummaryDto>>;
 
 public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery, List<IncidentSummaryDto>>
 {
@@ -43,6 +43,11 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
         if (!string.IsNullOrWhiteSpace(request.State))
         {
             query = query.Where(i => i.State == request.State);
+        }
+
+        if (request.AssetId.HasValue)
+        {
+            query = query.Where(i => i.AssetId == request.AssetId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -72,7 +77,7 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
                 i.Asset != null ? i.Asset.Name : "",
                 DateTime.UtcNow, // Fallback if no CreatedAt
                 i.ResolvedAt,
-                i.ClosedAt
+                i.ClosedAt ?? (i.State == "Resuelta" || i.State == "Cancelada" || i.State == "Closed" || i.State == "Resolved" ? DateTime.UtcNow : null)
             ))
             .ToListAsync(cancellationToken);
     }

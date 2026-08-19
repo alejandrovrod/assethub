@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Incidents.Events;
+using AssetHub.Application.Incidents.Helpers;
+using AssetHub.Domain.Incidents;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +15,7 @@ public class ChangeIncidentStateCommand : IRequest<Unit>
     public Guid IncidentId { get; set; }
     public string TargetState { get; set; } = string.Empty;
     public string? PropertiesJson { get; set; }
+    public bool ForceTransition { get; set; } = false;
 }
 
 public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentStateCommand, Unit>
@@ -49,7 +52,7 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
                     throw new Exception($"Invalid state transition: state {request.TargetState} is not defined in template");
                 }
                 
-                if (config.Transitions != null && config.Transitions.TryGetValue(incident.State, out var allowedTransitions))
+                if (!request.ForceTransition && config.Transitions != null && config.Transitions.TryGetValue(incident.State, out var allowedTransitions))
                 {
                     if (allowedTransitions != null && !allowedTransitions.Contains(request.TargetState))
                     {
@@ -65,25 +68,25 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
             else
             {
                 // Regla RN-11.2: reported->triaged->assigned->in_progress->resolved->closed. cancelled from anywhere.
-                if (request.TargetState != "cancelled")
+                if (!request.ForceTransition && request.TargetState != IncidentStates.Cancelled)
                 {
                     bool isValid = false;
                     switch (incident.State)
                     {
-                        case "reported":
-                            if (request.TargetState == "triaged") isValid = true;
+                        case IncidentStates.Reported:
+                            if (request.TargetState == IncidentStates.Triaged) isValid = true;
                             break;
-                        case "triaged":
-                            if (request.TargetState == "assigned") isValid = true;
+                        case IncidentStates.Triaged:
+                            if (request.TargetState == IncidentStates.Assigned) isValid = true;
                             break;
-                        case "assigned":
-                            if (request.TargetState == "in_progress") isValid = true;
+                        case IncidentStates.Assigned:
+                            if (request.TargetState == IncidentStates.InProgress) isValid = true;
                             break;
-                        case "in_progress":
-                            if (request.TargetState == "resolved") isValid = true;
+                        case IncidentStates.InProgress:
+                            if (request.TargetState == IncidentStates.Resolved) isValid = true;
                             break;
-                        case "resolved":
-                            if (request.TargetState == "closed") isValid = true;
+                        case IncidentStates.Resolved:
+                            if (request.TargetState == IncidentStates.Closed) isValid = true;
                             break;
                     }
 
@@ -91,7 +94,7 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
                         throw new InvalidOperationException($"Invalid transition from {incident.State} to {request.TargetState}");
                 }
                 
-                isTerminal = request.TargetState == "resolved" || request.TargetState == "closed" || request.TargetState == "cancelled";
+                isTerminal = IncidentStates.TerminalStates.Contains(request.TargetState);
             }
         }
         else 
@@ -105,8 +108,13 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
             }
             else
             {
-                isTerminal = request.TargetState == "resolved" || request.TargetState == "closed" || request.TargetState == "cancelled";
+                isTerminal = IncidentStates.TerminalStates.Contains(request.TargetState);
             }
+        }
+
+        if (isTerminal && !await IncidentClosingGuard.CanCloseAsync(_db, incident.Id, incident.TenantId, cancellationToken))
+        {
+            throw new InvalidOperationException("Cannot close the incident while it has active maintenance orders or open tasks.");
         }
 
         incident.State = request.TargetState;
@@ -116,10 +124,10 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
             incident.PropertiesJson = request.PropertiesJson;
         }
 
-        if (request.TargetState == "resolved")
+        if (request.TargetState == IncidentStates.Resolved)
             incident.ResolvedAt = DateTime.UtcNow;
             
-        if (request.TargetState == "closed")
+        if (request.TargetState == IncidentStates.Closed || isTerminal)
             incident.ClosedAt = DateTime.UtcNow;
 
         if (fromState != request.TargetState)
@@ -149,6 +157,44 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
                 request.TargetState,
                 isTerminal
             ), cancellationToken);
+
+            bool isAssignedState = false;
+
+            if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null && 
+                incident.IncidentTemplate.LifecycleStates.States != null && 
+                incident.IncidentTemplate.LifecycleStates.States.TryGetValue(request.TargetState, out var targetConfig))
+            {
+                if (targetConfig.AssociatedModule == "maintenance" || 
+                    targetConfig.AssociatedModule == "orders" || 
+                    targetConfig.AssociatedModule == "maintenance_orders" ||
+                    targetConfig.AssociatedModule == "work_orders")
+                {
+                    isAssignedState = true;
+                }
+            }
+            else if (request.TargetState == IncidentStates.Assigned)
+            {
+                isAssignedState = true;
+            }
+
+            if (isAssignedState)
+            {
+                await _mediator.Publish(new IncidentAssignedEvent(
+                    incident.Id,
+                    incident.AssetId,
+                    incident.TenantId
+                ), cancellationToken);
+            }
+
+            if (isTerminal)
+            {
+                await _mediator.Publish(new IncidentClosedEvent(
+                    incident.Id,
+                    incident.AssetId,
+                    incident.TenantId,
+                    request.TargetState
+                ), cancellationToken);
+            }
         }
         
         return Unit.Value;

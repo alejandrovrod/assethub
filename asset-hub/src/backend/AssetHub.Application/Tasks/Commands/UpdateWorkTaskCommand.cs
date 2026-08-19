@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,7 @@ public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskComman
         if (task == null)
             throw new ArgumentException("WorkTask not found");
 
-        if (task.State == "done" || task.State == "cancelled")
+        if (WorkTaskStates.TerminalStates.Contains(task.State))
             throw new InvalidOperationException("Cannot edit a task in a terminal state");
 
         if (request.AssignedEmployeeId.HasValue)
