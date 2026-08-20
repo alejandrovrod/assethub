@@ -56,10 +56,11 @@ public class GetPreventivePlanNextOccurrencesQueryHandler
 
             // Start from one tick before NextRunAt so it's included
             var cursor = from.AddSeconds(-1);
+            var tz = AssetHub.Application.Common.Time.TimeHelper.GetMexicoCityTimeZone();
 
             for (int i = 0; i < request.Count; i++)
             {
-                var next = expression.GetNextOccurrence(cursor);
+                var next = expression.GetNextOccurrence(cursor, tz);
                 if (next == null) break;
                 if (plan.EndsAt.HasValue && next.Value > plan.EndsAt.Value) break;
 

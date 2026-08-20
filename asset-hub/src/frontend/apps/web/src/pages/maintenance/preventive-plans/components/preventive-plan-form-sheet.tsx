@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { preventivePlanService, type PreventivePlanSummary } from '@/services/preventive-plan.service'
 import { assetService } from '@/services/asset.service'
 import { assetTemplateService } from '@/services/asset-template.service'
+import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { DatePicker } from '@/components/date-picker'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -23,6 +24,7 @@ const CRON_PRESETS = [
   { label: 'Semanal (lunes)', value: '0 0 * * 1' },
   { label: 'Mensual (día 1)', value: '0 0 1 * *' },
   { label: 'Cada hora', value: '0 * * * *' },
+  { label: 'Cada 5 minutos', value: '*/5 * * * *' },
   { label: 'Personalizado', value: 'custom' },
 ]
 
@@ -33,6 +35,7 @@ const formSchema = z
     targetType: z.enum(['Asset', 'AssetTemplate']),
     assetId: z.string().optional(),
     assetTemplateId: z.string().optional(),
+    workflowTemplateId: z.string().optional(),
     generatedEntityType: z.enum(['WorkTask', 'MaintenanceOrder', 'Both']),
     cronPreset: z.string().min(1),
     cronExpression: z.string().min(1, 'Expresión cron requerida'),
@@ -50,6 +53,9 @@ const formSchema = z
     }
     if (data.targetType === 'AssetTemplate' && !data.assetTemplateId) {
       ctx.addIssue({ code: 'custom', message: 'Seleccioná una plantilla', path: ['assetTemplateId'] })
+    }
+    if ((data.generatedEntityType === 'MaintenanceOrder' || data.generatedEntityType === 'Both') && !data.workflowTemplateId) {
+      ctx.addIssue({ code: 'custom', message: 'Seleccioná un flujo para las órdenes de mantenimiento', path: ['workflowTemplateId'] })
     }
   })
 
@@ -95,12 +101,22 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
     enabled: open,
   })
 
+  const { data: workflowTemplates } = useQuery({
+    queryKey: ['workflow-templates', 'preventive'],
+    queryFn: async () => {
+      const all = await WorkflowTemplateService.search(undefined, false)
+      return all.filter(t => t.type === 'preventive')
+    },
+    enabled: open,
+  })
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
       targetType: 'Asset',
+      workflowTemplateId: undefined,
       generatedEntityType: 'WorkTask',
       cronPreset: '0 0 1 * *',
       cronExpression: '0 0 1 * *',
@@ -113,6 +129,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
 
   const targetType = form.watch('targetType')
   const cronPreset = form.watch('cronPreset')
+  const generatedEntityType = form.watch('generatedEntityType')
   const selectedTemplateId = form.watch('assetTemplateId')
   const selectedAssetId = form.watch('assetId')
 
@@ -141,6 +158,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
         targetType: plan.targetType,
         assetId: plan.assetId ?? undefined,
         assetTemplateId: plan.assetTemplateId ?? undefined,
+        workflowTemplateId: plan.workflowTemplateId ?? undefined,
         generatedEntityType: plan.generatedEntityType as FormValues['generatedEntityType'],
         cronPreset: preset?.value ?? 'custom',
         cronExpression: plan.cronExpression,
@@ -157,6 +175,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
         name: '',
         description: '',
         targetType: 'Asset',
+        workflowTemplateId: undefined,
         generatedEntityType: 'WorkTask',
         cronPreset: '0 0 1 * *',
         cronExpression: '0 0 1 * *',
@@ -209,6 +228,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
       description: values.description || undefined,
       assetId: values.targetType === 'Asset' ? values.assetId : undefined,
       assetTemplateId: values.targetType === 'AssetTemplate' ? values.assetTemplateId : undefined,
+      workflowTemplateId: (values.generatedEntityType === 'MaintenanceOrder' || values.generatedEntityType === 'Both') ? values.workflowTemplateId : undefined,
       generatedEntityType: values.generatedEntityType,
       cronExpression: values.cronExpression,
       dueDateOffsetDays: values.dueDateOffsetDays,
@@ -420,6 +440,34 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                   </FormItem>
                 )}
               />
+
+              {(generatedEntityType === 'MaintenanceOrder' || generatedEntityType === 'Both') && (
+                <FormField
+                  control={form.control}
+                  name="workflowTemplateId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plantilla de Flujo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar flujo para las órdenes..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {workflowTemplates?.map((wt) => (
+                            <SelectItem key={wt.id} value={wt.id}>
+                              {wt.name} ({wt.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Define los campos y el ciclo de vida de las órdenes generadas</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}

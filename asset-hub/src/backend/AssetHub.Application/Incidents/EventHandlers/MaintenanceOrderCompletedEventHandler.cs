@@ -36,7 +36,7 @@ public class MaintenanceOrderCompletedEventHandler : INotificationHandler<Mainte
         try
         {
             var incident = await _db.Incidents
-                .Include(i => i.IncidentTemplate)
+                .Include(i => i.WorkflowTemplate)
                 .FirstOrDefaultAsync(i => i.Id == notification.IncidentId.Value, cancellationToken);
 
             if (incident == null)
@@ -45,9 +45,9 @@ public class MaintenanceOrderCompletedEventHandler : INotificationHandler<Mainte
             string targetState = IncidentStates.Resolved;
 
             // Opción A: Buscar estado terminal dinámicamente en la plantilla
-            if (incident.IncidentTemplate?.LifecycleStates?.States != null)
+            if (incident.WorkflowTemplate?.LifecycleStates?.States != null)
             {
-                var terminalStates = incident.IncidentTemplate.LifecycleStates.States
+                var terminalStates = incident.WorkflowTemplate.LifecycleStates.States
                     .Where(kvp => kvp.Value.IsTerminal)
                     .Select(kvp => kvp.Key)
                     .ToList();
@@ -65,7 +65,7 @@ public class MaintenanceOrderCompletedEventHandler : INotificationHandler<Mainte
                 else
                 {
                     // Fallback heurístico si no hay estados marcados isTerminal
-                    var keys = incident.IncidentTemplate.LifecycleStates.States.Keys;
+                    var keys = incident.WorkflowTemplate.LifecycleStates.States.Keys;
                     targetState = keys.FirstOrDefault(k => 
                         k.Contains("resolv", StringComparison.OrdinalIgnoreCase) || 
                         k.Contains("termina", StringComparison.OrdinalIgnoreCase) ||

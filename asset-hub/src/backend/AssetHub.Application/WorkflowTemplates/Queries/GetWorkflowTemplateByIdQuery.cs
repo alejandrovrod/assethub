@@ -2,13 +2,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
-using AssetHub.Domain.IncidentTemplates;
+using AssetHub.Domain.WorkflowTemplates;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace AssetHub.Application.IncidentTemplates.Queries;
+namespace AssetHub.Application.WorkflowTemplates.Queries;
 
-public record IncidentTemplateDetailDto(
+public record WorkflowTemplateDetailDto(
     Guid Id,
     string Code,
     string Name,
@@ -18,25 +18,25 @@ public record IncidentTemplateDetailDto(
     bool IsActive
 );
 
-public record GetIncidentTemplateByIdQuery(Guid Id) : IRequest<IncidentTemplateDetailDto?>;
+public record GetWorkflowTemplateByIdQuery(Guid Id) : IRequest<WorkflowTemplateDetailDto?>;
 
-public class GetIncidentTemplateByIdQueryHandler : IRequestHandler<GetIncidentTemplateByIdQuery, IncidentTemplateDetailDto?>
+public class GetWorkflowTemplateByIdQueryHandler : IRequestHandler<GetWorkflowTemplateByIdQuery, WorkflowTemplateDetailDto?>
 {
     private readonly ITenantDbContext _context;
 
-    public GetIncidentTemplateByIdQueryHandler(ITenantDbContext context)
+    public GetWorkflowTemplateByIdQueryHandler(ITenantDbContext context)
     {
         _context = context;
     }
 
-    public async Task<IncidentTemplateDetailDto?> Handle(GetIncidentTemplateByIdQuery request, CancellationToken cancellationToken)
+    public async Task<WorkflowTemplateDetailDto?> Handle(GetWorkflowTemplateByIdQuery request, CancellationToken cancellationToken)
     {
-        var template = await _context.IncidentTemplates
+        var template = await _context.WorkflowTemplates
             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken);
 
         if (template == null) return null;
 
-        return new IncidentTemplateDetailDto(
+        return new WorkflowTemplateDetailDto(
             template.Id,
             template.Code,
             template.Name,

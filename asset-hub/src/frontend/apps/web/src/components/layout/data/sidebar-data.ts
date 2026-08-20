@@ -60,7 +60,7 @@ export const sidebarData: SidebarData = {
             },
             {
               title: 'Plantillas de Incidencias',
-              url: '/maintenance/incident-templates',
+              url: '/maintenance/workflow-templates',
             },
             {
               title: 'Tareas',

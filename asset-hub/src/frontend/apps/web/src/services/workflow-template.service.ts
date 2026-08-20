@@ -1,66 +1,70 @@
 import { apiClient as api } from '@/lib/api-client'
 import { LifecycleConfig } from './asset-template.service'
 
-export interface IncidentTemplate {
+export interface WorkflowTemplate {
   id: string
   code: string
   name: string
   description: string
   schemaJson: string
+  type: string
   lifecycleStates: LifecycleConfig
   isActive: boolean
 }
 
-export interface IncidentTemplateSummary {
+export interface WorkflowTemplateSummary {
   id: string
   code: string
   name: string
   description: string
+  type: string
   isActive: boolean
 }
 
-export interface CreateIncidentTemplateDto {
+export interface CreateWorkflowTemplateDto {
   code: string
   name: string
   description: string
   schemaJson: string
+  type: string
   lifecycleStates: LifecycleConfig
 }
 
-export interface UpdateIncidentTemplateDto {
+export interface UpdateWorkflowTemplateDto {
   id: string
   code: string
   name: string
   description: string
   schemaJson: string
+  type: string
   lifecycleStates: LifecycleConfig
 }
 
-export const incidentTemplateService = {
+export const WorkflowTemplateService = {
   search: async (q?: string, includeInactive?: boolean) => {
     const params = new URLSearchParams()
     if (q) params.append('q', q)
     if (includeInactive) params.append('includeInactive', 'true')
     
-    const { data } = await api.get<{ items: IncidentTemplateSummary[] }>(`/incident-templates?${params.toString()}`)
+    const { data } = await api.get<{ items: WorkflowTemplateSummary[] }>(`/workflow-templates?${params.toString()}`)
     return data.items
   },
 
   getById: async (id: string) => {
-    const { data } = await api.get<IncidentTemplate>(`/incident-templates/${id}`)
+    const { data } = await api.get<WorkflowTemplate>(`/workflow-templates/${id}`)
     return data
   },
 
-  create: async (payload: CreateIncidentTemplateDto) => {
-    const { data } = await api.post<{ id: string }>('/incident-templates', payload)
+  create: async (payload: CreateWorkflowTemplateDto) => {
+    const { data } = await api.post<{ id: string }>('/workflow-templates', payload)
     return data.id
   },
 
-  update: async (id: string, payload: UpdateIncidentTemplateDto) => {
-    await api.put(`/incident-templates/${id}`, payload)
+  update: async (id: string, payload: UpdateWorkflowTemplateDto) => {
+    await api.put(`/workflow-templates/${id}`, payload)
   },
 
   delete: async (id: string) => {
-    await api.delete(`/incident-templates/${id}`)
+    await api.delete(`/workflow-templates/${id}`)
   }
 }

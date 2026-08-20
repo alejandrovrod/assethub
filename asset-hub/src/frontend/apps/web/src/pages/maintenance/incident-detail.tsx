@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, ArrowLeft, AlertTriangle, Pencil, Save, Image as ImageIcon, FileText, Download, ArrowRight, Clock, User } from 'lucide-react'
 import { incidentService, IncidentAttachment, IncidentTimelineEvent } from '@/services/incident.service'
-import { incidentTemplateService } from '@/services/incident-template.service'
+import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -42,9 +42,9 @@ export default function IncidentDetailPage() {
   })
 
   const { data: template } = useQuery({
-    queryKey: ['incident-template', incident?.incidentTemplateId],
-    queryFn: () => incidentTemplateService.getById(incident!.incidentTemplateId!),
-    enabled: !!incident?.incidentTemplateId
+    queryKey: ['workflow-template', incident?.WorkflowTemplateId],
+    queryFn: () => WorkflowTemplateService.getById(incident!.WorkflowTemplateId!),
+    enabled: !!incident?.WorkflowTemplateId
   })
 
   const { data: timelineEvents, isLoading: isLoadingTimeline } = useQuery({

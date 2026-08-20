@@ -23,6 +23,9 @@ public class PreventivePlan
     public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
     public ICollection<MaintenanceOrder> MaintenanceOrders { get; set; } = new List<MaintenanceOrder>();
 
+    public Guid? WorkflowTemplateId { get; set; }
+    public AssetHub.Domain.WorkflowTemplates.WorkflowTemplate? WorkflowTemplate { get; set; }
+
     public string GeneratedEntityType { get; set; } = PreventivePlanConstants.GeneratedEntityTypeWorkTask;
     public string CronExpression { get; set; } = string.Empty;
 

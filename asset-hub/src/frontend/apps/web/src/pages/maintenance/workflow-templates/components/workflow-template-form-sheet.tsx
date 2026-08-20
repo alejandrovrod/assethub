@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { incidentTemplateService } from '@/services/incident-template.service'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { toast } from 'sonner'
 import { LifecycleCanvas } from '@/pages/assets/components/lifecycle-canvas'
 import { SchemaBuilder } from '@/pages/assets/components/schema-builder'
@@ -17,6 +18,7 @@ import { SchemaBuilder } from '@/pages/assets/components/schema-builder'
 const formSchema = z.object({
   code: z.string().min(1, 'Código es requerido').max(50),
   name: z.string().min(1, 'Nombre es requerido').max(100),
+  type: z.enum(['incident', 'preventive'], { required_error: 'Tipo es requerido' }),
   description: z.string().max(500).optional(),
   schemaJson: z.string().refine((val) => {
     if (!val) return true
@@ -47,12 +49,12 @@ interface Props {
   onSuccess?: () => void
 }
 
-export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSuccess }: Props) {
+export function WorkflowTemplateFormSheet({ open, onOpenChange, templateId, onSuccess }: Props) {
   const queryClient = useQueryClient()
   
   const { data: template, isLoading: isLoadingTemplate } = useQuery({
-    queryKey: ['incident-template', templateId],
-    queryFn: () => incidentTemplateService.getById(templateId!),
+    queryKey: ['workflow-template', templateId],
+    queryFn: () => WorkflowTemplateService.getById(templateId!),
     enabled: !!templateId && open,
   })
 
@@ -61,6 +63,7 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
     defaultValues: {
       code: '',
       name: '',
+      type: 'incident',
       description: '',
       schemaJson: '{\n  "type": "object",\n  "properties": {}\n}',
       lifecycleStates: '{\n  "initialState": "reported",\n  "states": {\n    "reported": {\n      "allowedTransitions": ["in_progress"]\n    },\n    "in_progress": {\n      "allowedTransitions": ["resolved"]\n    },\n    "resolved": {\n      "allowedTransitions": []\n    }\n  }\n}',
@@ -73,6 +76,7 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
         form.reset({
           code: template.code,
           name: template.name,
+          type: template.type as any || 'incident',
           description: template.description || '',
           schemaJson: template.schemaJson || '{\n  "type": "object",\n  "properties": {}\n}',
           lifecycleStates: typeof template.lifecycleStates === 'string' 
@@ -83,6 +87,7 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
         form.reset({
           code: '',
           name: '',
+          type: 'incident',
           description: '',
           schemaJson: '{\n  "type": "object",\n  "properties": {}\n}',
           lifecycleStates: '{\n  "initialState": "reported",\n  "states": {\n    "reported": {\n      "allowedTransitions": ["in_progress"]\n    },\n    "in_progress": {\n      "allowedTransitions": ["resolved"]\n    },\n    "resolved": {\n      "allowedTransitions": []\n    }\n  }\n}',
@@ -92,7 +97,7 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
   }, [open, template, templateId, form])
 
   const createMutation = useMutation({
-    mutationFn: incidentTemplateService.create,
+    mutationFn: WorkflowTemplateService.create,
     onSuccess: () => {
       toast.success('Plantilla creada exitosamente')
       onSuccess?.()
@@ -101,9 +106,9 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => incidentTemplateService.update(templateId!, data),
+    mutationFn: (data: any) => WorkflowTemplateService.update(templateId!, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['incident-template', templateId] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-template', templateId] })
       toast.success('Plantilla actualizada exitosamente')
       onSuccess?.()
     },
@@ -132,9 +137,9 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
       <SheetContent className="sm:max-w-[800px] w-[90vw] flex flex-col p-0" aria-describedby={undefined}>
         <div className="p-6 pb-2 border-b shrink-0">
           <SheetHeader>
-            <SheetTitle>{templateId ? 'Editar Plantilla de Incidencia' : 'Nueva Plantilla de Incidencia'}</SheetTitle>
+            <SheetTitle>{templateId ? 'Editar Plantilla de Flujo' : 'Nueva Plantilla de Flujo'}</SheetTitle>
             <SheetDescription>
-              Configurá los detalles básicos, propiedades dinámicas y ciclo de vida de la incidencia.
+              Configurá los detalles básicos, el tipo (Incidencia o Mantenimiento) y el ciclo de vida.
             </SheetDescription>
           </SheetHeader>
         </div>
@@ -188,6 +193,28 @@ export function IncidentTemplateFormSheet({ open, onOpenChange, templateId, onSu
                       )}
                     />
                   </div>
+
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Flujo</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="incident">Incidencia</SelectItem>
+                            <SelectItem value="preventive">Plan de Mantenimiento Preventivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}

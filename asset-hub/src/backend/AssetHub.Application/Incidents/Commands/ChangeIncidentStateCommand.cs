@@ -32,7 +32,7 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
     public async Task<Unit> Handle(ChangeIncidentStateCommand request, CancellationToken cancellationToken)
     {
         var incident = await _db.Incidents
-            .Include(i => i.IncidentTemplate)
+            .Include(i => i.WorkflowTemplate)
             .FirstOrDefaultAsync(i => i.Id == request.IncidentId, cancellationToken);
             
         if (incident == null)
@@ -43,9 +43,9 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
 
         if (request.TargetState != incident.State)
         {
-            if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null)
+            if (incident.WorkflowTemplate != null && incident.WorkflowTemplate.LifecycleStates != null)
             {
-                var config = incident.IncidentTemplate.LifecycleStates;
+                var config = incident.WorkflowTemplate.LifecycleStates;
                 
                 if (config.States != null && !config.States.ContainsKey(request.TargetState))
                 {
@@ -100,9 +100,9 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
         else 
         {
             // Even if same state, calculate isTerminal
-            if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null && 
-                incident.IncidentTemplate.LifecycleStates.States != null && 
-                incident.IncidentTemplate.LifecycleStates.States.TryGetValue(request.TargetState, out var stateConfig))
+            if (incident.WorkflowTemplate != null && incident.WorkflowTemplate.LifecycleStates != null && 
+                incident.WorkflowTemplate.LifecycleStates.States != null && 
+                incident.WorkflowTemplate.LifecycleStates.States.TryGetValue(request.TargetState, out var stateConfig))
             {
                 isTerminal = stateConfig.IsTerminal;
             }
@@ -160,9 +160,9 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
 
             bool isAssignedState = false;
 
-            if (incident.IncidentTemplate != null && incident.IncidentTemplate.LifecycleStates != null && 
-                incident.IncidentTemplate.LifecycleStates.States != null && 
-                incident.IncidentTemplate.LifecycleStates.States.TryGetValue(request.TargetState, out var targetConfig))
+            if (incident.WorkflowTemplate != null && incident.WorkflowTemplate.LifecycleStates != null && 
+                incident.WorkflowTemplate.LifecycleStates.States != null && 
+                incident.WorkflowTemplate.LifecycleStates.States.TryGetValue(request.TargetState, out var targetConfig))
             {
                 if (targetConfig.AssociatedModule == "maintenance" || 
                     targetConfig.AssociatedModule == "orders" || 

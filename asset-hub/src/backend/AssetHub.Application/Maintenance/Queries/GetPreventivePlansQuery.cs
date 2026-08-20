@@ -65,6 +65,7 @@ public class GetPreventivePlansQueryHandler : IRequestHandler<GetPreventivePlans
                 AssetName = p.Asset != null ? p.Asset.Name : null,
                 AssetTemplateId = p.AssetTemplateId,
                 AssetTemplateName = p.AssetTemplate != null ? p.AssetTemplate.Name : null,
+                WorkflowTemplateId = p.WorkflowTemplateId,
                 GeneratedEntityType = p.GeneratedEntityType,
                 CronExpression = p.CronExpression,
                 DueDateOffsetDays = p.DueDateOffsetDays,

@@ -15,6 +15,8 @@ public class CreatePreventivePlanCommand : IRequest<Guid>
     public Guid? AssetTemplateId { get; set; }
     public Guid? AssetId { get; set; }
 
+    public Guid? WorkflowTemplateId { get; set; }
+
     public string GeneratedEntityType { get; set; } = PreventivePlanConstants.GeneratedEntityTypeWorkTask;
     public string CronExpression { get; set; } = string.Empty;
 
@@ -67,7 +69,8 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
         try
         {
             var expression = CronExpression.Parse(request.CronExpression);
-            nextRunAt = expression.GetNextOccurrence(DateTime.UtcNow);
+            var tz = AssetHub.Application.Common.Time.TimeHelper.GetMexicoCityTimeZone();
+            nextRunAt = expression.GetNextOccurrence(DateTime.UtcNow, tz);
         }
         catch (Exception ex)
         {
@@ -82,6 +85,7 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
             Description = request.Description,
             AssetTemplateId = request.AssetTemplateId,
             AssetId = request.AssetId,
+            WorkflowTemplateId = request.WorkflowTemplateId,
             GeneratedEntityType = request.GeneratedEntityType,
             CronExpression = request.CronExpression,
             DueDateOffsetDays = request.DueDateOffsetDays,

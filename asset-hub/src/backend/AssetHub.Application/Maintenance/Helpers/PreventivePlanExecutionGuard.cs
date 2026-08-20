@@ -18,34 +18,8 @@ public static class PreventivePlanExecutionGuard
         Guid tenantId,
         CancellationToken cancellationToken = default)
     {
-        var activeIncident = await db.Incidents
-            .AsNoTracking()
-            .AnyAsync(i =>
-                i.AssetId == asset.Id &&
-                i.TenantId == tenantId &&
-                !i.IsDeleted &&
-                IncidentStates.ActiveStates.Contains(i.State),
-                cancellationToken);
-
-        if (activeIncident)
-        {
-            return (false, $"Asset '{asset.Name}' has an active incident.");
-        }
-
-        var blockingOrder = await db.MaintenanceOrders
-            .AsNoTracking()
-            .AnyAsync(o =>
-                o.AssetId == asset.Id &&
-                o.TenantId == tenantId &&
-                !o.IsDeleted &&
-                o.State != MaintenanceOrderStates.Verified &&
-                o.State != MaintenanceOrderStates.Cancelled,
-                cancellationToken);
-
-        if (blockingOrder)
-        {
-            return (false, $"Asset '{asset.Name}' has an open or unverified maintenance order.");
-        }
+        // The user requested: "no quiero que me bloquees aunque se haya generado una incidencia o se haya creado un plan de mantenimiento porque el activo en la parte operativa si puede estar operando".
+        // Removed active incident and open maintenance order blocking logic.
 
         return (true, null);
     }

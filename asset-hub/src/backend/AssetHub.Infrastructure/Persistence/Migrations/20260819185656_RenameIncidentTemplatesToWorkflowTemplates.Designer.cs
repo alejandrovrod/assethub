@@ -4,17 +4,20 @@ using AssetHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 
 #nullable disable
 
-namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
+namespace AssetHub.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TenantDbContext))]
-    partial class TenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819185656_RenameIncidentTemplatesToWorkflowTemplates")]
+    partial class RenameIncidentTemplatesToWorkflowTemplates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -791,9 +794,6 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("WorkflowTemplateId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AssetId");
@@ -803,8 +803,6 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("DefaultAssignedEmployeeId");
 
                     b.HasIndex("DefaultAssignedTeamId");
-
-                    b.HasIndex("WorkflowTemplateId");
 
                     b.HasIndex("TenantId", "NextRunAt");
 
@@ -1583,15 +1581,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .HasForeignKey("DefaultAssignedTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AssetHub.Domain.WorkflowTemplates.WorkflowTemplate", "WorkflowTemplate")
-                        .WithMany()
-                        .HasForeignKey("WorkflowTemplateId");
-
                     b.Navigation("Asset");
 
                     b.Navigation("AssetTemplate");
-
-                    b.Navigation("WorkflowTemplate");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Maintenance.PreventivePlanExecutionLog", b =>

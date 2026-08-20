@@ -13,6 +13,7 @@ public class PreventivePlanDto
     public string? AssetTemplateName { get; set; }
     public Guid? AssetId { get; set; }
     public string? AssetName { get; set; }
+    public Guid? WorkflowTemplateId { get; set; }
 
     public string GeneratedEntityType { get; set; } = string.Empty;
     public string CronExpression { get; set; } = string.Empty;

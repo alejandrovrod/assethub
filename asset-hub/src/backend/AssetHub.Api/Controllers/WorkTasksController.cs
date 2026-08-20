@@ -114,20 +114,6 @@ public class WorkTasksController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id}/comments")]
-    public async Task<ActionResult<List<TaskCommentDto>>> GetTaskComments(Guid id)
-    {
-        var result = await _mediator.Send(new GetWorkTaskCommentsQuery(id));
-        return Ok(result);
-    }
-
-    [HttpPost("{id}/comments")]
-    public async Task<IActionResult> AddTaskComment(Guid id, [FromBody] AddTaskCommentCommand command)
-    {
-        command.WorkTaskId = id;
-        var commentId = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetTaskComments), new { id }, new { id = commentId });
-    }
 
     [HttpPost("evaluate-due")]
     [Authorize(Roles = "Admin,System")]

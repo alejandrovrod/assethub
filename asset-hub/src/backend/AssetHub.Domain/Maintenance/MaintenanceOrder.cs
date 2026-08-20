@@ -26,6 +26,7 @@ public class MaintenanceOrder
     public PreventivePlan? PreventivePlan { get; set; }
     
     public Guid? IncidentId { get; set; }
+    public Guid? WorkflowTemplateId { get; set; }
     public Incident? Incident { get; set; }
     
     public Guid? AssignedEmployeeId { get; set; }

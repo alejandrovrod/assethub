@@ -180,7 +180,7 @@ export default function PreventivePlansPage() {
                         </TableCell>
                         <TableCell className="text-sm">
                           {plan.nextRunAt
-                            ? format(new Date(plan.nextRunAt), 'dd MMM yyyy HH:mm', { locale: es })
+                            ? format(new Date(plan.nextRunAt.endsWith('Z') ? plan.nextRunAt : `${plan.nextRunAt}Z`), 'dd MMM yyyy HH:mm', { locale: es })
                             : '—'}
                         </TableCell>
                         <TableCell>
@@ -329,10 +329,10 @@ export default function PreventivePlansPage() {
                     <DetailRow label="Asignación automática" value={selectedPlan.autoAssign ? 'Sí' : 'No'} />
                     <DetailRow label="Estado" value={selectedPlan.isActive ? 'Activo' : 'Pausado'} />
                     {selectedPlan.lastRunAt && (
-                      <DetailRow label="Última ejecución" value={format(new Date(selectedPlan.lastRunAt), 'dd MMM yyyy HH:mm', { locale: es })} />
+                      <DetailRow label="Última ejecución" value={format(new Date(selectedPlan.lastRunAt.endsWith('Z') ? selectedPlan.lastRunAt : `${selectedPlan.lastRunAt}Z`), 'dd MMM yyyy HH:mm', { locale: es })} />
                     )}
                     {selectedPlan.endsAt && (
-                      <DetailRow label="Finaliza el" value={format(new Date(selectedPlan.endsAt), 'dd MMM yyyy', { locale: es })} />
+                      <DetailRow label="Finaliza el" value={format(new Date(selectedPlan.endsAt.endsWith('Z') ? selectedPlan.endsAt : `${selectedPlan.endsAt}Z`), 'dd MMM yyyy', { locale: es })} />
                     )}
                   </div>
                 </TabsContent>

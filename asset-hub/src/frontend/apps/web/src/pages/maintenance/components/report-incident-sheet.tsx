@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertTriangle, Tag, Box, ClipboardList } from 'lucide-react'
 import { incidentService } from '@/services/incident.service'
-import { incidentTemplateService } from '@/services/incident-template.service'
+import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { assetService } from '@/services/asset.service'
 import { toast } from 'sonner'
 import FormSchema from '@rjsf/core'
@@ -25,7 +25,7 @@ const formSchema = z.object({
   title: z.string().min(1, 'Título es requerido').max(200),
   description: z.string().optional(),
   assetId: z.string().min(1, 'Activo es requerido'),
-  incidentTemplateId: z.string().min(1, 'Plantilla es requerida'),
+  WorkflowTemplateId: z.string().min(1, 'Plantilla es requerida'),
   typeId: z.string().optional(),
   priorityId: z.string().optional(),
 })
@@ -55,8 +55,8 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
   })
 
   const { data: templates } = useQuery({
-    queryKey: ['incident-templates'],
-    queryFn: () => incidentTemplateService.search(undefined, false),
+    queryKey: ['workflow-templates'],
+    queryFn: () => WorkflowTemplateService.search(undefined, false),
     enabled: open,
   })
 
@@ -66,17 +66,17 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
       title: '',
       description: '',
       assetId: assetId ?? '',
-      incidentTemplateId: '',
+      WorkflowTemplateId: '',
       typeId: '00000000-0000-0000-0000-000000000000', // Mock UUIDs
       priorityId: '00000000-0000-0000-0000-000000000000',
     },
   })
 
-  const selectedTemplateId = form.watch('incidentTemplateId')
+  const selectedTemplateId = form.watch('WorkflowTemplateId')
 
   const { data: selectedTemplate } = useQuery({
-    queryKey: ['incident-template', selectedTemplateId],
-    queryFn: () => incidentTemplateService.getById(selectedTemplateId),
+    queryKey: ['workflow-template', selectedTemplateId],
+    queryFn: () => WorkflowTemplateService.getById(selectedTemplateId),
     enabled: !!selectedTemplateId,
   })
 
@@ -88,7 +88,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
         title: '',
         description: '',
         assetId: assetId ?? '',
-        incidentTemplateId: '',
+        WorkflowTemplateId: '',
         typeId: '00000000-0000-0000-0000-000000000000',
         priorityId: '00000000-0000-0000-0000-000000000000',
       })
@@ -226,7 +226,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
 
               <FormField
                 control={form.control}
-                name="incidentTemplateId"
+                name="WorkflowTemplateId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2 text-muted-foreground">

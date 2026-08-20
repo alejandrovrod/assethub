@@ -9,6 +9,7 @@ export interface PreventivePlanSummary {
   assetTemplateName?: string
   assetId?: string
   assetName?: string
+  workflowTemplateId?: string
   generatedEntityType: string
   cronExpression: string
   dueDateOffsetDays: number
@@ -27,6 +28,7 @@ export interface CreatePreventivePlanDto {
   description?: string
   assetTemplateId?: string
   assetId?: string
+  workflowTemplateId?: string
   generatedEntityType: string
   cronExpression: string
   dueDateOffsetDays: number

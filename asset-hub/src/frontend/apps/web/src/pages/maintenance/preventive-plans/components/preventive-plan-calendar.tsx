@@ -18,7 +18,7 @@ export function PreventivePlanCalendar({ planId }: Props) {
   })
 
   const occurrenceDates = useMemo(
-    () => (occurrences ?? []).map((d) => new Date(d)),
+    () => (occurrences ?? []).map((d) => new Date(d.endsWith('Z') ? d : `${d}Z`)),
     [occurrences]
   )
 

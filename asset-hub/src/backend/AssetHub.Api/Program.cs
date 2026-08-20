@@ -84,6 +84,7 @@ builder.Services.AddScoped<IEntityTypeUsageChecker, AssetHub.Infrastructure.Enti
 builder.Services.AddScoped<IAssetTemplateUsageChecker, AssetHub.Infrastructure.AssetTemplates.DummyAssetTemplateUsageChecker>();
 builder.Services.AddScoped<IAssetHierarchyService, AssetHub.Infrastructure.Services.AssetHierarchyService>();
 builder.Services.AddScoped<IFileStorageService, AssetHub.Infrastructure.Storage.LocalDiskFileStorageService>();
+builder.Services.AddHostedService<AssetHub.Api.Workers.PreventivePlanSchedulerService>();
 
 var app = builder.Build();
 

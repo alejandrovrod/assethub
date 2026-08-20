@@ -183,7 +183,8 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
             }
 
             plan.LastRunAt = occurrence;
-            plan.NextRunAt = ComputeNextOccurrence(plan.CronExpression, occurrence, plan.EndsAt);
+            var baseTime = occurrence > now ? occurrence : now;
+            plan.NextRunAt = ComputeNextOccurrence(plan.CronExpression, baseTime, plan.EndsAt);
 
             if (plan.NextRunAt == null && plan.EndsAt.HasValue)
             {
@@ -354,7 +355,8 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
     private static DateTime? ComputeNextOccurrence(string cronExpression, DateTime fromOccurrence, DateTime? endsAt)
     {
         var expression = CronExpression.Parse(cronExpression);
-        var next = expression.GetNextOccurrence(EnsureUtc(fromOccurrence));
+        var tz = AssetHub.Application.Common.Time.TimeHelper.GetMexicoCityTimeZone();
+        var next = expression.GetNextOccurrence(EnsureUtc(fromOccurrence), tz);
 
         if (next == null) return null;
         if (endsAt.HasValue && next.Value > endsAt.Value) return null;

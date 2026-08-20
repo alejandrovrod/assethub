@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using AssetHub.Application.Tasks.Commands;
+using AssetHub.Application.Tasks.Dtos;
+using AssetHub.Application.Tasks.Queries;
 using AssetHub.Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -21,12 +24,19 @@ public class TaskCommentsController : ControllerBase
         _mediator = mediator;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<List<TaskCommentDto>>> GetTaskComments(Guid taskId)
+    {
+        var result = await _mediator.Send(new GetWorkTaskCommentsQuery(taskId));
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> AddComment(Guid taskId, [FromBody] AddTaskCommentCommand command)
     {
         command.WorkTaskId = taskId;
         var id = await _mediator.Send(command);
-        return CreatedAtAction(nameof(AddComment), new { taskId, id }, new { id });
+        return CreatedAtAction(nameof(GetTaskComments), new { taskId }, new { id });
     }
 
     [HttpPut("{id}")]

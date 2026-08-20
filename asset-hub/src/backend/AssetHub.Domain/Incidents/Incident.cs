@@ -20,8 +20,8 @@ public class Incident
     public Guid TypeId { get; set; }
     public Guid? PriorityId { get; set; }
     
-    public Guid? IncidentTemplateId { get; set; }
-    public IncidentTemplates.IncidentTemplate? IncidentTemplate { get; set; }
+    public Guid? WorkflowTemplateId { get; set; }
+    public WorkflowTemplates.WorkflowTemplate? WorkflowTemplate { get; set; }
 
     public string PropertiesJson { get; set; } = "{}";
 

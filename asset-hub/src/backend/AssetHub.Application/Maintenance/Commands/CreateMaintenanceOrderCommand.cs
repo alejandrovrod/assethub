@@ -16,6 +16,7 @@ public class CreateMaintenanceOrderCommand : IRequest<Guid>
     public Guid AssetId { get; set; }
 
     public Guid? PreventivePlanId { get; set; }
+    public Guid? WorkflowTemplateId { get; set; }
     public Guid? IncidentId { get; set; }
 }
 
@@ -54,7 +55,8 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
             Description = request.Description,
             AssetId = request.AssetId,
             PreventivePlanId = request.PreventivePlanId,
-            IncidentId = request.IncidentId
+            IncidentId = request.IncidentId,
+            WorkflowTemplateId = request.WorkflowTemplateId
         };
 
         _db.MaintenanceOrders.Add(order);

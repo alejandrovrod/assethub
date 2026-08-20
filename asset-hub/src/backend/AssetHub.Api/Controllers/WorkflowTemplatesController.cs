@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using AssetHub.Application.IncidentTemplates.Commands;
-using AssetHub.Application.IncidentTemplates.Queries;
+using AssetHub.Application.WorkflowTemplates.Commands;
+using AssetHub.Application.WorkflowTemplates.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,13 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace AssetHub.Api.Controllers;
 
 [ApiController]
-[Route("api/v1/incident-templates")]
+[Route("api/v1/workflow-templates")]
 [Authorize]
-public class IncidentTemplatesController : ControllerBase
+public class WorkflowTemplatesController : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public IncidentTemplatesController(IMediator mediator)
+    public WorkflowTemplatesController(IMediator mediator)
     {
         _mediator = mediator;
     }
@@ -23,27 +23,27 @@ public class IncidentTemplatesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] bool includeInactive = false)
     {
-        var result = await _mediator.Send(new SearchIncidentTemplatesQuery(q, includeInactive));
+        var result = await _mediator.Send(new SearchWorkflowTemplatesQuery(q, includeInactive));
         return Ok(new { items = result });
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await _mediator.Send(new GetIncidentTemplateByIdQuery(id));
+        var result = await _mediator.Send(new GetWorkflowTemplateByIdQuery(id));
         if (result == null) return NotFound();
         return Ok(result);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateIncidentTemplateCommand command)
+    public async Task<IActionResult> Create([FromBody] CreateWorkflowTemplateCommand command)
     {
         var id = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateIncidentTemplateCommand command)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkflowTemplateCommand command)
     {
         var commandWithId = command with { Id = id };
         await _mediator.Send(commandWithId);
@@ -53,7 +53,7 @@ public class IncidentTemplatesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _mediator.Send(new DeleteIncidentTemplateCommand(id));
+        await _mediator.Send(new DeleteWorkflowTemplateCommand(id));
         return NoContent();
     }
 }

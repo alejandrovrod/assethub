@@ -11,7 +11,7 @@ import AssetDetailPage from "./pages/assets/detail";
 import AssetsTemplates from "./pages/assets/templates";
 import MaintenanceIncidents from "./pages/maintenance/incidents";
 import IncidentDetailPage from "./pages/maintenance/incident-detail";
-import IncidentTemplates from "./pages/maintenance/incident-templates/index";
+import WorkflowTemplates from "./pages/maintenance/workflow-templates/index";
 import MaintenanceTasks from "./pages/maintenance/tasks";
 import PreventivePlansPage from "./pages/maintenance/preventive-plans/index";
 import MaintenanceOrders from "./pages/maintenance/orders/index";
@@ -39,7 +39,7 @@ export default function App() {
           <Route path="maintenance">
             <Route path="incidents" element={<MaintenanceIncidents />} />
             <Route path="incidents/:id" element={<IncidentDetailPage />} />
-            <Route path="incident-templates" element={<IncidentTemplates />} />
+            <Route path="workflow-templates" element={<WorkflowTemplates />} />
             <Route path="tasks" element={<MaintenanceTasks />} />
             <Route path="preventive-plans" element={<PreventivePlansPage />} />
             <Route path="orders" element={<MaintenanceOrders />} />

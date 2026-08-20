@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
-import { Plus, Loader2, Pencil, Trash2, LayoutList, Kanban, Calendar, User, AlertCircle } from 'lucide-react'
+import { Plus, Loader2, Pencil, Trash2, LayoutList, Kanban, Calendar, User, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react'
 import { workTaskService, type WorkTaskSummary, type WorkTaskState, STATE_LABELS } from '@/services/work-task.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -60,6 +60,11 @@ export default function MaintenanceTasks() {
   const [searchTerm, setSearchTerm] = useState('')
   const [stateFilter, setStateFilter] = useState<WorkTaskState | 'all'>('all')
   const [view, setView] = useState<'list' | 'kanban'>('list')
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({})
+
+  const toggleOrder = (orderId: string) => {
+    setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }))
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['work-tasks', stateFilter, searchTerm],
@@ -72,6 +77,46 @@ export default function MaintenanceTasks() {
   })
 
   const items = data?.items || []
+
+  type RowItem =
+    | { type: 'order'; orderId: string; orderTitle: string; taskCount: number; tasks: WorkTaskSummary[] }
+    | { type: 'task'; task: WorkTaskSummary; isChild: boolean }
+
+  const groupedTasks = useMemo(() => {
+    const groups = new Map<string, WorkTaskSummary[]>()
+    const independent: WorkTaskSummary[] = []
+
+    for (const task of items) {
+      if (task.maintenanceOrderId) {
+        const orderId = task.maintenanceOrderId
+        if (!groups.has(orderId)) {
+          groups.set(orderId, [])
+        }
+        groups.get(orderId)!.push(task)
+      } else {
+        independent.push(task)
+      }
+    }
+
+    const rows: RowItem[] = []
+
+    groups.forEach((tasks, orderId) => {
+      const orderTitle = tasks[0].maintenanceOrderTitle || 'Orden sin título'
+      rows.push({ type: 'order', orderId, orderTitle, taskCount: tasks.length, tasks })
+
+      if (expandedOrders[orderId]) {
+        for (const task of tasks) {
+          rows.push({ type: 'task', task, isChild: true })
+        }
+      }
+    })
+
+    for (const task of independent) {
+      rows.push({ type: 'task', task, isChild: false })
+    }
+
+    return rows
+  }, [items, expandedOrders])
 
   useEffect(() => {
     if (selectedTaskId) {
@@ -202,67 +247,90 @@ export default function MaintenanceTasks() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((task) => (
-                        <TableRow
-                          key={task.id}
-                          className="cursor-pointer"
-                          onClick={() => handleRowClick(task)}
-                        >
-                          <TableCell className="font-medium max-w-xs truncate" title={task.title}>
-                            {task.title}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={STATE_VARIANTS[task.state]}>{STATE_LABELS[task.state]}</Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {task.dueAt
-                              ? format(new Date(task.dueAt), 'dd MMM yyyy', { locale: es })
-                              : '—'}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {task.assignedEmployeeName || task.assignedTeamName || '—'}
-                          </TableCell>
-                          <TableCell className="text-sm max-w-xs truncate" title={task.assetName}>
-                            {task.assetName || '—'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{task.priorityLabel || task.priorityCatalogItemId}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                            <TooltipProvider>
-                              <div className="flex items-center justify-end gap-1">
-                                <AlertDialog>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                          <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Eliminar</TooltipContent>
-                                  </Tooltip>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Esta acción eliminará la tarea &quot;{task.title}&quot;. No se puede
-                                        deshacer.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteMutation.mutate(task.id)}>
-                                        Eliminar
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            </TooltipProvider>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {groupedTasks.map((row) => {
+                        if (row.type === 'order') {
+                          const isExpanded = expandedOrders[row.orderId]
+                          return (
+                            <TableRow 
+                              key={`order-${row.orderId}`} 
+                              className="bg-muted/30 cursor-pointer hover:bg-muted/50" 
+                              onClick={() => toggleOrder(row.orderId)}
+                            >
+                              <TableCell colSpan={7} className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                                  <span>{row.orderTitle}</span>
+                                  <Badge variant="secondary" className="ml-2">{row.taskCount} tareas</Badge>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        } else {
+                          const task = row.task
+                          return (
+                            <TableRow
+                              key={`task-${task.id}`}
+                              className={`cursor-pointer ${row.isChild ? 'bg-background/50' : ''}`}
+                              onClick={() => handleRowClick(task)}
+                            >
+                              <TableCell className={`font-medium max-w-xs truncate ${row.isChild ? 'pl-8' : ''}`} title={task.title}>
+                                {row.isChild && <div className="inline-block w-4 h-4 border-l-2 border-b-2 border-muted-foreground/30 mr-2 -translate-y-1 rounded-bl-sm" />}
+                                {task.title}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={STATE_VARIANTS[task.state]}>{STATE_LABELS[task.state]}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {task.dueAt
+                                  ? format(new Date(task.dueAt), 'dd MMM yyyy', { locale: es })
+                                  : '—'}
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {task.assignedEmployeeName || task.assignedTeamName || '—'}
+                              </TableCell>
+                              <TableCell className="text-sm max-w-xs truncate" title={task.assetName}>
+                                {task.assetName || '—'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{task.priorityLabel || task.priorityCatalogItemId}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                <TooltipProvider>
+                                  <div className="flex items-center justify-end gap-1">
+                                    <AlertDialog>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                              <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Eliminar</TooltipContent>
+                                      </Tooltip>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Esta acción eliminará la tarea &quot;{task.title}&quot;. No se puede
+                                            deshacer.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => deleteMutation.mutate(task.id)}>
+                                            Eliminar
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </TooltipProvider>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        }
+                      })}
                     </TableBody>
                   </Table>
                 ) : (

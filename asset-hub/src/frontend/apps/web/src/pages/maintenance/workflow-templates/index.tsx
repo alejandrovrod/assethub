@@ -1,30 +1,30 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Loader2, Edit, Trash2 } from 'lucide-react'
-import { incidentTemplateService } from '@/services/incident-template.service'
+import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { IncidentTemplateFormSheet } from './components/incident-template-form-sheet'
+import { WorkflowTemplateFormSheet } from './components/workflow-template-form-sheet'
 
-export default function IncidentTemplates() {
+export default function WorkflowTemplates() {
   const queryClient = useQueryClient()
   
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<any>(null)
 
   const { data: templates, isLoading } = useQuery({
-    queryKey: ['incident-templates'],
-    queryFn: () => incidentTemplateService.search(),
+    queryKey: ['workflow-templates'],
+    queryFn: () => WorkflowTemplateService.search(),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: incidentTemplateService.delete,
+    mutationFn: WorkflowTemplateService.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['incident-templates'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-templates'] })
       toast.success('Plantilla eliminada')
     },
     onError: () => toast.error('Error al eliminar la plantilla')
@@ -47,9 +47,9 @@ export default function IncidentTemplates() {
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
-            <CardTitle>Plantillas de Incidencias</CardTitle>
+            <CardTitle>Plantillas de Flujos (Workflows)</CardTitle>
             <CardDescription>
-              Gestioná las plantillas (esquemas y ciclo de vida) para los distintos tipos de incidencias.
+              Gestioná las plantillas (esquemas y ciclo de vida) para incidencias y planes de mantenimiento.
             </CardDescription>
           </div>
           <Button onClick={handleCreate}>
@@ -73,6 +73,7 @@ export default function IncidentTemplates() {
                   <TableRow>
                     <TableHead className="w-[120px]">Código</TableHead>
                     <TableHead>Nombre</TableHead>
+                    <TableHead className="w-[150px]">Tipo</TableHead>
                     <TableHead>Descripción</TableHead>
                     <TableHead className="w-[100px]">Estado</TableHead>
                     <TableHead className="w-[100px] text-right">Acciones</TableHead>
@@ -83,6 +84,11 @@ export default function IncidentTemplates() {
                     <TableRow key={template.id}>
                       <TableCell className="font-medium">{template.code}</TableCell>
                       <TableCell>{template.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {template.type === 'preventive' ? 'Mantenimiento' : 'Incidencia'}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {template.description}
                       </TableCell>
@@ -120,13 +126,13 @@ export default function IncidentTemplates() {
         </CardContent>
       </Card>
 
-      <IncidentTemplateFormSheet
+      <WorkflowTemplateFormSheet
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         templateId={editingTemplate?.id}
         onSuccess={() => {
           setIsFormOpen(false)
-          queryClient.invalidateQueries({ queryKey: ['incident-templates'] })
+          queryClient.invalidateQueries({ queryKey: ['workflow-templates'] })
         }}
       />
     </div>

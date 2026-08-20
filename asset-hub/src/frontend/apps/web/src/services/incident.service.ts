@@ -27,7 +27,7 @@ export interface IncidentDetail {
   assetName: string
   typeId: string
   priorityId?: string
-  incidentTemplateId?: string
+  workflowTemplateId?: string
   propertiesJson: string
   state: string
   createdAt: string
@@ -59,7 +59,7 @@ export interface ReportIncidentDto {
   assetId: string
   typeId: string
   priorityId?: string
-  incidentTemplateId?: string
+  workflowTemplateId?: string
   propertiesJson?: string
   geoJson?: string
   targetAssetState?: string
