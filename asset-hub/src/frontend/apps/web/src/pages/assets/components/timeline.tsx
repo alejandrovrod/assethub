@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { assetService } from "../../../services/asset.service"
-import { Card, CardContent } from "../../../components/ui/card"
 import { Loader2, ArrowLeft, User, FileText } from "lucide-react"
 
 export function AssetTimeline({ assetId }: { assetId: string }) {
@@ -36,7 +35,10 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
   }
 
   return (
-    <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+    <div className="relative space-y-6">
+      {/* Vertical connector line */}
+      <div className="absolute left-5 top-0 bottom-0 w-px bg-border md:left-1/2 md:-translate-x-1/2" />
+
       {events.map((evt) => (
         <div key={evt.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-200 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
@@ -47,7 +49,7 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
               <span className="font-bold text-sm text-foreground capitalize">Cambio de estado</span>
               <time className="text-xs text-muted-foreground">{format(new Date(evt.at), 'PPp', { locale: es })}</time>
             </div>
-            
+
             <div className="text-sm text-muted-foreground mb-2">
               {evt.fromState && evt.toState ? (
                 <div className="flex items-center gap-2 mb-2">

@@ -42,6 +42,7 @@ const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'd
   scheduled: 'default',
   in_progress: 'default',
   done: 'default',
+  rescheduled: 'outline',
   verified: 'default',
   cancelled: 'destructive',
 }
@@ -65,6 +66,16 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   const [scheduledEnd, setScheduledEnd] = useState('')
   const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
   const [assignedEmployeeName, setAssignedEmployeeName] = useState('')
+  const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(new Set())
+
+  const toggleTaskCheck = (taskId: string, checked: boolean) => {
+    setCheckedTaskIds(prev => {
+      const next = new Set(prev)
+      if (checked) next.add(taskId)
+      else next.delete(taskId)
+      return next
+    })
+  }
 
   useEffect(() => {
     if (detail) {
@@ -89,15 +100,17 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order-tasks', order.id] })
       toast.success('Orden actualizada')
     },
     onError: () => toast.error('Error al actualizar la orden'),
   })
 
   const stateMutation = useMutation({
-    mutationFn: (action: 'approve' | 'schedule' | 'verify' | 'start' | 'complete' | 'cancel') => {
+    mutationFn: (action: 'approve' | 'schedule' | 'verify' | 'start' | 'complete' | 'cancel' | 'reject') => {
       if (action === 'approve') return maintenanceOrderService.approve(order.id)
       if (action === 'verify') return maintenanceOrderService.verify(order.id)
+      if (action === 'reject') return maintenanceOrderService.reject(order.id, Array.from(checkedTaskIds))
       if (action === 'start') return maintenanceOrderService.start(order.id)
       if (action === 'complete') return maintenanceOrderService.complete(order.id)
       if (action === 'cancel') return maintenanceOrderService.cancel(order.id)
@@ -110,6 +123,8 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order-tasks', order.id] })
+      setCheckedTaskIds(new Set())
       toast.success('Estado actualizado')
     },
     onError: () => toast.error('Error al cambiar el estado'),
@@ -123,7 +138,6 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   const tasks = detail?.tasks || []
   const totalTasks = tasks.length
   const completedTasks = tasks.filter(t => t.state === 'done' || t.state === 'cancelled').length
-  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100
   const isReadyToComplete = totalTasks === 0 || completedTasks === totalTasks
 
   return (
@@ -345,14 +359,27 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                       </div>
                     )}
                     {allowedActions.includes('verified') && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => stateMutation.mutate('verify')}
-                        disabled={stateMutation.isPending}
-                      >
-                        <Check className="h-4 w-4 mr-1" /> Verificar
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => stateMutation.mutate('verify')}
+                          disabled={stateMutation.isPending || checkedTaskIds.size < totalTasks}
+                        >
+                          <Check className="h-4 w-4 mr-1" /> Verificar
+                        </Button>
+                        {checkedTaskIds.size < totalTasks && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-amber-200"
+                            onClick={() => stateMutation.mutate('reject')}
+                            disabled={stateMutation.isPending}
+                          >
+                            <X className="h-4 w-4 mr-1" /> Rechazar
+                          </Button>
+                        )}
+                      </div>
                     )}
                     {allowedActions.includes('cancelled') && (
                       <Button
@@ -379,7 +406,12 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             />
 
             {/* Child tasks */}
-            <MaintenanceOrderTasksWidget orderId={order.id} />
+            <MaintenanceOrderTasksWidget
+              orderId={order.id}
+              validationMode={state === 'done'}
+              checkedTaskIds={checkedTaskIds}
+              onToggleTaskCheck={toggleTaskCheck}
+            />
 
             {/* Save */}
             <div className="flex justify-end">

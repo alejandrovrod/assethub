@@ -1,6 +1,6 @@
 import { apiClient as api } from '@/lib/api-client'
 
-export type MaintenanceOrderState = 'draft' | 'approved' | 'scheduled' | 'in_progress' | 'done' | 'verified' | 'cancelled'
+export type MaintenanceOrderState = 'draft' | 'approved' | 'scheduled' | 'in_progress' | 'done' | 'verified' | 'cancelled' | 'rescheduled'
 export type MaintenanceOrderKind = 'corrective' | 'preventive'
 
 export interface MaintenanceOrderSummary {
@@ -93,6 +93,7 @@ const STATE_LABELS: Record<MaintenanceOrderState, string> = {
   scheduled: 'Programada',
   in_progress: 'En progreso',
   done: 'Completada',
+  rescheduled: 'Reprogramada',
   verified: 'Verificada',
   cancelled: 'Cancelada',
 }
@@ -106,8 +107,9 @@ const ALLOWED_TRANSITIONS: Record<MaintenanceOrderState, MaintenanceOrderState[]
   draft: ['approved', 'scheduled'],
   approved: ['scheduled', 'cancelled'],
   scheduled: ['in_progress', 'cancelled'],
-  in_progress: ['done'],
-  done: ['verified'],
+  in_progress: ['done', 'cancelled'],
+  done: ['verified', 'rescheduled'],
+  rescheduled: ['scheduled', 'in_progress', 'cancelled'],
   verified: [],
   cancelled: [],
 }
@@ -161,6 +163,10 @@ export const maintenanceOrderService = {
 
   verify: async (id: string): Promise<void> => {
     await api.patch(`/maintenance-orders/${id}/verify`)
+  },
+
+  reject: async (id: string, approvedTaskIds: string[]): Promise<void> => {
+    await api.patch(`/maintenance-orders/${id}/reject`, approvedTaskIds)
   },
 
   start: async (id: string): Promise<void> => {

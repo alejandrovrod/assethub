@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, ArrowLeft, AlertTriangle, Pencil, Save, Image as ImageIcon, FileText, Download, ArrowRight, Clock, User } from 'lucide-react'
-import { incidentService, IncidentAttachment, IncidentTimelineEvent } from '@/services/incident.service'
+import { Loader2, ArrowLeft, AlertTriangle, Pencil, Save, FileText, User } from 'lucide-react'
+import { incidentService } from '@/services/incident.service'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -42,9 +42,9 @@ export default function IncidentDetailPage() {
   })
 
   const { data: template } = useQuery({
-    queryKey: ['workflow-template', incident?.WorkflowTemplateId],
-    queryFn: () => WorkflowTemplateService.getById(incident!.WorkflowTemplateId!),
-    enabled: !!incident?.WorkflowTemplateId
+    queryKey: ['workflow-template', incident?.workflowTemplateId],
+    queryFn: () => WorkflowTemplateService.getById(incident!.workflowTemplateId!),
+    enabled: !!incident?.workflowTemplateId
   })
 
   const { data: timelineEvents, isLoading: isLoadingTimeline } = useQuery({
@@ -323,7 +323,7 @@ export default function IncidentDetailPage() {
                     </div>
                   ) : (
                     <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                      {timelineEvents.map((event, index) => {
+                      {timelineEvents.map((event) => {
                         let parsedProps = null
                         if (event.propertiesJson && event.propertiesJson !== '{}') {
                           try {
@@ -395,7 +395,7 @@ export default function IncidentDetailPage() {
               </div>
               <div>
                 <span className="text-muted-foreground block mb-1">Fecha de Creación</span>
-                <span>{incident.reportedAt ? new Date(incident.reportedAt).toLocaleDateString() : '-'}</span>
+                <span>{incident.createdAt ? new Date(incident.createdAt).toLocaleDateString() : '-'}</span>
               </div>
               {incident.resolvedAt && (
                 <div>

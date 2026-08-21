@@ -133,6 +133,7 @@ public class GetWorkTasksQueryHandler : IRequestHandler<GetWorkTasksQuery, GetWo
                 PreventivePlanName = t.PreventivePlan != null ? t.PreventivePlan.Name : null,
                 MaintenanceOrderId = t.MaintenanceOrderId,
                 MaintenanceOrderTitle = t.MaintenanceOrder != null ? t.MaintenanceOrder.Title : null,
+                MaintenanceOrderState = t.MaintenanceOrder != null ? t.MaintenanceOrder.State : null,
                 AssignedEmployeeId = t.AssignedEmployeeId,
                 AssignedEmployeeName = t.AssignedEmployee != null ? $"{t.AssignedEmployee.FirstName} {t.AssignedEmployee.LastName}" : null,
                 AssignedTeamId = t.AssignedTeamId,

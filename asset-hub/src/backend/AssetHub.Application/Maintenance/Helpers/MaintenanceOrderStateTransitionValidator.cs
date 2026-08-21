@@ -17,7 +17,11 @@ public static class MaintenanceOrderStateTransitionValidator
         (MaintenanceOrderStates.Scheduled, MaintenanceOrderStates.Cancelled),
         (MaintenanceOrderStates.InProgress, MaintenanceOrderStates.Done),
         (MaintenanceOrderStates.InProgress, MaintenanceOrderStates.Cancelled),
-        (MaintenanceOrderStates.Done, MaintenanceOrderStates.Verified)
+        (MaintenanceOrderStates.Done, MaintenanceOrderStates.Verified),
+        (MaintenanceOrderStates.Done, MaintenanceOrderStates.Rescheduled),
+        (MaintenanceOrderStates.Rescheduled, MaintenanceOrderStates.Scheduled),
+        (MaintenanceOrderStates.Rescheduled, MaintenanceOrderStates.InProgress),
+        (MaintenanceOrderStates.Rescheduled, MaintenanceOrderStates.Cancelled)
     };
 
     public static bool IsValidTransition(string? fromState, string toState)

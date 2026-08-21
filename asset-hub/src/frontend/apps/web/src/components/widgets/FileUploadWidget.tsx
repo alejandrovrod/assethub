@@ -1,6 +1,5 @@
 import { WidgetProps } from '@rjsf/utils'
 import { ChangeEvent, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Loader2, UploadCloud, X, FileIcon } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
@@ -80,7 +79,7 @@ export const FileUploadWidget = (props: WidgetProps) => {
         onChange={handleFileChange}
         multiple={isMultiple}
         // Could be improved to read accept types from schema.
-        accept={schema.format === 'data-url' || schema.items?.format === 'data-url' ? 'image/*,application/pdf' : '*/*'}
+        accept={(schema as any).format === 'data-url' || (schema as any).items?.format === 'data-url' ? 'image/*,application/pdf' : '*/*'}
       />
       
       {(valuesArray.length === 0 || isMultiple) && (

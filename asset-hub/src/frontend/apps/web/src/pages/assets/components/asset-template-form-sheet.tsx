@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useMemo } from 'react'
+import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -8,11 +8,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { assetTemplateService } from '@/services/asset-template.service'
 import { toast } from 'sonner'
 import { SchemaBuilder } from './schema-builder'
 import { LifecycleCanvas } from './lifecycle-canvas'
+import { MaintenanceChecklistBuilder } from './maintenance-checklist-builder'
+import { SchemaFieldPreview } from './schema-field-preview'
 import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
+import { Info, FileText, List, GitBranch, CheckSquare, Eye } from 'lucide-react'
 
 const formSchema = z.object({
   code: z.string().min(1, 'Código es requerido').max(50),
@@ -48,16 +54,184 @@ interface Props {
   template?: any
 }
 
+function SchemaBuilderField() {
+  const form = useFormContext<FormValues>()
+  return (
+    <FormField
+      control={form.control}
+      name="schemaJson"
+      render={({ field }) => (
+        <FormItem>
+          <FormControl>
+            <SchemaBuilder value={field.value} onChange={field.onChange} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+function LifecycleCanvasField() {
+  const form = useFormContext<FormValues>()
+  const schemaJson = useWatch({ control: form.control, name: 'schemaJson' })
+  return (
+    <FormField
+      control={form.control}
+      name="lifecycleStates"
+      render={({ field }) => (
+        <FormItem>
+          <FormControl>
+            <LifecycleCanvas
+              value={field.value}
+              onChange={field.onChange}
+              schemaJson={schemaJson}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+function MaintenanceChecklistField() {
+  const form = useFormContext<FormValues>()
+  return (
+    <FormField
+      control={form.control}
+      name="maintenanceChecklist"
+      render={({ field }) => (
+        <FormItem>
+          <FormControl>
+            <MaintenanceChecklistBuilder value={field.value || ''} onChange={field.onChange} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
+
+function PreviewTabContent() {
+  const form = useFormContext<FormValues>()
+  const schemaJson = useWatch({ control: form.control, name: 'schemaJson' })
+  const lifecycleStates = useWatch({ control: form.control, name: 'lifecycleStates' })
+  const maintenanceChecklist = useWatch({ control: form.control, name: 'maintenanceChecklist' })
+
+  const previewFields = useMemo(() => {
+    try {
+      const schema = JSON.parse(schemaJson || '{}')
+      return Object.entries(schema.properties || {}).map(([key, prop]: [string, any]) => ({
+        keyName: key,
+        title: prop.title || key,
+        type: prop.type === 'array' && prop.items?.format === 'data-url' ? 'files'
+          : prop.format === 'data-url' ? 'file'
+          : prop.format === 'date' ? 'date'
+          : prop.catalogCode ? 'catalog'
+          : prop.enum ? 'enum'
+          : prop.type || 'string',
+        required: (schema.required || []).includes(key),
+        enumOptions: prop.enum?.join(', ') || undefined,
+        catalogCode: prop.catalogCode || undefined,
+      }))
+    } catch {
+      return []
+    }
+  }, [schemaJson])
+
+  const lifecycleSummary = useMemo(() => {
+    try {
+      const parsed = JSON.parse(lifecycleStates || '{}')
+      const states = Object.keys(parsed.transitions || {})
+      return {
+        initial: parsed.initialState || (states[0] || ''),
+        states,
+        transitions: parsed.transitions || {},
+      }
+    } catch {
+      return { initial: '', states: [], transitions: {} }
+    }
+  }, [lifecycleStates])
+
+  const checklistTasks = useMemo(() => {
+    try {
+      const parsed = JSON.parse(maintenanceChecklist || '{}')
+      return Array.isArray(parsed.tasks) ? parsed.tasks : []
+    } catch {
+      return []
+    }
+  }, [maintenanceChecklist])
+
+  return (
+    <TabsContent value="preview" className="flex flex-col gap-6 mt-0 overflow-y-auto">
+      <Alert className="bg-muted border-border">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Esta es una vista aproximada de cómo se verá la plantilla para el usuario final.
+        </AlertDescription>
+      </Alert>
+
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold">Atributos del activo</h4>
+        {previewFields.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay atributos configurados.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {previewFields.map((field) => (
+              <SchemaFieldPreview key={field.keyName} field={field} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold">Ciclo de vida</h4>
+        {lifecycleSummary.states.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay estados configurados.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {lifecycleSummary.states.map((state) => (
+              <Badge
+                key={state}
+                variant={state === lifecycleSummary.initial ? 'default' : 'outline'}
+              >
+                {state === lifecycleSummary.initial && (
+                  <Info className="h-3 w-3 mr-1" />
+                )}
+                {state}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold">Checklist de mantenimiento</h4>
+        {checklistTasks.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay tareas configuradas.</p>
+        ) : (
+          <ul className="list-decimal list-inside text-sm space-y-1">
+            {checklistTasks.map((task: any, idx: number) => (
+              <li key={idx}>{task.title || 'Tarea sin nombre'}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </TabsContent>
+  )
+}
+
 export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) {
   const queryClient = useQueryClient()
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: '',
       name: '',
       description: '',
-      businessEntityTypeId: '00000000-0000-0000-0000-000000000000', // Mock UUID for now
+      businessEntityTypeId: '00000000-0000-0000-0000-000000000000',
       schemaJson: '{\n  "type": "object",\n  "properties": {}\n}',
       lifecycleStates: '{\n  "initialState": "Active",\n  "transitions": {\n    "Active": ["Inactive"],\n    "Inactive": ["Active"]\n  }\n}',
       maintenanceChecklist: '',
@@ -73,8 +247,8 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
           description: template.description || '',
           businessEntityTypeId: template.businessEntityTypeId || '00000000-0000-0000-0000-000000000000',
           schemaJson: template.schemaJson || '{\n  "type": "object",\n  "properties": {}\n}',
-          lifecycleStates: typeof template.lifecycleStates === 'string' 
-            ? template.lifecycleStates 
+          lifecycleStates: typeof template.lifecycleStates === 'string'
+            ? template.lifecycleStates
             : JSON.stringify(template.lifecycleStates, null, 2) || '{\n  "initialState": "Active",\n  "transitions": {\n    "Active": ["Inactive"],\n    "Inactive": ["Active"]\n  }\n}',
           maintenanceChecklist: template.maintenanceChecklist || '',
         })
@@ -136,6 +310,8 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
+  const errors = Object.keys(form.formState.errors).length > 0
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className={`${formSheetContentClass} w-full sm:max-w-3xl md:max-w-5xl lg:max-w-[85vw] xl:max-w-[90vw]`}>
@@ -146,7 +322,8 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
               <SheetHeader className="p-6 pb-4">
                 <SheetTitle>{template ? 'Editar Plantilla' : 'Nueva Plantilla'}</SheetTitle>
                 <SheetDescription>
-                  Configurá los datos básicos y el esquema JSON de atributos para la plantilla de activo.
+                  Configurá paso a paso los datos básicos, atributos, ciclo de vida y checklist de la
+                  plantilla de activo.
                 </SheetDescription>
               </SheetHeader>
             }
@@ -161,14 +338,40 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
               </>
             }
           >
-            {Object.keys(form.formState.errors).length > 0 && (
-              <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-                <strong>Error de Validación:</strong>
-                <pre className="mt-2 text-xs">{JSON.stringify(form.formState.errors, null, 2)}</pre>
-              </div>
+            {errors && (
+              <Alert variant="destructive" className="mb-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Revisá los campos marcados en rojo antes de guardar.
+                </AlertDescription>
+              </Alert>
             )}
-            <div className="flex flex-col gap-6">
-                
+
+            <Tabs defaultValue="general" className="flex flex-col flex-1 min-h-0">
+              <TabsList className="self-start mb-4 flex-wrap h-auto">
+                <TabsTrigger value="general">
+                  <FileText className="h-4 w-4 mr-2" />
+                  General
+                </TabsTrigger>
+                <TabsTrigger value="attributes">
+                  <List className="h-4 w-4 mr-2" />
+                  Atributos
+                </TabsTrigger>
+                <TabsTrigger value="lifecycle">
+                  <GitBranch className="h-4 w-4 mr-2" />
+                  Ciclo de Vida
+                </TabsTrigger>
+                <TabsTrigger value="checklist">
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Checklist
+                </TabsTrigger>
+                <TabsTrigger value="preview">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Vista Previa
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="flex flex-col gap-6 mt-0">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -177,11 +380,11 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                       <FormItem>
                         <FormLabel>Código</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Ej: VEHICULO" 
-                            readOnly={!!template} 
+                          <Input
+                            placeholder="Ej: VEHICULO"
+                            readOnly={!!template}
                             className={template ? "bg-muted cursor-not-allowed text-muted-foreground" : ""}
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -217,57 +420,50 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                   )}
                 />
 
-                <div className="space-y-6 pt-4 border-t">
-                  <h4 className="text-sm font-medium">Configuración Visual (Schema & Ciclo de Vida)</h4>
-                  
-                  <FormField
-                    control={form.control}
-                    name="schemaJson"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Esquema de Atributos</FormLabel>
-                        <FormControl>
-                          <SchemaBuilder value={field.value} onChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="lifecycleStates"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Flujo de Estados (Máquina de Estados)</FormLabel>
-                        <FormControl>
-                          <LifecycleCanvas 
-                            value={field.value} 
-                            onChange={field.onChange} 
-                            schemaJson={form.watch('schemaJson')}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="maintenanceChecklist"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Checklist de Mantenimiento Preventivo (JSON)</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Ej: { &quot;tasks&quot;: [&quot;Revisar aceite&quot;, &quot;Revisar filtros&quot;] }" {...field} className="font-mono text-sm h-32" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
+                <div className="bg-muted/30 rounded-md p-4 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground mb-1">¿Qué es una plantilla de activo?</p>
+                  <p>
+                    Es la definición de un tipo de activo (vehículo, herramienta, equipo). Los activos
+                    creados con esta plantilla heredarán los atributos, estados y checklist que
+                    configures en las siguientes pestañas.
+                  </p>
                 </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="attributes" className="flex flex-col gap-6 mt-0">
+                <Alert className="bg-blue-50 text-blue-900 border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription>
+                    Los atributos son las características que completarán los usuarios al crear un
+                    activo de esta plantilla.
+                  </AlertDescription>
+                </Alert>
+                <SchemaBuilderField />
+              </TabsContent>
+
+              <TabsContent value="lifecycle" className="flex flex-col gap-6 mt-0">
+                <Alert className="bg-blue-50 text-blue-900 border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription>
+                    El ciclo de vida define los estados por los que puede pasar un activo y las
+                    transiciones permitidas entre ellos.
+                  </AlertDescription>
+                </Alert>
+                <LifecycleCanvasField />
+              </TabsContent>
+
+              <TabsContent value="checklist" className="flex flex-col gap-6 mt-0">
+                <Alert className="bg-blue-50 text-blue-900 border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription>
+                    El checklist se utiliza como base para las órdenes de mantenimiento preventivo de
+                    los activos de esta plantilla.
+                  </AlertDescription>
+                </Alert>
+                <MaintenanceChecklistField />
+              </TabsContent>
+              <PreviewTabContent />
+            </Tabs>
           </FormSheetLayout>
         </Form>
       </SheetContent>

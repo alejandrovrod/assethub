@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
-import { Plus, Loader2, Pencil, Trash2, LayoutList, Kanban, Calendar, User, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react'
-import { workTaskService, type WorkTaskSummary, type WorkTaskState, STATE_LABELS } from '@/services/work-task.service'
+import { Plus, Loader2, Trash2, LayoutList, Kanban, Calendar, User, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react'
+import { workTaskService, type WorkTaskState, type WorkTaskSummary, STATE_LABELS } from '@/services/work-task.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -38,6 +38,7 @@ import { es } from 'date-fns/locale'
 const STATE_OPTIONS: { value: WorkTaskState | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'todo', label: 'Por hacer' },
+  { value: 'rework', label: 'Rehacer' },
   { value: 'in_progress', label: 'En progreso' },
   { value: 'done', label: 'Completada' },
   { value: 'cancelled', label: 'Cancelada' },
@@ -45,6 +46,7 @@ const STATE_OPTIONS: { value: WorkTaskState | 'all'; label: string }[] = [
 
 const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   todo: 'secondary',
+  rework: 'outline',
   in_progress: 'default',
   done: 'default',
   cancelled: 'destructive',
@@ -79,7 +81,7 @@ export default function MaintenanceTasks() {
   const items = data?.items || []
 
   type RowItem =
-    | { type: 'order'; orderId: string; orderTitle: string; taskCount: number; tasks: WorkTaskSummary[] }
+    | { type: 'order'; orderId: string; orderTitle: string; orderState?: string; taskCount: number; tasks: WorkTaskSummary[] }
     | { type: 'task'; task: WorkTaskSummary; isChild: boolean }
 
   const groupedTasks = useMemo(() => {
@@ -102,7 +104,8 @@ export default function MaintenanceTasks() {
 
     groups.forEach((tasks, orderId) => {
       const orderTitle = tasks[0].maintenanceOrderTitle || 'Orden sin título'
-      rows.push({ type: 'order', orderId, orderTitle, taskCount: tasks.length, tasks })
+      const orderState = tasks[0].maintenanceOrderState
+      rows.push({ type: 'order', orderId, orderTitle, orderState, taskCount: tasks.length, tasks })
 
       if (expandedOrders[orderId]) {
         for (const task of tasks) {
@@ -163,6 +166,7 @@ export default function MaintenanceTasks() {
 
   const tasksByState: Record<WorkTaskState, WorkTaskSummary[]> = {
     todo: [],
+    rework: [],
     in_progress: [],
     done: [],
     cancelled: [],
@@ -260,6 +264,17 @@ export default function MaintenanceTasks() {
                                 <div className="flex items-center gap-2">
                                   {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                                   <span>{row.orderTitle}</span>
+                                  {row.orderState && (
+                                    <Badge variant="outline" className="ml-2 uppercase text-[10px]">
+                                      {row.orderState === 'draft' ? 'Borrador' :
+                                       row.orderState === 'approved' ? 'Aprobada' :
+                                       row.orderState === 'scheduled' ? 'Programada' :
+                                       row.orderState === 'in_progress' ? 'En progreso' :
+                                       row.orderState === 'done' ? 'Realizada' :
+                                       row.orderState === 'verified' ? 'Verificada' :
+                                       row.orderState === 'cancelled' ? 'Cancelada' : row.orderState}
+                                    </Badge>
+                                  )}
                                   <Badge variant="secondary" className="ml-2">{row.taskCount} tareas</Badge>
                                 </div>
                               </TableCell>

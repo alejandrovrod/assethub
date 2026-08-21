@@ -108,12 +108,11 @@ public class WorkTasksController : ControllerBase
     }
 
     [HttpGet("{id}/history")]
-    public async Task<ActionResult<List<TaskStatusHistoryDto>>> GetTaskHistory(Guid id)
+    public async Task<ActionResult> GetTaskHistory(Guid id)
     {
         var result = await _mediator.Send(new GetWorkTaskHistoryQuery(id));
-        return Ok(result);
+        return Ok(new { items = result });
     }
-
 
     [HttpPost("evaluate-due")]
     [Authorize(Roles = "Admin,System")]

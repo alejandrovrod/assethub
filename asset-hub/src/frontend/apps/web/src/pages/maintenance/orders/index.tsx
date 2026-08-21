@@ -47,6 +47,7 @@ const STATE_OPTIONS: { value: MaintenanceOrderState | 'all'; label: string }[] =
   { value: 'scheduled', label: 'Programada' },
   { value: 'in_progress', label: 'En progreso' },
   { value: 'done', label: 'Completada' },
+  { value: 'rescheduled', label: 'Reprogramada' },
   { value: 'verified', label: 'Verificada' },
   { value: 'cancelled', label: 'Cancelada' },
 ]
@@ -63,6 +64,7 @@ const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'd
   scheduled: 'default',
   in_progress: 'default',
   done: 'default',
+  rescheduled: 'outline',
   verified: 'default',
   cancelled: 'destructive',
 }

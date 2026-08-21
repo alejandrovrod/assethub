@@ -30,7 +30,7 @@ public class GetAssetTemplatesQueryHandler : IRequestHandler<GetAssetTemplatesQu
         var tenantId = _tenantResolver.GetCurrentTenantId();
         
         var query = _dbContext.AssetTemplates
-            .Where(t => t.TenantId == tenantId);
+            .Where(t => t.TenantId == tenantId && t.IsActive);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

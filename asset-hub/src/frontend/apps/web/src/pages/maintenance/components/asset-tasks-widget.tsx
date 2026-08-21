@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, Loader2, AlertCircle } from 'lucide-react'
-import { workTaskService, type WorkTaskSummary } from '@/services/work-task.service'
+import { workTaskService } from '@/services/work-task.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

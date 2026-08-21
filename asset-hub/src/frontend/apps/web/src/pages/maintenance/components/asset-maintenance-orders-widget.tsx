@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FileText, Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { maintenanceOrderService, STATE_LABELS, KIND_LABELS } from '@/services/maintenance-order.service'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +7,17 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+const STATE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  draft: 'outline',
+  approved: 'secondary',
+  scheduled: 'default',
+  in_progress: 'default',
+  done: 'default',
+  rescheduled: 'outline',
+  verified: 'default',
+  cancelled: 'destructive',
+}
 
 interface AssetMaintenanceOrdersWidgetProps {
   assetId: string

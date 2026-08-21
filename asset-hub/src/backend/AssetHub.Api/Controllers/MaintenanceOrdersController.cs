@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using AssetHub.Application.Maintenance.Commands;
 using AssetHub.Application.Maintenance.Dtos;
@@ -115,6 +116,14 @@ public class MaintenanceOrdersController : ControllerBase
     public async Task<IActionResult> VerifyOrder(Guid id)
     {
         var command = new VerifyMaintenanceOrderCommand { MaintenanceOrderId = id };
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+    [HttpPatch("{id}/reject")]
+    public async Task<IActionResult> RejectOrder(Guid id, [FromBody] List<Guid> approvedTaskIds)
+    {
+        var command = new RejectMaintenanceOrderCommand { MaintenanceOrderId = id, ApprovedTaskIds = approvedTaskIds ?? new List<Guid>() };
         await _mediator.Send(command);
         return NoContent();
     }

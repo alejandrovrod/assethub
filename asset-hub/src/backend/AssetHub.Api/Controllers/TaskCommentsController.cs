@@ -25,18 +25,27 @@ public class TaskCommentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<TaskCommentDto>>> GetTaskComments(Guid taskId)
+    public async Task<ActionResult> GetTaskComments(Guid taskId)
     {
         var result = await _mediator.Send(new GetWorkTaskCommentsQuery(taskId));
-        return Ok(result);
+        return Ok(new { items = result });
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddComment(Guid taskId, [FromBody] AddTaskCommentCommand command)
+    public async Task<ActionResult<TaskCommentDto>> AddComment(Guid taskId, [FromBody] AddTaskCommentCommand command)
     {
         command.WorkTaskId = taskId;
         var id = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetTaskComments), new { taskId }, new { id });
+        
+        var commentDto = new TaskCommentDto
+        {
+            Id = id,
+            Text = command.Text,
+            CreatedAt = DateTime.UtcNow,
+            CreatedByName = null
+        };
+        
+        return CreatedAtAction(nameof(GetTaskComments), new { taskId }, commentDto);
     }
 
     [HttpPut("{id}")]

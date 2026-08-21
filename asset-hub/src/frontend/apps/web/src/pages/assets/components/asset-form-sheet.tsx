@@ -9,6 +9,7 @@ import Form from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { handleServerError } from '@/lib/handle-server-error'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
+import { cn } from '@/lib/utils'
 
 import {
   Sheet,
@@ -142,7 +143,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className={formSheetContentClass} aria-describedby={undefined}>
+      <SheetContent className={cn(formSheetContentClass, "sm:max-w-3xl")} aria-describedby={undefined}>
         <UiForm {...form}>
           <FormSheetLayout
             onSubmit={form.handleSubmit(onSubmit)}

@@ -21,6 +21,7 @@ public class WorkTaskSummaryDto
 
     public Guid? MaintenanceOrderId { get; set; }
     public string? MaintenanceOrderTitle { get; set; }
+    public string? MaintenanceOrderState { get; set; }
 
     public Guid? AssignedEmployeeId { get; set; }
     public string? AssignedEmployeeName { get; set; }

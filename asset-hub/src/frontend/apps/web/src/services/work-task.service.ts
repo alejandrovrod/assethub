@@ -1,6 +1,6 @@
 import { apiClient as api } from '@/lib/api-client'
 
-export type WorkTaskState = 'todo' | 'in_progress' | 'done' | 'cancelled'
+export type WorkTaskState = 'todo' | 'rework' | 'in_progress' | 'done' | 'cancelled'
 
 export interface WorkTaskSummary {
   id: string
@@ -15,6 +15,7 @@ export interface WorkTaskSummary {
   incidentTitle?: string
   maintenanceOrderId?: string
   maintenanceOrderTitle?: string
+  maintenanceOrderState?: string
   preventivePlanId?: string
   preventivePlanName?: string
   assignedEmployeeId?: string
@@ -107,6 +108,7 @@ export interface WorkTaskQueryParams {
 
 export const STATE_LABELS: Record<WorkTaskState, string> = {
   todo: 'Por hacer',
+  rework: 'Rehacer',
   in_progress: 'En progreso',
   done: 'Completada',
   cancelled: 'Cancelada',

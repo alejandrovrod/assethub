@@ -469,7 +469,7 @@ export default function AssetDetailPage() {
           
           <AssetMaintenanceOrdersWidget assetId={asset.id} />
 
-          <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.assetTemplateId} />
+          <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.templateId} />
 
           <AssetTasksWidget assetId={asset.id} />
 

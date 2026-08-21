@@ -15,19 +15,18 @@ import {
   Save,
   Send,
   ArrowRight,
-  Link as LinkIcon,
 } from 'lucide-react'
 import {
   workTaskService,
-  type WorkTaskSummary,
   type WorkTaskState,
+  type WorkTaskSummary,
   STATE_LABELS,
 } from '@/services/work-task.service'
 import { catalogService } from '@/services/catalog.service'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -52,6 +51,7 @@ const TASK_TYPE_CATALOG_CODE = 'tasktype'
 
 const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   todo: 'secondary',
+  rework: 'outline',
   in_progress: 'default',
   done: 'default',
   cancelled: 'destructive',
@@ -59,6 +59,7 @@ const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructi
 
 const ALLOWED_TRANSITIONS: Record<WorkTaskState, WorkTaskState[]> = {
   todo: ['in_progress', 'cancelled'],
+  rework: ['in_progress', 'cancelled'],
   in_progress: ['done', 'cancelled'],
   done: [],
   cancelled: [],
@@ -198,6 +199,16 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const displayedTask = detail || task
   const state = displayedTask.state
   const allowedStates = ALLOWED_TRANSITIONS[state] || []
+  
+  const isStateChangeBlocked = Boolean(
+    displayedTask.maintenanceOrderState && 
+    displayedTask.maintenanceOrderState !== 'in_progress'
+  )
+
+  const isInfoEditBlocked = state === 'done' || state === 'cancelled' || Boolean(
+    displayedTask.maintenanceOrderState && 
+    ['done', 'verified', 'cancelled'].includes(displayedTask.maintenanceOrderState)
+  )
 
   return (
     <Card className="flex flex-col overflow-hidden w-[45%] h-full">
@@ -207,7 +218,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             className="text-lg font-semibold h-9 px-2 -ml-2 border-transparent hover:border-input focus-visible:border-input bg-transparent"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            disabled={state === 'done' || state === 'cancelled'}
+            disabled={isInfoEditBlocked}
             placeholder="Título de la tarea"
           />
           <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
@@ -289,6 +300,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Sin descripción"
                     rows={3}
+                    disabled={isInfoEditBlocked}
                   />
                 </div>
 
@@ -300,12 +312,13 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                       type="date"
                       value={dueAt}
                       onChange={(e) => setDueAt(e.target.value)}
+                      disabled={isInfoEditBlocked}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>Prioridad</Label>
-                    <Select value={priorityCatalogItemId} onValueChange={setPriorityCatalogItemId}>
+                    <Select disabled={isInfoEditBlocked} value={priorityCatalogItemId} onValueChange={setPriorityCatalogItemId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar prioridad" />
                       </SelectTrigger>
@@ -321,7 +334,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
                   <div className="space-y-2 col-span-2">
                     <Label>Tipo de tarea</Label>
-                    <Select value={taskTypeCatalogItemId} onValueChange={setTaskTypeCatalogItemId}>
+                    <Select disabled={isInfoEditBlocked} value={taskTypeCatalogItemId} onValueChange={setTaskTypeCatalogItemId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar tipo" />
                       </SelectTrigger>
@@ -370,6 +383,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                             variant="outline"
                             role="combobox"
                             onClick={onClick}
+                            disabled={isInfoEditBlocked}
                             className="w-full justify-between font-normal"
                           >
                             {assignedEmployeeId ? assignedEmployeeName || assignedEmployeeId : 'Buscar empleado...'}
@@ -405,6 +419,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                             variant="outline"
                             role="combobox"
                             onClick={onClick}
+                            disabled={isInfoEditBlocked}
                             className="w-full justify-between font-normal"
                           >
                             {assignedTeamId ? assignedTeamName || assignedTeamId : 'Buscar equipo...'}
@@ -420,6 +435,16 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium">Cambiar estado</h4>
+                  
+                  {isStateChangeBlocked && (
+                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded-md border border-destructive/20 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      <span>
+                        No se puede cambiar el estado de la tarea porque la orden principal no está En progreso.
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap gap-2">
                     {allowedStates.length === 0 ? (
                       <span className="text-sm text-muted-foreground">No hay transiciones disponibles</span>
@@ -430,7 +455,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                           variant="outline"
                           size="sm"
                           onClick={() => stateMutation.mutate(target)}
-                          disabled={stateMutation.isPending}
+                          disabled={stateMutation.isPending || isStateChangeBlocked}
                         >
                           {STATE_LABELS[target]}
                         </Button>
@@ -442,7 +467,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                 <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSave}
-                    disabled={updateMutation.isPending || assignMutation.isPending}
+                    disabled={updateMutation.isPending || assignMutation.isPending || isInfoEditBlocked}
                   >
                     <Save className="h-4 w-4 mr-2" />
                     Guardar cambios

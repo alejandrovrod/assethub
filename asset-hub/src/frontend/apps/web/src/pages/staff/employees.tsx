@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Pencil, Trash2, UserCheck, UserX, Users, Mail, Phone, Shield, User } from 'lucide-react'
+import { Plus, Loader2, Pencil, Trash2, Mail, Phone, Shield, User } from 'lucide-react'
 import { employeeService, type EmployeeSummary, type CreateEmployeeDto, type UpdateEmployeeDto } from '@/services/employee.service'
 import { catalogService, type CatalogItem } from '@/services/catalog.service'
 import { Button } from '@/components/ui/button'

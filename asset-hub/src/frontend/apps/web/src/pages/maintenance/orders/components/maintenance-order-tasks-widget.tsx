@@ -10,6 +10,7 @@ import { WorkTaskFormSheet } from '../../components/work-task-form-sheet'
 
 const TASK_STATE_ICONS: Record<string, React.ReactNode> = {
   todo: <Clock className="h-3.5 w-3.5 text-muted-foreground" />,
+  rework: <AlertCircle className="h-3.5 w-3.5 text-orange-500" />,
   in_progress: <AlertCircle className="h-3.5 w-3.5 text-amber-500" />,
   done: <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />,
   cancelled: <AlertCircle className="h-3.5 w-3.5 text-red-500" />,
@@ -17,6 +18,7 @@ const TASK_STATE_ICONS: Record<string, React.ReactNode> = {
 
 const TASK_STATE_LABELS: Record<string, string> = {
   todo: 'Por hacer',
+  rework: 'Rehacer',
   in_progress: 'En progreso',
   done: 'Completada',
   cancelled: 'Cancelada',
@@ -25,9 +27,12 @@ const TASK_STATE_LABELS: Record<string, string> = {
 interface MaintenanceOrderTasksWidgetProps {
   orderId: string
   state?: string
+  validationMode?: boolean
+  checkedTaskIds?: Set<string>
+  onToggleTaskCheck?: (id: string, checked: boolean) => void
 }
 
-export function MaintenanceOrderTasksWidget({ orderId, state }: MaintenanceOrderTasksWidgetProps) {
+export function MaintenanceOrderTasksWidget({ orderId, state, validationMode, checkedTaskIds, onToggleTaskCheck }: MaintenanceOrderTasksWidgetProps) {
   const queryClient = useQueryClient()
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
 
@@ -70,7 +75,16 @@ export function MaintenanceOrderTasksWidget({ orderId, state }: MaintenanceOrder
               key={task.id}
               className="flex items-center gap-3 p-2 rounded border bg-muted/20 hover:bg-muted/40 transition-colors"
             >
-              {TASK_STATE_ICONS[task.state] || <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+              {validationMode ? (
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer shrink-0"
+                  checked={checkedTaskIds?.has(task.id) || false}
+                  onChange={(e) => onToggleTaskCheck?.(task.id, e.target.checked)}
+                />
+              ) : (
+                TASK_STATE_ICONS[task.state] || <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
               <div className="flex-1 min-w-0">
                 <Link
                   to={`/maintenance/tasks?selected=${task.id}`}

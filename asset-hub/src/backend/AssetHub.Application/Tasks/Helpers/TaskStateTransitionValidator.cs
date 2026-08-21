@@ -10,6 +10,8 @@ public static class TaskStateTransitionValidator
     {
         (WorkTaskStates.Todo, WorkTaskStates.InProgress),
         (WorkTaskStates.Todo, WorkTaskStates.Cancelled),
+        (WorkTaskStates.Rework, WorkTaskStates.InProgress),
+        (WorkTaskStates.Rework, WorkTaskStates.Cancelled),
         (WorkTaskStates.InProgress, WorkTaskStates.Done),
         (WorkTaskStates.InProgress, WorkTaskStates.Cancelled),
     };
