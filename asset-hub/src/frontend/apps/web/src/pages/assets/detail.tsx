@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, ArrowLeft, Save, FileText, Image as ImageIcon, Download, GitBranch, Link as LinkIcon, Network } from 'lucide-react'
-import { assetService, AssetAttachment } from '@/services/asset.service'
+import { ArrowLeft, Loader2, Save, GitBranch, Link as LinkIcon, Network } from 'lucide-react'
+import { assetService } from '@/services/asset.service'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
@@ -36,7 +36,6 @@ export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState<any>({})
   const [isEditingGeneral, setIsEditingGeneral] = useState(false)
@@ -56,12 +55,6 @@ export default function AssetDetailPage() {
   const { data: asset, isLoading } = useQuery({
     queryKey: ['asset', id],
     queryFn: () => assetService.getAssetById(id!),
-    enabled: !!id
-  })
-
-  const { data: attachments, isLoading: isLoadingAttachments } = useQuery({
-    queryKey: ['asset-attachments', id],
-    queryFn: () => assetService.getAssetAttachments(id!),
     enabled: !!id
   })
 
@@ -155,22 +148,6 @@ export default function AssetDetailPage() {
   })
 
   const { schema, uiSchema, isResolving } = useResolvedSchema(asset?.schemaJson || '')
-
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => assetService.uploadAttachment(id!, file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asset-attachments', id] })
-      toast.success('Archivo subido exitosamente')
-    },
-    onError: () => toast.error('Error al subir el archivo')
-  })
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      uploadMutation.mutate(file)
-    }
-  }
 
   // Parse Lifecycle safely before early returns
   let lifecycle = { transitions: {} as Record<string, string[]>, states: {} as Record<string, any> }

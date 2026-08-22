@@ -95,11 +95,12 @@ export interface AdvancedSearchIncidentsDto {
 }
 
 export const incidentService = {
-  search: async (q?: string, state?: string, assetId?: string) => {
+  search: async (q?: string, state?: string, assetId?: string, pageSize?: number) => {
     const params = new URLSearchParams()
     if (q) params.append('q', q)
     if (state) params.append('state', state)
     if (assetId) params.append('assetId', assetId)
+    if (pageSize) params.append('pageSize', pageSize.toString())
     
     const { data } = await api.get<{ items: IncidentSummary[] }>(`/incidents?${params.toString()}`)
     return data.items

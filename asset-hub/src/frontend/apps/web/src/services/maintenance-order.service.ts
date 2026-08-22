@@ -44,6 +44,7 @@ export interface MaintenanceOrderDetail extends MaintenanceOrderSummary {
   description?: string
   parts: MaintenanceOrderPart[]
   tasks: MaintenanceOrderTask[]
+  propertiesJson?: string
 }
 
 export interface CreateMaintenanceOrderDto {
@@ -53,6 +54,7 @@ export interface CreateMaintenanceOrderDto {
   assetId: string
   preventivePlanId?: string
   incidentId?: string
+  propertiesJson?: string
 }
 
 export interface UpdateMaintenanceOrderDto {
@@ -62,6 +64,7 @@ export interface UpdateMaintenanceOrderDto {
   scheduledStart?: string
   scheduledEnd?: string
   removePreventivePlan?: boolean
+  propertiesJson?: string
 }
 
 export interface AddPartDto {

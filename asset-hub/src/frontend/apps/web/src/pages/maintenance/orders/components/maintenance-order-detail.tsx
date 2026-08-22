@@ -3,12 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   X,
   Calendar,
-  User,
   Package,
   Wrench,
   FileText,
   Loader2,
-  Save,
   Check,
   Clock,
   Link2Off,
@@ -17,12 +15,12 @@ import {
   maintenanceOrderService,
   type MaintenanceOrderSummary,
   type MaintenanceOrderState,
+  type UpdateMaintenanceOrderDto,
   STATE_LABELS,
   KIND_LABELS,
   ALLOWED_TRANSITIONS,
 } from '@/services/maintenance-order.service'
-import { AsyncCombobox } from '@/components/ui/async-combobox'
-import { apiClient as api } from '@/lib/api-client'
+import { PropagatedPropertiesDisplay } from '../../components/propagated-properties-display'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -62,11 +60,10 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   })
 
   const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState(detail?.description || (order as any).description || '')
+  const [propertiesJson, setPropertiesJson] = useState(detail?.propertiesJson || (order as any).propertiesJson || '{}')
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
-  const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
-  const [assignedEmployeeName, setAssignedEmployeeName] = useState('')
   const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(new Set())
 
   const toggleTaskCheck = (taskId: string, checked: boolean) => {
@@ -84,19 +81,21 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       setDescription(detail.description || '')
       setScheduledStart(detail.scheduledStart ? detail.scheduledStart.slice(0, 16) : '')
       setScheduledEnd(detail.scheduledEnd ? detail.scheduledEnd.slice(0, 16) : '')
-      setAssignedEmployeeId(detail.assignedEmployeeId || '')
-      setAssignedEmployeeName(detail.assignedEmployeeName || '')
+    }
+    if (detail?.propertiesJson) {
+      setPropertiesJson(detail.propertiesJson)
     }
   }, [detail])
 
   const updateMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (payloadOverride?: Partial<UpdateMaintenanceOrderDto>) =>
       maintenanceOrderService.update(order.id, {
         title,
         description,
+        propertiesJson,
         scheduledStart: scheduledStart ? new Date(scheduledStart).toISOString() : undefined,
         scheduledEnd: scheduledEnd ? new Date(scheduledEnd).toISOString() : undefined,
-        assignedEmployeeId: assignedEmployeeId || undefined,
+        ...payloadOverride,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
@@ -126,7 +125,6 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       if (action === 'complete') return maintenanceOrderService.complete(order.id)
       if (action === 'cancel') return maintenanceOrderService.cancel(order.id)
       return maintenanceOrderService.schedule(order.id, {
-        assignedEmployeeId: assignedEmployeeId || order.assignedEmployeeId,
         scheduledStart: scheduledStart || order.scheduledStart,
         scheduledEnd: scheduledEnd || order.scheduledEnd,
       })
@@ -144,6 +142,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   const displayedOrder = detail || order
   const state = displayedOrder.state
   const allowedActions = ALLOWED_TRANSITIONS[state] || []
+  const isInfoEditBlocked = state === 'verified' || state === 'cancelled'
 
   // Compute task progress
   const tasks = detail?.tasks || []
@@ -188,7 +187,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                 id="mo-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                disabled={state === 'verified'}
+                disabled={isInfoEditBlocked}
               />
             </div>
 
@@ -200,7 +199,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Sin descripción"
                 rows={3}
-                disabled={state === 'verified'}
+                disabled={isInfoEditBlocked}
               />
             </div>
 
@@ -219,7 +218,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                     type="datetime-local"
                     value={scheduledStart}
                     onChange={(e) => setScheduledStart(e.target.value)}
-                    disabled={state === 'verified'}
+                    disabled={isInfoEditBlocked}
                   />
                 </div>
                 <div className="space-y-2">
@@ -229,49 +228,21 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                     type="datetime-local"
                     value={scheduledEnd}
                     onChange={(e) => setScheduledEnd(e.target.value)}
-                    disabled={state === 'verified'}
+                    disabled={isInfoEditBlocked}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Assignment */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-3.5 w-3.5" />
-                Empleado asignado
-              </Label>
-              <AsyncCombobox<{ id: string; name: string }>
-                fetcher={async (query) => {
-                  const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
-                    params: { search: query, isActive: true },
-                  })
-                  return data.items.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
-                }}
-                labelKey="name"
-                valueKey="id"
-                placeholder="Buscar empleado..."
-                searchPlaceholder="Escriba para buscar..."
-                emptyText="No se encontraron empleados."
-                onSelect={(item) => {
-                  setAssignedEmployeeId(item.id)
-                  setAssignedEmployeeName(item.name)
-                }}
-                renderTrigger={(onClick) => (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    role="combobox"
-                    onClick={onClick}
-                    className="w-full justify-between font-normal"
-                    disabled={state === 'verified'}
-                  >
-                    {assignedEmployeeId ? assignedEmployeeName || assignedEmployeeId : 'Buscar empleado...'}
-                    <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                )}
+            {displayedOrder.assetId && (
+              <PropagatedPropertiesDisplay 
+                assetId={displayedOrder.assetId} 
+                propertiesJson={propertiesJson} 
+                disabled={isInfoEditBlocked}
+                inlineEdit={true}
+                onChange={setPropertiesJson}
               />
-            </div>
+            )}
 
             <Separator />
 
@@ -431,19 +402,18 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {/* Child tasks */}
             <MaintenanceOrderTasksWidget
               orderId={order.id}
+              assetId={order.assetId}
+              propertiesJson={propertiesJson}
+              state={state}
               validationMode={state === 'done'}
               checkedTaskIds={checkedTaskIds}
               onToggleTaskCheck={toggleTaskCheck}
             />
 
             {/* Save */}
-            <div className="flex justify-end">
-              <Button
-                onClick={() => updateMutation.mutate()}
-                disabled={updateMutation.isPending || state === 'verified'}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Guardar cambios
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => updateMutation.mutate({})} disabled={updateMutation.isPending || isInfoEditBlocked}>
+                {updateMutation.isPending ? 'Guardando...' : 'Guardar Información'}
               </Button>
             </div>
           </>

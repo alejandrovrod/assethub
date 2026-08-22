@@ -41,5 +41,7 @@ public class WorkTaskDto
     public Guid? AssignedTeamId { get; set; }
     public string? AssignedTeamName { get; set; }
 
+    public string? PropertiesJson { get; set; }
+
     public bool IsIndependent { get; set; }
 }

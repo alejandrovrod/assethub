@@ -26,8 +26,11 @@ public class GetWorkTaskByIdQueryHandler : IRequestHandler<GetWorkTaskByIdQuery,
             .AsNoTracking()
             .Include(t => t.Asset)
             .Include(t => t.Incident)
+                .ThenInclude(i => i!.Asset)
             .Include(t => t.MaintenanceOrder)
+                .ThenInclude(mo => mo!.Asset)
             .Include(t => t.PreventivePlan)
+                .ThenInclude(pp => pp!.Asset)
             .Include(t => t.TaskRecurrence)
             .Include(t => t.TaskTypeCatalogItem)
                 .ThenInclude(ci => ci!.Translations)
@@ -71,8 +74,8 @@ public class GetWorkTaskByIdQueryHandler : IRequestHandler<GetWorkTaskByIdQuery,
             PriorityLabel = priorityLabel,
             DueAt = task.DueAt,
             CreatedAt = task.CreatedAt,
-            AssetId = task.AssetId,
-            AssetName = task.Asset != null ? task.Asset.Name : null,
+            AssetId = task.AssetId ?? task.MaintenanceOrder?.AssetId ?? task.PreventivePlan?.AssetId ?? task.Incident?.AssetId,
+            AssetName = task.Asset != null ? task.Asset.Name : (task.MaintenanceOrder?.Asset?.Name ?? task.PreventivePlan?.Asset?.Name ?? task.Incident?.Asset?.Name),
             IncidentId = task.IncidentId,
             IncidentTitle = task.Incident != null ? task.Incident.Title : null,
             MaintenanceOrderId = task.MaintenanceOrderId,
@@ -86,6 +89,7 @@ public class GetWorkTaskByIdQueryHandler : IRequestHandler<GetWorkTaskByIdQuery,
             AssignedEmployeeName = task.AssignedEmployee != null ? $"{task.AssignedEmployee.FirstName} {task.AssignedEmployee.LastName}" : null,
             AssignedTeamId = task.AssignedTeamId,
             AssignedTeamName = task.AssignedTeam != null ? task.AssignedTeam.Name : null,
+            PropertiesJson = task.PropertiesJson,
             IsIndependent = task.IsIndependent,
             History = task.StatusHistory
                 .OrderByDescending(h => h.ChangedAt)

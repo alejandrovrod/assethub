@@ -145,7 +145,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className={cn(formSheetContentClass, "sm:max-w-3xl")} aria-describedby={undefined}>
+      <SheetContent className={cn(formSheetContentClass, "w-full sm:max-w-[100vw] sm:w-[95vw] lg:w-[90vw]")} aria-describedby={undefined}>
         <UiForm {...form}>
           <FormSheetLayout
             onSubmit={form.handleSubmit(onSubmit)}

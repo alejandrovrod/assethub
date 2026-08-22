@@ -39,9 +39,9 @@ public class IncidentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId, [FromQuery] int? pageSize)
     {
-        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId));
+        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId, pageSize));
         return Ok(new { items = result });
     }
 

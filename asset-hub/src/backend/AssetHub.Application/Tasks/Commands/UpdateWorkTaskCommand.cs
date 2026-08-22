@@ -18,6 +18,7 @@ public class UpdateWorkTaskCommand : IRequest
     public Guid PriorityCatalogItemId { get; set; }
     public Guid? AssignedEmployeeId { get; set; }
     public Guid? AssignedTeamId { get; set; }
+    public string? PropertiesJson { get; set; }
 }
 
 public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskCommand>
@@ -59,6 +60,8 @@ public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskComman
         task.PriorityCatalogItemId = request.PriorityCatalogItemId;
         task.AssignedEmployeeId = request.AssignedEmployeeId;
         task.AssignedTeamId = request.AssignedTeamId;
+        if (request.PropertiesJson != null)
+            task.PropertiesJson = request.PropertiesJson;
 
         await _db.SaveChangesAsync(cancellationToken);
     }

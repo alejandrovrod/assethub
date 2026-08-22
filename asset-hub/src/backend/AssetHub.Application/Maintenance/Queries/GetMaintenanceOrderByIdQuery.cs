@@ -87,6 +87,7 @@ public class GetMaintenanceOrderByIdQueryHandler : IRequestHandler<GetMaintenanc
             IncidentTitle = order.Incident?.Title,
             AssignedEmployeeId = order.AssignedEmployeeId,
             AssignedEmployeeName = order.AssignedEmployee != null ? $"{order.AssignedEmployee.FirstName} {order.AssignedEmployee.LastName}" : null,
+            PropertiesJson = order.PropertiesJson,
             Parts = parts,
             Tasks = tasks.ToArray()
         };

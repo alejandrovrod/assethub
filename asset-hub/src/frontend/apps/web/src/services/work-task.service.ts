@@ -30,6 +30,7 @@ export interface WorkTaskSummary {
 
 export interface WorkTaskDetail extends WorkTaskSummary {
   taskTypeLabel?: string
+  propertiesJson?: string
 }
 
 export interface WorkTaskHistoryEntry {
@@ -60,6 +61,7 @@ export interface CreateWorkTaskRequest {
   taskRecurrenceId?: string
   assignedEmployeeId?: string
   assignedTeamId?: string
+  propertiesJson?: string
 }
 
 export interface UpdateWorkTaskRequest {
@@ -70,6 +72,7 @@ export interface UpdateWorkTaskRequest {
   priorityCatalogItemId: string
   assignedEmployeeId?: string | null
   assignedTeamId?: string | null
+  propertiesJson?: string
 }
 
 export interface AssignWorkTaskRequest {

@@ -19,12 +19,12 @@ export function PreventivePlanAssetWidget({ assetId, assetTemplateId }: Props) {
 
   const { data: byAsset, isLoading: loadingAsset } = useQuery({
     queryKey: ['preventive-plans', 'asset', assetId],
-    queryFn: () => preventivePlanService.getAll({ assetId }),
+    queryFn: () => preventivePlanService.getAll({ assetId, pageSize: 4 }),
   })
 
   const { data: byTemplate, isLoading: loadingTemplate } = useQuery({
     queryKey: ['preventive-plans', 'template', assetTemplateId],
-    queryFn: () => preventivePlanService.getAll({ templateId: assetTemplateId }),
+    queryFn: () => preventivePlanService.getAll({ templateId: assetTemplateId, pageSize: 4 }),
   })
 
   const plans = useMemo(() => {

@@ -26,13 +26,15 @@ const TASK_STATE_LABELS: Record<string, string> = {
 
 interface MaintenanceOrderTasksWidgetProps {
   orderId: string
+  assetId?: string
+  propertiesJson?: string
   state?: string
   validationMode?: boolean
   checkedTaskIds?: Set<string>
   onToggleTaskCheck?: (id: string, checked: boolean) => void
 }
 
-export function MaintenanceOrderTasksWidget({ orderId, state, validationMode, checkedTaskIds, onToggleTaskCheck }: MaintenanceOrderTasksWidgetProps) {
+export function MaintenanceOrderTasksWidget({ orderId, assetId, propertiesJson, state, validationMode, checkedTaskIds, onToggleTaskCheck }: MaintenanceOrderTasksWidgetProps) {
   const queryClient = useQueryClient()
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
 
@@ -109,7 +111,7 @@ export function MaintenanceOrderTasksWidget({ orderId, state, validationMode, ch
       <WorkTaskFormSheet
         open={isTaskFormOpen}
         onOpenChange={setIsTaskFormOpen}
-        prefill={{ maintenanceOrderId: orderId }}
+        prefill={{ maintenanceOrderId: orderId, assetId, propertiesJson }}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['maintenance-order-tasks', orderId] })}
       />
     </div>

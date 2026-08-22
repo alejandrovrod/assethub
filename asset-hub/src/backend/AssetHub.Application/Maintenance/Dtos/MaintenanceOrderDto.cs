@@ -25,6 +25,8 @@ public class MaintenanceOrderSummaryDto
 
     public Guid? AssignedEmployeeId { get; set; }
     public string? AssignedEmployeeName { get; set; }
+
+    public string? PropertiesJson { get; set; }
 }
 
 public class MaintenanceOrderDetailDto : MaintenanceOrderSummaryDto

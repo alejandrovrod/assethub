@@ -8,16 +8,6 @@ import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-const STATE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  draft: 'outline',
-  approved: 'secondary',
-  scheduled: 'default',
-  in_progress: 'default',
-  done: 'default',
-  rescheduled: 'outline',
-  verified: 'default',
-  cancelled: 'destructive',
-}
 
 interface AssetMaintenanceOrdersWidgetProps {
   assetId: string
@@ -26,7 +16,7 @@ interface AssetMaintenanceOrdersWidgetProps {
 export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrdersWidgetProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['maintenance-orders', 'asset', assetId],
-    queryFn: () => maintenanceOrderService.getAll({ assetId, pageSize: 50 }),
+    queryFn: () => maintenanceOrderService.getAll({ assetId, pageSize: 4 }),
   })
 
   const orders = data?.items || []

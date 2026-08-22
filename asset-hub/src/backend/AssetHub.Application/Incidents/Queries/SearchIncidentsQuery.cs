@@ -20,7 +20,7 @@ public record IncidentSummaryDto(
     DateTime? ClosedAt
 );
 
-public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AssetId = null) : IRequest<List<IncidentSummaryDto>>;
+public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AssetId = null, int? PageSize = null) : IRequest<List<IncidentSummaryDto>>;
 
 public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery, List<IncidentSummaryDto>>
 {
@@ -65,6 +65,11 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
                 var catalogItemIdStr = filter.Value.ToString();
                 query = query.Where(a => a.PropertiesJson != null && a.PropertiesJson.Contains(catalogItemIdStr));
             }
+        }
+
+        if (request.PageSize.HasValue && request.PageSize.Value > 0)
+        {
+            query = query.Take(request.PageSize.Value);
         }
 
         return await query

@@ -32,6 +32,7 @@ public class MaintenanceOrder
     public Guid? AssignedEmployeeId { get; set; }
     public AssetHub.Domain.Staff.Employee? AssignedEmployee { get; set; }
     
+
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
     public DateTime? CompletedAt { get; set; }
@@ -39,6 +40,8 @@ public class MaintenanceOrder
     public decimal LaborCost { get; set; }
     
     public List<MaintenancePart> Parts { get; set; } = new();
+    
+    public string PropertiesJson { get; set; } = "{}";
     
     public bool IsDeleted { get; set; }
 }

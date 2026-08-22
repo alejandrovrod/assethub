@@ -27,7 +27,7 @@ export function AssetTasksWidget({ assetId }: AssetTasksWidgetProps) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['work-tasks', 'asset', assetId],
-    queryFn: () => workTaskService.getAll({ assetId, pageSize: 50 }),
+    queryFn: () => workTaskService.getAll({ assetId, pageSize: 4 }),
   })
 
   const tasks = data?.items || []

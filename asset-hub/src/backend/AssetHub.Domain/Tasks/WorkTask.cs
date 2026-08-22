@@ -58,6 +58,8 @@ public class WorkTask
 
     public Guid? PreventivePlanId { get; set; }
     public PreventivePlan? PreventivePlan { get; set; }
+    
+    public string PropertiesJson { get; set; } = "{}";
 
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }

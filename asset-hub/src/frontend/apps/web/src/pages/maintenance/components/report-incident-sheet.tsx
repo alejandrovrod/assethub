@@ -16,6 +16,7 @@ import { incidentService } from '@/services/incident.service'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { assetService } from '@/services/asset.service'
 import { toast } from 'sonner'
+import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
 import FormSchema from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
@@ -84,6 +85,8 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
 
   const { schema, uiSchema, isResolving } = useResolvedSchema(selectedTemplate?.schemaJson || '{}')
 
+  const { propagatedPropertiesJson } = usePropagatedProperties(assetId)
+
   useEffect(() => {
     if (open) {
       form.reset({
@@ -94,9 +97,14 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
         typeId: '00000000-0000-0000-0000-000000000000',
         priorityId: '00000000-0000-0000-0000-000000000000',
       })
-      setSchemaData({})
+      
+      if (propagatedPropertiesJson) {
+        setSchemaData(JSON.parse(propagatedPropertiesJson))
+      } else {
+        setSchemaData({})
+      }
     }
-  }, [open, form, assetId])
+  }, [open, form, assetId, propagatedPropertiesJson])
 
   const reportMutation = useMutation({
     mutationFn: incidentService.report,

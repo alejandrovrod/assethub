@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-type WorkTaskState = 'todo' | 'in_progress' | 'done' | 'cancelled'
+type WorkTaskState = 'todo' | 'rework' | 'in_progress' | 'done' | 'cancelled'
 
 interface Props {
   tasks: WorkTaskSummary[]
@@ -24,6 +24,7 @@ interface Column {
 
 const COLUMNS: Column[] = [
   { id: 'todo', title: 'Pendiente', color: 'bg-slate-500' },
+  { id: 'rework', title: 'Corrección', color: 'bg-orange-500' },
   { id: 'in_progress', title: 'En progreso', color: 'bg-blue-500' },
   { id: 'done', title: 'Terminada', color: 'bg-green-500' },
   { id: 'cancelled', title: 'Cancelada', color: 'bg-red-500' },
@@ -61,6 +62,7 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
   const grouped = useMemo(() => {
     const map: Record<WorkTaskState, WorkTaskSummary[]> = {
       todo: [],
+      rework: [],
       in_progress: [],
       done: [],
       cancelled: [],

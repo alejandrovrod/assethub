@@ -29,6 +29,8 @@ public class CreateWorkTaskCommand : IRequest<Guid>
 
     public Guid? AssignedEmployeeId { get; set; }
     public Guid? AssignedTeamId { get; set; }
+    
+    public string PropertiesJson { get; set; } = "{}";
 }
 
 public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskCommand, Guid>
@@ -117,7 +119,8 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
             PreventivePlanId = request.PreventivePlanId,
             TaskRecurrenceId = request.TaskRecurrenceId,
             AssignedEmployeeId = request.AssignedEmployeeId,
-            AssignedTeamId = request.AssignedTeamId
+            AssignedTeamId = request.AssignedTeamId,
+            PropertiesJson = request.PropertiesJson
         };
 
         _db.WorkTasks.Add(task);

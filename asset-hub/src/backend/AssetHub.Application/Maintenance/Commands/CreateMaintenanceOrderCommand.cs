@@ -18,6 +18,7 @@ public class CreateMaintenanceOrderCommand : IRequest<Guid>
     public Guid? PreventivePlanId { get; set; }
     public Guid? WorkflowTemplateId { get; set; }
     public Guid? IncidentId { get; set; }
+    public string PropertiesJson { get; set; } = "{}";
 }
 
 public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMaintenanceOrderCommand, Guid>
@@ -56,7 +57,8 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
             AssetId = request.AssetId,
             PreventivePlanId = request.PreventivePlanId,
             IncidentId = request.IncidentId,
-            WorkflowTemplateId = request.WorkflowTemplateId
+            WorkflowTemplateId = request.WorkflowTemplateId,
+            PropertiesJson = request.PropertiesJson
         };
 
         _db.MaintenanceOrders.Add(order);

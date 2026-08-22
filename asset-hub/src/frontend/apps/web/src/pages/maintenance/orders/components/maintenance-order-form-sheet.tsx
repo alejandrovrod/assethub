@@ -17,12 +17,14 @@ import { Loader2, Package, Clock, FileText, Link as LinkIcon, Wrench } from 'luc
 import {
   maintenanceOrderService,
   type MaintenanceOrderSummary,
-  type MaintenanceOrderKind,
   KIND_LABELS,
 } from '@/services/maintenance-order.service'
 import { assetService } from '@/services/asset.service'
 import { preventivePlanService } from '@/services/preventive-plan.service'
 import { catalogService } from '@/services/catalog.service'
+
+import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
+import { PropagatedPropertiesDisplay } from '../../components/propagated-properties-display'
 
 const formSchema = z.object({
   kind: z.string().min(1, 'El tipo es requerido'),
@@ -56,6 +58,8 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
   })
   const isEditing = !!order
   const [assetLabel, setAssetLabel] = useState(initialAssetLabel || '')
+
+  const [propertiesJson, setPropertiesJson] = useState((order as any)?.propertiesJson || '{}')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -93,6 +97,15 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
     }
   }, [order, open, form, initialAssetId, initialAssetLabel, taskTypes])
 
+  const { propagatedPropertiesJson } = usePropagatedProperties(form.watch('assetId'))
+
+  useEffect(() => {
+    if (!open) return
+    if (!isEditing && propagatedPropertiesJson) {
+      setPropertiesJson(propagatedPropertiesJson)
+    }
+  }, [propagatedPropertiesJson, open, isEditing])
+
   const createMutation = useMutation({
     mutationFn: (values: FormValues) =>
       maintenanceOrderService.create({
@@ -102,6 +115,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
         assetId: values.assetId,
         preventivePlanId: values.preventivePlanId || undefined,
         incidentId: values.incidentId || undefined,
+        propertiesJson,
       }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
@@ -118,6 +132,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       maintenanceOrderService.update(order!.id, {
         title: values.title,
         description: values.description || undefined,
+        propertiesJson,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
@@ -138,8 +153,8 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg flex flex-col">
-        <SheetHeader className="mb-4">
+      <SheetContent className="sm:max-w-lg flex flex-col p-0 h-full">
+        <SheetHeader className="p-6 pb-4 border-b shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <Wrench className="w-5 h-5 text-primary" />
             {isEditing ? 'Editar orden' : 'Nueva orden de mantenimiento'}
@@ -151,9 +166,10 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 pr-4 -mr-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2 pb-6 px-1">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden min-h-0">
+            <ScrollArea className="flex-1 px-6 min-h-0">
+              <div className="space-y-6 pt-4 pb-6">
               
               {/* Sección Principal */}
               <div className="space-y-4 p-4 border rounded-xl bg-card shadow-sm">
@@ -335,19 +351,29 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                   />
                 )}
               </div>
-            </form>
-          </Form>
-        </ScrollArea>
+              
+              {form.watch('assetId') && (
+                <PropagatedPropertiesDisplay 
+                  assetId={form.watch('assetId')} 
+                  propertiesJson={propertiesJson} 
+                  inlineEdit={true}
+                  onChange={setPropertiesJson}
+                />
+              )}
+              </div>
+            </ScrollArea>
 
-        <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={createMutation.isPending || updateMutation.isPending}>
-            {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? 'Guardar' : 'Crear'}
-          </Button>
-        </div>
+            <div className="p-6 border-t bg-background mt-auto flex justify-end gap-2 shrink-0">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {isEditing ? 'Guardar' : 'Crear'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </SheetContent>
     </Sheet>
   )

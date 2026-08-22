@@ -16,12 +16,8 @@ import {
   Send,
   ArrowRight,
 } from 'lucide-react'
-import {
-  workTaskService,
-  type WorkTaskState,
-  type WorkTaskSummary,
-  STATE_LABELS,
-} from '@/services/work-task.service'
+import { workTaskService, WorkTaskState, CreateWorkTaskRequest, WorkTaskSummary, STATE_LABELS } from '@/services/work-task.service'
+import { PropagatedPropertiesDisplay } from './propagated-properties-display'
 import { catalogService } from '@/services/catalog.service'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
@@ -70,8 +66,10 @@ interface WorkTaskDetailProps {
   onClose: () => void
 }
 
-interface EmployeeOption { id: string; name: string }
-interface TeamOption { id: string; name: string }
+interface TeamOption {
+  id: string
+  name: string
+}
 
 export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const queryClient = useQueryClient()
@@ -105,11 +103,11 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueAt, setDueAt] = useState('')
+  const [propertiesJson, setPropertiesJson] = useState('{}')
   const [priorityCatalogItemId, setPriorityCatalogItemId] = useState('')
   const [taskTypeCatalogItemId, setTaskTypeCatalogItemId] = useState('')
   const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
   const [assignedTeamId, setAssignedTeamId] = useState('')
-  const [assignedEmployeeName, setAssignedEmployeeName] = useState('')
   const [assignedTeamName, setAssignedTeamName] = useState('')
 
   useEffect(() => {
@@ -121,13 +119,15 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
       setTaskTypeCatalogItemId(detail.taskTypeCatalogItemId)
       setAssignedEmployeeId(detail.assignedEmployeeId || '')
       setAssignedTeamId(detail.assignedTeamId || '')
-      setAssignedEmployeeName(task.assignedEmployeeName || '')
       setAssignedTeamName(task.assignedTeamName || '')
+      if (detail.propertiesJson) {
+        setPropertiesJson(detail.propertiesJson)
+      }
     }
   }, [detail, task])
 
   const updateMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (payloadOverride?: Partial<CreateWorkTaskRequest>) =>
       workTaskService.update(task.id, {
         title: title || detail?.title || task.title,
         description,
@@ -136,6 +136,8 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
         taskTypeCatalogItemId,
         assignedEmployeeId: assignedEmployeeId || null,
         assignedTeamId: assignedTeamId || null,
+        propertiesJson,
+        ...payloadOverride,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
@@ -182,7 +184,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const [commentText, setCommentText] = useState('')
 
   const handleSave = () => {
-    updateMutation.mutate()
+    updateMutation.mutate({})
     if (assignedEmployeeId !== (detail?.assignedEmployeeId || '') || assignedTeamId !== (detail?.assignedTeamId || '')) {
       assignMutation.mutate()
     }
@@ -349,87 +351,17 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                   </div>
                 </div>
 
-                <Separator />
 
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" /> Asignación
-                  </h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2 text-muted-foreground">
-                        <User className="h-3.5 w-3.5" />
-                        Empleado asignado
-                      </Label>
-                      <AsyncCombobox<EmployeeOption>
-                        fetcher={async (query) => {
-                          const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
-                            params: { search: query, isActive: true },
-                          })
-                          return data.items.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
-                        }}
-                        labelKey="name"
-                        valueKey="id"
-                        placeholder="Buscar empleado..."
-                        searchPlaceholder="Escriba para buscar..."
-                        emptyText="No se encontraron empleados."
-                        onSelect={(item) => {
-                          setAssignedEmployeeId(item.id)
-                          setAssignedEmployeeName(item.name)
-                        }}
-                        renderTrigger={(onClick) => (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            role="combobox"
-                            onClick={onClick}
-                            disabled={isInfoEditBlocked}
-                            className="w-full justify-between font-normal"
-                          >
-                            {assignedEmployeeId ? assignedEmployeeName || assignedEmployeeId : 'Buscar empleado...'}
-                            <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        Equipo asignado
-                      </Label>
-                      <AsyncCombobox<TeamOption>
-                        fetcher={async (query) => {
-                          const { data } = await api.get<{ items: TeamOption[] }>('/teams', {
-                            params: { search: query },
-                          })
-                          return data.items
-                        }}
-                        labelKey="name"
-                        valueKey="id"
-                        placeholder="Buscar equipo..."
-                        searchPlaceholder="Escriba para buscar..."
-                        emptyText="No se encontraron equipos."
-                        onSelect={(item) => {
-                          setAssignedTeamId(item.id)
-                          setAssignedTeamName(item.name)
-                        }}
-                        renderTrigger={(onClick) => (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            role="combobox"
-                            onClick={onClick}
-                            disabled={isInfoEditBlocked}
-                            className="w-full justify-between font-normal"
-                          >
-                            {assignedTeamId ? assignedTeamName || assignedTeamId : 'Buscar equipo...'}
-                            <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
+
+                {displayedTask.assetId && (
+                  <PropagatedPropertiesDisplay
+                    assetId={displayedTask.assetId}
+                    propertiesJson={propertiesJson}
+                    disabled={isInfoEditBlocked}
+                    inlineEdit={true}
+                    onChange={setPropertiesJson}
+                  />
+                )}
 
                 <Separator />
 

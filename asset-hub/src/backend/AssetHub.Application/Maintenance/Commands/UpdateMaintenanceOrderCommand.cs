@@ -18,6 +18,7 @@ public class UpdateMaintenanceOrderCommand : IRequest<MaintenanceOrderSummaryDto
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
     public bool? RemovePreventivePlan { get; set; }
+    public string? PropertiesJson { get; set; }
 }
 
 public class UpdateMaintenanceOrderCommandHandler : IRequestHandler<UpdateMaintenanceOrderCommand, MaintenanceOrderSummaryDto>
@@ -55,6 +56,8 @@ public class UpdateMaintenanceOrderCommandHandler : IRequestHandler<UpdateMainte
             order.ScheduledEnd = request.ScheduledEnd.Value;
         if (request.RemovePreventivePlan == true)
             order.PreventivePlanId = null;
+        if (request.PropertiesJson != null)
+            order.PropertiesJson = request.PropertiesJson;
 
         await _db.SaveChangesAsync(cancellationToken);
 

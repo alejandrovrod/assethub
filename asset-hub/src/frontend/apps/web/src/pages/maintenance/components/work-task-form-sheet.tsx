@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { parseISO } from 'date-fns'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,21 +10,23 @@ import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { DatePicker } from '@/components/date-picker'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
-import { Loader2, ClipboardList, User, Users, Box, AlertTriangle, CalendarDays, FileText } from 'lucide-react'
+import { Loader2, Users, Box, AlertTriangle, CalendarDays, FileText, ClipboardList } from 'lucide-react'
 import { workTaskService, type WorkTaskSummary, type CreateWorkTaskRequest } from '@/services/work-task.service'
 import { catalogService, type CatalogItem } from '@/services/catalog.service'
 import { assetService } from '@/services/asset.service'
 import { preventivePlanService } from '@/services/preventive-plan.service'
+import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
+import { PropagatedPropertiesDisplay } from './propagated-properties-display'
+
 import { apiClient as api } from '@/lib/api-client'
 
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
 const PRIORITY_CATALOG_CODE = 'priority'
 
-interface EmployeeOption { id: string; name: string }
 interface TeamOption { id: string; name: string }
 
 const formSchema = z.object({
@@ -46,6 +47,7 @@ interface Prefill {
   maintenanceOrderId?: string
   preventivePlanId?: string
   taskRecurrenceId?: string
+  propertiesJson?: string
 }
 
 interface Props {
@@ -62,20 +64,11 @@ function toIsoDate(date: Date | undefined): string | undefined {
   return d.toISOString().split('T')[0]
 }
 
-function parseDate(value: string | undefined): Date | undefined {
-  if (!value) return undefined
-  try {
-    return parseISO(value)
-  } catch {
-    return undefined
-  }
-}
-
 export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!task
-  const [assignedEmployeeName, setAssignedEmployeeName] = useState(task?.assignedEmployeeName ?? '')
   const [assignedTeamName, setAssignedTeamName] = useState(task?.assignedTeamName ?? '')
+  const [propertiesJson, setPropertiesJson] = useState((task as any)?.propertiesJson || prefill?.propertiesJson || '{}')
 
   const { data: taskTypes } = useQuery({
     queryKey: ['catalog-items', TASK_TYPE_CATALOG_CODE],
@@ -136,32 +129,38 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
 
   useEffect(() => {
     if (!open) return
-    if (task) {
-      setAssignedEmployeeName(task.assignedEmployeeName ?? '')
-      setAssignedTeamName(task.assignedTeamName ?? '')
+    if (isEditing) {
       form.reset({
         title: task.title,
-        description: task.description ?? '',
-        dueAt: parseDate(task.dueAt),
+        description: task.description || '',
+        dueAt: task.dueAt ? new Date(task.dueAt) : undefined,
         taskTypeCatalogItemId: task.taskTypeCatalogItemId,
         priorityCatalogItemId: task.priorityCatalogItemId,
-        assignedEmployeeId: task.assignedEmployeeId ?? '',
         assignedTeamId: task.assignedTeamId ?? '',
       })
+      if ((task as any).propertiesJson) setPropertiesJson((task as any).propertiesJson)
     } else {
-      setAssignedEmployeeName('')
       setAssignedTeamName('')
+      setPropertiesJson(prefill?.propertiesJson && prefill.propertiesJson !== '{}' ? prefill.propertiesJson : (propagatedPropertiesJson || '{}'))
       form.reset({
         title: '',
         description: '',
         dueAt: undefined,
         taskTypeCatalogItemId: '',
         priorityCatalogItemId: '',
-        assignedEmployeeId: '',
         assignedTeamId: '',
       })
     }
   }, [open, task, form])
+
+  const { propagatedPropertiesJson } = usePropagatedProperties(prefill?.assetId)
+
+  useEffect(() => {
+    if (!open) return
+    if (!isEditing && (!prefill?.propertiesJson || prefill.propertiesJson === '{}') && propagatedPropertiesJson) {
+      setPropertiesJson(propagatedPropertiesJson)
+    }
+  }, [propagatedPropertiesJson, open, isEditing, prefill?.propertiesJson])
 
   const createMutation = useMutation({
     mutationFn: workTaskService.create,
@@ -198,11 +197,12 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
       dueAt: toIsoDate(values.dueAt),
       taskTypeCatalogItemId: values.taskTypeCatalogItemId,
       priorityCatalogItemId: values.priorityCatalogItemId,
-      assetId: prefill?.assetId,
+      assetId: (prefill?.maintenanceOrderId || prefill?.incidentId || prefill?.preventivePlanId || prefill?.taskRecurrenceId) ? undefined : prefill?.assetId,
       incidentId: prefill?.incidentId,
       maintenanceOrderId: prefill?.maintenanceOrderId,
       preventivePlanId: prefill?.preventivePlanId,
       taskRecurrenceId: prefill?.taskRecurrenceId,
+      propertiesJson: propertiesJson,
       assignedEmployeeId: values.assignedEmployeeId || undefined,
       assignedTeamId: values.assignedTeamId || undefined,
     }
@@ -339,97 +339,16 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
                   {renderCatalogSelect('priorityCatalogItemId', 'Prioridad', priorities)}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="assignedEmployeeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-muted-foreground">
-                          <User className="h-4 w-4" />
-                          Empleado asignado
-                        </FormLabel>
-                        <FormControl>
-                          <AsyncCombobox<EmployeeOption>
-                            fetcher={async (query) => {
-                              const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
-                                params: { search: query, isActive: true },
-                              })
-                              return data.items.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
-                            }}
-                            labelKey="name"
-                            valueKey="id"
-                            placeholder="Buscar empleado..."
-                            searchPlaceholder="Escriba para buscar..."
-                            emptyText="No se encontraron empleados."
-                            onSelect={(item) => {
-                              field.onChange(item.id)
-                              setAssignedEmployeeName(item.name)
-                            }}
-                            renderTrigger={(onClick) => (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                role="combobox"
-                                onClick={onClick}
-                                className="w-full justify-between font-normal"
-                              >
-                                {field.value ? assignedEmployeeName || field.value : 'Buscar empleado...'}
-                                <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="assignedTeamId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-muted-foreground">
-                          <Users className="h-4 w-4" />
-                          Equipo asignado
-                        </FormLabel>
-                        <FormControl>
-                          <AsyncCombobox<TeamOption>
-                            fetcher={async (query) => {
-                              const { data } = await api.get<{ items: TeamOption[] }>('/teams', {
-                                params: { search: query },
-                              })
-                              return data.items
-                            }}
-                            labelKey="name"
-                            valueKey="id"
-                            placeholder="Buscar equipo..."
-                            searchPlaceholder="Escriba para buscar..."
-                            emptyText="No se encontraron equipos."
-                            onSelect={(item) => {
-                              field.onChange(item.id)
-                              setAssignedTeamName(item.name)
-                            }}
-                            renderTrigger={(onClick) => (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                role="combobox"
-                                onClick={onClick}
-                                className="w-full justify-between font-normal"
-                              >
-                                {field.value ? assignedTeamName || field.value : 'Buscar equipo...'}
-                                <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+
+                {(prefill?.assetId || task?.assetId) && (
+                  <PropagatedPropertiesDisplay 
+                    assetId={(prefill?.assetId || task?.assetId)!} 
+                    propertiesJson={propertiesJson} 
+                    inlineEdit={true}
+                    onChange={setPropertiesJson}
                   />
-                </div>
+                )}
               </div>
             </ScrollArea>
 

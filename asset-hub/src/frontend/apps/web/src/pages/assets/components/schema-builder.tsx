@@ -32,7 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { GripVertical, Plus, Trash2, HelpCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { GripVertical, Plus, Trash2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { SchemaFieldPreview } from './schema-field-preview';
 
 interface SchemaField {
@@ -43,6 +43,7 @@ interface SchemaField {
   required: boolean;
   enumOptions?: string;
   catalogCode?: string;
+  propagateToWork?: boolean;
 }
 
 interface SchemaBuilderProps {
@@ -123,7 +124,7 @@ const SortableField = memo(function SortableField({
               placeholder="Etiqueta visible"
             />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <Select value={field.type} onValueChange={(val) => onUpdate(field.id, { type: val })}>
               <SelectTrigger>
                 <SelectValue />
@@ -140,7 +141,26 @@ const SortableField = memo(function SortableField({
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2 flex items-center justify-between">
+          <div className="md:col-span-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={field.propagateToWork}
+                onCheckedChange={(c) => onUpdate(field.id, { propagateToWork: !!c })}
+                id={`prop-${field.id}`}
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label htmlFor={`prop-${field.id}`} className="text-[10px] font-medium cursor-pointer leading-tight max-w-[60px] text-center">
+                      Propagar a Órdenes
+                    </Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Copia el valor de este campo a la Orden o Tarea al crearse desde el activo.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="flex items-center gap-2">
               <Switch
                 checked={field.required}
@@ -285,6 +305,7 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
               required: schema.required?.includes(key) || false,
               enumOptions,
               catalogCode,
+              propagateToWork: prop.propagateToWork || false,
             };
           });
           setFields(loadedFields);
@@ -359,6 +380,10 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
         const propConfig: any = {
           title: f.title,
         };
+        
+        if (f.propagateToWork) {
+          propConfig.propagateToWork = true;
+        }
 
         if (f.type === 'enum') {
           propConfig.type = 'string';
