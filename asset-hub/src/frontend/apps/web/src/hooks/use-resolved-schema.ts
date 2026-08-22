@@ -3,6 +3,7 @@ import { catalogService } from '@/services/catalog.service';
 
 export function useResolvedSchema(rawSchemaJson: string) {
   const [schema, setSchema] = useState<any>({});
+  const [uiSchema, setUiSchema] = useState<any>({});
   const [isResolving, setIsResolving] = useState(true);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export function useResolvedSchema(rawSchemaJson: string) {
       } catch (e) {
         if (isMounted) {
           setSchema({});
+          setUiSchema({});
           setIsResolving(false);
         }
         return;
@@ -25,6 +27,7 @@ export function useResolvedSchema(rawSchemaJson: string) {
       if (!parsedSchema.properties) {
         if (isMounted) {
           setSchema(parsedSchema);
+          setUiSchema({});
           setIsResolving(false);
         }
         return;
@@ -36,9 +39,17 @@ export function useResolvedSchema(rawSchemaJson: string) {
       // Extract all properties that need catalog resolution
       const catalogPromises = [];
       const keysToUpdate: { key: string, catalogCode: string }[] = [];
+      const generatedUiSchema: any = {};
 
       for (const key of Object.keys(resolvedSchema.properties)) {
         const prop = resolvedSchema.properties[key];
+        
+        // Setup uiSchema for custom types
+        if (prop.format === 'employee') {
+          generatedUiSchema[key] = { "ui:widget": "EmployeeSelectWidget" };
+        } else if (prop.format === 'team') {
+          generatedUiSchema[key] = { "ui:widget": "TeamSelectWidget" };
+        }
         
         // Auto-fix legacy broken date types
         if (prop.type === 'date') {
@@ -83,6 +94,7 @@ export function useResolvedSchema(rawSchemaJson: string) {
 
       if (isMounted) {
         setSchema(resolvedSchema);
+        setUiSchema(generatedUiSchema);
         setIsResolving(false);
       }
     }
@@ -94,5 +106,5 @@ export function useResolvedSchema(rawSchemaJson: string) {
     };
   }, [rawSchemaJson]);
 
-  return { schema, isResolving };
+  return { schema, uiSchema, isResolving };
 }

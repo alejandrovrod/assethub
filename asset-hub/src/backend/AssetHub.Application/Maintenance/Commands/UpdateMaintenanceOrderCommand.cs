@@ -17,6 +17,7 @@ public class UpdateMaintenanceOrderCommand : IRequest<MaintenanceOrderSummaryDto
     public Guid? AssignedEmployeeId { get; set; }
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
+    public bool? RemovePreventivePlan { get; set; }
 }
 
 public class UpdateMaintenanceOrderCommandHandler : IRequestHandler<UpdateMaintenanceOrderCommand, MaintenanceOrderSummaryDto>
@@ -52,6 +53,8 @@ public class UpdateMaintenanceOrderCommandHandler : IRequestHandler<UpdateMainte
             order.ScheduledStart = request.ScheduledStart.Value;
         if (request.ScheduledEnd.HasValue)
             order.ScheduledEnd = request.ScheduledEnd.Value;
+        if (request.RemovePreventivePlan == true)
+            order.PreventivePlanId = null;
 
         await _db.SaveChangesAsync(cancellationToken);
 

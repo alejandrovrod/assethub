@@ -57,6 +57,8 @@ const FIELD_TYPE_OPTIONS = [
   { value: 'date', label: 'Fecha', help: 'Selector de fecha.' },
   { value: 'enum', label: 'Lista fija', help: 'Opciones predefinidas separadas por coma.' },
   { value: 'catalog', label: 'Catálogo', help: 'Opciones dinámicas tomadas de un catálogo.' },
+  { value: 'employee', label: 'Persona / Empleado', help: 'Selección de un empleado del sistema.' },
+  { value: 'team', label: 'Grupo / Equipo', help: 'Selección de un equipo del sistema.' },
   { value: 'file', label: 'Archivo / Foto', help: 'Un solo archivo o imagen.' },
   { value: 'files', label: 'Archivos / Fotos', help: 'Varios archivos o imágenes.' },
 ];
@@ -263,6 +265,10 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
               type = 'date';
             } else if (prop.type === 'date') {
               type = 'date'; // Handle legacy broken schemas
+            } else if (prop.type === 'string' && prop.format === 'employee') {
+              type = 'employee';
+            } else if (prop.type === 'string' && prop.format === 'team') {
+              type = 'team';
             } else if (prop.catalogCode) {
               type = 'catalog';
               catalogCode = prop.catalogCode;
@@ -366,6 +372,12 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
         } else if (f.type === 'file') {
           propConfig.type = 'string';
           propConfig.format = 'data-url';
+        } else if (f.type === 'employee') {
+          propConfig.type = 'string';
+          propConfig.format = 'employee';
+        } else if (f.type === 'team') {
+          propConfig.type = 'string';
+          propConfig.format = 'team';
         } else if (f.type === 'files') {
           propConfig.type = 'array';
           propConfig.items = {

@@ -9,6 +9,8 @@ import Form from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { handleServerError } from '@/lib/handle-server-error'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
+import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
+import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
 import { cn } from '@/lib/utils'
 
 import {
@@ -139,7 +141,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
     }
   }
 
-  const { schema, isResolving } = useResolvedSchema(template.schemaJson)
+  const { schema, uiSchema, isResolving } = useResolvedSchema(template?.schemaJson || '{}')
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -234,10 +236,15 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                   ) : template?.schemaJson && (
                     <Form
                     schema={schema || {}}
+                    uiSchema={uiSchema || {}}
                     validator={validator}
                     formData={propertiesJson}
                     onChange={(e) => setPropertiesJson(e.formData)}
-                    widgets={{ FileWidget: FileUploadWidget }}
+                    widgets={{ 
+                      FileWidget: FileUploadWidget,
+                      EmployeeSelectWidget,
+                      TeamSelectWidget
+                    }}
                     tagName="div"
                     children={<></>}
                   />

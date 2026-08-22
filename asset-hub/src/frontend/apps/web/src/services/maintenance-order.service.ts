@@ -1,7 +1,7 @@
 import { apiClient as api } from '@/lib/api-client'
 
 export type MaintenanceOrderState = 'draft' | 'approved' | 'scheduled' | 'in_progress' | 'done' | 'verified' | 'cancelled' | 'rescheduled'
-export type MaintenanceOrderKind = 'corrective' | 'preventive'
+export type MaintenanceOrderKind = string
 
 export interface MaintenanceOrderSummary {
   id: string
@@ -61,6 +61,7 @@ export interface UpdateMaintenanceOrderDto {
   assignedEmployeeId?: string
   scheduledStart?: string
   scheduledEnd?: string
+  removePreventivePlan?: boolean
 }
 
 export interface AddPartDto {
@@ -98,7 +99,7 @@ const STATE_LABELS: Record<MaintenanceOrderState, string> = {
   cancelled: 'Cancelada',
 }
 
-const KIND_LABELS: Record<MaintenanceOrderKind, string> = {
+const KIND_LABELS: Record<string, string> = {
   corrective: 'Correctiva',
   preventive: 'Preventiva',
 }

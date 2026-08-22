@@ -230,7 +230,7 @@ export default function MaintenanceOrders() {
                     >
                       <TableCell className="font-medium">{order.title}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{KIND_LABELS[order.kind]}</Badge>
+                        <Badge variant="outline">{KIND_LABELS[order.kind] || order.kind}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={STATE_VARIANTS[order.state]}>{STATE_LABELS[order.state]}</Badge>

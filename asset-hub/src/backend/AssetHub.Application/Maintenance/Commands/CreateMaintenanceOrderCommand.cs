@@ -39,8 +39,8 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
         if (!assetExists)
             throw new ArgumentException("Asset not found");
 
-        if (request.Kind != MaintenanceOrderKinds.Corrective && request.Kind != MaintenanceOrderKinds.Preventive)
-            throw new ArgumentException("Invalid Kind. Must be corrective or preventive.");
+        if (string.IsNullOrWhiteSpace(request.Kind))
+            throw new ArgumentException("Kind cannot be empty.");
 
         if (request.PreventivePlanId.HasValue && request.IncidentId.HasValue)
             throw new ArgumentException("Order cannot have both a PreventivePlanId and an IncidentId");

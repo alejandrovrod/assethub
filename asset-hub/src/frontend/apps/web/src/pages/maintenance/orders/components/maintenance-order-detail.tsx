@@ -11,6 +11,7 @@ import {
   Save,
   Check,
   Clock,
+  Link2Off,
 } from 'lucide-react'
 import {
   maintenanceOrderService,
@@ -106,6 +107,16 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
     onError: () => toast.error('Error al actualizar la orden'),
   })
 
+  const unlinkPreventivePlanMutation = useMutation({
+    mutationFn: () => maintenanceOrderService.update(order.id, { removePreventivePlan: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
+      toast.success('Plan preventivo desvinculado')
+    },
+    onError: () => toast.error('Error al desvincular el plan'),
+  })
+
   const stateMutation = useMutation({
     mutationFn: (action: 'approve' | 'schedule' | 'verify' | 'start' | 'complete' | 'cancel' | 'reject') => {
       if (action === 'approve') return maintenanceOrderService.approve(order.id)
@@ -148,7 +159,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {displayedOrder.title}
           </CardTitle>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant="outline">{KIND_LABELS[displayedOrder.kind]}</Badge>
+            <Badge variant="outline">{KIND_LABELS[displayedOrder.kind] || displayedOrder.kind}</Badge>
             <Badge variant={STATE_VARIANTS[state]}>{STATE_LABELS[state]}</Badge>
             {displayedOrder.scheduledStart && (
               <span className="text-xs flex items-center gap-1 text-muted-foreground">
@@ -278,12 +289,24 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                   </Link>
                 </div>
                 {displayedOrder.preventivePlanId && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 group">
                     <Clock className="h-4 w-4" />
                     <span className="text-muted-foreground w-32 shrink-0">Plan preventivo</span>
                     <Link to={`/maintenance/preventive-plans`} className="text-sm font-medium hover:underline truncate">
                       {displayedOrder.preventivePlanName || displayedOrder.preventivePlanId}
                     </Link>
+                    {state !== 'verified' && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" 
+                        onClick={() => unlinkPreventivePlanMutation.mutate()}
+                        title="Desvincular plan preventivo"
+                        disabled={unlinkPreventivePlanMutation.isPending}
+                      >
+                        {unlinkPreventivePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2Off className="h-3 w-3 text-muted-foreground hover:text-destructive" />}
+                      </Button>
+                    )}
                   </div>
                 )}
                 {displayedOrder.incidentId && (

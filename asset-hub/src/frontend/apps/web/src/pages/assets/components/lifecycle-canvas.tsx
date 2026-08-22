@@ -35,7 +35,7 @@ import {
 import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
-import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag } from 'lucide-react';
+import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag, Palette } from 'lucide-react';
 
 interface LifecycleCanvasProps {
   value: string;
@@ -80,6 +80,94 @@ function ChildStatesInput({
       }}
       onBlur={() => setText(value.join(', '))}
     />
+  );
+}
+
+// -- Semantic Colors & Smart Defaults --
+const PRESET_COLORS = [
+  { label: 'Gris (Borrador / Neutro)', value: '#94a3b8' },
+  { label: 'Azul (En progreso / Asignado)', value: '#3b82f6' },
+  { label: 'Verde (Completado / Resuelto)', value: '#10b981' },
+  { label: 'Rojo (Problema / Cancelado)', value: '#ef4444' },
+  { label: 'Amarillo (Espera / Pausado)', value: '#f59e0b' },
+  { label: 'Morado (Especial / Externo)', value: '#8b5cf6' },
+];
+
+const getSmartColorForState = (stateName: string) => {
+  const lower = stateName.toLowerCase();
+  if (lower.match(/completado|cerrado|resuelto|aprobado|listo/)) return '#10b981'; // Green
+  if (lower.match(/falla|cancelado|rechazado|error|cr[íi]tico/)) return '#ef4444'; // Red
+  if (lower.match(/progreso|asignado|revisi[óo]n|curso|reparaci[óo]n/)) return '#3b82f6'; // Blue
+  if (lower.match(/espera|pausado|pendiente|diagn[óo]stico/)) return '#f59e0b'; // Yellow
+  if (lower.match(/especial|externo/)) return '#8b5cf6'; // Purple
+  return '#94a3b8'; // Default Gray
+};
+
+function ColorSwatchPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [isCustom, setIsCustom] = useState(() => !PRESET_COLORS.some((c) => c.value === value));
+  const [localColor, setLocalColor] = useState(value);
+
+  useEffect(() => {
+    setLocalColor(value);
+    setIsCustom(!PRESET_COLORS.some((c) => c.value === value));
+  }, [value]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
+        {PRESET_COLORS.map((c) => (
+          <button
+            key={c.value}
+            title={c.label}
+            onClick={() => {
+              setIsCustom(false);
+              onChange(c.value);
+            }}
+            className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
+              value === c.value && !isCustom
+                ? 'border-primary ring-2 ring-primary/20 scale-110'
+                : 'border-transparent'
+            }`}
+            style={{ backgroundColor: c.value }}
+          />
+        ))}
+
+        <button
+          title="Color Personalizado"
+          onClick={() => setIsCustom(true)}
+          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all bg-muted ${
+            isCustom
+              ? 'border-primary ring-2 ring-primary/20 scale-110'
+              : 'border-dashed border-muted-foreground hover:border-solid hover:scale-110'
+          }`}
+        >
+          <Palette className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
+
+      {isCustom && (
+        <div className="flex items-center gap-2 pt-2 animate-in fade-in slide-in-from-top-2">
+          <Input
+            type="color"
+            value={localColor}
+            onChange={(e) => setLocalColor(e.target.value)}
+            onBlur={() => {
+              if (localColor !== value) onChange(localColor);
+            }}
+            className="h-8 w-14 p-1 cursor-pointer"
+          />
+          <span className="text-xs text-muted-foreground font-mono">
+            {localColor.toUpperCase()}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -145,7 +233,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
             },
             position: { x: 100 + (idx % 4) * 180, y: 100 + Math.floor(idx / 4) * 120 },
             style: {
-              backgroundColor: isInitial ? '#dcfce7' : config.color || config.Color || '#ffffff',
+              backgroundColor: config.color || config.Color || '#ffffff',
               border: `2px solid ${
                 isInitial ? '#16a34a' : config.isTerminal ? '#dc2626' : config.color || config.Color || '#94a3b8'
               }`,
@@ -197,7 +285,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
             },
             style: {
               ...n.style,
-              backgroundColor: isInitial ? '#dcfce7' : config.color || config.Color || '#ffffff',
+              backgroundColor: config.color || config.Color || '#ffffff',
               border: `2px solid ${
                 isInitial ? '#16a34a' : config.isTerminal ? '#dc2626' : config.color || config.Color || '#94a3b8'
               }`,
@@ -247,10 +335,15 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     return node?.id || '';
   }, [nodes]);
 
+  const notifyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Sync to parent when nodes/edges change
   const notifyChange = useCallback(
     (newNodes: Node[], newEdges: Edge[]) => {
-      const transitions: Record<string, string[]> = {};
+      if (notifyTimeoutRef.current) clearTimeout(notifyTimeoutRef.current);
+      
+      notifyTimeoutRef.current = setTimeout(() => {
+        const transitions: Record<string, string[]> = {};
       const states: Record<string, any> = {};
 
       newNodes.forEach((n) => {
@@ -286,8 +379,9 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
         2
       );
 
-      lastSerializedValue.current = jsonStr;
-      onChange(jsonStr);
+        lastSerializedValue.current = jsonStr;
+        onChange(jsonStr);
+      }, 300);
     },
     [onChange]
   );
@@ -357,7 +451,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
       data: {
         label: name,
         stateConfig: {
-          color: '#94a3b8',
+          color: getSmartColorForState(name),
           isTerminal: false,
           requiresFields: [],
           allowedRoles: [],
@@ -389,7 +483,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
       data: { ...n.data, isInitial: n.id === nodeId },
       style: {
         ...n.style,
-        backgroundColor: n.id === nodeId ? '#dcfce7' : n.data?.stateConfig?.color || '#ffffff',
+        backgroundColor: n.data?.stateConfig?.color || '#ffffff',
         border: `2px solid ${
           n.id === nodeId
             ? '#16a34a'
@@ -425,6 +519,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
             },
             style: {
               ...n.style,
+              backgroundColor: newStateConfig.color || '#ffffff',
               border: `2px solid ${
                 isInitial ? '#16a34a' : isTerminal ? '#dc2626' : newStateConfig.color || '#94a3b8'
               }`,
@@ -597,6 +692,12 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
               </Button>
             </div>
             <div className="flex-1 border rounded bg-muted/20 overflow-hidden relative">
+              <style>{`
+                .react-flow__node.selected {
+                  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4) !important;
+                  transition: box-shadow 0.2s ease-in-out;
+                }
+              `}</style>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -617,8 +718,8 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
 
           {/* Node Properties Panel (Sheet) */}
           <Sheet open={!!selectedNodeId} onOpenChange={(open) => !open && setSelectedNodeId(null)}>
-            <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
-              <SheetHeader className="mb-4">
+            <SheetContent className="w-[90vw] sm:max-w-[600px] md:max-w-[700px] overflow-y-auto">
+              <SheetHeader className="sticky top-0 bg-background z-10 pt-2 pb-4 -mt-2 border-b mb-6">
                 <SheetTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-muted-foreground" />
                   Configurar Estado
@@ -640,17 +741,21 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
               {selectedNode && (
                 <div className="px-4 pb-6 space-y-6">
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant={selectedNode.data?.isInitial ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleSetInitial(selectedNode.id)}
-                    >
-                      <Star className="h-4 w-4 mr-2" />
-                      {selectedNode.data?.isInitial ? 'Estado inicial' : 'Marcar como inicial'}
-                    </Button>
-                    {selectedNode.data?.isInitial && (
-                      <span className="text-xs text-green-600 font-medium">Este es el estado inicial</span>
+                    {selectedNode.data?.isInitial ? (
+                      <span className="flex items-center text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-md border border-green-200">
+                        <Star className="h-4 w-4 mr-2" />
+                        Este es el estado inicial
+                      </span>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetInitial(selectedNode.id)}
+                      >
+                        <Star className="h-4 w-4 mr-2" />
+                        Marcar como inicial
+                      </Button>
                     )}
                   </div>
 
@@ -660,16 +765,14 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                       Apariencia
                     </h4>
 
-                    <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                    <div className="flex flex-col gap-3 p-3 border rounded-lg bg-card">
                       <div>
                         <Label className="text-sm font-medium">Color de Etiqueta</Label>
-                        <p className="text-xs text-muted-foreground">Color que representará al estado</p>
+                        <p className="text-xs text-muted-foreground">El color predeterminado se asigna por el nombre del estado.</p>
                       </div>
-                      <Input
-                        type="color"
+                      <ColorSwatchPicker
                         value={selectedNode.data?.stateConfig?.color || '#94a3b8'}
-                        onChange={(e) => updateSelectedNodeConfig('color', e.target.value)}
-                        className="h-10 w-16 p-1 rounded-md cursor-pointer"
+                        onChange={(val) => updateSelectedNodeConfig('color', val)}
                       />
                     </div>
                   </div>

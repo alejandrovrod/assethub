@@ -5,6 +5,9 @@ using AssetHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using AssetHub.Domain.AssetTemplates;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Collections.Generic;
 
 namespace AssetHub.Application.Assets.Queries;
 
@@ -44,6 +47,37 @@ public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, Asset
 
         if (asset == null || asset.AssetTemplate == null) return null;
 
+        var propertiesJson = asset.PropertiesJson;
+        if (!string.IsNullOrEmpty(propertiesJson) && !string.IsNullOrEmpty(asset.AssetTemplate.SchemaJson))
+        {
+            try
+            {
+                var schemaObj = JsonNode.Parse(asset.AssetTemplate.SchemaJson);
+                var schemaProperties = schemaObj?["properties"]?.AsObject();
+                if (schemaProperties != null)
+                {
+                    var propsObj = JsonNode.Parse(propertiesJson)?.AsObject();
+                    if (propsObj != null)
+                    {
+                        var keysToRemove = new List<string>();
+                        foreach (var kvp in propsObj)
+                        {
+                            if (!schemaProperties.ContainsKey(kvp.Key))
+                            {
+                                keysToRemove.Add(kvp.Key);
+                            }
+                        }
+                        foreach (var key in keysToRemove)
+                        {
+                            propsObj.Remove(key);
+                        }
+                        propertiesJson = propsObj.ToJsonString();
+                    }
+                }
+            }
+            catch { /* Ignore parsing errors, return original */ }
+        }
+
         return new AssetDetailDto(
             asset.Id,
             asset.AssetTemplateId,
@@ -56,7 +90,7 @@ public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, Asset
             asset.Name,
             asset.State,
             asset.ConditionIndex,
-            asset.PropertiesJson,
+            propertiesJson,
             asset.InstalledAt,
             asset.CommissionedAt
         );

@@ -5,7 +5,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, ArrowLeft, Save, FileText, Image as ImageIcon, Download, GitBranch, Link as LinkIcon, Network } from 'lucide-react'
 import { assetService, AssetAttachment } from '@/services/asset.service'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
+import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
+import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
 import { ImageLightbox } from '@/components/widgets/image-lightbox'
+import { employeeService } from '@/services/employee.service'
+import { teamService } from '@/services/team.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +30,7 @@ import { AssetTasksWidget } from '@/pages/maintenance/components/asset-tasks-wid
 import { AssetIncidentsWidget } from '@/pages/maintenance/components/asset-incidents-widget'
 import { AssetMaintenanceOrdersWidget } from '@/pages/maintenance/components/asset-maintenance-orders-widget'
 import { ReportIncidentSheet } from '@/pages/maintenance/components/report-incident-sheet'
+import { MaintenanceOrderFormSheet } from '@/pages/maintenance/orders/components/maintenance-order-form-sheet'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -63,6 +68,16 @@ export default function AssetDetailPage() {
   const { data: allAssets } = useQuery({
     queryKey: ['assets'],
     queryFn: () => assetService.getAssets()
+  })
+
+  const { data: allEmployees } = useQuery({
+    queryKey: ['employees', 'all'],
+    queryFn: () => employeeService.getAll({ pageSize: 1000 }).then(res => res.items)
+  })
+
+  const { data: allTeams } = useQuery({
+    queryKey: ['teams', 'all'],
+    queryFn: () => teamService.getAll({ pageSize: 1000 }).then(res => res.items)
   })
 
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
@@ -139,7 +154,7 @@ export default function AssetDetailPage() {
     onError: () => toast.error('Error al cambiar el padre')
   })
 
-  const { schema, isResolving } = useResolvedSchema(asset?.schemaJson || '')
+  const { schema, uiSchema, isResolving } = useResolvedSchema(asset?.schemaJson || '')
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => assetService.uploadAttachment(id!, file),
@@ -414,12 +429,12 @@ export default function AssetDetailPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.keys(formData).length === 0 && (
+                  {Object.keys((schema as any)?.properties || {}).length === 0 && (
                     <p className="text-muted-foreground text-sm italic col-span-full">
                       No hay atributos configurados.
                     </p>
                   )}
-                  {Object.keys(formData).map(key => {
+                  {Object.keys((schema as any)?.properties || {}).map(key => {
                     const fieldSchema = (schema as any)?.properties?.[key]
                     const title = fieldSchema?.title || key
                     let value = formData[key]
@@ -435,6 +450,16 @@ export default function AssetDetailPage() {
                         const matchedOption = fieldSchema.items.oneOf.find((opt: any) => opt.const === val)
                         return matchedOption?.title || val
                       }).join(', ')
+                    }
+
+                    if (fieldSchema?.format === 'employee' && value && allEmployees) {
+                      const emp = allEmployees.find(e => e.id === value)
+                      if (emp) value = `${emp.firstName} ${emp.lastName}`
+                    }
+
+                    if (fieldSchema?.format === 'team' && value && allTeams) {
+                      const team = allTeams.find(t => t.id === value)
+                      if (team) value = team.name
                     }
 
                     const isDataUrl = fieldSchema?.format === 'data-url' || fieldSchema?.items?.format === 'data-url';
@@ -567,51 +592,6 @@ export default function AssetDetailPage() {
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg">Adjuntos</CardTitle>
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => fileInputRef.current?.click()} disabled={uploadMutation.isPending}>
-                {uploadMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Subir'}
-              </Button>
-              <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-            </CardHeader>
-            <CardContent>
-              {isLoadingAttachments ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-              ) : attachments?.length === 0 ? (
-                <div 
-                  className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed rounded-lg bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <ImageIcon className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
-                    Haz clic para subir un archivo
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    (PDF, Imágenes, etc.)
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {attachments?.map((att: AssetAttachment) => (
-                    <div key={att.id} className="flex items-center justify-between p-2 border rounded-md bg-card">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        {att.kind === 'photo' ? <ImageIcon className="h-5 w-5 text-blue-500 shrink-0" /> : <FileText className="h-5 w-5 text-orange-500 shrink-0" />}
-                        <div className="flex flex-col overflow-hidden">
-                          <span className="text-sm font-medium truncate" title={att.fileName}>{att.fileName}</span>
-                          <span className="text-xs text-muted-foreground">{(att.sizeBytes / 1024).toFixed(1)} KB</span>
-                        </div>
-                      </div>
-                      <a href={`http://localhost:5168${att.blobUri}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
-                        <Download className="h-4 w-4" />
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
       </div>
@@ -628,13 +608,18 @@ export default function AssetDetailPage() {
           </div>
           <div className="flex-1 overflow-y-auto px-6 pb-6">
             <div className="rjsf-tailwind mt-6">
-              <Form 
+              <Form
                 schema={schema} 
+                uiSchema={uiSchema}
                 validator={validator}
                 formData={formData}
                 onChange={e => setFormData(e.formData)}
                 onSubmit={onSubmit}
-                widgets={{ FileWidget: FileUploadWidget }}
+                widgets={{ 
+                  FileWidget: FileUploadWidget,
+                  EmployeeSelectWidget,
+                  TeamSelectWidget
+                }}
               >
                 <div className="flex justify-end mt-6 gap-2 border-t pt-4">
                   <Button variant="outline" type="button" onClick={() => setIsEditingDynamic(false)}>
@@ -703,10 +688,15 @@ export default function AssetDetailPage() {
               <div className="rjsf-tailwind">
                 <Form
                   schema={transitionSchema}
+                  uiSchema={uiSchema}
                   validator={validator}
                   formData={transitionData}
                   onChange={(e) => setTransitionData(e.formData)}
-                  widgets={{ FileWidget: FileUploadWidget }}
+                  widgets={{ 
+                    FileWidget: FileUploadWidget,
+                    EmployeeSelectWidget,
+                    TeamSelectWidget 
+                  }}
                   children={<></>}
                 />
               </div>
@@ -745,11 +735,36 @@ export default function AssetDetailPage() {
             toast.success('Incidencia creada y activo bloqueado exitosamente')
           }}
         />
+      ) : targetModule === 'work_orders' ? (
+        <MaintenanceOrderFormSheet
+          open={moduleDelegationOpen}
+          onOpenChange={setModuleDelegationOpen}
+          initialAssetId={asset.id}
+          initialAssetLabel={`${asset.code} - ${asset.name}`}
+          onSuccess={(data) => {
+            setModuleDelegationOpen(false)
+            if (pendingTargetState && data?.id) {
+              stateMutation.mutate({ 
+                toState: pendingTargetState, 
+                transitionData: { 
+                  source_module: 'work_orders',
+                  referenceId: data.id 
+                } 
+              })
+            } else if (pendingTargetState) {
+              // Fallback just in case no ID was returned
+              stateMutation.mutate({ 
+                toState: pendingTargetState, 
+                transitionData: { source_module: 'work_orders' } 
+              })
+            }
+          }}
+        />
       ) : (
         <Sheet open={moduleDelegationOpen} onOpenChange={setModuleDelegationOpen}>
           <SheetContent side="right" className="w-[400px] sm:w-[540px]">
             <SheetHeader>
-              <SheetTitle>Módulo: {targetModule === 'work_orders' ? 'Órdenes de Trabajo' : targetModule}</SheetTitle>
+              <SheetTitle>Módulo: {targetModule}</SheetTitle>
               <SheetDescription>
                 Creando registro en módulo externo para avanzar al estado <strong>{pendingTargetState}</strong>.
               </SheetDescription>

@@ -20,6 +20,8 @@ import FormSchema from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
+import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
+import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Título es requerido').max(200),
@@ -80,7 +82,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
     enabled: !!selectedTemplateId,
   })
 
-  const { schema, isResolving } = useResolvedSchema(selectedTemplate?.schemaJson || '')
+  const { schema, uiSchema, isResolving } = useResolvedSchema(selectedTemplate?.schemaJson || '{}')
 
   useEffect(() => {
     if (open) {
@@ -265,10 +267,15 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                   ) : (
                     <FormSchema 
                       schema={schema} 
+                      uiSchema={uiSchema}
                       validator={validator} 
                       formData={schemaData} 
                       onChange={e => setSchemaData(e.formData)} 
-                      widgets={{ FileWidget: FileUploadWidget }}
+                      widgets={{ 
+                        FileWidget: FileUploadWidget,
+                        EmployeeSelectWidget,
+                        TeamSelectWidget
+                      }}
                       tagName="div"
                       children={<></>}
                     />

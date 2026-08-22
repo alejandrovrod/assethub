@@ -14,6 +14,10 @@ import { toast } from 'sonner'
 import Form from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
+import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
+import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
+import { employeeService } from '@/services/employee.service'
+import { teamService } from '@/services/team.service'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 import { IncidentTasksWidget } from './components/incident-tasks-widget'
@@ -39,6 +43,11 @@ export default function IncidentDetailPage() {
     queryKey: ['incident', id],
     queryFn: () => incidentService.getById(id!),
     enabled: !!id
+  })
+
+  const { data: allTeams } = useQuery({
+    queryKey: ['teams', 'all'],
+    queryFn: () => teamService.getAll({ pageSize: 1000 }).then(res => res.items)
   })
 
   const { data: template } = useQuery({
@@ -73,7 +82,12 @@ export default function IncidentDetailPage() {
   }, [incident?.title, setCustomTitle])
 
   // Process template schema
-  const { schema, isResolving } = useResolvedSchema(template?.schemaJson || '')
+  const { schema, uiSchema, isResolving } = useResolvedSchema(template?.schemaJson || '{}')
+
+  const { data: allEmployees } = useQuery({
+    queryKey: ['employees', 'all'],
+    queryFn: () => employeeService.getAll({ pageSize: 1000 }).then(res => res.items)
+  })
 
   const lifecycleConfig = useMemo(() => {
     if (!template?.lifecycleStates) return null
@@ -119,9 +133,6 @@ export default function IncidentDetailPage() {
     onError: (err) => handleServerError(err)
   })
 
-  // We reuse state mutation for properties update if there's no dedicated update endpoint yet, 
-  // or we could use the state change endpoint to just update properties with the same state.
-  // Assuming there's no update endpoint yet, we just patch the state with the same state and new properties.
   const updatePropertiesMutation = useMutation({
     mutationFn: (propertiesJson: string) => incidentService.changeState(id!, { targetState: incident!.state, propertiesJson }),
     onSuccess: () => {
@@ -139,7 +150,6 @@ export default function IncidentDetailPage() {
       setPendingTargetState(targetState)
       setTransitionDialogOpen(true)
     } else {
-      // Just change state without additional properties
       stateMutation.mutate({ targetState })
     }
   }
@@ -175,7 +185,6 @@ export default function IncidentDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-lg border">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/maintenance/incidents')}>
@@ -196,7 +205,6 @@ export default function IncidentDetailPage() {
           </div>
         </div>
 
-        {/* TRANSITIONS BAR */}
         <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
           <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
             Cambiar estado a:
@@ -226,7 +234,6 @@ export default function IncidentDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* LEFT COL - MAIN DATA */}
         <div className="md:col-span-2 flex flex-col gap-6">
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="mb-4">
@@ -244,7 +251,6 @@ export default function IncidentDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* DYNAMIC PROPERTIES */}
               {schema && (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -281,6 +287,16 @@ export default function IncidentDetailPage() {
                               const matchedOption = fieldSchema.items.oneOf.find((opt: any) => opt.const === val)
                               return matchedOption?.title || val
                             }).join(', ')
+                          }
+
+                          if (fieldSchema?.format === 'employee' && value && allEmployees) {
+                            const emp = allEmployees.find(e => e.id === value)
+                            if (emp) value = `${emp.firstName} ${emp.lastName}`
+                          }
+
+                          if (fieldSchema?.format === 'team' && value && allTeams) {
+                            const team = allTeams.find(t => t.id === value)
+                            if (team) value = team.name
                           }
 
                           const isDataUrl = fieldSchema?.format === 'data-url' || fieldSchema?.items?.format === 'data-url';
@@ -461,11 +477,16 @@ export default function IncidentDetailPage() {
               ) : (
                 <Form 
                   schema={schema || {}} 
+                  uiSchema={uiSchema || {}}
                   validator={validator}
                   formData={formData}
                   onChange={e => setFormData(e.formData)}
                   onSubmit={handleDynamicSubmit}
-                  widgets={{ FileWidget: FileUploadWidget }}
+                  widgets={{ 
+                    FileWidget: FileUploadWidget,
+                    EmployeeSelectWidget,
+                    TeamSelectWidget
+                  }}
                 >
                   <div className="flex justify-end mt-6 gap-2 border-t pt-4">
                     <Button variant="outline" type="button" onClick={() => setIsEditingDynamic(false)}>
@@ -498,10 +519,15 @@ export default function IncidentDetailPage() {
               <div className="rjsf-tailwind">
                 <Form
                   schema={transitionSchema}
+                  uiSchema={uiSchema}
                   validator={validator}
                   formData={transitionData}
                   onChange={(e) => setTransitionData(e.formData)}
-                  widgets={{ FileWidget: FileUploadWidget }}
+                  widgets={{ 
+                    FileWidget: FileUploadWidget,
+                    EmployeeSelectWidget,
+                    TeamSelectWidget
+                  }}
                   children={<></>}
                 />
               </div>

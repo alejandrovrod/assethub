@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { toast } from 'sonner'
-import { Loader2, Package, Clock } from 'lucide-react'
+import { Loader2, Package, Clock, FileText, Link as LinkIcon, Wrench } from 'lucide-react'
 import {
   maintenanceOrderService,
   type MaintenanceOrderSummary,
@@ -22,9 +22,10 @@ import {
 } from '@/services/maintenance-order.service'
 import { assetService } from '@/services/asset.service'
 import { preventivePlanService } from '@/services/preventive-plan.service'
+import { catalogService } from '@/services/catalog.service'
 
 const formSchema = z.object({
-  kind: z.enum(['corrective', 'preventive']),
+  kind: z.string().min(1, 'El tipo es requerido'),
   title: z.string().min(1, 'El título es requerido').max(200),
   description: z.string().max(2000).optional(),
   assetId: z.string().min(1, 'El activo es requerido'),
@@ -38,13 +39,23 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   order?: MaintenanceOrderSummary
-  onSuccess?: () => void
+  onSuccess?: (data?: { id: string }) => void
+  initialAssetId?: string
+  initialAssetLabel?: string
 }
 
-export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess }: Props) {
+import { useQuery } from '@tanstack/react-query'
+
+export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess, initialAssetId, initialAssetLabel }: Props) {
   const queryClient = useQueryClient()
+  
+  const { data: taskTypes } = useQuery({
+    queryKey: ['catalog', 'tasktype'],
+    queryFn: () => catalogService.getCatalogItems('tasktype'),
+    enabled: open,
+  })
   const isEditing = !!order
-  const [assetLabel, setAssetLabel] = useState('')
+  const [assetLabel, setAssetLabel] = useState(initialAssetLabel || '')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,7 +63,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       kind: 'corrective',
       title: '',
       description: '',
-      assetId: '',
+      assetId: initialAssetId || '',
       preventivePlanId: '',
       incidentId: '',
     },
@@ -61,7 +72,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
   useEffect(() => {
     if (order) {
       form.reset({
-        kind: order.kind as MaintenanceOrderKind,
+        kind: order.kind,
         title: order.title,
         description: '',
         assetId: order.assetId,
@@ -71,16 +82,16 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       setAssetLabel(order.assetName || '')
     } else {
       form.reset({
-        kind: 'corrective',
+        kind: taskTypes?.[0]?.code || '',
         title: '',
         description: '',
-        assetId: '',
+        assetId: initialAssetId || '',
         preventivePlanId: '',
         incidentId: '',
       })
-      setAssetLabel('')
+      setAssetLabel(initialAssetLabel || '')
     }
-  }, [order, open, form])
+  }, [order, open, form, initialAssetId, initialAssetLabel, taskTypes])
 
   const createMutation = useMutation({
     mutationFn: (values: FormValues) =>
@@ -92,12 +103,12 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
         preventivePlanId: values.preventivePlanId || undefined,
         incidentId: values.incidentId || undefined,
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
       toast.success('Orden creada')
       form.reset()
       setAssetLabel('')
-      onSuccess?.()
+      onSuccess?.(data)
     },
     onError: () => toast.error('Error al crear la orden'),
   })
@@ -128,8 +139,11 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg flex flex-col">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? 'Editar orden' : 'Nueva orden de mantenimiento'}</SheetTitle>
+        <SheetHeader className="mb-4">
+          <SheetTitle className="flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-primary" />
+            {isEditing ? 'Editar orden' : 'Nueva orden de mantenimiento'}
+          </SheetTitle>
           <SheetDescription>
             {isEditing
               ? 'Modificá los datos de la orden.'
@@ -139,148 +153,188 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
 
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-              {!isEditing && (
-                <FormField
-                  control={form.control}
-                  name="kind"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(['corrective', 'preventive'] as const).map((k) => (
-                            <SelectItem key={k} value={k}>
-                              {KIND_LABELS[k]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {isEditing && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Tipo:</span>
-                  <Badge variant="outline">{KIND_LABELS[order!.kind]}</Badge>
-                </div>
-              )}
-
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Título de la orden" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Descripción opcional" rows={3} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="assetId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Activo</FormLabel>
-                    <AsyncCombobox<{ id: string; name: string }>
-                      fetcher={async (query) => {
-                        const items = await assetService.getAssets(query || undefined)
-                        return items.map((a: any) => ({ id: a.id, name: a.name }))
-                      }}
-                      labelKey="name"
-                      valueKey="id"
-                      placeholder="Buscar activo..."
-                      searchPlaceholder="Escriba para buscar..."
-                      emptyText="No se encontraron activos."
-                      onSelect={(item) => {
-                        field.onChange(item.id)
-                        setAssetLabel(item.name)
-                      }}
-                      renderTrigger={(onClick) => (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          role="combobox"
-                          onClick={onClick}
-                          className="w-full justify-between font-normal"
-                        >
-                          {assetLabel || 'Buscar activo...'}
-                          <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2 pb-6 px-1">
+              
+              {/* Sección Principal */}
+              <div className="space-y-4 p-4 border rounded-xl bg-card shadow-sm">
+                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4" />
+                  Información Principal
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {!isEditing && (
+                    <FormField
+                      control={form.control}
+                      name="kind"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || (taskTypes?.[0]?.code ?? '')}>
+                            <FormControl>
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Seleccionar tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {taskTypes?.map((t) => (
+                                <SelectItem key={t.code} value={t.code}>
+                                  {t.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
                       )}
                     />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  )}
 
-              {!isEditing && (
+                  {isEditing && (
+                    <div className="flex items-center gap-2 mt-8">
+                      <span className="text-sm font-medium">Tipo:</span>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                        {taskTypes?.find(t => t.code === order!.kind)?.label || KIND_LABELS[order!.kind] || order!.kind}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-1">
+                        <FormLabel>Título</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ej. Revisión de motor" className="bg-background" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 p-4 border rounded-xl bg-card shadow-sm">
                 <FormField
                   control={form.control}
-                  name="preventivePlanId"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" /> Plan preventivo (opcional)
-                      </FormLabel>
-                      <AsyncCombobox<{ id: string; name: string }>
-                        fetcher={async (query) => {
-                          const plans = await preventivePlanService.getAll()
-                          const filtered = query
-                            ? plans.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
-                            : plans
-                          return filtered.map(p => ({ id: p.id, name: p.name }))
-                        }}
-                        labelKey="name"
-                        valueKey="id"
-                        placeholder="Buscar plan..."
-                        searchPlaceholder="Escriba para buscar..."
-                        emptyText="No se encontraron planes."
-                        onSelect={(item) => field.onChange(item.id)}
-                        renderTrigger={(onClick) => (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            role="combobox"
-                            onClick={onClick}
-                            className="w-full justify-between font-normal"
-                          >
-                            {field.value ? 'Plan seleccionado' : 'Buscar plan...'}
-                            <Clock className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        )}
-                      />
+                      <FormLabel>Descripción</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          placeholder="Agregá detalles adicionales, observaciones o instrucciones específicas para esta orden..." 
+                          rows={4} 
+                          className="bg-background resize-none"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
+              </div>
+
+              <div className="space-y-4 p-4 border rounded-xl bg-muted/30">
+                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
+                  <LinkIcon className="w-4 h-4" />
+                  Vínculos
+                </h4>
+
+                <FormField
+                  control={form.control}
+                  name="assetId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Activo asociado</FormLabel>
+                      <FormControl>
+                        {initialAssetId ? (
+                           <div className="flex items-center gap-3 p-3 bg-background border rounded-lg">
+                             <div className="p-2 bg-primary/10 text-primary rounded-md">
+                               <Package className="w-4 h-4" />
+                             </div>
+                             <div className="flex flex-col">
+                               <span className="text-sm font-medium leading-none mb-1">{initialAssetLabel?.split('-')[1]?.trim() || initialAssetLabel}</span>
+                               <span className="text-xs text-muted-foreground">{initialAssetLabel?.split('-')[0]?.trim()}</span>
+                             </div>
+                           </div>
+                        ) : (
+                          <AsyncCombobox<{ id: string; name: string; code: string }>
+                            fetcher={async (query) => {
+                              const items = await assetService.getAssets(query || undefined)
+                              return items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
+                            }}
+                            labelKey="name"
+                            valueKey="id"
+                            placeholder="Buscar activo..."
+                            searchPlaceholder="Escriba para buscar..."
+                            emptyText="No se encontraron activos."
+                            onSelect={(item) => {
+                              field.onChange(item.id)
+                              setAssetLabel(`${item.code} - ${item.name}`)
+                            }}
+                            renderTrigger={(onClick) => (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                role="combobox"
+                                onClick={onClick}
+                                className="w-full justify-between font-normal bg-background"
+                              >
+                                {assetLabel || 'Buscar activo...'}
+                                <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            )}
+                          />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {!isEditing && (
+                  <FormField
+                    control={form.control}
+                    name="preventivePlanId"
+                    render={({ field }) => (
+                      <FormItem className="pt-2">
+                        <FormLabel className="flex items-center gap-2">
+                          Plan preventivo (opcional)
+                        </FormLabel>
+                        <AsyncCombobox<{ id: string; name: string }>
+                          fetcher={async (query) => {
+                            const plans = await preventivePlanService.getAll()
+                            const filtered = query
+                              ? plans.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
+                              : plans
+                            return filtered.map(p => ({ id: p.id, name: p.name }))
+                          }}
+                          labelKey="name"
+                          valueKey="id"
+                          placeholder="Vincular a un plan..."
+                          searchPlaceholder="Escriba para buscar..."
+                          emptyText="No se encontraron planes."
+                          onSelect={(item) => field.onChange(item.id)}
+                          renderTrigger={(onClick) => (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              role="combobox"
+                              onClick={onClick}
+                              className="w-full justify-between font-normal bg-background"
+                            >
+                              {field.value ? 'Plan seleccionado' : 'Buscar plan...'}
+                              <Clock className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          )}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
             </form>
           </Form>
         </ScrollArea>

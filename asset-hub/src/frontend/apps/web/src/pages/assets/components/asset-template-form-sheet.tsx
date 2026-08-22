@@ -314,7 +314,7 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className={`${formSheetContentClass} w-full sm:max-w-3xl md:max-w-5xl lg:max-w-[85vw] xl:max-w-[90vw]`}>
+      <SheetContent className={`${formSheetContentClass} w-full sm:max-w-[95vw]`}>
         <Form {...form}>
           <FormSheetLayout
             onSubmit={form.handleSubmit(onSubmit, (err) => console.log('FORM ERRORS:', err))}

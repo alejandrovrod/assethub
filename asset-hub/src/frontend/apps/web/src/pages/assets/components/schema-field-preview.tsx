@@ -59,11 +59,27 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
         return (
           <Select disabled>
             <SelectTrigger>
-              <SelectValue placeholder={field.catalogCode ? `Catálogo: ${field.catalogCode}` : 'Catálogo no seleccionado'} />
+              <SelectValue placeholder={`Seleccionar de ${field.catalogCode || 'Catálogo'}...`} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_placeholder">Opción de catálogo</SelectItem>
+              <SelectItem value="preview">Vista previa</SelectItem>
             </SelectContent>
+          </Select>
+        )
+      case 'employee':
+        return (
+          <Select disabled>
+            <SelectTrigger>
+              <SelectValue placeholder="Buscar empleado..." />
+            </SelectTrigger>
+          </Select>
+        )
+      case 'team':
+        return (
+          <Select disabled>
+            <SelectTrigger>
+              <SelectValue placeholder="Buscar equipo..." />
+            </SelectTrigger>
           </Select>
         )
       case 'file':
