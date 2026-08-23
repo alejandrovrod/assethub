@@ -196,6 +196,24 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     return [];
   }, [schemaJson]);
 
+  const availableTargetFields = useMemo(() => {
+    try {
+      if (!schemaJson) return [];
+      const schema = JSON.parse(schemaJson);
+      if (schema?.properties) {
+        return Object.keys(schema.properties)
+          .filter((key) => schema.properties[key].format === 'employee' || schema.properties[key].format === 'team')
+          .map((key) => ({
+            key,
+            title: schema.properties[key].title || key,
+          }));
+      }
+    } catch (e) {
+      return [];
+    }
+    return [];
+  }, [schemaJson]);
+
   // Initialize and re-hydrate from value when it changes externally
   useEffect(() => {
     if (!value || value === lastSerializedValue.current) return;
@@ -225,6 +243,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 requiresFields: config.requiresFields || config.RequiresFields || [],
                 allowedRoles: config.allowedRoles || config.AllowedRoles || [],
                 onEnterAction: config.onEnterAction || config.OnEnterAction || '',
+                notificationTargetFieldId: config.notificationTargetFieldId || config.NotificationTargetFieldId || '',
                 associatedModule: config.associatedModule || config.AssociatedModule || '',
                 childStateDependencies:
                   config.childStateDependencies || config.ChildStateDependencies || [],
@@ -277,6 +296,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 requiresFields: config.requiresFields || config.RequiresFields || [],
                 allowedRoles: config.allowedRoles || config.AllowedRoles || [],
                 onEnterAction: config.onEnterAction || config.OnEnterAction || '',
+                notificationTargetFieldId: config.notificationTargetFieldId || config.NotificationTargetFieldId || '',
                 associatedModule: config.associatedModule || config.AssociatedModule || '',
                 childStateDependencies:
                   config.childStateDependencies || config.ChildStateDependencies || [],
@@ -310,6 +330,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
               requiresFields: [],
               allowedRoles: [],
               onEnterAction: '',
+              notificationTargetFieldId: '',
               associatedModule: '',
               childStateDependencies: [],
             },
@@ -355,6 +376,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
           requiresFields: config.requiresFields || [],
           allowedRoles: config.allowedRoles || [],
           onEnterAction: config.onEnterAction || '',
+          notificationTargetFieldId: config.notificationTargetFieldId || '',
           associatedModule: config.associatedModule || '',
           childStateDependencies: config.childStateDependencies || [],
         };
@@ -456,6 +478,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
           requiresFields: [],
           allowedRoles: [],
           onEnterAction: '',
+          notificationTargetFieldId: '',
           associatedModule: '',
           childStateDependencies: [],
         },
@@ -818,6 +841,33 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {selectedNode.data?.stateConfig?.onEnterAction === 'NOTIFY_MANAGER' && (
+                        <div className="pt-2 space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                          <Label className="text-sm font-medium">Campo Destinatario de Notificación</Label>
+                          <Select
+                            value={selectedNode.data?.stateConfig?.notificationTargetFieldId || ''}
+                            onValueChange={(val) => updateSelectedNodeConfig('notificationTargetFieldId', val)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccioná un campo de Empleado o Equipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableTargetFields.length === 0 ? (
+                                <SelectItem value="_empty_" disabled>
+                                  No hay campos de Empleado/Equipo en la plantilla
+                                </SelectItem>
+                              ) : (
+                                availableTargetFields.map((field) => (
+                                  <SelectItem key={field.key} value={field.key}>
+                                    {field.title}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
 
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Módulo Asociado (Delegación)</Label>

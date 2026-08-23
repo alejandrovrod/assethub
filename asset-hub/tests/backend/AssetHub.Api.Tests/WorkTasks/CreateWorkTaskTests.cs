@@ -54,7 +54,7 @@ public class CreateWorkTaskTests
         db.CatalogItems.Add(priority);
         await db.SaveChangesAsync();
 
-        var handler = new CreateWorkTaskCommandHandler(db, new WorkTaskTestHelper.FakeTenantResolver(tenantId));
+        var handler = new CreateWorkTaskCommandHandler(db, new WorkTaskTestHelper.FakeTenantResolver(tenantId), new Moq.Mock<MediatR.IMediator>().Object);
         var id = await handler.Handle(new CreateWorkTaskCommand
         {
             Title = "Review asset",
@@ -75,7 +75,7 @@ public class CreateWorkTaskTests
         var tenantId = Guid.NewGuid();
         await using var db = WorkTaskTestHelper.CreateDbContext(tenantId);
 
-        var handler = new CreateWorkTaskCommandHandler(db, new WorkTaskTestHelper.FakeTenantResolver(tenantId));
+        var handler = new CreateWorkTaskCommandHandler(db, new WorkTaskTestHelper.FakeTenantResolver(tenantId), new Moq.Mock<MediatR.IMediator>().Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(new CreateWorkTaskCommand
         {
@@ -90,7 +90,7 @@ public class CreateWorkTaskTests
         var tenantId = Guid.NewGuid();
         await using var db = WorkTaskTestHelper.CreateDbContext(tenantId);
 
-        var handler = new CreateWorkTaskCommandHandler(db, new WorkTaskTestHelper.FakeTenantResolver(tenantId));
+        var handler = new CreateWorkTaskCommandHandler(db, new WorkTaskTestHelper.FakeTenantResolver(tenantId), new Moq.Mock<MediatR.IMediator>().Object);
         var id = await handler.Handle(new CreateWorkTaskCommand
         {
             Title = "Standalone task",

@@ -96,7 +96,7 @@ public class MaintenanceWorkflowIntegrationTests
         db.Incidents.Add(incident);
         await db.SaveChangesAsync();
 
-        var handler = new IncidentAssignedEventHandler(db);
+        var handler = new IncidentAssignedEventHandler(db, new MaintenanceOrderTestHelper.CapturingMediator());
         await handler.Handle(new AssetHub.Application.Incidents.Events.IncidentAssignedEvent(incident.Id, asset.Id, tenantId), CancellationToken.None);
 
         var order = db.MaintenanceOrders.FirstOrDefault(o => o.IncidentId == incident.Id);

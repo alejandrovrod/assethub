@@ -16,12 +16,14 @@ export interface Asset {
   conditionIndex?: number
   propertiesJson: string
   geoJson?: string
+  latitude?: number
+  longitude?: number
   createdAt: string
   updatedAt: string
   
   // Includes
   assetTemplate?: AssetTemplate
-  children?: AssetSummaryDto[]
+  childrenCount: number
   lifecycleStates?: any // Or import LifecycleConfig and use it
 }
 
@@ -92,6 +94,9 @@ export interface AssetDetail {
   propertiesJson: string
   commissionedAt?: string
   installedAt?: string
+  latitude?: number
+  longitude?: number
+  geoJson?: string
 }
 
 export interface AssetAttachment {

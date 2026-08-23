@@ -270,8 +270,8 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-            <ScrollArea className="flex-1 px-6 py-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden min-h-0">
+            <ScrollArea className="flex-1 px-6 py-6 min-h-0">
               <div className="space-y-6">
                 {relatedEntity && (
                   <div className="rounded-md border bg-muted/30 p-4 space-y-1">
@@ -352,7 +352,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
               </div>
             </ScrollArea>
 
-            <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
+            <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3 shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>

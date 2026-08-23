@@ -8,6 +8,7 @@ using AssetHub.Domain.AssetTemplates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Collections.Generic;
+using NetTopologySuite.IO;
 
 namespace AssetHub.Application.Assets.Queries;
 
@@ -27,7 +28,10 @@ public record AssetDetailDto(
     decimal? ConditionIndex,
     string PropertiesJson,
     DateTime? InstalledAt,
-    DateTime? CommissionedAt
+    DateTime? CommissionedAt,
+    double? Latitude,
+    double? Longitude,
+    string? GeoJson
 );
 
 public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, AssetDetailDto?>
@@ -78,6 +82,13 @@ public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, Asset
             catch { /* Ignore parsing errors, return original */ }
         }
 
+        string? geoJsonStr = null;
+        if (asset.Geo != null)
+        {
+            var writer = new GeoJsonWriter();
+            geoJsonStr = writer.Write(asset.Geo);
+        }
+
         return new AssetDetailDto(
             asset.Id,
             asset.AssetTemplateId,
@@ -92,7 +103,10 @@ public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, Asset
             asset.ConditionIndex,
             propertiesJson,
             asset.InstalledAt,
-            asset.CommissionedAt
+            asset.CommissionedAt,
+            asset.Geo?.Coordinate?.Y,
+            asset.Geo?.Coordinate?.X,
+            geoJsonStr
         );
     }
 }

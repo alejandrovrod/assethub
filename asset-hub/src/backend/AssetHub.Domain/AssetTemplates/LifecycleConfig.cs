@@ -22,6 +22,7 @@ public class StateConfig
     public List<string> AllowedRoles { get; set; } = new();
     public List<string> RequiresFields { get; set; } = new();
     public string OnEnterAction { get; set; } = string.Empty;
+    public string NotificationTargetFieldId { get; set; } = string.Empty;
     public int? MaxHoursInState { get; set; }
     public bool IsTerminal { get; set; } = false;
     public string AssociatedModule { get; set; } = string.Empty;

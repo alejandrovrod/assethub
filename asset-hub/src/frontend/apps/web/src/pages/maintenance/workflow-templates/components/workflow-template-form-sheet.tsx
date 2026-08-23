@@ -178,7 +178,7 @@ export function WorkflowTemplateFormSheet({ open, onOpenChange, templateId, onSu
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[800px] w-[90vw] flex flex-col p-0" aria-describedby={undefined}>
+      <SheetContent className="sm:max-w-[1200px] w-[95vw] flex flex-col p-0" aria-describedby={undefined}>
         <div className="p-6 pb-2 border-b shrink-0">
           <SheetHeader>
             <SheetTitle>{templateId ? 'Editar Plantilla de Flujo' : 'Nueva Plantilla de Flujo'}</SheetTitle>

@@ -25,11 +25,13 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
 {
     private readonly ITenantDbContext _db;
     private readonly ITenantResolver _tenantResolver;
+    private readonly IMediator _mediator;
 
-    public CreateMaintenanceOrderCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver)
+    public CreateMaintenanceOrderCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver, IMediator mediator)
     {
         _db = db;
         _tenantResolver = tenantResolver;
+        _mediator = mediator;
     }
 
     public async Task<Guid> Handle(CreateMaintenanceOrderCommand request, CancellationToken cancellationToken)
@@ -63,6 +65,13 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
 
         _db.MaintenanceOrders.Add(order);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _mediator.Publish(new AssetHub.Application.Maintenance.Events.MaintenanceOrderCreatedEvent(
+            order.Id,
+            order.TenantId,
+            order.AssetId,
+            order.PropertiesJson
+        ), cancellationToken);
 
         return order.Id;
     }

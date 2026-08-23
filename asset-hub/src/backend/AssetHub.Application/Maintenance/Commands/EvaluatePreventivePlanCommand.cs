@@ -311,12 +311,20 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
                 AssetId = asset.Id,
                 PreventivePlanId = plan.Id,
                 AssignedEmployeeId = plan.AutoAssign ? plan.DefaultAssignedEmployeeId : null,
-                ScheduledStart = dueAt
+                ScheduledStart = dueAt,
+                PropertiesJson = asset.PropertiesJson
             };
 
             _db.MaintenanceOrders.Add(order);
             generated.Add(new GeneratedItem(PreventivePlanConstants.GeneratedEntityTypeMaintenanceOrder, order.Id));
             maintenanceOrderId = order.Id;
+
+            await _mediator.Publish(new AssetHub.Application.Maintenance.Events.MaintenanceOrderCreatedEvent(
+                order.Id,
+                order.TenantId,
+                order.AssetId,
+                order.PropertiesJson
+            ), cancellationToken);
         }
 
         if (plan.GeneratedEntityType == PreventivePlanConstants.GeneratedEntityTypeWorkTask ||
@@ -337,11 +345,19 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
                 PreventivePlanId = plan.Id,
                 AssignedEmployeeId = plan.AutoAssign ? plan.DefaultAssignedEmployeeId : null,
                 AssignedTeamId = plan.AutoAssign ? plan.DefaultAssignedTeamId : null,
-                IsIndependent = false
+                IsIndependent = false,
+                PropertiesJson = asset.PropertiesJson
             };
 
             _db.WorkTasks.Add(task);
             generated.Add(new GeneratedItem(PreventivePlanConstants.GeneratedEntityTypeWorkTask, task.Id));
+
+            await _mediator.Publish(new AssetHub.Application.Tasks.Events.WorkTaskCreatedEvent(
+                task.Id,
+                task.TenantId,
+                task.AssetId,
+                task.PropertiesJson
+            ), cancellationToken);
         }
 
         return generated;

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 export const formSheetContentClass =
   'flex flex-col p-0 h-full gap-0 overflow-hidden'
 
-const formClass = 'flex flex-col flex-1 min-h-0 overflow-hidden'
+const formClass = 'flex flex-col flex-1 h-full min-h-0 overflow-hidden'
 const bodyClass = 'flex-1 min-h-0 overflow-y-auto'
 const footerClass = 'shrink-0 border-t bg-background p-6 flex justify-end gap-2'
 

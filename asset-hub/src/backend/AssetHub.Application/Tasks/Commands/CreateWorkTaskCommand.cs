@@ -37,11 +37,13 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
 {
     private readonly ITenantDbContext _db;
     private readonly ITenantResolver _tenantResolver;
+    private readonly IMediator _mediator;
 
-    public CreateWorkTaskCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver)
+    public CreateWorkTaskCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver, IMediator mediator)
     {
         _db = db;
         _tenantResolver = tenantResolver;
+        _mediator = mediator;
     }
 
     public async Task<Guid> Handle(CreateWorkTaskCommand request, CancellationToken cancellationToken)
@@ -125,6 +127,13 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
 
         _db.WorkTasks.Add(task);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _mediator.Publish(new AssetHub.Application.Tasks.Events.WorkTaskCreatedEvent(
+            task.Id,
+            task.TenantId,
+            task.AssetId,
+            task.PropertiesJson
+        ), cancellationToken);
 
         return task.Id;
     }

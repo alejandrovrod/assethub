@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Assets.Events;
@@ -13,11 +14,13 @@ public class AssetOnEnterTriggerHandler : INotificationHandler<AssetStateChanged
 {
     private readonly ITenantDbContext _db;
     private readonly ILogger<AssetOnEnterTriggerHandler> _logger;
+    private readonly IEmailService _emailService;
 
-    public AssetOnEnterTriggerHandler(ITenantDbContext db, ILogger<AssetOnEnterTriggerHandler> logger)
+    public AssetOnEnterTriggerHandler(ITenantDbContext db, ILogger<AssetOnEnterTriggerHandler> logger, IEmailService emailService)
     {
         _db = db;
         _logger = logger;
+        _emailService = emailService;
     }
 
     public async Task Handle(AssetStateChangedEvent notification, CancellationToken cancellationToken)
@@ -53,7 +56,57 @@ public class AssetOnEnterTriggerHandler : INotificationHandler<AssetStateChanged
                         _logger.LogInformation("=> Ejecutando Side Effect: Creando Orden de Trabajo automáticamente...");
                         break;
                     case "NOTIFY_MANAGER":
-                        _logger.LogInformation("=> Ejecutando Side Effect: Enviando email/SMS al supervisor...");
+                        _logger.LogInformation("=> Ejecutando Side Effect: Enviando email al supervisor...");
+                        
+                        var targetFieldId = stateConfig.NotificationTargetFieldId;
+                        if (string.IsNullOrEmpty(targetFieldId))
+                        {
+                            _logger.LogWarning("No se configuró el campo destinatario para la acción NOTIFY_MANAGER en el estado {State}", notification.ToState);
+                            break;
+                        }
+
+                        if (string.IsNullOrEmpty(asset.PropertiesJson))
+                        {
+                            _logger.LogWarning("El activo {AssetId} no tiene propiedades JSON, no se puede obtener el destinatario.", asset.Id);
+                            break;
+                        }
+
+                        try
+                        {
+                            var propsDoc = JsonDocument.Parse(asset.PropertiesJson);
+                            if (propsDoc.RootElement.TryGetProperty(targetFieldId, out var targetValueElement))
+                            {
+                                var targetValueStr = targetValueElement.GetString();
+                                if (Guid.TryParse(targetValueStr, out var targetEmployeeId))
+                                {
+                                    var employee = await _db.Employees.FirstOrDefaultAsync(e => e.Id == targetEmployeeId, cancellationToken);
+                                    if (employee != null && !string.IsNullOrEmpty(employee.Email))
+                                    {
+                                        var subject = $"Notificación de Cambio de Estado: Activo {asset.Code}";
+                                        var body = $"El activo '{asset.Name}' ha transicionado al estado '{notification.ToState}'.\nPor favor revise el sistema para más detalles.";
+                                        
+                                        await _emailService.SendEmailAsync(employee.Email, subject, body, cancellationToken);
+                                        _logger.LogInformation("=> Correo enviado exitosamente a {Email}", employee.Email);
+                                    }
+                                    else
+                                    {
+                                        _logger.LogWarning("=> No se encontró el empleado con ID {EmployeeId} o no tiene un email configurado.", targetEmployeeId);
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("=> El valor del campo destinatario {TargetFieldId} no es un GUID válido.", targetFieldId);
+                                }
+                            }
+                            else
+                            {
+                                _logger.LogWarning("=> El campo destinatario {TargetFieldId} no existe en las propiedades del activo.", targetFieldId);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error procesando el envío de correo para NOTIFY_MANAGER");
+                        }
                         break;
                     default:
                         _logger.LogInformation("=> Ejecutando Side Effect Genérico: {Action}", stateConfig.OnEnterAction);

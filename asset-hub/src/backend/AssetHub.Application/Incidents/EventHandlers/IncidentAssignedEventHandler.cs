@@ -12,10 +12,12 @@ namespace AssetHub.Application.Incidents.EventHandlers;
 public class IncidentAssignedEventHandler : INotificationHandler<IncidentAssignedEvent>
 {
     private readonly ITenantDbContext _db;
+    private readonly IMediator _mediator;
 
-    public IncidentAssignedEventHandler(ITenantDbContext db)
+    public IncidentAssignedEventHandler(ITenantDbContext db, IMediator mediator)
     {
         _db = db;
+        _mediator = mediator;
     }
 
     public async Task Handle(IncidentAssignedEvent notification, CancellationToken cancellationToken)
@@ -40,10 +42,18 @@ public class IncidentAssignedEventHandler : INotificationHandler<IncidentAssigne
             Title = $"Orden correctiva: {incident.Title}",
             Description = incident.Description,
             AssetId = notification.AssetId,
-            IncidentId = notification.IncidentId
+            IncidentId = notification.IncidentId,
+            PropertiesJson = incident.PropertiesJson
         };
 
         _db.MaintenanceOrders.Add(order);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _mediator.Publish(new AssetHub.Application.Maintenance.Events.MaintenanceOrderCreatedEvent(
+            order.Id,
+            order.TenantId,
+            order.AssetId,
+            order.PropertiesJson
+        ), cancellationToken);
     }
 }

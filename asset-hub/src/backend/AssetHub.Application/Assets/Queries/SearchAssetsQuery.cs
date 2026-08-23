@@ -7,6 +7,7 @@ using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Assets;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.IO;
 
 namespace AssetHub.Application.Assets.Queries;
 
@@ -14,7 +15,7 @@ public record SearchAssetsQuery(string? SearchTerm, Guid? TemplateId, string? St
 
 public record AssetSummaryDto(Guid Id, string Code, string Name, string State, string? StateColor);
 
-public record AssetDto(Guid Id, Guid TemplateId, Guid? ParentId, string Path, string PathNames, string Code, string Name, string State, string? StateColor, decimal? ConditionIndex, List<AssetSummaryDto> Children);
+public record AssetDto(Guid Id, Guid TemplateId, Guid? ParentId, string Path, string PathNames, string Code, string Name, string State, string? StateColor, decimal? ConditionIndex, int ChildrenCount, double? Latitude, double? Longitude, string? GeoJson);
 
 public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<AssetDto>>
 {
@@ -82,17 +83,17 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
 
         var assets = await q.ToListAsync(cancellationToken);
         
-        // Fetch immediate children for the matched assets
+        // Fetch child counts for the matched assets
         var matchedIds = assets.Select(a => a.Id).ToList();
-        var allChildren = new List<Asset>();
+        var childrenCounts = new Dictionary<Guid, int>();
         if (matchedIds.Any())
         {
-            allChildren = await _dbContext.Assets
-                .Include(a => a.AssetTemplate)
+            childrenCounts = await _dbContext.Assets
                 .Where(a => !a.IsDeleted && a.ParentId.HasValue && matchedIds.Contains(a.ParentId.Value))
-                .ToListAsync(cancellationToken);
+                .GroupBy(a => a.ParentId!.Value)
+                .Select(g => new { ParentId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ParentId, x => x.Count, cancellationToken);
         }
-        var childrenLookup = allChildren.GroupBy(a => a.ParentId!.Value).ToDictionary(g => g.Key, g => g.ToList());
 
         // Extraer todos los IDs de las rutas para buscar sus nombres
         var pathIds = new HashSet<Guid>();
@@ -110,6 +111,8 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
             .Where(a => pathIds.Contains(a.Id))
             .ToDictionaryAsync(a => a.Id, a => a.Name, cancellationToken);
 
+        var geoJsonWriter = new GeoJsonWriter();
+
         return assets.Select(a => {
             var pathNames = "/";
             if (!string.IsNullOrEmpty(a.Path)) 
@@ -119,21 +122,18 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
                 pathNames = "/" + string.Join("/", names) + "/";
             }
 
-            var assetChildren = childrenLookup.TryGetValue(a.Id, out var cList)
-                ? cList.Select(c => {
-                    string? cColor = null;
-                    if (c.AssetTemplate?.LifecycleStates?.States != null && c.AssetTemplate.LifecycleStates.States.TryGetValue(c.State, out var cStateConfig))
-                    {
-                        cColor = cStateConfig.Color;
-                    }
-                    return new AssetSummaryDto(c.Id, c.Code, c.Name, c.State, cColor);
-                }).ToList()
-                : new List<AssetSummaryDto>();
+            var childrenCount = childrenCounts.TryGetValue(a.Id, out var c) ? c : 0;
 
             string? aColor = null;
             if (a.AssetTemplate?.LifecycleStates?.States != null && a.AssetTemplate.LifecycleStates.States.TryGetValue(a.State, out var aStateConfig))
             {
                 aColor = aStateConfig.Color;
+            }
+            
+            string? geoJsonStr = null;
+            if (a.Geo != null)
+            {
+                geoJsonStr = geoJsonWriter.Write(a.Geo);
             }
 
             return new AssetDto(
@@ -147,7 +147,10 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
                 a.State,
                 aColor,
                 a.ConditionIndex,
-                assetChildren
+                childrenCount,
+                a.Geo?.Coordinate?.Y, // Y is Latitude in standard GIS, or X depending on how it was stored. Usually Y=Lat, X=Lng.
+                a.Geo?.Coordinate?.X,
+                geoJsonStr
             );
         }).ToList();
     }

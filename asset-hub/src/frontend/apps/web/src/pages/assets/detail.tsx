@@ -31,6 +31,7 @@ import { AssetIncidentsWidget } from '@/pages/maintenance/components/asset-incid
 import { AssetMaintenanceOrdersWidget } from '@/pages/maintenance/components/asset-maintenance-orders-widget'
 import { ReportIncidentSheet } from '@/pages/maintenance/components/report-incident-sheet'
 import { MaintenanceOrderFormSheet } from '@/pages/maintenance/orders/components/maintenance-order-form-sheet'
+import { AssetMap } from '@/components/map/AssetMap'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -100,15 +101,21 @@ export default function AssetDetailPage() {
   }, [asset?.name, setCustomTitle])
 
   const updateMutation = useMutation({
-    mutationFn: (args: { code?: string, name?: string, propertiesJson?: string }) => assetService.updateAsset(id!, {
-      code: args.code ?? asset!.code,
-      name: args.name ?? asset!.name,
-      installedAt: asset!.installedAt,
-      commissionedAt: asset!.commissionedAt,
-      conditionIndex: asset!.conditionIndex,
-      propertiesJson: args.propertiesJson ?? (asset!.propertiesJson || '{}'),
-      geoJson: undefined
-    }),
+    mutationFn: (args: { code?: string, name?: string, propertiesJson?: string, latitude?: number, longitude?: number, geoJson?: string }) => {
+      let geoJson = args.geoJson
+      if (geoJson === undefined && args.latitude !== undefined && args.longitude !== undefined) {
+        geoJson = JSON.stringify({ type: 'Point', coordinates: [args.longitude, args.latitude] })
+      }
+      return assetService.updateAsset(id!, {
+        code: args.code ?? asset!.code,
+        name: args.name ?? asset!.name,
+        installedAt: asset!.installedAt,
+        commissionedAt: asset!.commissionedAt,
+        conditionIndex: asset!.conditionIndex,
+        propertiesJson: args.propertiesJson ?? (asset!.propertiesJson || '{}'),
+        geoJson
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
       queryClient.invalidateQueries({ queryKey: ['assets'] })
@@ -211,7 +218,15 @@ export default function AssetDetailPage() {
     
     if (requiresFields.length > 0) {
       setPendingTargetState(nextState)
-      setTransitionData({})
+      
+      const initialData: Record<string, any> = {}
+      requiresFields.forEach((field: string) => {
+        if (formData[field] !== undefined && formData[field] !== null) {
+          initialData[field] = formData[field]
+        }
+      })
+      
+      setTransitionData(initialData)
       setTransitionDialogOpen(true)
     } else {
       stateMutation.mutate({ toState: nextState })
@@ -383,6 +398,7 @@ export default function AssetDetailPage() {
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="details">Detalles</TabsTrigger>
+              <TabsTrigger value="map">Ubicación</TabsTrigger>
               <TabsTrigger value="timeline">Bitácora</TabsTrigger>
             </TabsList>
             
@@ -457,6 +473,28 @@ export default function AssetDetailPage() {
               )}
             </CardContent>
           </Card>
+          </TabsContent>
+          
+          <TabsContent value="map">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ubicación del Activo</CardTitle>
+                <CardDescription>
+                  Arrastra el pin para actualizar la ubicación.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AssetMap 
+                  latitude={asset.latitude} 
+                  longitude={asset.longitude} 
+                  geoJson={asset.geoJson}
+                  assetName={asset.name}
+                  onChange={(lat, lng, geoJsonStr) => {
+                    updateMutation.mutate({ latitude: lat, longitude: lng, geoJson: geoJsonStr })
+                  }}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="timeline">

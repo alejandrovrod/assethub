@@ -5,9 +5,10 @@ import { assetService, Asset } from '@/services/asset.service'
 import { assetTemplateService, AssetTemplate } from '@/services/asset-template.service'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Filter } from 'lucide-react'
+import { Plus, Trash2, Filter, LayoutGrid, List } from 'lucide-react'
 import { toast } from 'sonner'
 import { AssetFormSheet } from './components/asset-form-sheet'
+import { AssetGlobalMapModal } from '@/components/map/AssetGlobalMapModal'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -15,6 +16,26 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 export default function AssetsPage() {
   const navigate = useNavigate()
@@ -22,6 +43,8 @@ export default function AssetsPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<AssetTemplate | null>(null)
+  const [mapModalOpen, setMapModalOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   const [searchTerm, setSearchTerm] = useState('')
   const [catalogFilters, setCatalogFilters] = useState<Record<string, string>>({})
@@ -60,16 +83,7 @@ export default function AssetsPage() {
     setSheetOpen(true)
   }
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation()
-    console.log("Intentando eliminar activo ID:", id)
-    if (window.confirm('¿Estás seguro de eliminar este activo? Esta acción no se puede deshacer.')) {
-      console.log("Confirmado. Ejecutando mutación...")
-      deleteMutation.mutate(id)
-    } else {
-      console.log("Cancelado por el usuario.")
-    }
-  }
+  // Eliminación usando AlertDialog (ya no necesitamos window.confirm)
 
   return (
     <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
@@ -80,23 +94,49 @@ export default function AssetsPage() {
             Gestione sus activos físicos reales basados en plantillas.
           </p>
         </div>
-        
-        <AsyncCombobox
-          fetcher={async (query) => {
-             const results = await assetTemplateService.getTemplates(query)
-             return results.filter(t => t.isActive)
-          }}
-          labelKey="name"
-          valueKey="id"
-          onSelect={handleCreate}
-          searchPlaceholder="Buscar plantilla por nombre..."
-          emptyText="No se encontró ninguna plantilla activa."
-          renderTrigger={(onClick) => (
-            <Button onClick={onClick}>
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Activo
+
+        <div className="flex items-center gap-2">
+          <div className="flex bg-muted rounded-md p-1 items-center">
+            <Button 
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              className="h-8 px-2"
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
-          )}
-        />
+            <Button 
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              className="h-8 px-2"
+              onClick={() => setViewMode('table')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Button variant="outline" onClick={() => setMapModalOpen(true)} className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /><path d="M15 5.764v15" /><path d="M9 3.236v15" /></svg>
+            Ver en Mapa
+          </Button>
+
+          <AsyncCombobox
+            fetcher={async (query) => {
+              const results = await assetTemplateService.getTemplates(query)
+              return results.filter(t => t.isActive)
+            }}
+            labelKey="name"
+            valueKey="id"
+            onSelect={handleCreate}
+            searchPlaceholder="Buscar plantilla por nombre..."
+            emptyText="No se encontró ninguna plantilla activa."
+            renderTrigger={(onClick) => (
+              <Button onClick={onClick} size="icon" title="Agregar Activo">
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+          />
+        </div>
       </div>
 
       <div className="flex flex-1 gap-6 overflow-hidden min-h-0 mt-4">
@@ -106,21 +146,21 @@ export default function AssetsPage() {
             <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
               <Filter className="h-4 w-4" /> Búsqueda
             </h3>
-            <Input 
-              placeholder="Código o nombre..." 
+            <Input
+              placeholder="Código o nombre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
-          
+
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {isLoadingFilters ? (
               <div className="text-sm text-muted-foreground">Cargando filtros...</div>
             ) : searchFilters?.map((filter) => (
               <div key={filter.attributeKey} className="mb-6">
                 <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
-                
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -131,8 +171,8 @@ export default function AssetsPage() {
                       <span className="truncate">
                         {catalogFilters[filter.attributeKey]
                           ? filter.options.find(
-                              (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
-                            )?.label
+                            (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
+                          )?.label
                           : "Todos"}
                       </span>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -197,12 +237,12 @@ export default function AssetsPage() {
                 <div className="text-center py-10 text-muted-foreground">
                   No se encontraron activos con estos filtros.
                 </div>
-              ) : (
+              ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {assets?.map((asset) => (
-                    <div 
-                      key={asset.id} 
-                      className="border rounded-lg p-4 bg-card hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors shadow-sm flex flex-col justify-between" 
+                    <div
+                      key={asset.id}
+                      className="border rounded-lg p-4 bg-card hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors shadow-sm flex flex-col justify-between"
                       onClick={() => navigate(`/assets/${asset.id}`)}
                     >
                       <div className="flex justify-between items-start mb-2">
@@ -210,8 +250,8 @@ export default function AssetsPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold">{asset.name}</h4>
                             {asset.state && (
-                              <Badge 
-                                variant="secondary" 
+                              <Badge
+                                variant="secondary"
                                 className="text-[10px] px-1.5 py-0"
                                 style={asset.stateColor ? { backgroundColor: asset.stateColor, color: '#fff' } : undefined}
                               >
@@ -219,17 +259,48 @@ export default function AssetsPage() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm font-medium text-muted-foreground">{asset.code}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-sm font-medium text-muted-foreground">{asset.code}</p>
+                            {asset.childrenCount > 0 && (
+                              <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal text-muted-foreground">
+                                {asset.childrenCount} {asset.childrenCount === 1 ? 'hijo' : 'hijos'}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={(e) => handleDelete(e, asset.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={(e) => e.stopPropagation()}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                ¿Estás seguro de que deseas eliminar este activo?.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteMutation.mutate(asset.id)
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                       {/* Si está buscando y tiene padre, mostrar quién es el padre explícitamente */}
                       {isSearching && asset.pathNames && asset.pathNames !== '/' && (
@@ -239,30 +310,91 @@ export default function AssetsPage() {
                         </div>
                       )}
 
-                      {/* Mostrar Hijos */}
-                      {asset.children && asset.children.length > 0 && (
-                        <div className="mt-3 pt-3 border-t">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2">
-                            Hijos ({asset.children.length}):
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {asset.children.map(child => (
-                              <div
-                                key={child.id}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  navigate(`/assets/${child.id}`)
-                                }}
-                                className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-secondary cursor-pointer bg-background"
-                              >
-                                {child.name}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Estado</TableHead>
+                        {isSearching && <TableHead>Ruta (Padre)</TableHead>}
+                        <TableHead>Hijos</TableHead>
+                        <TableHead className="w-[80px] text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assets?.map((asset) => (
+                        <TableRow 
+                          key={asset.id}
+                          className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                          onClick={() => navigate(`/assets/${asset.id}`)}
+                        >
+                          <TableCell className="font-medium">{asset.code}</TableCell>
+                          <TableCell>{asset.name}</TableCell>
+                          <TableCell>
+                            {asset.state && (
+                              <Badge
+                                variant="secondary"
+                                style={asset.stateColor ? { backgroundColor: asset.stateColor, color: '#fff' } : undefined}
+                              >
+                                {asset.state}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          {isSearching && (
+                            <TableCell className="text-xs text-muted-foreground">
+                              {asset.pathNames && asset.pathNames !== '/' ? asset.pathNames.split('/').filter(Boolean).slice(-1)[0] : '-'}
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            {asset.childrenCount > 0 ? (
+                              <Badge variant="outline">{asset.childrenCount}</Badge>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={(e) => e.stopPropagation()}
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    ¿Estás seguro de que deseas eliminar este activo?.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      deleteMutation.mutate(asset.id)
+                                    }}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Eliminar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>
@@ -271,13 +403,19 @@ export default function AssetsPage() {
       </div>
 
       {selectedTemplate && (
-        <AssetFormSheet 
-          open={sheetOpen} 
+        <AssetFormSheet
+          open={sheetOpen}
           onOpenChange={setSheetOpen}
           asset={editingAsset}
           template={selectedTemplate}
         />
       )}
+
+      <AssetGlobalMapModal
+        open={mapModalOpen}
+        onOpenChange={setMapModalOpen}
+        assets={assets || []}
+      />
     </div>
   )
 }

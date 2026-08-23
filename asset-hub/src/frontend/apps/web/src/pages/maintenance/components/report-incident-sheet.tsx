@@ -23,6 +23,8 @@ import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
+import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
+import { cn } from '@/lib/utils'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Título es requerido').max(200),
@@ -136,25 +138,37 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[700px] w-[95vw] flex flex-col p-0 gap-0">
-        <SheetHeader className="px-6 py-4 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-md">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <SheetTitle className="text-xl">{title ?? 'Reportar Incidencia'}</SheetTitle>
-              <SheetDescription>
-                {description ?? 'Creá una nueva incidencia asignada a un activo.'}
-              </SheetDescription>
-            </div>
-          </div>
-        </SheetHeader>
-
+      <SheetContent className={cn(formSheetContentClass, "sm:max-w-[700px] w-[95vw]")}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
-            <ScrollArea className="flex-1 p-6">
-              <div className="space-y-6">
+          <FormSheetLayout
+            onSubmit={form.handleSubmit(onSubmit)}
+            header={
+              <SheetHeader className="px-6 py-4 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 text-primary rounded-md">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <SheetTitle className="text-xl">{title ?? 'Reportar Incidencia'}</SheetTitle>
+                    <SheetDescription>
+                      {description ?? 'Creá una nueva incidencia asignada a un activo.'}
+                    </SheetDescription>
+                  </div>
+                </div>
+              </SheetHeader>
+            }
+            footer={
+              <>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={reportMutation.isPending} className="min-w-[150px]">
+                  {reportMutation.isPending ? 'Guardando...' : 'Reportar Incidencia'}
+                </Button>
+              </>
+            }
+          >
+            <div className="space-y-6">
             <FormField
               control={form.control}
               name="title"
@@ -291,18 +305,8 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                 </div>
               </Card>
             )}
-              </div>
-            </ScrollArea>
-
-            <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={reportMutation.isPending} className="min-w-[150px]">
-                {reportMutation.isPending ? 'Guardando...' : 'Reportar Incidencia'}
-              </Button>
             </div>
-          </form>
+          </FormSheetLayout>
         </Form>
       </SheetContent>
     </Sheet>
