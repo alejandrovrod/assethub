@@ -122,7 +122,7 @@ export function MaintenanceChecklistBuilder({ value, onChange }: MaintenanceChec
 
   const notifyChange = (newTasks: ChecklistTask[]) => {
     const payload = {
-      tasks: newTasks.map(({ id, ...rest }) => rest),
+      tasks: newTasks,
     }
     onChange(JSON.stringify(payload, null, 2))
   }

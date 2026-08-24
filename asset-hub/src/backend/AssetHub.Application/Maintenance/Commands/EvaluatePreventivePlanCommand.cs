@@ -132,21 +132,22 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
                 {
                     var generated = await GenerateWorkItemsAsync(plan, asset, occurrence, cancellationToken);
 
+                    var primaryItem = generated.FirstOrDefault();
+                    _db.PreventivePlanExecutionLogs.Add(new PreventivePlanExecutionLog
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = plan.TenantId,
+                        PreventivePlanId = plan.Id,
+                        ExecutedAt = now,
+                        Occurrence = occurrence,
+                        AssetId = asset.Id,
+                        Status = PreventivePlanConstants.ExecutionStatusSuccess,
+                        GeneratedEntityType = primaryItem?.EntityType,
+                        GeneratedEntityId = primaryItem?.EntityId
+                    });
+
                     foreach (var item in generated)
                     {
-                        _db.PreventivePlanExecutionLogs.Add(new PreventivePlanExecutionLog
-                        {
-                            Id = Guid.NewGuid(),
-                            TenantId = plan.TenantId,
-                            PreventivePlanId = plan.Id,
-                            ExecutedAt = now,
-                            Occurrence = occurrence,
-                            AssetId = asset.Id,
-                            Status = PreventivePlanConstants.ExecutionStatusSuccess,
-                            GeneratedEntityType = item.EntityType,
-                            GeneratedEntityId = item.EntityId
-                        });
-
                         planGeneratedItems.Add(new GeneratedItemInfo
                         {
                             EntityType = item.EntityType,
@@ -224,6 +225,7 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
         if (plan.AssetId.HasValue)
         {
             var asset = await _db.Assets
+                .Include(a => a.AssetTemplate)
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a => a.TenantId == plan.TenantId && a.Id == plan.AssetId.Value && !a.IsDeleted, cancellationToken);
 
@@ -233,6 +235,7 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
         if (plan.AssetTemplateId.HasValue)
         {
             return await _db.Assets
+                .Include(a => a.AssetTemplate)
                 .IgnoreQueryFilters()
                 .Where(a => a.TenantId == plan.TenantId && a.AssetTemplateId == plan.AssetTemplateId.Value && !a.IsDeleted)
                 .ToListAsync(cancellationToken);
@@ -327,8 +330,64 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
             ), cancellationToken);
         }
 
-        if (plan.GeneratedEntityType == PreventivePlanConstants.GeneratedEntityTypeWorkTask ||
-            plan.GeneratedEntityType == PreventivePlanConstants.GeneratedEntityTypeBoth)
+        bool hasChecklistTasks = false;
+        List<ChecklistTaskSchema> checklistTasks = new();
+
+        if (!string.IsNullOrWhiteSpace(asset.AssetTemplate?.MaintenanceChecklist))
+        {
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<ChecklistSchema>(asset.AssetTemplate.MaintenanceChecklist, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (parsed?.Tasks != null && parsed.Tasks.Count > 0)
+                {
+                    hasChecklistTasks = true;
+                    checklistTasks = parsed.Tasks;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse MaintenanceChecklist for AssetTemplate {TemplateId}", asset.AssetTemplateId);
+            }
+        }
+
+        if (hasChecklistTasks && maintenanceOrderId.HasValue)
+        {
+            foreach (var ct in checklistTasks)
+            {
+                var task = new WorkTask
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = plan.TenantId,
+                    Title = ct.Title ?? "Tarea de checklist",
+                    Description = !string.IsNullOrWhiteSpace(ct.Frequency) 
+                        ? $"Frecuencia sugerida: {ct.Frequency}\n{ct.Description}" 
+                        : ct.Description,
+                    State = "todo",
+                    TaskTypeCatalogItemId = typeId,
+                    PriorityCatalogItemId = priorityId,
+                    DueAt = dueAt,
+                    AssetId = asset.Id,
+                    MaintenanceOrderId = maintenanceOrderId,
+                    PreventivePlanId = plan.Id,
+                    AssignedEmployeeId = plan.AutoAssign ? plan.DefaultAssignedEmployeeId : null,
+                    AssignedTeamId = plan.AutoAssign ? plan.DefaultAssignedTeamId : null,
+                    IsIndependent = false,
+                    PropertiesJson = asset.PropertiesJson
+                };
+
+                _db.WorkTasks.Add(task);
+                generated.Add(new GeneratedItem(PreventivePlanConstants.GeneratedEntityTypeWorkTask, task.Id));
+
+                await _mediator.Publish(new AssetHub.Application.Tasks.Events.WorkTaskCreatedEvent(
+                    task.Id,
+                    task.TenantId,
+                    task.AssetId,
+                    task.PropertiesJson
+                ), cancellationToken);
+            }
+        }
+        else if (plan.GeneratedEntityType == PreventivePlanConstants.GeneratedEntityTypeWorkTask ||
+                 plan.GeneratedEntityType == PreventivePlanConstants.GeneratedEntityTypeBoth)
         {
             var task = new WorkTask
             {
@@ -384,6 +443,18 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
     {
         public List<string>? AllowedStates { get; set; }
         public List<string>? ExcludedStates { get; set; }
+    }
+
+    private class ChecklistSchema
+    {
+        public List<ChecklistTaskSchema>? Tasks { get; set; }
+    }
+    
+    private class ChecklistTaskSchema
+    {
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public string? Frequency { get; set; }
     }
 
     private record GeneratedItem(string EntityType, Guid EntityId);

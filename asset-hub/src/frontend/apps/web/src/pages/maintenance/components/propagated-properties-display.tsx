@@ -13,9 +13,11 @@ import { customValidator as validator } from '@/lib/rjsf-validator'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
+import { WorkflowTemplateService } from '@/services/workflow-template.service'
 
 interface Props {
-  assetId: string
+  assetId?: string
+  workflowTemplateId?: string
   propertiesJson: string
   disabled?: boolean
   onUpdate?: (newPropertiesJson: string) => void
@@ -24,17 +26,24 @@ interface Props {
   onChange?: (newPropertiesJson: string) => void
 }
 
-export function PropagatedPropertiesDisplay({ assetId, propertiesJson, disabled, onUpdate, isUpdating, inlineEdit, onChange }: Props) {
+export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, propertiesJson, disabled, onUpdate, isUpdating, inlineEdit, onChange }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<any>({})
 
   const { data: asset } = useQuery({
     queryKey: ['asset', assetId],
-    queryFn: () => assetService.getAssetById(assetId),
-    enabled: !!assetId
+    queryFn: () => assetService.getAssetById(assetId!),
+    enabled: !!assetId && !workflowTemplateId
   })
 
-  const { schema, uiSchema, isResolving } = useResolvedSchema(asset?.schemaJson || '')
+  const { data: workflowTemplate } = useQuery({
+    queryKey: ['workflow-template', workflowTemplateId],
+    queryFn: () => WorkflowTemplateService.getById(workflowTemplateId!),
+    enabled: !!workflowTemplateId
+  })
+
+  const rawSchemaJson = workflowTemplateId ? (workflowTemplate?.schemaJson || '') : (asset?.schemaJson || '')
+  const { schema, uiSchema, isResolving } = useResolvedSchema(rawSchemaJson)
 
   const { data: allEmployees } = useQuery({
     queryKey: ['employees', 'all'],
@@ -59,12 +68,12 @@ export function PropagatedPropertiesDisplay({ assetId, propertiesJson, disabled,
     const baseSchema = schema as any
     const newSchema: any = { type: 'object', properties: {} }
     Object.keys(baseSchema.properties).forEach(key => {
-      if (baseSchema.properties[key].propagateToWork) {
+      if (workflowTemplateId || baseSchema.properties[key].propagateToWork) {
         newSchema.properties[key] = baseSchema.properties[key]
       }
     })
     return newSchema
-  }, [schema])
+  }, [schema, workflowTemplateId])
 
   const handleEditClick = () => {
     setFormData(properties)

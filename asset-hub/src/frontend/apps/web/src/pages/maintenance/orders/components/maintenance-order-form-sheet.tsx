@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
+import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { Loader2, Package, Clock, FileText, Link as LinkIcon, Wrench } from 'lucide-react'
 import {
@@ -33,6 +34,7 @@ const formSchema = z.object({
   assetId: z.string().min(1, 'El activo es requerido'),
   preventivePlanId: z.string().optional(),
   incidentId: z.string().optional(),
+  generateChecklistTasks: z.boolean().default(false),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -62,7 +64,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
   const [propertiesJson, setPropertiesJson] = useState((order as any)?.propertiesJson || '{}')
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       kind: 'corrective',
       title: '',
@@ -70,6 +72,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       assetId: initialAssetId || '',
       preventivePlanId: '',
       incidentId: '',
+      generateChecklistTasks: false,
     },
   })
 
@@ -92,6 +95,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
         assetId: initialAssetId || '',
         preventivePlanId: '',
         incidentId: '',
+        generateChecklistTasks: false,
       })
       setAssetLabel(initialAssetLabel || '')
     }
@@ -116,6 +120,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
         preventivePlanId: values.preventivePlanId || undefined,
         incidentId: values.incidentId || undefined,
         propertiesJson,
+        generateChecklistTasks: values.generateChecklistTasks,
       }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
@@ -350,11 +355,35 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                     )}
                   />
                 )}
+
+                {!isEditing && form.watch('assetId') && (
+                  <FormField
+                    control={form.control}
+                    name="generateChecklistTasks"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-background">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm font-medium">Tareas de plantilla</FormLabel>
+                          <SheetDescription className="text-xs">
+                            Generar tareas base usando el checklist de la plantilla del activo
+                          </SheetDescription>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
               
-              {form.watch('assetId') && (
+              {(form.watch('assetId') || order?.workflowTemplateId) && (
                 <PropagatedPropertiesDisplay 
                   assetId={form.watch('assetId')} 
+                  workflowTemplateId={order?.workflowTemplateId}
                   propertiesJson={propertiesJson} 
                   inlineEdit={true}
                   onChange={setPropertiesJson}

@@ -16,6 +16,7 @@ export interface WorkTaskSummary {
   maintenanceOrderId?: string
   maintenanceOrderTitle?: string
   maintenanceOrderState?: string
+  workflowTemplateId?: string
   preventivePlanId?: string
   preventivePlanName?: string
   assignedEmployeeId?: string

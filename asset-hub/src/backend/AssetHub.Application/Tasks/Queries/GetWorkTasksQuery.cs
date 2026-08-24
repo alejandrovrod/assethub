@@ -129,6 +129,7 @@ public class GetWorkTasksQueryHandler : IRequestHandler<GetWorkTasksQuery, GetWo
                 AssetName = t.Asset != null ? t.Asset.Name : (t.MaintenanceOrder != null && t.MaintenanceOrder.Asset != null ? t.MaintenanceOrder.Asset.Name : (t.PreventivePlan != null && t.PreventivePlan.Asset != null ? t.PreventivePlan.Asset.Name : (t.Incident != null && t.Incident.Asset != null ? t.Incident.Asset.Name : null))),
                 IncidentId = t.IncidentId,
                 IncidentTitle = t.Incident != null ? t.Incident.Title : null,
+                WorkflowTemplateId = t.MaintenanceOrder != null && t.MaintenanceOrder.WorkflowTemplateId != null ? t.MaintenanceOrder.WorkflowTemplateId : (t.Incident != null && t.Incident.WorkflowTemplateId != null ? t.Incident.WorkflowTemplateId : (t.PreventivePlan != null ? t.PreventivePlan.WorkflowTemplateId : null)),
                 PreventivePlanId = t.PreventivePlanId,
                 PreventivePlanName = t.PreventivePlan != null ? t.PreventivePlan.Name : null,
                 MaintenanceOrderId = t.MaintenanceOrderId,

@@ -150,9 +150,8 @@ export default function MaintenanceOrders() {
                 Seguimiento de órdenes de mantenimiento, costos y verificación.
               </CardDescription>
             </div>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva orden
+            <Button size="icon" onClick={handleCreate}>
+              <Plus className="h-4 w-4" />
             </Button>
           </CardHeader>
 
@@ -195,7 +194,7 @@ export default function MaintenanceOrders() {
             </Select>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             <Table>
               <TableHeader>
                 <TableRow>

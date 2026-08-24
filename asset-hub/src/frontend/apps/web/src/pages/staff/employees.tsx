@@ -75,9 +75,8 @@ export default function StaffEmployees() {
               Gestión del personal de mantenimiento y operaciones.
             </CardDescription>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Empleado
+          <Button size="icon" onClick={handleCreate}>
+            <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
 

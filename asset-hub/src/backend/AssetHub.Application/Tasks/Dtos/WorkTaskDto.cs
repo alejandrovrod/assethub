@@ -25,6 +25,8 @@ public class WorkTaskDto
     public Guid? IncidentId { get; set; }
     public string? IncidentTitle { get; set; }
 
+    public Guid? WorkflowTemplateId { get; set; }
+
     public Guid? MaintenanceOrderId { get; set; }
     public string? MaintenanceOrderTitle { get; set; }
     public string? MaintenanceOrderState { get; set; }

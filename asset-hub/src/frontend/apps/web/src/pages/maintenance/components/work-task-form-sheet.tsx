@@ -341,9 +341,10 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
 
 
 
-                {(prefill?.assetId || task?.assetId) && (
+                {(prefill?.assetId || task?.assetId || task?.workflowTemplateId) && (
                   <PropagatedPropertiesDisplay 
                     assetId={(prefill?.assetId || task?.assetId)!} 
+                    workflowTemplateId={task?.workflowTemplateId}
                     propertiesJson={propertiesJson} 
                     inlineEdit={true}
                     onChange={setPropertiesJson}

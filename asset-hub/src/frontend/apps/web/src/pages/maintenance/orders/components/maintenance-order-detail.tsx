@@ -234,9 +234,10 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
               </div>
             </div>
 
-            {displayedOrder.assetId && (
+            {(displayedOrder.assetId || displayedOrder.workflowTemplateId) && (
               <PropagatedPropertiesDisplay 
                 assetId={displayedOrder.assetId} 
+                workflowTemplateId={displayedOrder.workflowTemplateId}
                 propertiesJson={propertiesJson} 
                 disabled={isInfoEditBlocked}
                 inlineEdit={true}

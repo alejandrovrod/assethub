@@ -85,6 +85,7 @@ public class GetMaintenanceOrderByIdQueryHandler : IRequestHandler<GetMaintenanc
             PreventivePlanName = order.PreventivePlan?.Name,
             IncidentId = order.IncidentId,
             IncidentTitle = order.Incident?.Title,
+            WorkflowTemplateId = order.WorkflowTemplateId ?? order.Incident?.WorkflowTemplateId ?? order.PreventivePlan?.WorkflowTemplateId,
             AssignedEmployeeId = order.AssignedEmployeeId,
             AssignedEmployeeName = order.AssignedEmployee != null ? $"{order.AssignedEmployee.FirstName} {order.AssignedEmployee.LastName}" : null,
             PropertiesJson = order.PropertiesJson,

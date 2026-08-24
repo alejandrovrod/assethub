@@ -22,6 +22,8 @@ public class MaintenanceOrderSummaryDto
 
     public Guid? IncidentId { get; set; }
     public string? IncidentTitle { get; set; }
+    
+    public Guid? WorkflowTemplateId { get; set; }
 
     public Guid? AssignedEmployeeId { get; set; }
     public string? AssignedEmployeeName { get; set; }

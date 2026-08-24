@@ -16,6 +16,8 @@ public class WorkTaskSummaryDto
     public Guid? IncidentId { get; set; }
     public string? IncidentTitle { get; set; }
 
+    public Guid? WorkflowTemplateId { get; set; }
+
     public Guid? PreventivePlanId { get; set; }
     public string? PreventivePlanName { get; set; }
 

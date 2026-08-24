@@ -12,7 +12,7 @@ import { WorkflowTemplateFormSheet } from './components/workflow-template-form-s
 
 export default function WorkflowTemplates() {
   const queryClient = useQueryClient()
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<any>(null)
 
@@ -52,9 +52,8 @@ export default function WorkflowTemplates() {
               Gestioná las plantillas (esquemas y ciclo de vida) para incidencias y planes de mantenimiento.
             </CardDescription>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Plantilla
+          <Button size="icon" onClick={handleCreate}>
+            <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden">
@@ -98,15 +97,15 @@ export default function WorkflowTemplates() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(template)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => {
                             if (window.confirm('¿Estás seguro de eliminar esta plantilla?')) {

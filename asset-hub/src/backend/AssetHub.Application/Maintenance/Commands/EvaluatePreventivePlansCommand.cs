@@ -110,21 +110,22 @@ public class EvaluatePreventivePlansCommandHandler : IRequestHandler<EvaluatePre
                     {
                         var generated = await GenerateWorkItemsAsync(plan, asset, occurrence, cancellationToken);
 
+                        var primaryItem = generated.FirstOrDefault();
+                        _db.PreventivePlanExecutionLogs.Add(new PreventivePlanExecutionLog
+                        {
+                            Id = Guid.NewGuid(),
+                            TenantId = plan.TenantId,
+                            PreventivePlanId = plan.Id,
+                            ExecutedAt = now,
+                            Occurrence = occurrence,
+                            AssetId = asset.Id,
+                            Status = PreventivePlanConstants.ExecutionStatusSuccess,
+                            GeneratedEntityType = primaryItem?.EntityType,
+                            GeneratedEntityId = primaryItem?.EntityId
+                        });
+
                         foreach (var item in generated)
                         {
-                            _db.PreventivePlanExecutionLogs.Add(new PreventivePlanExecutionLog
-                            {
-                                Id = Guid.NewGuid(),
-                                TenantId = plan.TenantId,
-                                PreventivePlanId = plan.Id,
-                                ExecutedAt = now,
-                                Occurrence = occurrence,
-                                AssetId = asset.Id,
-                                Status = PreventivePlanConstants.ExecutionStatusSuccess,
-                                GeneratedEntityType = item.EntityType,
-                                GeneratedEntityId = item.EntityId
-                            });
-
                             planGeneratedItems.Add(new GeneratedItemInfo
                             {
                                 EntityType = item.EntityType,

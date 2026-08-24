@@ -34,59 +34,55 @@ export function AssetTasksWidget({ assetId }: AssetTasksWidgetProps) {
   const openTasks = tasks.filter((t) => t.state !== 'done' && t.state !== 'cancelled')
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg">Tareas de mantenimiento</CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Crear tarea
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : openTasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
-            <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
-            <p>No hay tareas abiertas para este activo.</p>
-          </div>
-        ) : (
-          <ScrollArea className="max-h-[240px]">
-            <div className="space-y-2">
-              {openTasks.map((task) => (
-                <Link
-                  key={task.id}
-                  to={`/maintenance/tasks?selected=${task.id}`}
-                  className="flex items-center justify-between p-2 rounded-md border bg-muted/20 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate" title={task.title}>
-                      {task.title}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      {task.dueAt && (
-                        <span>Vence {format(new Date(task.dueAt), 'dd MMM', { locale: es })}</span>
-                      )}
-                      {task.assignedEmployeeName && <span>· {task.assignedEmployeeName}</span>}
-                    </div>
+    <div className="flex flex-col gap-4">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : openTasks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
+          <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
+          <p>No hay tareas abiertas para este activo.</p>
+        </div>
+      ) : (
+        <ScrollArea className="max-h-[240px]">
+          <div className="space-y-2">
+            {openTasks.map((task) => (
+              <Link
+                key={task.id}
+                to={`/maintenance/tasks?selected=${task.id}`}
+                className="flex items-center justify-between p-2 rounded-md border bg-muted/20 hover:bg-muted/40 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate" title={task.title}>
+                    {task.title}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    {task.dueAt && (
+                      <span>Vence {format(new Date(task.dueAt), 'dd MMM', { locale: es })}</span>
+                    )}
+                    {task.assignedEmployeeName && <span>· {task.assignedEmployeeName}</span>}
                   </div>
-                  <Badge variant="outline" className="text-xs shrink-0">
-                    {STATE_LABELS[task.state] || task.state}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
+                </div>
+                <Badge variant="outline" className="text-xs shrink-0">
+                  {STATE_LABELS[task.state] || task.state}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+
+      <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)} className="w-full mt-2">
+        <Plus className="h-4 w-4 mr-1" />
+        Crear tarea
+      </Button>
 
       <WorkTaskFormSheet
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         prefill={{ assetId }}
       />
-    </Card>
+    </div>
   )
 }

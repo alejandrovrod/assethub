@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { preventivePlanService, type PreventivePlanSummary } from '@/services/preventive-plan.service'
@@ -17,7 +18,8 @@ import { assetTemplateService } from '@/services/asset-template.service'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { DatePicker } from '@/components/date-picker'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Package, Users, User } from 'lucide-react'
+import { apiClient as api } from '@/lib/api-client'
 
 const CRON_PRESETS = [
   { label: 'Diario (medianoche)', value: '0 0 * * *' },
@@ -89,26 +91,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!plan
 
-  const { data: assets } = useQuery({
-    queryKey: ['assets'],
-    queryFn: () => assetService.getAssets(),
-    enabled: open,
-  })
-
-  const { data: templates } = useQuery({
-    queryKey: ['asset-templates'],
-    queryFn: () => assetTemplateService.getTemplates(),
-    enabled: open,
-  })
-
-  const { data: workflowTemplates } = useQuery({
-    queryKey: ['workflow-templates', 'preventive'],
-    queryFn: async () => {
-      const all = await WorkflowTemplateService.search(undefined, false)
-      return all.filter(t => t.type === 'preventive')
-    },
-    enabled: open,
-  })
+  const [assetLabel, setAssetLabel] = useState<string>('')
+  const [employeeLabel, setEmployeeLabel] = useState<string>('')
+  const [teamLabel, setTeamLabel] = useState<string>('')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -132,26 +117,68 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
   const generatedEntityType = form.watch('generatedEntityType')
   const selectedTemplateId = form.watch('assetTemplateId')
   const selectedAssetId = form.watch('assetId')
+  const selectedEmployeeId = form.watch('defaultAssignedEmployeeId')
+  const selectedTeamId = form.watch('defaultAssignedTeamId')
+
+  const { data: templates } = useQuery({
+    queryKey: ['asset-templates'],
+    queryFn: () => assetTemplateService.getTemplates(),
+    enabled: open,
+  })
+
+  const { data: workflowTemplates } = useQuery({
+    queryKey: ['workflow-templates', 'all'],
+    queryFn: async () => {
+      const all = await WorkflowTemplateService.search(undefined, false)
+      return all // Allow all templates (incident or preventive) to be selected
+    },
+    enabled: open,
+  })
+
+  // Removed getAssets query, we now use AsyncCombobox or fetch one asset
+  const { data: selectedAsset } = useQuery({
+    queryKey: ['asset', selectedAssetId],
+    queryFn: () => assetService.getAssetById(selectedAssetId!),
+    enabled: !!selectedAssetId,
+  })
+
+  const { data: selectedEmployee } = useQuery({
+    queryKey: ['employee', selectedEmployeeId],
+    queryFn: async () => {
+      const { data } = await api.get(`/employees/${selectedEmployeeId}`)
+      return data
+    },
+    enabled: !!selectedEmployeeId,
+  })
+
+  const { data: selectedTeam } = useQuery({
+    queryKey: ['team', selectedTeamId],
+    queryFn: async () => {
+      const { data } = await api.get(`/teams/${selectedTeamId}`)
+      return data
+    },
+    enabled: !!selectedTeamId,
+  })
 
   const lifecycleStates = useMemo(() => {
     if (targetType === 'AssetTemplate' && selectedTemplateId) {
       const template = templates?.find((t) => t.id === selectedTemplateId)
       return Object.keys(template?.lifecycleStates?.states ?? {})
     }
-    if (targetType === 'Asset' && selectedAssetId) {
-      const asset = assets?.find((a) => a.id === selectedAssetId)
-      const template = templates?.find((t) => t.id === asset?.assetTemplateId)
+    if (targetType === 'Asset' && selectedAsset) {
+      const template = templates?.find((t) => t.id === selectedAsset.templateId)
       return Object.keys(template?.lifecycleStates?.states ?? {})
     }
     return []
-  }, [targetType, selectedTemplateId, selectedAssetId, templates, assets])
+  }, [targetType, selectedTemplateId, selectedAsset, templates])
 
   useEffect(() => {
     if (!open) return
-
     if (plan) {
       const conditions = parseConditionRule(plan.conditionRuleJson)
       const preset = CRON_PRESETS.find((p) => p.value === plan.cronExpression)
+      setAssetLabel(plan.assetName ?? '')
+      // Leave team and employee empty until their queries load the data
       form.reset({
         name: plan.name,
         description: plan.description ?? '',
@@ -171,6 +198,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
         endsAt: plan.endsAt ? new Date(plan.endsAt) : undefined,
       })
     } else {
+      setAssetLabel('')
+      setEmployeeLabel('')
+      setTeamLabel('')
       form.reset({
         name: '',
         description: '',
@@ -186,6 +216,18 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
       })
     }
   }, [open, plan, form])
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      setEmployeeLabel(`${selectedEmployee.firstName} ${selectedEmployee.lastName}`)
+    }
+  }, [selectedEmployee])
+
+  useEffect(() => {
+    if (selectedTeam) {
+      setTeamLabel(selectedTeam.name)
+    }
+  }, [selectedTeam])
 
   useEffect(() => {
     if (cronPreset !== 'custom') {
@@ -323,20 +365,35 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Activo</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar activo..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {assets?.map((a) => (
-                            <SelectItem key={a.id} value={a.id}>
-                              {a.name} ({a.code})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <AsyncCombobox<{ id: string; name: string; code: string }>
+                          fetcher={async (query) => {
+                            const items = await assetService.getAssets(query || undefined)
+                            return items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
+                          }}
+                          labelKey="name"
+                          valueKey="id"
+                          placeholder="Buscar activo..."
+                          searchPlaceholder="Escriba para buscar..."
+                          emptyText="No se encontraron activos."
+                          onSelect={(item) => {
+                            field.onChange(item.id)
+                            setAssetLabel(`${item.code} - ${item.name}`)
+                          }}
+                          renderTrigger={(onClick) => (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              role="combobox"
+                              onClick={onClick}
+                              className="w-full justify-between font-normal bg-background"
+                            >
+                              {assetLabel || 'Buscar activo...'}
+                              <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          )}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -511,8 +568,37 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                       <FormItem>
                         <FormLabel>ID Empleado (opcional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="UUID del empleado" {...field} />
+                          <AsyncCombobox<{ id: string; name: string }>
+                            fetcher={async (query) => {
+                              const { data } = await api.get<{ items: Array<{ id: string; firstName: string; lastName: string }> }>('/employees', {
+                                params: { search: query, isActive: true },
+                              })
+                              return data.items.map((e) => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
+                            }}
+                            labelKey="name"
+                            valueKey="id"
+                            placeholder="Buscar empleado..."
+                            searchPlaceholder="Escriba para buscar..."
+                            emptyText="No se encontraron empleados."
+                            onSelect={(item) => {
+                              field.onChange(item.id)
+                              setEmployeeLabel(item.name)
+                            }}
+                            renderTrigger={(onClick) => (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                role="combobox"
+                                onClick={onClick}
+                                className="w-full justify-between font-normal bg-background"
+                              >
+                                {employeeLabel || 'Buscar empleado...'}
+                                <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            )}
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -523,8 +609,37 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                       <FormItem>
                         <FormLabel>ID Equipo (opcional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="UUID del equipo" {...field} />
+                          <AsyncCombobox<{ id: string; name: string }>
+                            fetcher={async (query) => {
+                              const { data } = await api.get<{ items: Array<{ id: string; name: string }> }>('/teams', {
+                                params: { search: query, isActive: true },
+                              })
+                              return data.items.map((t) => ({ id: t.id, name: t.name }))
+                            }}
+                            labelKey="name"
+                            valueKey="id"
+                            placeholder="Buscar equipo..."
+                            searchPlaceholder="Escriba para buscar..."
+                            emptyText="No se encontraron equipos."
+                            onSelect={(item) => {
+                              field.onChange(item.id)
+                              setTeamLabel(item.name)
+                            }}
+                            renderTrigger={(onClick) => (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                role="combobox"
+                                onClick={onClick}
+                                className="w-full justify-between font-normal bg-background"
+                              >
+                                {teamLabel || 'Buscar equipo...'}
+                                <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            )}
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />

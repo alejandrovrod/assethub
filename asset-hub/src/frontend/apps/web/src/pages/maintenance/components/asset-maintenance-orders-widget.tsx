@@ -22,51 +22,46 @@ export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrders
   const orders = data?.items || []
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg">Órdenes de mantenimiento</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
-            <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
-            <p>No hay órdenes para este activo.</p>
-          </div>
-        ) : (
-          <ScrollArea className="max-h-[240px]">
-            <div className="space-y-2">
-              {orders.map((order) => (
-                <Link
-                  key={order.id}
-                  to={`/maintenance/orders?selected=${order.id}`}
-                  className="flex items-center justify-between p-2 rounded-md border bg-muted/20 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate" title={order.title}>
-                      {order.title}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <Badge variant="secondary" className="text-[10px] h-4">
-                        {KIND_LABELS[order.kind] || order.kind}
-                      </Badge>
-                      {order.scheduledStart && (
-                        <span>Prog. {format(new Date(order.scheduledStart), 'dd MMM', { locale: es })}</span>
-                      )}
-                    </div>
+    <div className="flex flex-col gap-4">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
+          <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
+          <p>No hay órdenes para este activo.</p>
+        </div>
+      ) : (
+        <ScrollArea className="max-h-[240px]">
+          <div className="space-y-2">
+            {orders.map((order) => (
+              <Link
+                key={order.id}
+                to={`/maintenance/orders?selected=${order.id}`}
+                className="flex items-center justify-between p-2 rounded-md border bg-muted/20 hover:bg-muted/40 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate" title={order.title}>
+                    {order.title}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    <Badge variant="secondary" className="text-[10px] h-4">
+                      {KIND_LABELS[order.kind] || order.kind}
+                    </Badge>
+                    {order.scheduledStart && (
+                      <span>Prog. {format(new Date(order.scheduledStart), 'dd MMM', { locale: es })}</span>
+                    )}
                   </div>
-                  <Badge variant="outline" className="text-xs shrink-0 capitalize">
-                    {STATE_LABELS[order.state] || order.state}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+                </div>
+                <Badge variant="outline" className="text-xs shrink-0 capitalize">
+                  {STATE_LABELS[order.state] || order.state}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
   )
 }

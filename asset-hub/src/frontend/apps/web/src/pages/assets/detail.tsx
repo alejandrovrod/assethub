@@ -12,6 +12,8 @@ import { employeeService } from '@/services/employee.service'
 import { teamService } from '@/services/team.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -340,55 +342,58 @@ export default function AssetDetailPage() {
           )}
         </div>
 
-        {/* Center: Metadata */}
-        <div className="flex items-center gap-4 shrink-0 border rounded-lg px-4 py-2 bg-card shadow-sm">
-          <div className="text-sm">
-            <span className="text-muted-foreground block text-xs">ID Interno</span>
-            <code className="text-xs break-all">{asset.id}</code>
+        {/* Right side: Metadata & Transitions */}
+        <div className="flex items-center gap-4 shrink-0 flex-wrap justify-end">
+          {/* Center: Metadata */}
+          <div className="flex items-center gap-4 border rounded-lg px-4 h-12 bg-card shadow-sm">
+            <div className="flex flex-col justify-center">
+              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">ID Interno</span>
+              <code className="text-xs break-all">{asset.id}</code>
+            </div>
+            {asset.installedAt && (
+              <div className="flex flex-col justify-center border-l pl-4 h-full">
+                <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">Instalado</span>
+                <span className="text-xs">{new Date(asset.installedAt).toLocaleDateString()}</span>
+              </div>
+            )}
           </div>
-          {asset.installedAt && (
-            <div className="text-sm border-l pl-4">
-              <span className="text-muted-foreground block text-xs">Instalado</span>
-              <span className="text-xs">{new Date(asset.installedAt).toLocaleDateString()}</span>
+
+          {/* Right: Transitions bar */}
+          {currentStateConfig.associatedModule ? (
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg px-3 h-12 shadow-sm">
+              <span className="text-sm font-medium px-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Activo bloqueado. Gestión delegada al módulo: <span className="uppercase">{currentStateConfig.associatedModule}</span>
+              </span>
+            </div>
+          ) : !currentStateConfig.isTerminal && (
+            <div className="flex items-center gap-2 bg-card border rounded-lg px-3 h-12 shadow-sm">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-2">
+                Cambiar estado a:
+              </span>
+              {availableTransitions.length === 0 ? (
+                <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
+              ) : (
+                availableTransitions.map((nextState: string) => {
+                  const blockReason = getTransitionBlockReason(nextState)
+                  return (
+                    <Button
+                      key={nextState}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleStateChangeClick(nextState)}
+                      disabled={stateMutation.isPending || !!blockReason}
+                      title={blockReason || `Cambiar a ${nextState}`}
+                    >
+                      {nextState}
+                    </Button>
+                  )
+                })
+              )}
             </div>
           )}
         </div>
-
-        {/* Right: Transitions bar */}
-        {currentStateConfig.associatedModule ? (
-          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg p-2 shadow-sm shrink-0">
-            <span className="text-sm font-medium px-2 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Activo bloqueado. Gestión delegada al módulo: <span className="uppercase">{currentStateConfig.associatedModule}</span>
-            </span>
-          </div>
-        ) : !currentStateConfig.isTerminal && (
-          <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm shrink-0">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
-              Cambiar estado a:
-            </span>
-            {availableTransitions.length === 0 ? (
-              <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
-            ) : (
-              availableTransitions.map((nextState: string) => {
-                const blockReason = getTransitionBlockReason(nextState)
-                return (
-                  <Button
-                    key={nextState}
-                    variant="outline"
-                    size="sm"
-                    className="h-8 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => handleStateChangeClick(nextState)}
-                    disabled={stateMutation.isPending || !!blockReason}
-                    title={blockReason || `Cambiar a ${nextState}`}
-                  >
-                    {nextState}
-                  </Button>
-                )
-              })
-            )}
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -400,6 +405,7 @@ export default function AssetDetailPage() {
               <TabsTrigger value="details">Detalles</TabsTrigger>
               <TabsTrigger value="map">Ubicación</TabsTrigger>
               <TabsTrigger value="timeline">Bitácora</TabsTrigger>
+              <TabsTrigger value="hierarchy">Jerarquía</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="flex flex-col gap-6">
@@ -500,113 +506,145 @@ export default function AssetDetailPage() {
           <TabsContent value="timeline">
             <AssetTimeline assetId={id!} />
           </TabsContent>
+
+          <TabsContent value="hierarchy">
+            {/* HIERARCHY */}
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Network className="h-5 w-5" /> Jerarquía
+                </CardTitle>
+                
+                <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedParentId(asset.parentId || 'none')}>Cambiar Padre</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Cambiar Activo Padre</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Select onValueChange={setSelectedParentId} value={selectedParentId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar nuevo padre..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Ninguno (Raíz) --</SelectItem>
+                          {allAssets?.filter(a => a.id !== id).map(a => (
+                            <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Cancelar</Button>
+                      <Button 
+                        onClick={() => moveMutation.mutate(selectedParentId === 'none' ? null : selectedParentId)}
+                        disabled={moveMutation.isPending}
+                      >
+                        {moveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Guardar
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent className="text-sm space-y-4">
+                <div>
+                  <span className="text-muted-foreground block mb-1">Padre</span>
+                  {parentAsset ? (
+                    <div 
+                      className="flex items-center gap-2 p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/assets/${parentAsset.id}`)}
+                    >
+                      <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="font-medium">{parentAsset.name}</div>
+                        <div className="text-xs text-muted-foreground">{parentAsset.code}</div>
+                      </div>
+                      {parentAsset.state && (
+                        <Badge variant="secondary" style={parentAsset.stateColor ? { backgroundColor: parentAsset.stateColor, color: '#fff' } : undefined} className="text-[10px]">
+                          {parentAsset.state}
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground italic">Ninguno (Activo raíz)</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block mb-2">Hijos / Componentes ({childAssets.length})</span>
+                  {childAssets.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {childAssets.map(child => (
+                        <div 
+                          key={child.id}
+                          className="flex items-center gap-2 p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/assets/${child.id}`)}
+                        >
+                          <GitBranch className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex-1">
+                            <div className="font-medium">{child.name}</div>
+                            <div className="text-xs text-muted-foreground">{child.code}</div>
+                          </div>
+                          {child.state && (
+                            <Badge variant="secondary" style={child.stateColor ? { backgroundColor: child.stateColor, color: '#fff' } : undefined} className="text-[10px]">
+                              {child.state}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground italic">No tiene componentes</span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
         </div>
 
         {/* RIGHT COL */}
-        <div className="flex flex-col gap-6">
-          <AssetIncidentsWidget assetId={asset.id} />
-          
-          <AssetMaintenanceOrdersWidget assetId={asset.id} />
+        <div className="flex flex-col gap-6 md:mt-[56px]">
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            <AccordionItem value="incidents" className="border rounded-lg bg-card text-card-foreground shadow-sm">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
+                Incidencias activas
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 pt-0">
+                <AssetIncidentsWidget assetId={asset.id} />
+              </AccordionContent>
+            </AccordionItem>
 
-          <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.templateId} />
+            <AccordionItem value="orders" className="border rounded-lg bg-card text-card-foreground shadow-sm">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
+                Órdenes de mantenimiento
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 pt-0">
+                <AssetMaintenanceOrdersWidget assetId={asset.id} />
+              </AccordionContent>
+            </AccordionItem>
 
-          <AssetTasksWidget assetId={asset.id} />
+            <AccordionItem value="plans" className="border rounded-lg bg-card text-card-foreground shadow-sm">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
+                Planes Preventivos
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 pt-0">
+                <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.templateId} />
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* HIERARCHY */}
-          <Card>
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Network className="h-5 w-5" /> Jerarquía
-              </CardTitle>
-              
-              <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedParentId(asset.parentId || 'none')}>Cambiar Padre</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Cambiar Activo Padre</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <Select onValueChange={setSelectedParentId} value={selectedParentId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar nuevo padre..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">-- Ninguno (Raíz) --</SelectItem>
-                        {allAssets?.filter(a => a.id !== id).map(a => (
-                          <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Cancelar</Button>
-                    <Button 
-                      onClick={() => moveMutation.mutate(selectedParentId === 'none' ? null : selectedParentId)}
-                      disabled={moveMutation.isPending}
-                    >
-                      {moveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Guardar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent className="text-sm space-y-4">
-              <div>
-                <span className="text-muted-foreground block mb-1">Padre</span>
-                {parentAsset ? (
-                  <div 
-                    className="flex items-center gap-2 p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/assets/${parentAsset.id}`)}
-                  >
-                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1">
-                      <div className="font-medium">{parentAsset.name}</div>
-                      <div className="text-xs text-muted-foreground">{parentAsset.code}</div>
-                    </div>
-                    {parentAsset.state && (
-                      <Badge variant="secondary" style={parentAsset.stateColor ? { backgroundColor: parentAsset.stateColor, color: '#fff' } : undefined} className="text-[10px]">
-                        {parentAsset.state}
-                      </Badge>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground italic">Ninguno (Activo raíz)</span>
-                )}
-              </div>
-
-              <div>
-                <span className="text-muted-foreground block mb-2">Hijos / Componentes ({childAssets.length})</span>
-                {childAssets.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {childAssets.map(child => (
-                      <div 
-                        key={child.id}
-                        className="flex items-center gap-2 p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/50"
-                        onClick={() => navigate(`/assets/${child.id}`)}
-                      >
-                        <GitBranch className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <div className="font-medium">{child.name}</div>
-                          <div className="text-xs text-muted-foreground">{child.code}</div>
-                        </div>
-                        {child.state && (
-                          <Badge variant="secondary" style={child.stateColor ? { backgroundColor: child.stateColor, color: '#fff' } : undefined} className="text-[10px]">
-                            {child.state}
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground italic">No tiene componentes</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            <AccordionItem value="tasks" className="border rounded-lg bg-card text-card-foreground shadow-sm">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
+                Tareas Asociadas
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 pt-0">
+                <AssetTasksWidget assetId={asset.id} />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
       </div>

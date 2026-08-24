@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertTriangle, Tag, Box, ClipboardList } from 'lucide-react'
@@ -53,11 +54,8 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
   
   const [schemaData, setSchemaData] = useState<any>({})
 
-  const { data: assets } = useQuery({
-    queryKey: ['assets-summary'],
-    queryFn: () => assetService.getAssets(),
-    enabled: open,
-  })
+  const [assetLabel, setAssetLabel] = useState<string>('')
+
 
   const { data: templates } = useQuery({
     queryKey: ['workflow-templates'],
@@ -78,6 +76,18 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
   })
 
   const selectedTemplateId = form.watch('WorkflowTemplateId')
+
+  const { data: selectedAsset } = useQuery({
+    queryKey: ['asset', form.watch('assetId')],
+    queryFn: () => assetService.getAssetById(form.watch('assetId')),
+    enabled: !!form.watch('assetId'),
+  })
+
+  useEffect(() => {
+    if (selectedAsset) {
+      setAssetLabel(`${selectedAsset.code} - ${selectedAsset.name}`)
+    }
+  }, [selectedAsset])
 
   const { data: selectedTemplate } = useQuery({
     queryKey: ['workflow-template', selectedTemplateId],
@@ -208,20 +218,35 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                         <Box className="h-4 w-4" />
                         Activo
                       </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="Seleccione un activo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {assets?.map((asset: any) => (
-                            <SelectItem key={asset.id} value={asset.id}>
-                              {asset.name} ({asset.code})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <AsyncCombobox<{ id: string; name: string; code: string }>
+                          fetcher={async (query) => {
+                            const items = await assetService.getAssets(query || undefined)
+                            return items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
+                          }}
+                          labelKey="name"
+                          valueKey="id"
+                          placeholder="Seleccione un activo"
+                          searchPlaceholder="Escriba para buscar..."
+                          emptyText="No se encontraron activos."
+                          onSelect={(item) => {
+                            field.onChange(item.id)
+                            setAssetLabel(`${item.code} - ${item.name}`)
+                          }}
+                          renderTrigger={(onClick) => (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              role="combobox"
+                              onClick={onClick}
+                              className="w-full justify-between font-normal bg-background h-10"
+                            >
+                              {assetLabel || 'Seleccione un activo'}
+                              <Box className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          )}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -230,21 +255,18 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                 <FormField
                   control={form.control}
                   name="assetId"
-                  render={({ field }) => {
-                    const selectedAsset = assets?.find((a: any) => a.id === field.value)
-                    return (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-muted-foreground">
-                          <Box className="h-4 w-4" />
-                          Activo
-                        </FormLabel>
-                        <FormControl>
-                          <Input value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.code})` : field.value} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )
-                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-muted-foreground">
+                        <Box className="h-4 w-4" />
+                        Activo
+                      </FormLabel>
+                      <FormControl>
+                        <Input value={assetLabel || field.value} disabled />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               )}
 

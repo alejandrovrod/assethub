@@ -19,6 +19,7 @@ export interface MaintenanceOrderSummary {
   preventivePlanName?: string
   incidentId?: string
   incidentTitle?: string
+  workflowTemplateId?: string
   assignedEmployeeId?: string
   assignedEmployeeName?: string
 }
@@ -55,6 +56,7 @@ export interface CreateMaintenanceOrderDto {
   preventivePlanId?: string
   incidentId?: string
   propertiesJson?: string
+  generateChecklistTasks?: boolean
 }
 
 export interface UpdateMaintenanceOrderDto {

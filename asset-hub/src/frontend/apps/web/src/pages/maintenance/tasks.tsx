@@ -187,9 +187,8 @@ export default function MaintenanceTasks() {
                 Seguimiento de tareas de mantenimiento, asignaciones y vencimientos.
               </CardDescription>
             </div>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva tarea
+            <Button size="icon" onClick={handleCreate}>
+              <Plus className="h-4 w-4" />
             </Button>
           </CardHeader>
 
@@ -255,9 +254,9 @@ export default function MaintenanceTasks() {
                         if (row.type === 'order') {
                           const isExpanded = expandedOrders[row.orderId]
                           return (
-                            <TableRow 
-                              key={`order-${row.orderId}`} 
-                              className="bg-muted/30 cursor-pointer hover:bg-muted/50" 
+                            <TableRow
+                              key={`order-${row.orderId}`}
+                              className="bg-muted/30 cursor-pointer hover:bg-muted/50"
                               onClick={() => toggleOrder(row.orderId)}
                             >
                               <TableCell colSpan={7} className="font-medium">
@@ -267,12 +266,12 @@ export default function MaintenanceTasks() {
                                   {row.orderState && (
                                     <Badge variant="outline" className="ml-2 uppercase text-[10px]">
                                       {row.orderState === 'draft' ? 'Borrador' :
-                                       row.orderState === 'approved' ? 'Aprobada' :
-                                       row.orderState === 'scheduled' ? 'Programada' :
-                                       row.orderState === 'in_progress' ? 'En progreso' :
-                                       row.orderState === 'done' ? 'Realizada' :
-                                       row.orderState === 'verified' ? 'Verificada' :
-                                       row.orderState === 'cancelled' ? 'Cancelada' : row.orderState}
+                                        row.orderState === 'approved' ? 'Aprobada' :
+                                          row.orderState === 'scheduled' ? 'Programada' :
+                                            row.orderState === 'in_progress' ? 'En progreso' :
+                                              row.orderState === 'done' ? 'Realizada' :
+                                                row.orderState === 'verified' ? 'Verificada' :
+                                                  row.orderState === 'cancelled' ? 'Cancelada' : row.orderState}
                                     </Badge>
                                   )}
                                   <Badge variant="secondary" className="ml-2">{row.taskCount} tareas</Badge>

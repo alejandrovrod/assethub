@@ -59,9 +59,8 @@ export default function MaintenanceIncidents() {
               Gestioná las incidencias reportadas en los activos.
             </CardDescription>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Reportar Incidencia
+          <Button size="icon" onClick={handleCreate}>
+            <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
@@ -72,21 +71,21 @@ export default function MaintenanceIncidents() {
                 <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <Filter className="h-4 w-4" /> Búsqueda
                 </h3>
-                <Input 
-                  placeholder="Título o activo..." 
+                <Input
+                  placeholder="Título o activo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full"
                 />
               </div>
-              
+
               <ScrollArea className="flex-1 min-h-0 pr-4">
                 {isLoadingFilters ? (
                   <div className="text-sm text-muted-foreground">Cargando filtros...</div>
                 ) : searchFilters?.map((filter) => (
                   <div key={filter.attributeKey} className="mb-6">
                     <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
-                    
+
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -97,8 +96,8 @@ export default function MaintenanceIncidents() {
                           <span className="truncate">
                             {catalogFilters[filter.attributeKey]
                               ? filter.options.find(
-                                  (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
-                                )?.label
+                                (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
+                              )?.label
                               : "Todos"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -166,38 +165,38 @@ export default function MaintenanceIncidents() {
                   </div>
                 ) : (
                   <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Activo</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Reportado el</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {incidents?.map((incident) => (
-                    <TableRow key={incident.id}>
-                      <TableCell className="font-medium">{incident.title}</TableCell>
-                      <TableCell>{incident.assetName}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{incident.state}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(incident.createdAt), 'PPp', { locale: es })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleView(incident.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Activo</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Reportado el</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {incidents?.map((incident) => (
+                        <TableRow key={incident.id}>
+                          <TableCell className="font-medium">{incident.title}</TableCell>
+                          <TableCell>{incident.assetName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{incident.state}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {format(new Date(incident.createdAt), 'PPp', { locale: es })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleView(incident.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
                   </Table>
                 )}
               </ScrollArea>

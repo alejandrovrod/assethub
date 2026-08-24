@@ -116,9 +116,8 @@ export default function PreventivePlansPage() {
                 Programá tareas y órdenes de mantenimiento preventivo recurrentes.
               </CardDescription>
             </div>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Plan
+            <Button size="icon" onClick={handleCreate}>
+              <Plus className="h-4 w-4" />
             </Button>
           </CardHeader>
 

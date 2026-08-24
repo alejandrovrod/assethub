@@ -19,12 +19,12 @@ export function PreventivePlanAssetWidget({ assetId, assetTemplateId }: Props) {
 
   const { data: byAsset, isLoading: loadingAsset } = useQuery({
     queryKey: ['preventive-plans', 'asset', assetId],
-    queryFn: () => preventivePlanService.getAll({ assetId, pageSize: 4 }),
+    queryFn: () => preventivePlanService.getAll({ assetId }),
   })
 
   const { data: byTemplate, isLoading: loadingTemplate } = useQuery({
     queryKey: ['preventive-plans', 'template', assetTemplateId],
-    queryFn: () => preventivePlanService.getAll({ templateId: assetTemplateId, pageSize: 4 }),
+    queryFn: () => preventivePlanService.getAll({ templateId: assetTemplateId }),
   })
 
   const plans = useMemo(() => {
@@ -37,49 +37,41 @@ export function PreventivePlanAssetWidget({ assetId, assetTemplateId }: Props) {
   const isLoading = loadingAsset || loadingTemplate
 
   return (
-    <Card>
-      <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Wrench className="h-5 w-5" />
-          Planes de Mantenimiento
-        </CardTitle>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/maintenance/preventive-plans')}>
-          Ver todos
-        </Button>
-      </CardHeader>
-      <CardContent className="text-sm">
-        {isLoading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : plans.length > 0 ? (
-          <ul className="space-y-3">
-            {plans.map((plan) => (
-              <li
-                key={plan.id}
-                className="flex items-center justify-between p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/40"
-                onClick={() => navigate('/maintenance/preventive-plans')}
-              >
-                <div>
-                  <p className="font-medium">{plan.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {plan.nextRunAt
-                      ? `Próxima: ${format(new Date(plan.nextRunAt), 'dd MMM yyyy', { locale: es })}`
-                      : 'Sin programación'}
-                  </p>
-                </div>
-                <Badge variant={plan.isActive ? 'default' : 'secondary'}>
-                  {plan.isActive ? 'Activo' : 'Pausado'}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted-foreground text-center py-4">
-            No hay planes asociados a este activo.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-4">
+      {isLoading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : plans.length > 0 ? (
+        <ul className="space-y-3">
+          {plans.map((plan) => (
+            <li
+              key={plan.id}
+              className="flex items-center justify-between p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/40"
+              onClick={() => navigate('/maintenance/preventive-plans')}
+            >
+              <div>
+                <p className="font-medium">{plan.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {plan.nextRunAt
+                    ? `Próxima: ${format(new Date(plan.nextRunAt), 'dd MMM yyyy', { locale: es })}`
+                    : 'Sin programación'}
+                </p>
+              </div>
+              <Badge variant={plan.isActive ? 'default' : 'secondary'}>
+                {plan.isActive ? 'Activo' : 'Pausado'}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-muted-foreground text-center py-4 text-sm">
+          No hay planes asociados a este activo.
+        </p>
+      )}
+      <Button variant="ghost" size="sm" onClick={() => navigate('/maintenance/preventive-plans')} className="w-full mt-2">
+        Ver todos
+      </Button>
+    </div>
   )
 }

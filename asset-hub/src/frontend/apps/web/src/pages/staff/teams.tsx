@@ -58,9 +58,8 @@ export default function StaffTeams() {
               Organiza empleados en equipos de trabajo para asignación colectiva.
             </CardDescription>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Equipo
+          <Button size="icon" onClick={handleCreate}>
+            <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
 

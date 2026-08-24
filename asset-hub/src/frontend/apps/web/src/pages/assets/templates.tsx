@@ -12,7 +12,7 @@ import { AssetTemplateFormSheet } from './components/asset-template-form-sheet'
 
 export default function AssetsTemplates() {
   const queryClient = useQueryClient()
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<any>(null)
 
@@ -54,7 +54,7 @@ export default function AssetsTemplates() {
     if (!newCode) return
     const newName = window.prompt('Ingresá el nuevo nombre para la plantilla clonada:', `${template.name} (Copia)`)
     if (!newName) return
-    
+
     cloneMutation.mutate({ sourceTemplateId: template.id, newCode, newName })
   }
 
@@ -68,9 +68,8 @@ export default function AssetsTemplates() {
               Gestioná las plantillas (esquemas y ciclo de vida) para los distintos tipos de activos.
             </CardDescription>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Plantilla
+          <Button size="icon" onClick={handleCreate}>
+            <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden">
@@ -112,26 +111,26 @@ export default function AssetsTemplates() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
                           onClick={() => handleEdit(template)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
                           title="Clonar plantilla"
                           onClick={() => handleClone(template)}
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           onClick={() => {
                             if (confirm('¿Estás seguro de eliminar esta plantilla?')) {
@@ -150,11 +149,11 @@ export default function AssetsTemplates() {
           </ScrollArea>
         </CardContent>
       </Card>
-      
-      <AssetTemplateFormSheet 
-        open={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
-        template={editingTemplate} 
+
+      <AssetTemplateFormSheet
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        template={editingTemplate}
       />
     </div>
   )

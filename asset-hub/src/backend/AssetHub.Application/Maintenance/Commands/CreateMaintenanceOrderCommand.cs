@@ -19,6 +19,8 @@ public class CreateMaintenanceOrderCommand : IRequest<Guid>
     public Guid? WorkflowTemplateId { get; set; }
     public Guid? IncidentId { get; set; }
     public string PropertiesJson { get; set; } = "{}";
+    
+    public bool GenerateChecklistTasks { get; set; } = false;
 }
 
 public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMaintenanceOrderCommand, Guid>
@@ -38,8 +40,11 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
     {
         var tenantId = _tenantResolver.GetCurrentTenantId();
 
-        var assetExists = await _db.Assets.AnyAsync(a => a.Id == request.AssetId, cancellationToken);
-        if (!assetExists)
+        var asset = await _db.Assets
+            .Include(a => a.AssetTemplate)
+            .FirstOrDefaultAsync(a => a.Id == request.AssetId, cancellationToken);
+            
+        if (asset == null)
             throw new ArgumentException("Asset not found");
 
         if (string.IsNullOrWhiteSpace(request.Kind))
@@ -73,6 +78,66 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
             order.PropertiesJson
         ), cancellationToken);
 
+        if (request.GenerateChecklistTasks && !string.IsNullOrWhiteSpace(asset.AssetTemplate?.MaintenanceChecklist))
+        {
+            var (typeId, priorityId) = await AssetHub.Application.Maintenance.Helpers.PreventivePlanCatalogDefaults.EnsureDefaultCatalogsAsync(_db, tenantId.Value, cancellationToken);
+            
+            try
+            {
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<ChecklistSchema>(asset.AssetTemplate.MaintenanceChecklist, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (parsed?.Tasks != null && parsed.Tasks.Count > 0)
+                {
+                    foreach (var ct in parsed.Tasks)
+                    {
+                        var task = new AssetHub.Domain.Tasks.WorkTask
+                        {
+                            Id = Guid.NewGuid(),
+                            TenantId = tenantId.Value,
+                            Title = ct.Title ?? "Tarea de checklist",
+                            Description = !string.IsNullOrWhiteSpace(ct.Frequency) 
+                                ? $"Frecuencia sugerida: {ct.Frequency}\n{ct.Description}" 
+                                : ct.Description,
+                            State = "todo",
+                            TaskTypeCatalogItemId = typeId,
+                            PriorityCatalogItemId = priorityId,
+                            DueAt = DateTime.UtcNow.AddDays(7), // default due date
+                            AssetId = asset.Id,
+                            MaintenanceOrderId = order.Id,
+                            IsIndependent = false,
+                            PropertiesJson = asset.PropertiesJson
+                        };
+
+                        _db.WorkTasks.Add(task);
+                        
+                        await _mediator.Publish(new AssetHub.Application.Tasks.Events.WorkTaskCreatedEvent(
+                            task.Id,
+                            task.TenantId,
+                            task.AssetId,
+                            task.PropertiesJson
+                        ), cancellationToken);
+                    }
+                    
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+            }
+            catch
+            {
+                // Ignore parse errors
+            }
+        }
+
         return order.Id;
+    }
+    
+    private class ChecklistSchema
+    {
+        public System.Collections.Generic.List<ChecklistTaskSchema>? Tasks { get; set; }
+    }
+    
+    private class ChecklistTaskSchema
+    {
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public string? Frequency { get; set; }
     }
 }
