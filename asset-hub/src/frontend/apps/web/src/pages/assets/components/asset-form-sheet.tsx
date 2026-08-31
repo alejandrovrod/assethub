@@ -62,7 +62,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
   
   const { data: allAssets } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => assetService.getAssets(),
+    queryFn: () => assetService.getAssets().then(res => res.items),
     enabled: open
   })
 

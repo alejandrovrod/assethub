@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import ReactFlow, {
   Background,
   Controls,
+  ControlButton,
+  useReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
   addEdge,
@@ -35,7 +37,7 @@ import {
 import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
-import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag, Palette } from 'lucide-react';
+import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag, Palette, Maximize, Focus } from 'lucide-react';
 
 interface LifecycleCanvasProps {
   value: string;
@@ -80,6 +82,41 @@ function ChildStatesInput({
       }}
       onBlur={() => setText(value.join(', '))}
     />
+  );
+}
+
+function CustomControls({ wrapperRef }: { wrapperRef: React.RefObject<HTMLDivElement | null> }) {
+  const { fitView } = useReactFlow();
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement && wrapperRef.current) {
+      wrapperRef.current.requestFullscreen().catch((err) => {
+        console.error('Error attempting to enable fullscreen mode:', err);
+      });
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err) => {
+        console.error('Error attempting to exit fullscreen mode:', err);
+      });
+    }
+  };
+
+  return (
+    <Controls showFitView={false}>
+      <ControlButton 
+        onClick={() => fitView({ duration: 800 })} 
+        title="Ajustar y Centrar Vista"
+        aria-label="Ajustar y Centrar Vista"
+      >
+        <Focus className="h-4 w-4" />
+      </ControlButton>
+      <ControlButton 
+        onClick={toggleFullscreen} 
+        title="Pantalla Completa"
+        aria-label="Pantalla Completa"
+      >
+        <Maximize className="h-4 w-4" />
+      </ControlButton>
+    </Controls>
   );
 }
 
@@ -172,7 +209,17 @@ function ColorSwatchPicker({
 }
 
 export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvasProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [newNodeName, setNewNodeName] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -714,7 +761,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 Agregar Estado
               </Button>
             </div>
-            <div className="flex-1 border rounded bg-muted/20 overflow-hidden relative">
+            <div ref={wrapperRef} className="flex-1 border rounded bg-background overflow-hidden relative">
               <style>{`
                 .react-flow__node.selected {
                   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4) !important;
@@ -734,14 +781,17 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 fitView
               >
                 <Background />
-                <Controls />
+                <CustomControls wrapperRef={wrapperRef} />
               </ReactFlow>
             </div>
           </div>
 
           {/* Node Properties Panel (Sheet) */}
           <Sheet open={!!selectedNodeId} onOpenChange={(open) => !open && setSelectedNodeId(null)}>
-            <SheetContent className="w-[90vw] sm:max-w-[600px] md:max-w-[700px] overflow-y-auto">
+            <SheetContent 
+              container={isFullscreen ? wrapperRef.current : undefined}
+              className="w-[90vw] sm:max-w-[600px] md:max-w-[700px] overflow-y-auto"
+            >
               <SheetHeader className="sticky top-0 bg-background z-10 pt-2 pb-4 -mt-2 border-b mb-6">
                 <SheetTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-muted-foreground" />

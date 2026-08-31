@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Models;
 using AssetHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,9 +21,9 @@ public record IncidentSummaryDto(
     DateTime? ClosedAt
 );
 
-public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AssetId = null, int? PageSize = null) : IRequest<List<IncidentSummaryDto>>;
+public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AssetId = null, int Page = 1, int PageSize = 50) : IRequest<PagedResult<IncidentSummaryDto>>;
 
-public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery, List<IncidentSummaryDto>>
+public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery, PagedResult<IncidentSummaryDto>>
 {
     private readonly ITenantDbContext _db;
     private readonly ITenantResolver _tenantResolver;
@@ -33,7 +34,7 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
         _tenantResolver = tenantResolver;
     }
 
-    public async Task<List<IncidentSummaryDto>> Handle(SearchIncidentsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<IncidentSummaryDto>> Handle(SearchIncidentsQuery request, CancellationToken cancellationToken)
     {
         var tenantId = _tenantResolver.GetCurrentTenantId();
         var query = _db.Incidents
@@ -67,13 +68,12 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
             }
         }
 
-        if (request.PageSize.HasValue && request.PageSize.Value > 0)
-        {
-            query = query.Take(request.PageSize.Value);
-        }
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        return await query
+        var items = await query
             .OrderByDescending(i => i.Id) // Id is Guid, usually we'd order by date if we had a CreateDate in base entity, assuming they don't have CreatedAt base property we'll order by Id or just don't order for now
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
             .Select(i => new IncidentSummaryDto(
                 i.Id,
                 i.Title,
@@ -85,5 +85,7 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
                 i.ClosedAt ?? (i.State == "Resuelta" || i.State == "Cancelada" || i.State == "Closed" || i.State == "Resolved" ? DateTime.UtcNow : null)
             ))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<IncidentSummaryDto>(items, totalCount, request.Page, request.PageSize);
     }
 }

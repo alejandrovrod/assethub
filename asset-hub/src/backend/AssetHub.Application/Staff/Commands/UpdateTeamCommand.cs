@@ -40,7 +40,6 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand, Unit>
         var tenantId = _tenantResolver.GetCurrentTenantId();
 
         var team = await _db.Teams
-            .Include(t => t.Members)
             .FirstOrDefaultAsync(t => t.Id == request.TeamId && !t.IsDeleted, cancellationToken);
 
         if (team == null)
@@ -61,22 +60,33 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand, Unit>
         team.Name = request.Name;
         team.Description = request.Description;
 
-        // Replace members: remove old, add new
-        _db.TeamMembers.RemoveRange(team.Members);
+        // Replace members: Delete old members from DB directly to avoid EF tracking issues
+        await _db.TeamMembers
+            .Where(tm => tm.TeamId == team.Id)
+            .ExecuteDeleteAsync(cancellationToken);
 
-        foreach (var memberDto in request.Members)
+        // Add fresh members
+        foreach (var reqMember in request.Members)
         {
-            team.Members.Add(new TeamMember
+            _db.TeamMembers.Add(new TeamMember
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId!.Value,
                 TeamId = team.Id,
-                EmployeeId = memberDto.EmployeeId,
-                IsLead = memberDto.IsLead
+                EmployeeId = reqMember.EmployeeId,
+                IsLead = reqMember.IsLead
             });
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            var entries = ex.Entries.Select(e => e.Entity.GetType().Name + " " + e.State).ToList();
+            throw new Exception($"Concurrency error in UpdateTeam. Entries: {string.Join(", ", entries)}", ex);
+        }
 
         return Unit.Value;
     }

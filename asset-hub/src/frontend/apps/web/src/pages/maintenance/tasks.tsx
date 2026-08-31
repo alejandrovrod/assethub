@@ -63,22 +63,31 @@ export default function MaintenanceTasks() {
   const [stateFilter, setStateFilter] = useState<WorkTaskState | 'all'>('all')
   const [view, setView] = useState<'list' | 'kanban'>('list')
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({})
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, stateFilter, pageSize])
 
   const toggleOrder = (orderId: string) => {
     setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }))
   }
 
   const { data, isLoading } = useQuery({
-    queryKey: ['work-tasks', stateFilter, searchTerm],
+    queryKey: ['work-tasks', stateFilter, searchTerm, page, pageSize],
     queryFn: () =>
       workTaskService.getAll({
         state: stateFilter === 'all' ? undefined : stateFilter,
         search: searchTerm || undefined,
-        pageSize: 100,
+        page,
+        pageSize,
       }),
   })
 
   const items = data?.items || []
+  const totalCount = data?.totalCount || 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
 
   type RowItem =
     | { type: 'order'; orderId: string; orderTitle: string; orderState?: string; taskCount: number; tasks: WorkTaskSummary[] }
@@ -229,8 +238,8 @@ export default function MaintenanceTasks() {
             </Tabs>
           </div>
 
-          <CardContent className="flex-1 p-0 overflow-hidden">
-            <ScrollArea className="h-full">
+          <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+            <ScrollArea className="flex-1 min-h-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -284,7 +293,7 @@ export default function MaintenanceTasks() {
                           return (
                             <TableRow
                               key={`task-${task.id}`}
-                              className={`cursor-pointer ${row.isChild ? 'bg-background/50' : ''}`}
+                              className={`cursor-pointer hover:bg-muted/50 transition-colors ${row.isChild ? 'bg-background/50' : ''} ${selectedTask?.id === task.id ? 'bg-muted' : ''}`}
                               onClick={() => handleRowClick(task)}
                             >
                               <TableCell className={`font-medium max-w-xs truncate ${row.isChild ? 'pl-8' : ''}`} title={task.title}>
@@ -408,6 +417,48 @@ export default function MaintenanceTasks() {
                 </div>
               )}
             </ScrollArea>
+            {/* Pagination Controls */}
+            {!isLoading && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    Total: {totalCount} tareas
+                  </span>
+                  <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                    <SelectTrigger className="w-[100px] h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 / pág</SelectItem>
+                      <SelectItem value="20">20 / pág</SelectItem>
+                      <SelectItem value="50">50 / pág</SelectItem>
+                      <SelectItem value="100">100 / pág</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <div className="flex items-center text-sm px-2">
+                    Página {page} de {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page >= totalPages}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

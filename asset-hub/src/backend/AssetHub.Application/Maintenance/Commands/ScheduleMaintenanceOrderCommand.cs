@@ -42,6 +42,14 @@ public class ScheduleMaintenanceOrderCommandHandler : IRequestHandler<ScheduleMa
         if (changedState && !MaintenanceOrderStateTransitionValidator.IsValidTransition(order.State, MaintenanceOrderStates.Scheduled))
             throw new InvalidOperationException(MaintenanceOrderStateTransitionValidator.GetErrorMessage(order.State, MaintenanceOrderStates.Scheduled));
 
+        if (changedState && (!request.ScheduledStart.HasValue || !request.ScheduledEnd.HasValue))
+        {
+            if (!order.ScheduledStart.HasValue || !order.ScheduledEnd.HasValue)
+            {
+                throw new InvalidOperationException("ScheduledStart and ScheduledEnd are required to schedule an order");
+            }
+        }
+
         if (request.AssignedEmployeeId.HasValue)
             order.AssignedEmployeeId = request.AssignedEmployeeId.Value;
         if (request.ScheduledStart.HasValue)

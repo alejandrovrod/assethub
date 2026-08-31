@@ -39,10 +39,10 @@ public class IncidentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId, [FromQuery] int? pageSize)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId, pageSize));
-        return Ok(new { items = result });
+        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId, page, pageSize));
+        return Ok(result);
     }
 
     [HttpPost("search")]
@@ -50,8 +50,8 @@ public class IncidentsController : ControllerBase
     {
         request ??= new AssetHub.Api.Controllers.AdvancedSearchRequest();
         try {
-            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters, request.AssetId));
-            return Ok(new { items = result });
+            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters, request.AssetId, request.Page, request.PageSize));
+            return Ok(result);
         } catch (Exception ex) {
             return StatusCode(500, new { error = ex.ToString() });
         }

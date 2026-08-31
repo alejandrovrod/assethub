@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { assetService, Asset } from '@/services/asset.service'
@@ -16,6 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Table,
@@ -48,17 +49,27 @@ export default function AssetsPage() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [catalogFilters, setCatalogFilters] = useState<Record<string, string>>({})
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const isSearching = searchTerm.trim().length > 0 || Object.keys(catalogFilters).length > 0
 
-  const { data: assets, isLoading: isLoadingAssets } = useQuery({
-    queryKey: ['assets', searchTerm, catalogFilters],
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, catalogFilters, pageSize])
+
+  const { data: pagedResult, isLoading: isLoadingAssets } = useQuery({
+    queryKey: ['assets', searchTerm, catalogFilters, page, pageSize],
     queryFn: () => assetService.advancedSearch({
       searchTerm: searchTerm || undefined,
       catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined,
-      rootOnly: !isSearching
+      rootOnly: !isSearching,
+      page,
+      pageSize
     })
   })
+
+  const assets = pagedResult?.items || []
 
   const { data: searchFilters, isLoading: isLoadingFilters } = useQuery({
     queryKey: ['asset-filters'],
@@ -397,6 +408,49 @@ export default function AssetsPage() {
                   </Table>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!isLoadingAssets && (
+            <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  Total: {pagedResult?.totalCount || 0} activos
+                </span>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 / pág</SelectItem>
+                    <SelectItem value="20">20 / pág</SelectItem>
+                    <SelectItem value="50">50 / pág</SelectItem>
+                    <SelectItem value="100">100 / pág</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </Button>
+                <div className="flex items-center text-sm px-2">
+                  Página {page} de {pagedResult?.totalPages || 1}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page >= (pagedResult?.totalPages || 1)}
+                >
+                  Siguiente
+                </Button>
+              </div>
             </div>
           )}
         </div>

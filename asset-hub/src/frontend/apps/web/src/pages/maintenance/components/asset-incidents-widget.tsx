@@ -16,7 +16,7 @@ interface AssetIncidentsWidgetProps {
 export function AssetIncidentsWidget({ assetId }: AssetIncidentsWidgetProps) {
   const { data: incidents, isLoading } = useQuery({
     queryKey: ['incidents', 'asset', assetId],
-    queryFn: () => incidentService.search(undefined, undefined, assetId, 4),
+    queryFn: () => incidentService.search(undefined, undefined, assetId, 1, 4).then(res => res.items),
   })
 
   const activeIncidents = (incidents || []).filter(i => !i.closedAt)

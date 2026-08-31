@@ -23,10 +23,10 @@ public class AssetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state, [FromQuery] Guid? ancestorId)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state, [FromQuery] Guid? ancestorId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state, null, ancestorId));
-        return Ok(new { items = result });
+        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state, null, ancestorId, false, page, pageSize));
+        return Ok(result);
     }
 
     [HttpPost("search")]
@@ -39,8 +39,10 @@ public class AssetsController : ControllerBase
             request.State, 
             request.CatalogFilters, 
             request.AncestorId,
-            request.RootOnly));
-        return Ok(new { items = result });
+            request.RootOnly,
+            request.Page,
+            request.PageSize));
+        return Ok(result);
     }
 
     [HttpGet("search-filters")]
@@ -199,6 +201,8 @@ public class AdvancedSearchRequest
     public Dictionary<string, Guid>? CatalogFilters { get; set; }
     public bool? RootOnly { get; set; }
     public Guid? AssetId { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
 }
 
 public class CreateAssetRequest

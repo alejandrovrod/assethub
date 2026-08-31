@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Loader2, Pencil, Trash2, Mail, Phone, Shield, User } from 'lucide-react'
 import { employeeService, type EmployeeSummary, type CreateEmployeeDto, type UpdateEmployeeDto } from '@/services/employee.service'
@@ -223,21 +223,23 @@ function EmployeeFormSheet({
   const [phoneNumber, setPhoneNumber] = useState('')
   const [roleCatalogItemId, setRoleCatalogItemId] = useState('')
 
-  const resetForm = () => {
-    if (employee) {
-      setFirstName(employee.firstName)
-      setLastName(employee.lastName)
-      setEmail(employee.email)
-      setPhoneNumber(employee.phoneNumber || '')
-      setRoleCatalogItemId(employee.roleCatalogItemId)
-    } else {
-      setFirstName('')
-      setLastName('')
-      setEmail('')
-      setPhoneNumber('')
-      setRoleCatalogItemId('')
+  useEffect(() => {
+    if (open) {
+      if (employee) {
+        setFirstName(employee.firstName)
+        setLastName(employee.lastName)
+        setEmail(employee.email)
+        setPhoneNumber(employee.phoneNumber || '')
+        setRoleCatalogItemId(employee.roleCatalogItemId)
+      } else {
+        setFirstName('')
+        setLastName('')
+        setEmail('')
+        setPhoneNumber('')
+        setRoleCatalogItemId('')
+      }
     }
-  }
+  }, [open, employee])
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateEmployeeDto) => employeeService.create(payload),
@@ -281,7 +283,7 @@ function EmployeeFormSheet({
   const isValid = firstName.trim() && lastName.trim() && email.trim() && roleCatalogItemId
 
   return (
-    <Sheet open={open} onOpenChange={(val) => { onOpenChange(val); if (val) resetForm() }}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 h-full">
         <SheetHeader className="p-6 pb-4 border-b shrink-0">
           <div className="flex items-center gap-3">
@@ -301,8 +303,8 @@ function EmployeeFormSheet({
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-6 py-6">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="space-y-6 pb-6">
             {/* Personal Information Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -400,7 +402,7 @@ function EmployeeFormSheet({
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

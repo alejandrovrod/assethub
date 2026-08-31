@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, BookOpen, ChevronRight, Loader2, Edit, Trash2 } from 'lucide-react'
 import { catalogService, type Catalog, type CatalogItem } from '@/services/catalog.service'
@@ -7,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { CatalogForm, type CatalogFormValues } from './components/catalog-form'
 import { CatalogItemForm, type CatalogItemFormValues } from './components/catalog-item-form'
@@ -22,6 +29,14 @@ export default function CatalogsPage() {
   const [editingCatalog, setEditingCatalog] = useState<Catalog | null>(null)
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null)
 
+  // Pagination
+  const [itemPage, setItemPage] = useState(1)
+  const [itemPageSize, setItemPageSize] = useState(10)
+
+  useEffect(() => {
+    setItemPage(1)
+  }, [selectedCatalog?.id, itemPageSize])
+
   // Queries
   const { data: catalogs, isLoading: catalogsLoading } = useQuery({
     queryKey: ['catalogs'],
@@ -33,6 +48,16 @@ export default function CatalogsPage() {
     queryFn: () => catalogService.getCatalogItems(selectedCatalog!.code),
     enabled: !!selectedCatalog,
   })
+
+  const itemTotalCount = catalogItems?.length || 0
+  const itemTotalPages = Math.max(1, Math.ceil(itemTotalCount / itemPageSize))
+  const currentItemPage = Math.min(itemPage, itemTotalPages)
+
+  const pagedItems = useMemo(() => {
+    if (!catalogItems) return []
+    const start = (currentItemPage - 1) * itemPageSize
+    return catalogItems.slice(start, start + itemPageSize)
+  }, [catalogItems, currentItemPage, itemPageSize])
 
   // Mutations
   const createCatalogMutation = useMutation({
@@ -217,8 +242,8 @@ export default function CatalogsPage() {
                 Nuevo Elemento
               </Button>
             </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden">
-              <ScrollArea className="h-full">
+            <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+              <ScrollArea className="flex-1 min-h-0">
                 {itemsLoading ? (
                   <div className="flex justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -238,7 +263,7 @@ export default function CatalogsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {catalogItems?.map((item) => (
+                      {pagedItems.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.code}</TableCell>
                           <TableCell>{item.label || item.code}</TableCell>
@@ -269,6 +294,48 @@ export default function CatalogsPage() {
                   </Table>
                 )}
               </ScrollArea>
+              {/* Pagination Controls */}
+              {!itemsLoading && (
+                <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      Total: {itemTotalCount} elementos
+                    </span>
+                    <Select value={String(itemPageSize)} onValueChange={(v) => setItemPageSize(Number(v))}>
+                      <SelectTrigger className="w-[100px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10 / pág</SelectItem>
+                        <SelectItem value="20">20 / pág</SelectItem>
+                        <SelectItem value="50">50 / pág</SelectItem>
+                        <SelectItem value="100">100 / pág</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setItemPage(p => Math.max(1, p - 1))}
+                      disabled={currentItemPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <div className="flex items-center text-sm px-2">
+                      Página {currentItemPage} de {itemTotalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setItemPage(p => Math.min(itemTotalPages, p + 1))}
+                      disabled={currentItemPage >= itemTotalPages}
+                    >
+                      Siguiente
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </>
         ) : (

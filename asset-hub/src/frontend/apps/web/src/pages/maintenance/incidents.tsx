@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, Loader2, Eye } from 'lucide-react'
 import { incidentService } from '@/services/incident.service'
@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Check, ChevronsUpDown, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { assetService } from '@/services/asset.service'
 
 export default function MaintenanceIncidents() {
@@ -26,15 +27,25 @@ export default function MaintenanceIncidents() {
   const [catalogFilters, setCatalogFilters] = useState<Record<string, string>>({})
   const [searchParams] = useSearchParams()
   const assetId = searchParams.get('assetId') || undefined
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
-  const { data: incidents, isLoading } = useQuery({
-    queryKey: ['incidents', searchTerm, catalogFilters, assetId],
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, catalogFilters, assetId, pageSize])
+
+  const { data: pagedResult, isLoading } = useQuery({
+    queryKey: ['incidents', searchTerm, catalogFilters, assetId, page, pageSize],
     queryFn: () => incidentService.advancedSearch({
       searchTerm: searchTerm || undefined,
       catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined,
-      assetId
+      assetId,
+      page,
+      pageSize
     }),
   })
+
+  const incidents = pagedResult?.items || []
 
   const { data: searchFilters, isLoading: isLoadingFilters } = useQuery({
     queryKey: ['asset-filters'],
@@ -50,8 +61,8 @@ export default function MaintenanceIncidents() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
-      <Card className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-col gap-4 p-4 pt-0">
+      <Card className="flex flex-1 flex-col">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
             <CardTitle>Incidencias</CardTitle>
@@ -63,10 +74,10 @@ export default function MaintenanceIncidents() {
             <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-          <div className="flex flex-1 gap-6 overflow-hidden min-h-0 mt-4 p-4 pt-0">
+        <CardContent className="flex-1 p-0 flex flex-col">
+          <div className="flex flex-1 gap-6 mt-4 p-4 pt-0">
             {/* Sidebar de Búsqueda y Filtros */}
-            <div className="w-64 flex flex-col gap-6 overflow-hidden min-h-0 shrink-0">
+            <div className="w-64 flex flex-col gap-6 shrink-0">
               <div>
                 <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <Filter className="h-4 w-4" /> Búsqueda
@@ -153,8 +164,7 @@ export default function MaintenanceIncidents() {
             </div>
 
             {/* Grilla de Incidencias */}
-            <div className="flex-1 rounded-lg border shadow-sm p-4 overflow-auto">
-              <ScrollArea className="h-full">
+            <div className="flex-1 rounded-lg border shadow-sm p-4">
                 {isLoading ? (
                   <div className="flex justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -199,7 +209,49 @@ export default function MaintenanceIncidents() {
                     </TableBody>
                   </Table>
                 )}
-              </ScrollArea>
+              
+              {/* Pagination Controls */}
+              {!isLoading && (
+                <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      Total: {pagedResult?.totalCount || 0} incidencias
+                    </span>
+                    <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                      <SelectTrigger className="w-[100px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10 / pág</SelectItem>
+                        <SelectItem value="20">20 / pág</SelectItem>
+                        <SelectItem value="50">50 / pág</SelectItem>
+                        <SelectItem value="100">100 / pág</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <div className="flex items-center text-sm px-2">
+                      Página {page} de {pagedResult?.totalPages || 1}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setPage(p => p + 1)}
+                      disabled={page >= (pagedResult?.totalPages || 1)}
+                    >
+                      Siguiente
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

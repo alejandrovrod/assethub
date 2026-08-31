@@ -47,6 +47,7 @@ interface Prefill {
   maintenanceOrderId?: string
   preventivePlanId?: string
   taskRecurrenceId?: string
+  workflowTemplateId?: string
   propertiesJson?: string
 }
 
@@ -341,10 +342,12 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
 
 
 
-                {(prefill?.assetId || task?.assetId || task?.workflowTemplateId) && (
+                {(prefill?.assetId || prefill?.workflowTemplateId || task?.assetId || task?.workflowTemplateId || prefill?.incidentId || task?.incidentId || prefill?.maintenanceOrderId || task?.maintenanceOrderId) && (
                   <PropagatedPropertiesDisplay 
                     assetId={(prefill?.assetId || task?.assetId)!} 
-                    workflowTemplateId={task?.workflowTemplateId}
+                    workflowTemplateId={prefill?.workflowTemplateId ?? task?.workflowTemplateId}
+                    incidentId={prefill?.incidentId ?? task?.incidentId}
+                    maintenanceOrderId={prefill?.maintenanceOrderId ?? task?.maintenanceOrderId}
                     propertiesJson={propertiesJson} 
                     inlineEdit={true}
                     onChange={setPropertiesJson}

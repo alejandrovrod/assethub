@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Pencil, Trash2, Crown, Users } from 'lucide-react'
+import { Plus, Loader2, Pencil, Trash2, Crown, Users, Settings, User, Info, UsersRound } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 import { teamService, type TeamSummary, type CreateTeamDto, type UpdateTeamDto } from '@/services/team.service'
 import { employeeService } from '@/services/employee.service'
 import { Button } from '@/components/ui/button'
@@ -176,6 +177,8 @@ export default function StaffTeams() {
   )
 }
 
+
+// TeamFormSheet Component
 function TeamFormSheet({
   open,
   onOpenChange,
@@ -270,66 +273,134 @@ function TeamFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? 'Editar Equipo' : 'Nuevo Equipo'}</SheetTitle>
-        </SheetHeader>
+      <SheetContent className="sm:max-w-2xl flex flex-col p-0 h-full">
+        <div className="px-6 py-6 border-b shrink-0">
+          <SheetHeader className="flex flex-row items-center space-x-4 space-y-0 text-left">
+            <div className="bg-muted p-3 rounded-md">
+              <Users className="h-6 w-6 text-foreground/80" />
+            </div>
+            <div>
+              <SheetTitle className="text-xl font-semibold">
+                {isEditing ? 'Editar Equipo' : 'Nuevo Equipo'}
+              </SheetTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Modifica los datos del equipo y sus integrantes.
+              </p>
+            </div>
+          </SheetHeader>
+        </div>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Nombre</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del equipo" />
-          </div>
-          <div className="space-y-2">
-            <Label>Descripción</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="(opcional)" />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Miembros ({members.length})</Label>
-            <div className="border rounded-md max-h-64 overflow-y-auto">
-              {employeeList.map((emp) => {
-                const isMember = members.some(m => m.employeeId === emp.id)
-                const memberEntry = members.find(m => m.employeeId === emp.id)
-
-                return (
-                  <div key={emp.id} className="flex items-center justify-between px-3 py-2 border-b last:border-b-0 hover:bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={isMember}
-                        onCheckedChange={() => toggleMember(emp.id)}
-                      />
-                      <span className="text-sm">{emp.firstName} {emp.lastName}</span>
-                    </div>
-                    {isMember && (
-                      <Button
-                        variant={memberEntry?.isLead ? 'default' : 'ghost'}
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => toggleLead(emp.id)}
-                      >
-                        <Crown className="h-3 w-3 mr-1" />
-                        Líder
-                      </Button>
-                    )}
-                  </div>
-                )
-              })}
-              {employeeList.length === 0 && (
-                <div className="p-4 text-sm text-muted-foreground text-center">
-                  No hay empleados activos
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="space-y-8 pb-10">
+            
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 text-muted-foreground">
+                <Info className="h-4 w-4" />
+                <h4 className="text-sm font-medium">Información del equipo</h4>
+              </div>
+              
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Nombre <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Ej: Mantenimiento Preventivo" 
+                    className="rounded-md focus-visible:ring-primary/20"
+                  />
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label className="text-sm">Descripción</Label>
+                  <Input 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)} 
+                    placeholder="Breve descripción (opcional)" 
+                    className="rounded-md focus-visible:ring-primary/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <div className="border-t my-6"></div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 text-muted-foreground">
+                  <UsersRound className="h-4 w-4" />
+                  <h4 className="text-sm font-medium">Integrantes</h4>
+                </div>
+                
+                <div className="border rounded-md shadow-sm overflow-hidden bg-card">
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <div className="flex flex-col">
+                      {employeeList.map((emp) => {
+                        const isMember = members.some(m => m.employeeId === emp.id)
+                        const memberEntry = members.find(m => m.employeeId === emp.id)
+
+                        return (
+                          <div 
+                            key={emp.id} 
+                            className={`
+                              flex items-center justify-between px-4 py-3 border-b last:border-b-0 transition-colors
+                              ${isMember ? 'bg-primary/5' : 'hover:bg-muted/30'}
+                            `}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                id={`member-${emp.id}`}
+                                checked={isMember}
+                                onCheckedChange={() => toggleMember(emp.id)}
+                              />
+                              <Label 
+                                htmlFor={`member-${emp.id}`}
+                                className="text-sm font-medium cursor-pointer"
+                              >
+                                {emp.firstName} {emp.lastName}
+                              </Label>
+                            </div>
+                            {isMember && (
+                              <Button
+                                variant={memberEntry?.isLead ? 'default' : 'outline'}
+                                size="sm"
+                                className={`h-7 px-3 text-xs transition-all ${
+                                  memberEntry?.isLead ? 'shadow-sm' : 'text-muted-foreground'
+                                }`}
+                                onClick={() => toggleLead(emp.id)}
+                              >
+                                <Crown className={`h-3.5 w-3.5 mr-1.5 ${memberEntry?.isLead ? 'text-amber-300' : ''}`} />
+                                {memberEntry?.isLead ? 'Líder' : 'Hacer líder'}
+                              </Button>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {employeeList.length === 0 && (
+                        <div className="p-8 flex flex-col items-center justify-center text-center">
+                          <Users className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                          <p className="text-sm font-medium text-muted-foreground">No hay empleados disponibles</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <SheetFooter>
-          <Button onClick={handleSubmit} disabled={isPending || !name || members.length === 0}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {isEditing ? 'Guardar' : 'Crear'}
+        <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
           </Button>
-        </SheetFooter>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isPending || !name || members.length === 0}
+            className="w-full sm:w-auto min-w-[140px]"
+          >
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            {isEditing ? 'Guardar Cambios' : 'Crear Equipo'}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )

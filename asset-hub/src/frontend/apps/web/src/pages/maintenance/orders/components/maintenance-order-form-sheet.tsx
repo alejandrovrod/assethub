@@ -282,8 +282,8 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                         ) : (
                           <AsyncCombobox<{ id: string; name: string; code: string }>
                             fetcher={async (query) => {
-                              const items = await assetService.getAssets(query || undefined)
-                              return items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
+                              const result = await assetService.getAssets(query || undefined)
+                              return result.items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
                             }}
                             labelKey="name"
                             valueKey="id"
@@ -380,10 +380,11 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                 )}
               </div>
               
-              {(form.watch('assetId') || order?.workflowTemplateId) && (
+              {(form.watch('assetId') || order?.workflowTemplateId || form.watch('incidentId') || order?.incidentId) && (
                 <PropagatedPropertiesDisplay 
                   assetId={form.watch('assetId')} 
                   workflowTemplateId={order?.workflowTemplateId}
+                  incidentId={form.watch('incidentId') || order?.incidentId}
                   propertiesJson={propertiesJson} 
                   inlineEdit={true}
                   onChange={setPropertiesJson}

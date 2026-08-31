@@ -79,8 +79,20 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
     if (detail) {
       setTitle(detail.title)
       setDescription(detail.description || '')
-      setScheduledStart(detail.scheduledStart ? detail.scheduledStart.slice(0, 16) : '')
-      setScheduledEnd(detail.scheduledEnd ? detail.scheduledEnd.slice(0, 16) : '')
+      // If the backend returned a date (UTC or not), we need to format it to YYYY-MM-DDThh:mm for datetime-local input in local time
+      if (detail.scheduledStart) {
+        const d = new Date(detail.scheduledStart)
+        setScheduledStart(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16))
+      } else {
+        setScheduledStart('')
+      }
+      
+      if (detail.scheduledEnd) {
+        const d = new Date(detail.scheduledEnd)
+        setScheduledEnd(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16))
+      } else {
+        setScheduledEnd('')
+      }
     }
     if (detail?.propertiesJson) {
       setPropertiesJson(detail.propertiesJson)
@@ -124,9 +136,9 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       if (action === 'start') return maintenanceOrderService.start(order.id)
       if (action === 'complete') return maintenanceOrderService.complete(order.id)
       if (action === 'cancel') return maintenanceOrderService.cancel(order.id)
-      return maintenanceOrderService.schedule(order.id, {
-        scheduledStart: scheduledStart || order.scheduledStart,
-        scheduledEnd: scheduledEnd || order.scheduledEnd,
+      if (action === 'schedule') return maintenanceOrderService.schedule(order.id, {
+        scheduledStart: scheduledStart ? new Date(scheduledStart).toISOString() : order.scheduledStart,
+        scheduledEnd: scheduledEnd ? new Date(scheduledEnd).toISOString() : order.scheduledEnd,
       })
     },
     onSuccess: () => {
@@ -234,11 +246,12 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
               </div>
             </div>
 
-            {(displayedOrder.assetId || displayedOrder.workflowTemplateId) && (
-              <PropagatedPropertiesDisplay 
-                assetId={displayedOrder.assetId} 
-                workflowTemplateId={displayedOrder.workflowTemplateId}
-                propertiesJson={propertiesJson} 
+            {(order.assetId || detail?.workflowTemplateId || order.incidentId) && (
+              <PropagatedPropertiesDisplay
+                assetId={order.assetId}
+                workflowTemplateId={detail?.workflowTemplateId}
+                incidentId={order.incidentId}
+                propertiesJson={propertiesJson}
                 disabled={isInfoEditBlocked}
                 inlineEdit={true}
                 onChange={setPropertiesJson}
@@ -404,6 +417,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             <MaintenanceOrderTasksWidget
               orderId={order.id}
               assetId={order.assetId}
+              workflowTemplateId={order.workflowTemplateId}
               propertiesJson={propertiesJson}
               state={state}
               validationMode={state === 'done'}

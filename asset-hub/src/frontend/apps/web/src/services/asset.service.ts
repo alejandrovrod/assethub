@@ -35,6 +35,14 @@ export interface AssetSummaryDto {
   stateColor?: string
 }
 
+export interface PagedResult<T> {
+  items: T[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
 export interface AdvancedSearchRequest {
   searchTerm?: string
   templateId?: string
@@ -42,6 +50,8 @@ export interface AdvancedSearchRequest {
   ancestorId?: string
   catalogFilters?: Record<string, string>
   rootOnly?: boolean
+  page?: number
+  pageSize?: number
 }
 
 export interface CatalogItemFilterDto {
@@ -121,16 +131,16 @@ export interface AssetEvent {
 }
 
 export const assetService = {
-  getAssets: async (q?: string, templateId?: string, state?: string, ancestorId?: string) => {
-    const { data } = await apiClient.get<{ items: Asset[] }>('/assets', {
-      params: { q, templateId, state, ancestorId }
+  getAssets: async (q?: string, templateId?: string, state?: string, ancestorId?: string, page: number = 1, pageSize: number = 50) => {
+    const { data } = await apiClient.get<PagedResult<Asset>>('/assets', {
+      params: { q, templateId, state, ancestorId, page, pageSize }
     })
-    return data.items
+    return data
   },
   
   advancedSearch: async (request: AdvancedSearchRequest) => {
-    const { data } = await apiClient.post<{ items: Asset[] }>('/assets/search', request)
-    return data.items
+    const { data } = await apiClient.post<PagedResult<Asset>>('/assets/search', request)
+    return data
   },
 
   getSearchFilters: async () => {

@@ -19,6 +19,14 @@ export interface IncidentSummary {
   closedAt?: string
 }
 
+export interface PagedResult<T> {
+  items: T[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
 export interface IncidentDetail {
   id: string
   title: string
@@ -92,23 +100,26 @@ export interface AdvancedSearchIncidentsDto {
   state?: string
   catalogFilters?: Record<string, string>
   assetId?: string
+  page?: number
+  pageSize?: number
 }
 
 export const incidentService = {
-  search: async (q?: string, state?: string, assetId?: string, pageSize?: number) => {
+  search: async (q?: string, state?: string, assetId?: string, page: number = 1, pageSize: number = 50) => {
     const params = new URLSearchParams()
     if (q) params.append('q', q)
     if (state) params.append('state', state)
     if (assetId) params.append('assetId', assetId)
-    if (pageSize) params.append('pageSize', pageSize.toString())
+    params.append('page', page.toString())
+    params.append('pageSize', pageSize.toString())
     
-    const { data } = await api.get<{ items: IncidentSummary[] }>(`/incidents?${params.toString()}`)
-    return data.items
+    const { data } = await api.get<PagedResult<IncidentSummary>>(`/incidents?${params.toString()}`)
+    return data
   },
 
   advancedSearch: async (payload: AdvancedSearchIncidentsDto) => {
-    const { data } = await api.post<{ items: IncidentSummary[] }>('/incidents/search', payload)
-    return data.items
+    const { data } = await api.post<PagedResult<IncidentSummary>>('/incidents/search', payload)
+    return data
   },
 
   getById: async (id: string) => {

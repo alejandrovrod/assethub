@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { assetService } from '@/services/asset.service'
 import { employeeService } from '@/services/employee.service'
 import { teamService } from '@/services/team.service'
+import { incidentService } from '@/services/incident.service'
+import { maintenanceOrderService } from '@/services/maintenance-order.service'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { FileText, Loader2, Pencil, Save } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
@@ -18,6 +20,8 @@ import { WorkflowTemplateService } from '@/services/workflow-template.service'
 interface Props {
   assetId?: string
   workflowTemplateId?: string
+  incidentId?: string
+  maintenanceOrderId?: string
   propertiesJson: string
   disabled?: boolean
   onUpdate?: (newPropertiesJson: string) => void
@@ -26,23 +30,81 @@ interface Props {
   onChange?: (newPropertiesJson: string) => void
 }
 
-export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, propertiesJson, disabled, onUpdate, isUpdating, inlineEdit, onChange }: Props) {
+export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incidentId, maintenanceOrderId, propertiesJson, disabled, onUpdate, isUpdating, inlineEdit, onChange }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<any>({})
 
   const { data: asset } = useQuery({
     queryKey: ['asset', assetId],
     queryFn: () => assetService.getAssetById(assetId!),
-    enabled: !!assetId && !workflowTemplateId
+    enabled: !!assetId
   })
 
-  const { data: workflowTemplate } = useQuery({
-    queryKey: ['workflow-template', workflowTemplateId],
-    queryFn: () => WorkflowTemplateService.getById(workflowTemplateId!),
-    enabled: !!workflowTemplateId
+  const { data: incident } = useQuery({
+    queryKey: ['incident', incidentId],
+    queryFn: () => incidentService.getById(incidentId!),
+    enabled: !!incidentId
   })
 
-  const rawSchemaJson = workflowTemplateId ? (workflowTemplate?.schemaJson || '') : (asset?.schemaJson || '')
+  const { data: order } = useQuery({
+    queryKey: ['maintenance-order', maintenanceOrderId],
+    queryFn: () => maintenanceOrderService.getById(maintenanceOrderId!),
+    enabled: !!maintenanceOrderId
+  })
+
+  const allWorkflowTemplateIds = useMemo(() => {
+    const ids = new Set<string>()
+    if (workflowTemplateId) ids.add(workflowTemplateId)
+    if (incident?.workflowTemplateId) ids.add(incident.workflowTemplateId)
+    if (order?.workflowTemplateId) ids.add(order.workflowTemplateId)
+    return Array.from(ids)
+  }, [workflowTemplateId, incident?.workflowTemplateId, order?.workflowTemplateId])
+
+  const { data: workflowTemplates } = useQuery({
+    queryKey: ['workflow-templates-multiple', allWorkflowTemplateIds],
+    queryFn: async () => {
+      return await Promise.all(allWorkflowTemplateIds.map(id => WorkflowTemplateService.getById(id)))
+    },
+    enabled: allWorkflowTemplateIds.length > 0
+  })
+
+  const rawSchemaJson = useMemo(() => {
+    let combined: any = { type: 'object', properties: {} }
+    let hasProperties = false
+
+    if (asset?.schemaJson) {
+      try {
+        const parsed = JSON.parse(asset.schemaJson)
+        if (parsed.properties) {
+          for (const key of Object.keys(parsed.properties)) {
+            parsed.properties[key]._source = 'asset'
+          }
+          Object.assign(combined.properties, parsed.properties)
+          hasProperties = true
+        }
+      } catch (e) {}
+    }
+
+    if (workflowTemplates) {
+      for (const wt of workflowTemplates) {
+        if (wt?.schemaJson) {
+          try {
+            const parsed = JSON.parse(wt.schemaJson)
+            if (parsed.properties) {
+              for (const key of Object.keys(parsed.properties)) {
+                parsed.properties[key]._source = 'workflowTemplate'
+              }
+              Object.assign(combined.properties, parsed.properties)
+              hasProperties = true
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    return hasProperties ? JSON.stringify(combined) : ''
+  }, [asset?.schemaJson, workflowTemplates])
+
   const { schema, uiSchema, isResolving } = useResolvedSchema(rawSchemaJson)
 
   const { data: allEmployees } = useQuery({
@@ -68,12 +130,13 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, prope
     const baseSchema = schema as any
     const newSchema: any = { type: 'object', properties: {} }
     Object.keys(baseSchema.properties).forEach(key => {
-      if (workflowTemplateId || baseSchema.properties[key].propagateToWork) {
-        newSchema.properties[key] = baseSchema.properties[key]
+      const prop = baseSchema.properties[key]
+      if (prop._source === 'workflowTemplate' || prop.propagateToWork || (!prop._source && allWorkflowTemplateIds.length > 0)) {
+        newSchema.properties[key] = prop
       }
     })
     return newSchema
-  }, [schema, workflowTemplateId])
+  }, [schema, allWorkflowTemplateIds.length])
 
   const handleEditClick = () => {
     setFormData(properties)
@@ -104,7 +167,7 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, prope
         <h4 className="text-sm font-medium flex items-center gap-2">
           <FileText className="h-4 w-4" /> Información Propagada
         </h4>
-        <div className="rjsf-tailwind bg-muted/10 p-4 rounded-md border">
+        <div className="rjsf-tailwind rjsf-single-column bg-muted/10 p-4 rounded-md border">
           <Form
             schema={subSchema}
             uiSchema={uiSchema}
@@ -112,6 +175,7 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, prope
             formData={properties}
             onChange={e => onChange?.(JSON.stringify(e.formData))}
             disabled={disabled}
+            tagName="div"
             widgets={{
               FileWidget: FileUploadWidget,
               EmployeeSelectWidget,
@@ -193,7 +257,7 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, prope
               </SheetHeader>
             </div>
             <div className="flex-1 overflow-y-auto px-6 pb-6">
-              <div className="rjsf-tailwind mt-6">
+              <div className="rjsf-tailwind rjsf-single-column mt-6">
                 <Form
                   schema={subSchema}
                   uiSchema={uiSchema}

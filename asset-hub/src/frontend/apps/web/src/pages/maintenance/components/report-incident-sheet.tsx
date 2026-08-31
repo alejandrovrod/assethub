@@ -221,8 +221,8 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                       <FormControl>
                         <AsyncCombobox<{ id: string; name: string; code: string }>
                           fetcher={async (query) => {
-                            const items = await assetService.getAssets(query || undefined)
-                            return items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
+                            const result = await assetService.getAssets(query || undefined)
+                            return result.items.map((a: any) => ({ id: a.id, name: a.name, code: a.code }))
                           }}
                           labelKey="name"
                           valueKey="id"

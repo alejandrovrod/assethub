@@ -353,10 +353,12 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
 
 
-                {(task.assetId || task.workflowTemplateId) && (
+                {(task.assetId || detail?.workflowTemplateId || task.workflowTemplateId || task.incidentId || task.maintenanceOrderId) && (
                   <PropagatedPropertiesDisplay
                     assetId={task.assetId}
-                    workflowTemplateId={task.workflowTemplateId}
+                    workflowTemplateId={detail?.workflowTemplateId ?? task.workflowTemplateId}
+                    incidentId={task.incidentId}
+                    maintenanceOrderId={task.maintenanceOrderId}
                     propertiesJson={propertiesJson}
                     disabled={isInfoEditBlocked}
                     inlineEdit={true}

@@ -144,6 +144,37 @@ export default function IncidentDetailPage() {
     onError: (err) => handleServerError(err)
   })
 
+  const formatDynamicField = (key: string, rawValue: any) => {
+    const fieldSchema = (schema as any)?.properties?.[key]
+    const title = fieldSchema?.title || key
+    let value = rawValue
+    
+    if (value && fieldSchema?.oneOf && !Array.isArray(value)) {
+      const matchedOption = fieldSchema.oneOf.find((opt: any) => opt.const === value)
+      if (matchedOption?.title) value = matchedOption.title
+    } else if (value && fieldSchema?.type === 'array' && fieldSchema?.items?.oneOf && Array.isArray(value)) {
+      value = value.map((val: any) => {
+        const matchedOption = fieldSchema.items.oneOf.find((opt: any) => opt.const === val)
+        return matchedOption?.title || val
+      }).join(', ')
+    }
+
+    if (fieldSchema?.format === 'employee' && value && allEmployees) {
+      const emp = allEmployees.find(e => e.id === value)
+      if (emp) value = `${emp.firstName} ${emp.lastName}`
+    }
+
+    if (fieldSchema?.format === 'team' && value && allTeams) {
+      const team = allTeams.find(t => t.id === value)
+      if (team) value = team.name
+    }
+
+    const isDataUrl = fieldSchema?.format === 'data-url' || fieldSchema?.items?.format === 'data-url'
+    const valuesArray = Array.isArray(value) ? value : (value ? [value] : [])
+
+    return { title, value, isDataUrl, valuesArray }
+  }
+
   const handleStateClick = (targetState: string) => {
     const targetConfig = lifecycleConfig?.states?.[targetState]
     if (targetConfig?.requiresFields && targetConfig.requiresFields.length > 0) {
@@ -275,33 +306,8 @@ export default function IncidentDetailPage() {
                           </p>
                         )}
                         {Object.keys(formData).map(key => {
-                          const fieldSchema = (schema as any)?.properties?.[key]
-                          const title = fieldSchema?.title || key
-                          let value = formData[key]
+                          const { title, value, isDataUrl, valuesArray } = formatDynamicField(key, formData[key])
                           
-                          if (value && fieldSchema?.oneOf && !Array.isArray(value)) {
-                            const matchedOption = fieldSchema.oneOf.find((opt: any) => opt.const === value)
-                            if (matchedOption?.title) value = matchedOption.title
-                          } else if (value && fieldSchema?.type === 'array' && fieldSchema?.items?.oneOf && Array.isArray(value)) {
-                            value = value.map((val: any) => {
-                              const matchedOption = fieldSchema.items.oneOf.find((opt: any) => opt.const === val)
-                              return matchedOption?.title || val
-                            }).join(', ')
-                          }
-
-                          if (fieldSchema?.format === 'employee' && value && allEmployees) {
-                            const emp = allEmployees.find(e => e.id === value)
-                            if (emp) value = `${emp.firstName} ${emp.lastName}`
-                          }
-
-                          if (fieldSchema?.format === 'team' && value && allTeams) {
-                            const team = allTeams.find(t => t.id === value)
-                            if (team) value = team.name
-                          }
-
-                          const isDataUrl = fieldSchema?.format === 'data-url' || fieldSchema?.items?.format === 'data-url';
-                          const valuesArray = Array.isArray(value) ? value : (value ? [value] : []);
-
                           return (
                             <div key={key}>
                               <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -377,12 +383,15 @@ export default function IncidentDetailPage() {
                                 <div className="mt-3 bg-muted/50 rounded-md p-3 text-xs border">
                                   <p className="font-semibold mb-1 border-b pb-1">Datos ingresados:</p>
                                   <div className="grid grid-cols-1 gap-2 mt-2">
-                                    {Object.keys(parsedProps).map(key => (
-                                      <div key={key} className="flex justify-between gap-4">
-                                        <span className="text-muted-foreground truncate">{key}:</span>
-                                        <span className="font-medium text-right break-all">{String(parsedProps[key])}</span>
-                                      </div>
-                                    ))}
+                                    {Object.keys(parsedProps).map(key => {
+                                      const { title, value } = formatDynamicField(key, parsedProps[key])
+                                      return (
+                                        <div key={key} className="flex justify-between gap-4">
+                                          <span className="text-muted-foreground truncate">{title}:</span>
+                                          <span className="font-medium text-right break-all">{String(value)}</span>
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 </div>
                               )}

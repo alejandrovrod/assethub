@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Loader2, Play, Pause, Pencil, Trash2, RotateCw } from 'lucide-react'
 import { preventivePlanService, type PreventivePlanSummary } from '@/services/preventive-plan.service'
@@ -11,6 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { PreventivePlanFormSheet } from './components/preventive-plan-form-sheet'
 import { PreventivePlanExecutionLog } from './components/preventive-plan-execution-log'
 import { PreventivePlanCalendar } from './components/preventive-plan-calendar'
@@ -48,6 +55,12 @@ export default function PreventivePlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<PreventivePlanSummary | undefined>()
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, activeFilter, pageSize])
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ['preventive-plans', activeFilter],
@@ -104,6 +117,16 @@ export default function PreventivePlansPage() {
     searchTerm ? p.name.toLowerCase().includes(searchTerm.toLowerCase()) : true
   )
 
+  const totalCount = filteredPlans?.length || 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const currentPage = Math.min(page, totalPages)
+
+  const pagedPlans = useMemo(() => {
+    if (!filteredPlans) return []
+    const start = (currentPage - 1) * pageSize
+    return filteredPlans.slice(start, start + pageSize)
+  }, [filteredPlans, currentPage, pageSize])
+
   return (
     <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
       <div className="flex gap-4 flex-1 overflow-hidden">
@@ -137,13 +160,13 @@ export default function PreventivePlansPage() {
             </Tabs>
           </div>
 
-          <CardContent className="flex-1 p-0 overflow-hidden">
-            <ScrollArea className="h-full">
+          <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+            <ScrollArea className="flex-1 min-h-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : filteredPlans && filteredPlans.length > 0 ? (
+              ) : pagedPlans.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -157,7 +180,7 @@ export default function PreventivePlansPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPlans.map((plan) => (
+                    {pagedPlans.map((plan) => (
                       <TableRow
                         key={plan.id}
                         className="cursor-pointer"
@@ -283,6 +306,48 @@ export default function PreventivePlansPage() {
                 </div>
               )}
             </ScrollArea>
+            {/* Pagination Controls */}
+            {!isLoading && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    Total: {totalCount} planes
+                  </span>
+                  <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                    <SelectTrigger className="w-[100px] h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 / pág</SelectItem>
+                      <SelectItem value="20">20 / pág</SelectItem>
+                      <SelectItem value="50">50 / pág</SelectItem>
+                      <SelectItem value="100">100 / pág</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <div className="flex items-center text-sm px-2">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage >= totalPages}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -4,20 +4,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
-using AssetHub.Domain.Assets;
+using AssetHub.Application.Common.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.IO;
 
 namespace AssetHub.Application.Assets.Queries;
 
-public record SearchAssetsQuery(string? SearchTerm, Guid? TemplateId, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AncestorId = null, bool? RootOnly = false) : IRequest<List<AssetDto>>;
+public record SearchAssetsQuery(string? SearchTerm, Guid? TemplateId, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AncestorId = null, bool? RootOnly = false, int Page = 1, int PageSize = 50) : IRequest<PagedResult<AssetDto>>;
 
 public record AssetSummaryDto(Guid Id, string Code, string Name, string State, string? StateColor);
 
 public record AssetDto(Guid Id, Guid TemplateId, Guid? ParentId, string Path, string PathNames, string Code, string Name, string State, string? StateColor, decimal? ConditionIndex, int ChildrenCount, double? Latitude, double? Longitude, string? GeoJson);
 
-public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<AssetDto>>
+public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, PagedResult<AssetDto>>
 {
     private readonly ITenantDbContext _dbContext;
 
@@ -26,7 +26,7 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
         _dbContext = dbContext;
     }
 
-    public async Task<List<AssetDto>> Handle(SearchAssetsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<AssetDto>> Handle(SearchAssetsQuery request, CancellationToken cancellationToken)
     {
         var q = _dbContext.Assets
             .Include(a => a.AssetTemplate)
@@ -81,6 +81,12 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
             }
         }
 
+        var totalCount = await q.CountAsync(cancellationToken);
+        
+        q = q.OrderBy(a => a.Code) // Añadir ordenamiento por defecto para Skip/Take consistente
+             .Skip((request.Page - 1) * request.PageSize)
+             .Take(request.PageSize);
+
         var assets = await q.ToListAsync(cancellationToken);
         
         // Fetch child counts for the matched assets
@@ -113,7 +119,7 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
 
         var geoJsonWriter = new GeoJsonWriter();
 
-        return assets.Select(a => {
+        var dtos = assets.Select(a => {
             var pathNames = "/";
             if (!string.IsNullOrEmpty(a.Path)) 
             {
@@ -153,5 +159,7 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, List<
                 geoJsonStr
             );
         }).ToList();
+
+        return new PagedResult<AssetDto>(dtos, totalCount, request.Page, request.PageSize);
     }
 }

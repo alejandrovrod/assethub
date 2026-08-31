@@ -65,8 +65,16 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, Guid>
             });
         }
 
-        _db.Teams.Add(team);
-        await _db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            _db.Teams.Add(team);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            var entries = ex.Entries.Select(e => e.Entity.GetType().Name + " " + e.State).ToList();
+            throw new Exception($"Concurrency error in CreateTeam. Entries: {string.Join(", ", entries)}", ex);
+        }
 
         return team.Id;
     }

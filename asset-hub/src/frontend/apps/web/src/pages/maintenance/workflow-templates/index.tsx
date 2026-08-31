@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Loader2, Edit, Trash2 } from 'lucide-react'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
@@ -8,6 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { WorkflowTemplateFormSheet } from './components/workflow-template-form-sheet'
 
 export default function WorkflowTemplates() {
@@ -15,11 +22,23 @@ export default function WorkflowTemplates() {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ['workflow-templates'],
     queryFn: () => WorkflowTemplateService.search(),
   })
+
+  const totalCount = templates?.length || 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const currentPage = Math.min(page, totalPages)
+
+  const pagedTemplates = useMemo(() => {
+    if (!templates) return []
+    const start = (currentPage - 1) * pageSize
+    return templates.slice(start, start + pageSize)
+  }, [templates, currentPage, pageSize])
 
   const deleteMutation = useMutation({
     mutationFn: WorkflowTemplateService.delete,
@@ -56,8 +75,8 @@ export default function WorkflowTemplates() {
             <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="flex-1 p-0 overflow-hidden">
-          <ScrollArea className="h-[calc(100vh-16rem)]">
+        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+          <ScrollArea className="flex-1 min-h-0">
             {isLoading ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -79,7 +98,7 @@ export default function WorkflowTemplates() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {templates?.map((template) => (
+                  {pagedTemplates.map((template) => (
                     <TableRow key={template.id}>
                       <TableCell className="font-medium">{template.code}</TableCell>
                       <TableCell>{template.name}</TableCell>
@@ -122,6 +141,48 @@ export default function WorkflowTemplates() {
               </Table>
             )}
           </ScrollArea>
+          {/* Pagination Controls */}
+          {!isLoading && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  Total: {totalCount} plantillas
+                </span>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1) }}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 / pág</SelectItem>
+                    <SelectItem value="20">20 / pág</SelectItem>
+                    <SelectItem value="50">50 / pág</SelectItem>
+                    <SelectItem value="100">100 / pág</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <div className="flex items-center text-sm px-2">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

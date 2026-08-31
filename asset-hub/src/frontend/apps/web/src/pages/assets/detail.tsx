@@ -63,7 +63,7 @@ export default function AssetDetailPage() {
 
   const { data: allAssets } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => assetService.getAssets()
+    queryFn: () => assetService.getAssets().then(res => res.items)
   })
 
   const { data: allEmployees } = useQuery({

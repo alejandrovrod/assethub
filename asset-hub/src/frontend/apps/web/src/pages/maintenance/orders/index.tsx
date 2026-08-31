@@ -80,14 +80,22 @@ export default function MaintenanceOrders() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedOrderId = searchParams.get('selected')
 
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, stateFilter, kindFilter, pageSize])
+
   const { data, isLoading } = useQuery({
-    queryKey: ['maintenance-orders', stateFilter, kindFilter, searchTerm],
+    queryKey: ['maintenance-orders', stateFilter, kindFilter, searchTerm, page, pageSize],
     queryFn: () =>
       maintenanceOrderService.getAll({
         state: stateFilter === 'all' ? undefined : stateFilter,
         kind: kindFilter === 'all' ? undefined : kindFilter,
         search: searchTerm || undefined,
-        pageSize: 100,
+        page,
+        pageSize,
       }),
   })
 
@@ -139,10 +147,10 @@ export default function MaintenanceOrders() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
-      <div className="flex gap-4 flex-1 overflow-hidden">
+    <div className="flex flex-col gap-4 p-4 pt-0">
+      <div className="flex gap-4 flex-1">
         {/* Main list */}
-        <Card className={`flex flex-1 flex-col overflow-hidden ${selectedOrder ? 'max-w-[55%]' : ''}`}>
+        <Card className={`flex flex-1 flex-col ${selectedOrder ? 'max-w-[55%]' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
             <div>
               <CardTitle>Órdenes de Mantenimiento</CardTitle>
@@ -194,7 +202,7 @@ export default function MaintenanceOrders() {
             </Select>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="px-4">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -224,7 +232,7 @@ export default function MaintenanceOrders() {
                   items.map((order) => (
                     <TableRow
                       key={order.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className={`cursor-pointer hover:bg-muted/50 transition-colors ${selectedOrder?.id === order.id ? 'bg-muted' : ''}`}
                       onClick={() => handleRowClick(order)}
                     >
                       <TableCell className="font-medium">{order.title}</TableCell>
@@ -299,7 +307,50 @@ export default function MaintenanceOrders() {
                 )}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
+
+          {/* Pagination Controls */}
+          {!isLoading && (
+            <div className="flex items-center justify-between border-t border-border pt-4 px-4 pb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  Total: {data?.totalCount || 0} órdenes
+                </span>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 / pág</SelectItem>
+                    <SelectItem value="20">20 / pág</SelectItem>
+                    <SelectItem value="50">50 / pág</SelectItem>
+                    <SelectItem value="100">100 / pág</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </Button>
+                <div className="flex items-center text-sm px-2">
+                  Página {page} de {Math.max(1, Math.ceil((data?.totalCount || 0) / pageSize))}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page >= Math.ceil((data?.totalCount || 0) / pageSize)}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Detail panel */}
