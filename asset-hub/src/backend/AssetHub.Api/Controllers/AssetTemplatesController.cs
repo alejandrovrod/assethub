@@ -84,6 +84,14 @@ public class AssetTemplatesController : ControllerBase
         ));
         return Created($"/api/v1/asset-templates/{id}", new { id });
     }
+
+    [HttpPost("{id}/clone-system")]
+    [Authorize(Roles = "admin,Tenant Admin")]
+    public async Task<IActionResult> CloneSystem([FromRoute] Guid id)
+    {
+        var newId = await _mediator.Send(new CloneSystemTemplateCommand(id));
+        return Created($"/api/v1/asset-templates/{newId}", new { id = newId });
+    }
 }
 
 public class CloneAssetTemplateRequest

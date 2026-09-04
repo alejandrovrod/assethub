@@ -13,6 +13,7 @@ export interface AssetTemplate {
   maintenanceChecklist: string
   version: number
   isActive: boolean
+  isSystemTemplate?: boolean
 }
 
 export interface LifecycleConfig {
@@ -90,6 +91,11 @@ export const assetTemplateService = {
 
   cloneTemplate: async (request: CloneAssetTemplateRequest): Promise<{ id: string }> => {
     const { data } = await apiClient.post<{ id: string }>('/asset-templates/clone', request)
+    return data
+  },
+
+  cloneSystemTemplate: async (id: string): Promise<{ id: string }> => {
+    const { data } = await apiClient.post<{ id: string }>(`/asset-templates/${id}/clone-system`)
     return data
   }
 }

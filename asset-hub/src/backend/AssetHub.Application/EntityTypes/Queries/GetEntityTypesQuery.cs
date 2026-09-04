@@ -11,7 +11,7 @@ namespace AssetHub.Application.EntityTypes.Queries;
 
 public record GetEntityTypesQuery() : IRequest<List<EntityTypeDto>>;
 
-public record EntityTypeDto(Guid Id, string Code, string Name, string Description, string Icon, List<string> EnabledModules, List<Guid> DefaultCatalogIds);
+public record EntityTypeDto(Guid Id, string Code, string Name, string Description, string Icon, List<string> EnabledModules, List<Guid> DefaultCatalogIds, bool IsSystemCategory);
 
 public class GetEntityTypesQueryHandler : IRequestHandler<GetEntityTypesQuery, List<EntityTypeDto>>
 {
@@ -35,7 +35,8 @@ public class GetEntityTypesQueryHandler : IRequestHandler<GetEntityTypesQuery, L
             t.Description,
             t.Icon,
             t.EnabledModules,
-            t.DefaultCatalogIds
+            t.DefaultCatalogIds,
+            !t.TenantId.HasValue
         )).ToList();
     }
 }

@@ -7,7 +7,7 @@ namespace AssetHub.Domain.AssetTemplates;
 public class AssetTemplate
 {
     public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid? TenantId { get; set; }
     
     public Guid BusinessEntityTypeId { get; set; }
     public BusinessEntityType? BusinessEntityType { get; set; }

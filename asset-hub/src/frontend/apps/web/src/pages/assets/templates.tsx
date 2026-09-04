@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { AssetTemplateFormSheet } from './components/asset-template-form-sheet'
+import { SystemTemplateLibraryModal } from './components/system-template-library-modal'
 
 export default function AssetsTemplates() {
   const queryClient = useQueryClient()
@@ -30,15 +31,15 @@ export default function AssetsTemplates() {
     queryFn: () => assetTemplateService.getTemplates(),
   })
 
-  const totalCount = templates?.length || 0
+  const tenantTemplates = useMemo(() => templates?.filter(t => !t.isSystemTemplate) || [], [templates])
+  const totalCount = tenantTemplates.length
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const currentPage = Math.min(page, totalPages)
 
   const pagedTemplates = useMemo(() => {
-    if (!templates) return []
     const start = (currentPage - 1) * pageSize
-    return templates.slice(start, start + pageSize)
-  }, [templates, currentPage, pageSize])
+    return tenantTemplates.slice(start, start + pageSize)
+  }, [tenantTemplates, currentPage, pageSize])
 
   const deleteMutation = useMutation({
     mutationFn: assetTemplateService.deleteTemplate,
@@ -87,9 +88,12 @@ export default function AssetsTemplates() {
               Gestioná las plantillas (esquemas y ciclo de vida) para los distintos tipos de activos.
             </CardDescription>
           </div>
-          <Button size="icon" onClick={handleCreate}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <SystemTemplateLibraryModal />
+            <Button size="icon" onClick={handleCreate} title="Crear plantilla desde cero">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
           <ScrollArea className="flex-1 min-h-0">

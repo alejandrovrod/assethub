@@ -96,7 +96,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
         modelBuilder.Entity<BusinessEntityType>(b =>
         {
             b.HasKey(e => e.Id);
-            b.HasQueryFilter(e => e.IsActive && e.TenantId == CurrentTenantId);
+            b.HasQueryFilter(e => e.IsActive && (e.TenantId == CurrentTenantId || e.TenantId == null));
             b.HasIndex(e => new { e.Code, e.TenantId }).IsUnique();
             
             b.Property(e => e.EnabledModules).HasConversion(stringListConverter);
@@ -111,7 +111,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
         modelBuilder.Entity<AssetTemplate>(b =>
         {
             b.HasKey(t => t.Id);
-            b.HasQueryFilter(t => t.TenantId == CurrentTenantId);
+            b.HasQueryFilter(t => t.TenantId == CurrentTenantId || t.TenantId == null);
             
             // Un template code no es único solo por Tenant, sino por Code + TenantId + Version
             // Aunque si hacemos soft-delete o creamos nuevas versiones, Code se repite.

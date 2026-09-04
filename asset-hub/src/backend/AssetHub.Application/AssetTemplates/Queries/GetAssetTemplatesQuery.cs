@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AssetHub.Application.AssetTemplates.Queries;
 public record GetAssetTemplatesQuery(string? SearchTerm = null) : IRequest<List<AssetTemplateDto>>;
 
-public record AssetTemplateDto(Guid Id, Guid BusinessEntityTypeId, string Code, string Name, string Description, string SchemaJson, List<Guid> AllowedChildTemplateIds, LifecycleConfig LifecycleStates, string MaintenanceChecklist, int Version, bool IsActive);
+public record AssetTemplateDto(Guid Id, Guid BusinessEntityTypeId, string Code, string Name, string Description, string SchemaJson, List<Guid> AllowedChildTemplateIds, LifecycleConfig LifecycleStates, string MaintenanceChecklist, int Version, bool IsActive, bool IsSystemTemplate);
 
 public class GetAssetTemplatesQueryHandler : IRequestHandler<GetAssetTemplatesQuery, List<AssetTemplateDto>>
 {
@@ -30,7 +30,7 @@ public class GetAssetTemplatesQueryHandler : IRequestHandler<GetAssetTemplatesQu
         var tenantId = _tenantResolver.GetCurrentTenantId();
         
         var query = _dbContext.AssetTemplates
-            .Where(t => t.TenantId == tenantId && t.IsActive);
+            .Where(t => (t.TenantId == tenantId || t.TenantId == null) && t.IsActive);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -51,7 +51,8 @@ public class GetAssetTemplatesQueryHandler : IRequestHandler<GetAssetTemplatesQu
             t.LifecycleStates,
             t.MaintenanceChecklist,
             t.Version,
-            t.IsActive
+            t.IsActive,
+            !t.TenantId.HasValue
         )).ToList();
     }
 }

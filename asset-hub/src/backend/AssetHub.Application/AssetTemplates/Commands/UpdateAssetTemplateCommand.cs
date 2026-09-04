@@ -88,7 +88,7 @@ public class UpdateAssetTemplateCommandHandler : IRequestHandler<UpdateAssetTemp
         }
     }
 
-    private async Task ValidateCatalogsAsync(string schemaJson, Guid tenantId, CancellationToken cancellationToken)
+    private async Task ValidateCatalogsAsync(string schemaJson, Guid? tenantId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(schemaJson)) return;
         
