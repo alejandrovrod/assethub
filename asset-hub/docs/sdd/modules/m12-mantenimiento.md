@@ -354,3 +354,24 @@
 | `src/pages/maintenance/orders/components/maintenance-order-tasks-widget.tsx` | Widget de tareas hijas |
 | `src/App.tsx` | Ruta `/maintenance/orders` |
 | `src/components/layout/data/sidebar-data.ts` | Navegación "Órdenes" |
+
+---
+
+## 7. Subtareas (WorkTasks) y Notificaciones
+
+Se integró un sistema de tareas dependientes (`WorkTask`) y alertas vía correo electrónico (`SmtpEmailService`) para cerrar la brecha comunicacional.
+
+### Casos de uso
+| CU | Actor | Descripción |
+|---|---|---|
+| CU-12.1 | Jefe de Mantenimiento | Crea una orden y asigna múltiples subtareas (`WorkTasks`) a distintos técnicos desde el panel. |
+| CU-12.2 | Sistema (Email) | Dispara correo electrónico automático al técnico cuando se crea o asigna una orden/tarea a su nombre. |
+| CU-12.3 | Técnico | Recibe el correo y cambia el estado de su tarea individual a `done` sin afectar el resto de la orden hasta que todas terminen. |
+
+### Reglas de negocio
+- RN-12.8: Las notificaciones por correo (`WorkTaskCreatedEventHandler`, `MaintenanceOrderCreatedEventHandler`) se envían de forma asíncrona. Si el SMTP falla, no se debe hacer rollback de la creación de la tarea.
+- RN-12.9: La Orden de mantenimiento consolida el estado global, pero permite un seguimiento pormenorizado gracias a las WorkTasks.
+
+### Criterios de aceptación
+- CA-12.5: Given una creación de `WorkTask` asignada a un empleado, When la transacción finaliza, Then el servicio envía un email al correo del técnico asociado.
+- CA-12.6: Given un problema de conexión SMTP, When se asigna una orden, Then la orden se crea de forma exitosa en la base de datos y se loguea el error del email.

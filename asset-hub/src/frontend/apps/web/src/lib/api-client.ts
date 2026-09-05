@@ -12,6 +12,25 @@ export const apiClient = axios.create({
 
 import { useAuthStore } from '../store/auth.store'
 
+// Helper para extraer el tenant del subdominio
+const extractTenantFromUrl = () => {
+  if (typeof window === 'undefined') return null;
+  const hostname = window.location.hostname;
+  const parts = hostname.split('.');
+  
+  // Si estamos en localhost y tiene más de 1 parte (ej. coca-cola.localhost)
+  if (hostname.endsWith('localhost') && parts.length > 1) {
+    return parts[0];
+  }
+  
+  // Si estamos en producción y tiene 3 o más partes, omitiendo www (ej. coca-cola.assethub.com)
+  if (!hostname.endsWith('localhost') && parts.length >= 3 && parts[0] !== 'www') {
+    return parts[0];
+  }
+  
+  return null;
+}
+
 // Request Interceptor: Inyectar el token JWT y el Tenant
 apiClient.interceptors.request.use((config) => {
   const state = useAuthStore.getState()
@@ -19,8 +38,16 @@ apiClient.interceptors.request.use((config) => {
     if (state.token) {
       config.headers.Authorization = `Bearer ${state.token}`
     }
-    // Inject X-Tenant from state or fallback to 'demo' for local development
-    config.headers['X-Tenant'] = state.tenantSlug || 'demo'
+    
+    // Primero intentamos sacar el tenant de la URL (Subdominio)
+    const urlTenant = extractTenantFromUrl();
+    if (urlTenant) {
+      config.headers['X-Tenant'] = urlTenant
+    } 
+    // Si no hay subdominio (ej. estamos en localhost a secas), usamos el de la sesión
+    else if (state.tenantSlug) {
+      config.headers['X-Tenant'] = state.tenantSlug
+    }
   }
   return config
 })

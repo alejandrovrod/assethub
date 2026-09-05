@@ -35,5 +35,12 @@ public class TenantsController : ControllerBase
         });
     }
 
+    [HttpGet("check-slug")]
+    public async Task<IActionResult> CheckSlug([FromQuery] string slug)
+    {
+        var result = await _mediator.Send(new AssetHub.Application.Tenancy.Commands.CheckSlugCommand(slug));
+        return Ok(result);
+    }
+
     // PATCH /current and Onboarding step will go here
 }

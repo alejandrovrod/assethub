@@ -14,11 +14,33 @@ export interface LoginResponse {
   roles?: string[]
 }
 
+export interface SignUpTenantRequest {
+  orgName: string
+  slug: string
+  adminName: string
+  email: string
+  password: string
+  planCode: string
+}
+
+export interface SignUpTenantResponse {
+  tenantId: string
+  status: string
+}
+
 export const authService = {
   login: async (request: LoginRequest): Promise<LoginResponse> => {
     const { data } = await apiClient.post<LoginResponse>('/auth/login', request)
     return data
   },
   
-  // You can add refresh token logic here later
+  signUpTenant: async (request: SignUpTenantRequest): Promise<SignUpTenantResponse> => {
+    const { data } = await apiClient.post<SignUpTenantResponse>('/auth/signup-tenant', request)
+    return data
+  },
+
+  checkSlug: async (slug: string): Promise<{ available: boolean }> => {
+    const { data } = await apiClient.get<{ available: boolean }>(`/tenants/check-slug?slug=${slug}`)
+    return data
+  }
 }

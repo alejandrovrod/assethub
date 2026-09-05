@@ -353,15 +353,12 @@ export default function AssetsPage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                      {/* Si está buscando, mostrar quién es el padre explícitamente */}
-                      {isSearching && (
-                        <div className="mt-2 pt-2 border-t text-xs text-muted-foreground break-all">
-                          <span className="font-semibold">Padre:</span> {getParentName(asset.pathNames, asset.parentId)}
-                          {asset.pathNames && asset.pathNames !== '/' && (
-                            <div className="text-[10px] mt-1 opacity-70">Ruta completa: {asset.pathNames}</div>
-                          )}
-                        </div>
-                      )}
+                      <div className="mt-2 pt-2 border-t text-xs text-muted-foreground break-all">
+                        <span className="font-semibold">Padre:</span> {getParentName(asset.pathNames, asset.parentId)}
+                        {asset.pathNames && asset.pathNames !== '/' && (
+                          <div className="text-[10px] mt-1 opacity-70">Ruta completa: {asset.pathNames}</div>
+                        )}
+                      </div>
 
 
                     </div>
@@ -376,7 +373,7 @@ export default function AssetsPage() {
                         <TableHead>Nombre</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead>Salud Predictiva</TableHead>
-                        {isSearching && <TableHead>Padre</TableHead>}
+                        <TableHead>Padre</TableHead>
                         <TableHead>Hijos</TableHead>
                         <TableHead className="w-[80px] text-right">Acciones</TableHead>
                       </TableRow>
@@ -424,11 +421,9 @@ export default function AssetsPage() {
                               <span className="text-xs text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          {isSearching && (
-                            <TableCell className="text-xs text-muted-foreground">
-                              {getParentName(asset.pathNames, asset.parentId)}
-                            </TableCell>
-                          )}
+                          <TableCell className="text-xs text-muted-foreground">
+                            {getParentName(asset.pathNames, asset.parentId)}
+                          </TableCell>
                           <TableCell>
                             {asset.childrenCount > 0 ? (
                               <Badge variant="outline">{asset.childrenCount}</Badge>

@@ -53,7 +53,20 @@ export default function LoginPage() {
       });
       setAuth(data.accessToken, data.refreshToken, data.tenantSlug, data.tenantName, data.roles);
       toast.success("¡Bienvenido a AssetHub!");
-      navigate("/");
+      
+      const currentHost = window.location.hostname;
+      if (data.tenantSlug && currentHost === "localhost") {
+        const syncData = encodeURIComponent(JSON.stringify({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          tenantSlug: data.tenantSlug,
+          tenantName: data.tenantName,
+          roles: data.roles
+        }));
+        window.location.href = `http://${data.tenantSlug}.localhost:${window.location.port}/auth-sync?data=${syncData}`;
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       toast.error("Error al iniciar sesión. Verificá tus credenciales.");
     } finally {
@@ -102,6 +115,12 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
+          <div className="mt-4 text-center text-sm">
+            ¿No tenés una cuenta?{" "}
+            <a href="/signup" className="text-primary hover:underline">
+              Registrá tu empresa
+            </a>
+          </div>
         </CardContent>
       </Card>
     </main>

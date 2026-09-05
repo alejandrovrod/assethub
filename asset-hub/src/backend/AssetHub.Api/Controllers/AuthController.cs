@@ -36,6 +36,13 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(request);
         return Ok(new { success = result });
     }
+
+    [HttpPost("signup-tenant")]
+    public async Task<IActionResult> SignUpTenant([FromBody] AssetHub.Application.Tenancy.Commands.SignUpTenantCommand request)
+    {
+        var result = await _mediator.Send(request);
+        return Ok(result);
+    }
 }
 
 public class LoginRequest

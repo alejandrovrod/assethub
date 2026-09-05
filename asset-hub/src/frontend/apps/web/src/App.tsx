@@ -21,7 +21,10 @@ import CatalogsPage from "./pages/catalogs/index";
 import SettingsUsers from "./pages/settings/users";
 import SettingsRoles from "./pages/settings/roles";
 import SettingsTenant from "./pages/settings/tenant";
+import SignupPage from "./pages/SignupPage";
 import SettingsAudit from "./pages/settings/audit";
+import AuthSyncPage from "./pages/auth-sync";
+import LogoutSyncPage from "./pages/logout-sync";
 
 export default function App() {
   return (
@@ -60,6 +63,9 @@ export default function App() {
           </Route>
         </Route>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/auth-sync" element={<AuthSyncPage />} />
+        <Route path="/logout-sync" element={<LogoutSyncPage />} />
       </Routes>
       <Toaster />
     </ThemeProvider>

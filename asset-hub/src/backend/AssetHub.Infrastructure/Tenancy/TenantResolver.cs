@@ -65,12 +65,6 @@ public class TenantResolver : ITenantResolver
             {
                 var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
                 var tenant = db.Tenants.FirstOrDefault(t => t.Slug == slug);
-                if (tenant == null && slug == "demo")
-                {
-                    tenant = new Tenant { Name = "Demo Tenant", Slug = "demo", Status = TenantStatus.Active };
-                    db.Tenants.Add(tenant);
-                    db.SaveChanges();
-                }
                 return tenant;
             }
         });
