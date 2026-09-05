@@ -38,7 +38,9 @@ var connectionString = builder.Configuration.GetConnectionString("assethub");
 builder.Services.AddDbContext<PlatformDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IPlatformDbContext>(provider => provider.GetRequiredService<PlatformDbContext>());
 
-builder.Services.AddDbContext<TenantDbContext>(options => options.UseSqlServer(connectionString, x => x.UseNetTopologySuite()));
+builder.Services.AddDbContext<TenantDbContext>(options => options
+    .UseSqlServer(connectionString, x => x.UseNetTopologySuite())
+    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 builder.Services.AddScoped<ITenantDbContext>(provider => provider.GetRequiredService<TenantDbContext>());
 
 builder.Services.AddDbContext<SecurityDbContext>(options => options.UseSqlServer(connectionString));

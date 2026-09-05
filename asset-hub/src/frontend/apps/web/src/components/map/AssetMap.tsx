@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Maximize, Minimize } from 'lucide-react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -10,6 +10,8 @@ import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import { MapLegend } from './MapLegend'
+import { createColoredMarkerIcon } from './map-utils'
 
 const defaultIcon = L.icon({
   iconRetinaUrl,
@@ -31,6 +33,9 @@ interface AssetMapProps {
   onChange?: (lat?: number, lng?: number, geoJsonStr?: string) => void
   readOnly?: boolean
   assetName?: string
+  riskLevel?: 'Low' | 'Moderate' | 'High' | 'Critical'
+  assetState?: string
+  assetStateColor?: string
 }
 
 const DEFAULT_CENTER = { lat: 19.4326, lng: -99.1332 } // CDMX, adjust as needed
@@ -55,7 +60,7 @@ function MapResizer() {
   return null
 }
 
-function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange }: any) {
+function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange, assetStateColor }: any) {
   const map = useMap()
   const featureGroupRef = useRef<L.FeatureGroup>(new L.FeatureGroup())
   const isInitialized = useRef(false)
@@ -66,7 +71,13 @@ function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange }: any)
     map.addLayer(fg)
     
     if (!readOnly) {
-      map.pm.setGlobalOptions({ layerGroup: fg })
+      map.pm.setGlobalOptions({ 
+        layerGroup: fg,
+        pathOptions: {
+          color: assetStateColor || '#3388ff',
+          weight: 4
+        }
+      })
       map.pm.addControls({
         position: 'topleft',
         drawCircle: false,
@@ -99,13 +110,25 @@ function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange }: any)
     if (geoJson) {
       try {
         const parsed = JSON.parse(geoJson)
-        const layer = L.geoJSON(parsed)
+        const layer = L.geoJSON(parsed, {
+          pointToLayer: (feature, latlng) => {
+            return L.marker(latlng, {
+              icon: assetStateColor ? createColoredMarkerIcon(assetStateColor) : defaultIcon
+            })
+          },
+          style: {
+            color: assetStateColor || '#3388ff',
+            weight: 4
+          }
+        })
         layer.eachLayer(l => fg.addLayer(l))
       } catch (e) {
         console.error("Invalid geojson in AssetMap")
       }
     } else if (latitude != null && longitude != null) {
-      const marker = L.marker([latitude, longitude])
+      const marker = L.marker([latitude, longitude], {
+        icon: assetStateColor ? createColoredMarkerIcon(assetStateColor) : defaultIcon
+      })
       fg.addLayer(marker)
     }
 
@@ -183,12 +206,19 @@ function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange }: any)
   return null
 }
 
-export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = false, assetName }: AssetMapProps) {
+export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = false, assetName: _assetName, riskLevel, assetState, assetStateColor }: AssetMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const center = (latitude != null && longitude != null) 
     ? new L.LatLng(latitude, longitude) 
     : DEFAULT_CENTER
+
+  const riskBadgeStyles = {
+    Low: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
+    Moderate: 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400',
+    High: 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400',
+    Critical: 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+  }
 
   return (
     <div className={isFullscreen 
@@ -207,9 +237,22 @@ export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = fa
           longitude={longitude} 
           readOnly={readOnly} 
           onChange={onChange} 
+          assetStateColor={assetStateColor}
+        />
+        <MapLegend 
+          states={assetState ? [{ name: assetState, color: assetStateColor || '#3388ff' }] : []}
+          showRisk={true}
         />
       </MapContainer>
       
+      {riskLevel && (
+        <div className="absolute top-2 left-12 z-[400] pointer-events-none">
+          <div className={`px-2.5 py-1 rounded-md border text-xs font-semibold backdrop-blur-md shadow-sm ${riskBadgeStyles[riskLevel] || ''}`}>
+            Riesgo Predictivo: {riskLevel}
+          </div>
+        </div>
+      )}
+
       <button 
         onClick={(e) => {
           e.preventDefault()

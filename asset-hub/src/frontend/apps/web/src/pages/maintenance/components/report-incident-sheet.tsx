@@ -97,7 +97,8 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
 
   const { schema, uiSchema, isResolving } = useResolvedSchema(selectedTemplate?.schemaJson || '{}')
 
-  const { propagatedPropertiesJson } = usePropagatedProperties(assetId)
+  const effectiveAssetId = form.watch('assetId') || assetId
+  const { propagatedPropertiesJson } = usePropagatedProperties(effectiveAssetId)
 
   useEffect(() => {
     if (open) {
@@ -109,14 +110,51 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
         typeId: '00000000-0000-0000-0000-000000000000',
         priorityId: '00000000-0000-0000-0000-000000000000',
       })
-      
-      if (propagatedPropertiesJson) {
-        setSchemaData(JSON.parse(propagatedPropertiesJson))
-      } else {
-        setSchemaData({})
-      }
+      setSchemaData({})
     }
-  }, [open, form, assetId, propagatedPropertiesJson])
+  }, [open, form, assetId])
+
+  // Pre-fill schemaData when template schema or propagated properties are loaded
+  useEffect(() => {
+    if (!selectedTemplate?.schemaJson) return
+    try {
+      const templateSchema = JSON.parse(selectedTemplate.schemaJson)
+      if (!templateSchema.properties) return
+
+      const assetProps = propagatedPropertiesJson ? JSON.parse(propagatedPropertiesJson) : {}
+      const assetSchema = selectedAsset?.schemaJson ? JSON.parse(selectedAsset.schemaJson) : null
+
+      setSchemaData((prev: any) => {
+        const next = { ...prev }
+        for (const tKey of Object.keys(templateSchema.properties)) {
+          if (next[tKey] !== undefined && next[tKey] !== '') continue
+          const tProp = templateSchema.properties[tKey]
+
+          // 1. Direct key match
+          if (assetProps[tKey] !== undefined) {
+            next[tKey] = assetProps[tKey]
+            continue
+          }
+
+          // 2. Match by catalogCode or title from asset schema
+          if (assetSchema?.properties) {
+            for (const aKey of Object.keys(assetSchema.properties)) {
+              const aProp = assetSchema.properties[aKey]
+              const hasSameCatalog = tProp.catalogCode && aProp.catalogCode && tProp.catalogCode === aProp.catalogCode
+              const hasSameTitle = tProp.title && aProp.title && tProp.title.toLowerCase().trim() === aProp.title.toLowerCase().trim()
+              if ((hasSameCatalog || hasSameTitle) && assetProps[aKey] !== undefined) {
+                next[tKey] = assetProps[aKey]
+                break
+              }
+            }
+          }
+        }
+        return next
+      })
+    } catch (e) {
+      console.error('Error prefilling incident template properties', e)
+    }
+  }, [selectedTemplate, propagatedPropertiesJson, selectedAsset])
 
   const reportMutation = useMutation({
     mutationFn: incidentService.report,
@@ -134,11 +172,22 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
   })
 
   const onSubmit = (values: FormValues) => {
+    const filteredProps: Record<string, any> = {}
+    if (schema?.properties) {
+      for (const key of Object.keys(schema.properties)) {
+        if (schemaData[key] !== undefined) {
+          filteredProps[key] = schemaData[key]
+        }
+      }
+    } else {
+      Object.assign(filteredProps, schemaData)
+    }
+
     const payload = {
       ...values,
       typeId: values.typeId || '00000000-0000-0000-0000-000000000000',
       priorityId: values.priorityId || '00000000-0000-0000-0000-000000000000',
-      propertiesJson: Object.keys(schemaData).length > 0 ? JSON.stringify(schemaData) : undefined,
+      propertiesJson: Object.keys(filteredProps).length > 0 ? JSON.stringify(filteredProps) : undefined,
       targetAssetState,
       attachments: [],
     }

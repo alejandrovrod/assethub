@@ -19,6 +19,7 @@ public class Asset
     public ICollection<MaintenanceOrder> MaintenanceOrders { get; set; } = new List<MaintenanceOrder>();
     public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
     public ICollection<PreventivePlan> PreventivePlans { get; set; } = new List<PreventivePlan>();
+    public ICollection<AssetHealthPrediction> HealthPredictions { get; set; } = new List<AssetHealthPrediction>();
     public Guid AssetTemplateId { get; set; }
     public AssetTemplate? AssetTemplate { get; set; }
 

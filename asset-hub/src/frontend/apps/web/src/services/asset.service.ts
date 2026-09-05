@@ -25,6 +25,11 @@ export interface Asset {
   assetTemplate?: AssetTemplate
   childrenCount: number
   lifecycleStates?: any // Or import LifecycleConfig and use it
+
+  // Health Prediction
+  healthRiskLevel?: 'Low' | 'Moderate' | 'High' | 'Critical'
+  healthRiskProbability?: number
+  healthPredictedFailureDays?: number
 }
 
 export interface AssetSummaryDto {
@@ -195,5 +200,23 @@ export const assetService = {
   moveAsset: async (id: string, newParentId: string | null) => {
     const { data } = await apiClient.patch(`/assets/${id}/move`, { newParentId })
     return data
+  },
+
+  getHealthForecast: async (id: string): Promise<AssetHealthForecast | null> => {
+    try {
+      const { data } = await apiClient.get<AssetHealthForecast>(`/assets/${id}/health-forecast`)
+      return data
+    } catch {
+      return null
+    }
   }
+}
+
+export interface AssetHealthForecast {
+  assetId: string
+  riskProbability: number
+  riskLevel: 'Low' | 'Moderate' | 'High' | 'Critical'
+  predictedFailureDays?: number
+  topFeatureContributionsJson?: string
+  createdAt: string
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -121,7 +122,30 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
         
         if (!string.IsNullOrWhiteSpace(request.PropertiesJson))
         {
-            incident.PropertiesJson = request.PropertiesJson;
+            try
+            {
+                var existingNode = !string.IsNullOrWhiteSpace(incident.PropertiesJson) 
+                    ? JsonNode.Parse(incident.PropertiesJson) as JsonObject 
+                    : null;
+                var updateNode = JsonNode.Parse(request.PropertiesJson) as JsonObject;
+
+                if (existingNode != null && updateNode != null)
+                {
+                    foreach (var kvp in updateNode)
+                    {
+                        existingNode[kvp.Key] = kvp.Value?.DeepClone();
+                    }
+                    incident.PropertiesJson = existingNode.ToJsonString();
+                }
+                else
+                {
+                    incident.PropertiesJson = request.PropertiesJson;
+                }
+            }
+            catch
+            {
+                incident.PropertiesJson = request.PropertiesJson;
+            }
         }
 
         if (request.TargetState == IncidentStates.Resolved)

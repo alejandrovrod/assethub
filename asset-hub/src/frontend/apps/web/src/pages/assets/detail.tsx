@@ -12,7 +12,6 @@ import { employeeService } from '@/services/employee.service'
 import { teamService } from '@/services/team.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
@@ -20,8 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import Form from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
-import { Pencil, Check, X } from 'lucide-react'
+import { Pencil, Check, X, Cpu, Info } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { handleServerError } from '@/lib/handle-server-error'
@@ -58,6 +58,12 @@ export default function AssetDetailPage() {
   const { data: asset, isLoading } = useQuery({
     queryKey: ['asset', id],
     queryFn: () => assetService.getAssetById(id!),
+    enabled: !!id
+  })
+
+  const { data: forecast } = useQuery({
+    queryKey: ['asset-health-forecast', id],
+    queryFn: () => assetService.getHealthForecast(id!),
     enabled: !!id
   })
 
@@ -290,6 +296,23 @@ export default function AssetDetailPage() {
                 <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined} className="shrink-0">
                   {asset.state}
                 </Badge>
+                {forecast && (
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-semibold shrink-0 ${
+                      forecast.riskLevel === 'Critical'
+                        ? 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+                        : forecast.riskLevel === 'High'
+                        ? 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400'
+                        : forecast.riskLevel === 'Moderate'
+                        ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400'
+                        : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
+                    }`}
+                    title={`Pronóstico XGBoost: ${forecast.riskLevel} (${(forecast.riskProbability * 100).toFixed(0)}% de riesgo)`}
+                  >
+                    Salud: {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
+                  </Badge>
+                )}
                 <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8 shrink-0">
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -401,12 +424,80 @@ export default function AssetDetailPage() {
         {/* LEFT COL - MAIN DATA */}
         <div className="md:col-span-2 flex flex-col gap-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="details">Detalles</TabsTrigger>
-              <TabsTrigger value="map">Ubicación</TabsTrigger>
-              <TabsTrigger value="timeline">Bitácora</TabsTrigger>
-              <TabsTrigger value="hierarchy">Jerarquía</TabsTrigger>
-            </TabsList>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <TabsList className="w-fit">
+                <TabsTrigger value="details">Detalles</TabsTrigger>
+                <TabsTrigger value="map">Ubicación</TabsTrigger>
+                <TabsTrigger value="timeline">Bitácora</TabsTrigger>
+                <TabsTrigger value="hierarchy">Jerarquía</TabsTrigger>
+              </TabsList>
+
+              {forecast && (
+                <div className="flex items-center gap-2.5 bg-card border rounded-lg px-3 py-1.5 shadow-sm text-xs justify-between sm:justify-end flex-wrap">
+                  <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                    <Cpu className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="hidden xl:inline">Salud Predictiva:</span>
+                    <span className="xl:hidden">Salud:</span>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-semibold shrink-0 ${
+                        forecast.riskLevel === 'Critical'
+                          ? 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+                          : forecast.riskLevel === 'High'
+                          ? 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400'
+                          : forecast.riskLevel === 'Moderate'
+                          ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400'
+                          : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
+                      }`}
+                    >
+                      {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 border-l pl-2.5 border-border/60">
+                    <span className="text-muted-foreground hidden sm:inline">Falla:</span>
+                    <span className="font-medium text-foreground">
+                      {forecast.predictedFailureDays != null
+                        ? (forecast.predictedFailureDays >= 365
+                            ? 'Más de 1 año'
+                            : `~${forecast.predictedFailureDays}d`)
+                        : 'Estable'}
+                    </span>
+                  </div>
+
+                  {(() => {
+                    let factors: Array<{ description: string }> = []
+                    if (forecast.topFeatureContributionsJson) {
+                      try {
+                        factors = JSON.parse(forecast.topFeatureContributionsJson)
+                      } catch {}
+                    }
+                    if (factors.length === 0) return null
+
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-1 border-l pl-2.5 border-border/60">
+                              <Info className="h-3.5 w-3.5 opacity-70" />
+                              <span className="underline underline-offset-2 decoration-dotted text-[11px] hidden sm:inline">Factores</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs text-xs p-3">
+                            <p className="font-semibold mb-1 text-primary-foreground">Factores de riesgo identificados:</p>
+                            <ul className="list-disc list-inside space-y-1 text-primary-foreground/80 text-[11px]">
+                              {factors.map((f, idx) => (
+                                <li key={idx}>{f.description}</li>
+                              ))}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )
+                  })()}
+                </div>
+              )}
+            </div>
             
             <TabsContent value="details" className="flex flex-col gap-6">
               <Card>
@@ -495,6 +586,9 @@ export default function AssetDetailPage() {
                   longitude={asset.longitude} 
                   geoJson={asset.geoJson}
                   assetName={asset.name}
+                  riskLevel={forecast?.riskLevel}
+                  assetState={asset.state}
+                  assetStateColor={asset.stateColor}
                   onChange={(lat, lng, geoJsonStr) => {
                     updateMutation.mutate({ latitude: lat, longitude: lng, geoJson: geoJsonStr })
                   }}
@@ -608,7 +702,7 @@ export default function AssetDetailPage() {
 
         {/* RIGHT COL */}
         <div className="flex flex-col gap-6 md:mt-[56px]">
-          <Accordion type="single" collapsible className="w-full space-y-4">
+          <Accordion type="single" collapsible defaultValue="incidents" className="w-full space-y-4">
             <AccordionItem value="incidents" className="border rounded-lg bg-card text-card-foreground shadow-sm">
               <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
                 Incidencias activas

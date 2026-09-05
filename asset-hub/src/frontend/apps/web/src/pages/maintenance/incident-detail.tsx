@@ -177,8 +177,19 @@ export default function IncidentDetailPage() {
 
   const handleStateClick = (targetState: string) => {
     const targetConfig = lifecycleConfig?.states?.[targetState]
-    if (targetConfig?.requiresFields && targetConfig.requiresFields.length > 0) {
+    const requiredFields = targetConfig?.requiresFields || []
+    const customSchemaFields = Object.keys(targetConfig?.propertiesSchema?.properties || {})
+    const allTransitionFields = Array.from(new Set([...requiredFields, ...customSchemaFields]))
+
+    if (allTransitionFields.length > 0) {
       setPendingTargetState(targetState)
+      const initialTransitionData: Record<string, any> = {}
+      for (const field of allTransitionFields) {
+        if (formData[field] !== undefined) {
+          initialTransitionData[field] = formData[field]
+        }
+      }
+      setTransitionData(initialTransitionData)
       setTransitionDialogOpen(true)
     } else {
       stateMutation.mutate({ targetState })
@@ -300,12 +311,12 @@ export default function IncidentDetailPage() {
                       <div className="text-sm text-muted-foreground italic">Resolviendo catálogos...</div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {Object.keys(formData).length === 0 && (
+                        {Object.keys((schema as any)?.properties || {}).length === 0 && (
                           <p className="text-muted-foreground text-sm italic col-span-full">
                             No hay atributos configurados.
                           </p>
                         )}
-                        {Object.keys(formData).map(key => {
+                        {Object.keys((schema as any)?.properties || {}).map(key => {
                           const { title, value, isDataUrl, valuesArray } = formatDynamicField(key, formData[key])
                           
                           return (

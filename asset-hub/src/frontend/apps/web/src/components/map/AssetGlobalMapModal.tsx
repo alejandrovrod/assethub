@@ -8,20 +8,13 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Asset } from '@/services/asset.service'
 import { Badge } from '@/components/ui/badge'
+import { MapLegend } from './MapLegend'
+import { createColoredMarkerIcon } from './map-utils'
 
-const customIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41]
-})
+// No longer need default customIcon since we use createColoredMarkerIcon
 
 interface AssetGlobalMapModalProps {
   open: boolean
@@ -87,13 +80,32 @@ function MapResizer({ mapAssets }: { mapAssets: any[] }) {
 }
 
 export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalMapModalProps) {
-  // Activos con coordenadas o geoJson válido
-  const mapAssets = assets?.filter(a => (a.latitude != null && a.longitude != null) || a.geoJson) || []
+  const [hiddenStates, setHiddenStates] = useState<string[]>([])
+  const [hiddenRisks, setHiddenRisks] = useState<string[]>([])
+
+  // Activos con coordenadas o geoJson válido (lista completa original)
+  const allMapAssets = assets?.filter(a => (a.latitude != null && a.longitude != null) || a.geoJson) || []
 
   // Calcular centro basado en los activos, o default si no hay
-  const center = mapAssets.length > 0 
-    ? { lat: mapAssets[0].latitude!, lng: mapAssets[0].longitude! }
+  const center = allMapAssets.length > 0 
+    ? { lat: allMapAssets[0].latitude!, lng: allMapAssets[0].longitude! }
     : DEFAULT_CENTER
+
+  const uniqueStates = Array.from(
+    new Map(
+      assets
+        .filter(a => a.state && a.stateColor)
+        .map(a => [a.state, { name: a.state, color: a.stateColor! }])
+    ).values()
+  )
+
+  // Aplicar filtros locales (estados ocultos y riesgos ocultos)
+  const mapAssets = allMapAssets.filter(a => {
+    if (a.state && hiddenStates.includes(a.state)) return false
+    const risk = a.healthRiskLevel || 'None'
+    if (hiddenRisks.includes(risk)) return false
+    return true
+  })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,6 +117,14 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
           {open && ( // Solo renderizar el mapa cuando el modal está abierto para evitar bugs de dimensiones
             <MapContainer center={center} zoom={DEFAULT_ZOOM} scrollWheelZoom={true} className="h-full w-full z-0">
               <MapResizer mapAssets={mapAssets} />
+              <MapLegend 
+                states={uniqueStates} 
+                showRisk={true} 
+                hiddenStates={hiddenStates}
+                onStateToggle={(s) => setHiddenStates(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                hiddenRisks={hiddenRisks}
+                onRiskToggle={(r) => setHiddenRisks(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r])}
+              />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -118,7 +138,7 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
                 }
 
                 const popupContent = (
-                  <div className="flex flex-col gap-2 p-1">
+                  <div className="flex flex-col gap-2 p-1 min-w-[220px]">
                     <div className="font-semibold text-base">{asset.name}</div>
                     <div className="text-sm text-muted-foreground">{asset.code}</div>
                     <div>
@@ -129,11 +149,47 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
                         {asset.state}
                       </Badge>
                     </div>
+
+                    {asset.healthRiskLevel && (
+                      <div className="mt-2 flex flex-col gap-1 border-t pt-2">
+                        <div className="text-xs font-semibold">Salud Predictiva</div>
+                        <div className="text-xs text-muted-foreground flex justify-between items-center">
+                          <span>Nivel de Riesgo:</span>
+                          <span className={`px-1.5 py-0.5 rounded border font-semibold ${
+                            {
+                              Low: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
+                              Moderate: 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400',
+                              High: 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400',
+                              Critical: 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+                            }[asset.healthRiskLevel] || ''
+                          }`}>
+                            {asset.healthRiskLevel}
+                          </span>
+                        </div>
+                        {asset.healthRiskProbability != null && (
+                          <div className="text-xs text-muted-foreground flex justify-between">
+                            <span>Probabilidad de Falla:</span>
+                            <span className="font-medium text-foreground">
+                              {(asset.healthRiskProbability * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        )}
+                        {asset.healthPredictedFailureDays != null && (
+                          <div className="text-xs text-muted-foreground flex justify-between">
+                            <span>Falla Estimada:</span>
+                            <span className="font-medium text-foreground">
+                              {asset.healthPredictedFailureDays} días
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <a 
                       href={`/assets/${asset.id}`} 
                       target="_blank" 
                       rel="noreferrer"
-                      className="text-xs text-blue-600 hover:underline mt-2 inline-block"
+                      className="text-xs text-blue-600 hover:underline mt-2 inline-block text-right w-full"
                     >
                       Abrir detalle →
                     </a>
@@ -154,7 +210,7 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
                         <Popup minWidth={200}>{popupContent}</Popup>
                       </GeoJSON>
                     )}
-                    <Marker position={latLng} icon={customIcon}>
+                    <Marker position={latLng} icon={createColoredMarkerIcon(asset.stateColor || '#3388ff')}>
                       <Popup minWidth={200}>
                         {popupContent}
                       </Popup>

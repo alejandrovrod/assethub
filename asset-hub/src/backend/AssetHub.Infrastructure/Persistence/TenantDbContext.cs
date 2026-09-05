@@ -34,6 +34,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Assets.AssetAttachment> AssetAttachments { get; set; } = null!;
     public DbSet<AssetHub.Domain.Assets.AssetLifecycleEvent> AssetLifecycleEvents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Assets.AssetAttributeValue> AssetAttributeValues { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Assets.AssetHealthPrediction> AssetHealthPredictions { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; set; } = null!;
@@ -149,6 +150,17 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasMany(a => a.MaintenanceOrders).WithOne(m => m.Asset).HasForeignKey(m => m.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(a => a.WorkTasks).WithOne(t => t.Asset).HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(a => a.PreventivePlans).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.HealthPredictions).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Assets.AssetHealthPrediction>(b =>
+        {
+            b.HasKey(p => p.Id);
+            b.HasQueryFilter(p => p.TenantId == CurrentTenantId);
+            b.HasIndex(p => new { p.TenantId, p.AssetId });
+            b.HasIndex(p => p.CreatedAt);
+            b.Property(p => p.RiskProbability).HasPrecision(5, 4);
+            b.Property(p => p.RiskLevel).HasMaxLength(50);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Assets.AssetAttachment>(b =>

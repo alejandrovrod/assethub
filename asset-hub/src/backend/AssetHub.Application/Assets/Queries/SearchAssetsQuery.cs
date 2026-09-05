@@ -15,7 +15,25 @@ public record SearchAssetsQuery(string? SearchTerm, Guid? TemplateId, string? St
 
 public record AssetSummaryDto(Guid Id, string Code, string Name, string State, string? StateColor);
 
-public record AssetDto(Guid Id, Guid TemplateId, Guid? ParentId, string Path, string PathNames, string Code, string Name, string State, string? StateColor, decimal? ConditionIndex, int ChildrenCount, double? Latitude, double? Longitude, string? GeoJson);
+public record AssetDto(
+    Guid Id, 
+    Guid TemplateId, 
+    Guid? ParentId, 
+    string Path, 
+    string PathNames, 
+    string Code, 
+    string Name, 
+    string State, 
+    string? StateColor, 
+    decimal? ConditionIndex, 
+    int ChildrenCount, 
+    double? Latitude, 
+    double? Longitude, 
+    string? GeoJson,
+    string? HealthRiskLevel = null,
+    decimal? HealthRiskProbability = null,
+    int? HealthPredictedFailureDays = null
+);
 
 public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, PagedResult<AssetDto>>
 {
@@ -117,6 +135,25 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, Paged
             .Where(a => pathIds.Contains(a.Id))
             .ToDictionaryAsync(a => a.Id, a => a.Name, cancellationToken);
 
+        // Fetch predictions for the matched assets
+        var predictions = new Dictionary<Guid, (string RiskLevel, decimal RiskProbability, int? PredictedFailureDays)>();
+        if (matchedIds.Any())
+        {
+            var rawPreds = await _dbContext.AssetHealthPredictions
+                .Where(p => matchedIds.Contains(p.AssetId))
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new { p.AssetId, p.RiskLevel, p.RiskProbability, p.PredictedFailureDays })
+                .ToListAsync(cancellationToken);
+
+            foreach (var p in rawPreds)
+            {
+                if (!predictions.ContainsKey(p.AssetId))
+                {
+                    predictions[p.AssetId] = (p.RiskLevel, p.RiskProbability, p.PredictedFailureDays);
+                }
+            }
+        }
+
         var geoJsonWriter = new GeoJsonWriter();
 
         var dtos = assets.Select(a => {
@@ -142,6 +179,17 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, Paged
                 geoJsonStr = geoJsonWriter.Write(a.Geo);
             }
 
+            string? predRiskLevel = null;
+            decimal? predRiskProbability = null;
+            int? predPredictedFailureDays = null;
+
+            if (predictions.TryGetValue(a.Id, out var pred))
+            {
+                predRiskLevel = pred.RiskLevel;
+                predRiskProbability = pred.RiskProbability;
+                predPredictedFailureDays = pred.PredictedFailureDays;
+            }
+
             return new AssetDto(
                 a.Id,
                 a.AssetTemplateId,
@@ -156,7 +204,10 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, Paged
                 childrenCount,
                 a.Geo?.Coordinate?.Y, // Y is Latitude in standard GIS, or X depending on how it was stored. Usually Y=Lat, X=Lng.
                 a.Geo?.Coordinate?.X,
-                geoJsonStr
+                geoJsonStr,
+                predRiskLevel,
+                predRiskProbability,
+                predPredictedFailureDays
             );
         }).ToList();
 

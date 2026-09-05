@@ -190,6 +190,21 @@ public class AssetsController : ControllerBase
         var result = await _mediator.Send(new GetAssetsNearbyQuery(lon, lat, radius));
         return Ok(result);
     }
+
+    [HttpPost("predictions/batch")]
+    public async Task<IActionResult> RecordPredictionBatch([FromBody] RecordAssetPredictionBatchCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return Ok(new { Processed = result });
+    }
+
+    [HttpGet("{id}/health-forecast")]
+    public async Task<IActionResult> GetHealthForecast(Guid id)
+    {
+        var result = await _mediator.Send(new GetAssetHealthForecastQuery(id));
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
 }
 
 public class AdvancedSearchRequest

@@ -5,6 +5,11 @@ import { customizeValidator } from '@rjsf/validator-ajv8'
 // the strict "data-url" format validation will fail if we don't relax it.
 export const customValidator = customizeValidator({
   customFormats: {
-    'data-url': /^(data:|http:|https:|\/)/
+    'data-url': /^(data:|http:|https:|\/)/,
+    employee: () => true,
+    team: () => true,
+  },
+  ajvOptionsOverrides: {
+    strict: false,
   }
 })

@@ -5,7 +5,7 @@ import { assetService, Asset } from '@/services/asset.service'
 import { assetTemplateService, AssetTemplate } from '@/services/asset-template.service'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Filter, LayoutGrid, List } from 'lucide-react'
+import { Plus, Trash2, Filter, LayoutGrid, List, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import { AssetFormSheet } from './components/asset-form-sheet'
 import { AssetGlobalMapModal } from '@/components/map/AssetGlobalMapModal'
@@ -15,9 +15,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+const riskLabels: Record<string, string> = {
+  Low: 'Bajo',
+  Moderate: 'Moderado',
+  High: 'Alto',
+  Critical: 'Crítico'
+}
+
+const riskBadgeStyles: Record<string, string> = {
+  Low: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
+  Moderate: 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400',
+  High: 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400',
+  Critical: 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+}
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Table,
   TableBody,
@@ -53,6 +66,13 @@ export default function AssetsPage() {
   const [pageSize, setPageSize] = useState(10)
 
   const isSearching = searchTerm.trim().length > 0 || Object.keys(catalogFilters).length > 0
+
+  const getParentName = (pathNames?: string, parentId?: string) => {
+    if (!parentId) return 'Ninguno (Raíz)'
+    if (!pathNames || pathNames === '/') return '-'
+    const parts = pathNames.split('/').filter(Boolean)
+    return parts.length > 1 ? parts[parts.length - 2] : '-'
+  }
 
   useEffect(() => {
     setPage(1)
@@ -258,7 +278,7 @@ export default function AssetsPage() {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h4 className="font-semibold">{asset.name}</h4>
                             {asset.state && (
                               <Badge
@@ -267,6 +287,26 @@ export default function AssetsPage() {
                                 style={asset.stateColor ? { backgroundColor: asset.stateColor, color: '#fff' } : undefined}
                               >
                                 {asset.state}
+                              </Badge>
+                            )}
+                            {asset.healthRiskLevel && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] px-1.5 py-0 font-semibold shrink-0 inline-flex items-center gap-1",
+                                  riskBadgeStyles[asset.healthRiskLevel] || riskBadgeStyles.Low
+                                )}
+                                title={
+                                  asset.healthPredictedFailureDays != null
+                                    ? `Falla estimada: ${asset.healthPredictedFailureDays >= 365 ? 'Más de 1 año (Óptimo)' : `${asset.healthPredictedFailureDays} días`}`
+                                    : undefined
+                                }
+                              >
+                                <Activity className="h-2.5 w-2.5" />
+                                <span>Salud {riskLabels[asset.healthRiskLevel] || asset.healthRiskLevel}</span>
+                                {asset.healthRiskProbability != null && (
+                                  <span className="opacity-80">({(asset.healthRiskProbability * 100).toFixed(0)}%)</span>
+                                )}
                               </Badge>
                             )}
                           </div>
@@ -313,11 +353,13 @@ export default function AssetsPage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                      {/* Si está buscando y tiene padre, mostrar quién es el padre explícitamente */}
-                      {isSearching && asset.pathNames && asset.pathNames !== '/' && (
+                      {/* Si está buscando, mostrar quién es el padre explícitamente */}
+                      {isSearching && (
                         <div className="mt-2 pt-2 border-t text-xs text-muted-foreground break-all">
-                          <span className="font-semibold">Padre:</span> {asset.pathNames.split('/').filter(Boolean).slice(-1)[0]}
-                          <div className="text-[10px] mt-1 opacity-70">Ruta completa: {asset.pathNames}</div>
+                          <span className="font-semibold">Padre:</span> {getParentName(asset.pathNames, asset.parentId)}
+                          {asset.pathNames && asset.pathNames !== '/' && (
+                            <div className="text-[10px] mt-1 opacity-70">Ruta completa: {asset.pathNames}</div>
+                          )}
                         </div>
                       )}
 
@@ -333,7 +375,8 @@ export default function AssetsPage() {
                         <TableHead>Código</TableHead>
                         <TableHead>Nombre</TableHead>
                         <TableHead>Estado</TableHead>
-                        {isSearching && <TableHead>Ruta (Padre)</TableHead>}
+                        <TableHead>Salud Predictiva</TableHead>
+                        {isSearching && <TableHead>Padre</TableHead>}
                         <TableHead>Hijos</TableHead>
                         <TableHead className="w-[80px] text-right">Acciones</TableHead>
                       </TableRow>
@@ -357,9 +400,33 @@ export default function AssetsPage() {
                               </Badge>
                             )}
                           </TableCell>
+                          <TableCell>
+                            {asset.healthRiskLevel ? (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-xs font-semibold inline-flex items-center gap-1.5",
+                                  riskBadgeStyles[asset.healthRiskLevel] || riskBadgeStyles.Low
+                                )}
+                                title={
+                                  asset.healthPredictedFailureDays != null
+                                    ? `Falla estimada: ${asset.healthPredictedFailureDays >= 365 ? 'Más de 1 año (Óptimo)' : `${asset.healthPredictedFailureDays} días`}`
+                                    : undefined
+                                }
+                              >
+                                <Activity className="h-3 w-3 shrink-0" />
+                                <span>{riskLabels[asset.healthRiskLevel] || asset.healthRiskLevel}</span>
+                                {asset.healthRiskProbability != null && (
+                                  <span className="opacity-80">({(asset.healthRiskProbability * 100).toFixed(0)}%)</span>
+                                )}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
                           {isSearching && (
                             <TableCell className="text-xs text-muted-foreground">
-                              {asset.pathNames && asset.pathNames !== '/' ? asset.pathNames.split('/').filter(Boolean).slice(-1)[0] : '-'}
+                              {getParentName(asset.pathNames, asset.parentId)}
                             </TableCell>
                           )}
                           <TableCell>
