@@ -11,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { Card } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertTriangle, Tag, Box, ClipboardList } from 'lucide-react'
 import { incidentService } from '@/services/incident.service'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
@@ -256,7 +255,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
               )}
             />
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {!hideAssetSelector ? (
                 <FormField
                   control={form.control}

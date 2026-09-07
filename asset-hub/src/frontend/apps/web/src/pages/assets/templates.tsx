@@ -81,14 +81,14 @@ export default function AssetsTemplates() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
       <Card className="flex flex-1 flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
           <div>
             <CardTitle>Plantillas de Activos</CardTitle>
-            <CardDescription>
+            <CardDescription className="mt-1.5">
               Gestioná las plantillas (esquemas y ciclo de vida) para los distintos tipos de activos.
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <SystemTemplateLibraryModal />
             <Button size="icon" onClick={handleCreate} title="Crear plantilla desde cero">
               <Plus className="h-4 w-4" />
@@ -96,7 +96,7 @@ export default function AssetsTemplates() {
           </div>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-auto">
             {isLoading ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -106,8 +106,9 @@ export default function AssetsTemplates() {
                 <p className="text-muted-foreground mb-4">No hay plantillas registradas.</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[800px]">
+                  <TableHeader>
                   <TableRow>
                     <TableHead className="w-[120px]">Código</TableHead>
                     <TableHead>Nombre</TableHead>
@@ -168,12 +169,13 @@ export default function AssetsTemplates() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
-          </ScrollArea>
+          </div>
           {/* Pagination Controls */}
           {!isLoading && (
-            <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border px-4 py-3 shrink-0">
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                 <span className="text-sm text-muted-foreground">
                   Total: {totalCount} plantillas
                 </span>

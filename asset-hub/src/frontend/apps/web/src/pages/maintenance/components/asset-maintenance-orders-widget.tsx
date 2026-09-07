@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, AlertCircle } from 'lucide-react'
 import { maintenanceOrderService, STATE_LABELS, KIND_LABELS } from '@/services/maintenance-order.service'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'

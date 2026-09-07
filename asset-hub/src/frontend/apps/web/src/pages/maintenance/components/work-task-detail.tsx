@@ -3,8 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   X,
   Calendar,
-  User,
-  Users,
   History,
   MessageSquare,
   Package,
@@ -19,8 +17,6 @@ import {
 import { workTaskService, WorkTaskState, CreateWorkTaskRequest, WorkTaskSummary, STATE_LABELS } from '@/services/work-task.service'
 import { PropagatedPropertiesDisplay } from './propagated-properties-display'
 import { catalogService } from '@/services/catalog.service'
-import { AsyncCombobox } from '@/components/ui/async-combobox'
-import { apiClient as api } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -66,11 +62,6 @@ interface WorkTaskDetailProps {
   onClose: () => void
 }
 
-interface TeamOption {
-  id: string
-  name: string
-}
-
 export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('details')
@@ -108,7 +99,6 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const [taskTypeCatalogItemId, setTaskTypeCatalogItemId] = useState('')
   const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
   const [assignedTeamId, setAssignedTeamId] = useState('')
-  const [assignedTeamName, setAssignedTeamName] = useState('')
 
   useEffect(() => {
     if (detail) {
@@ -119,7 +109,6 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
       setTaskTypeCatalogItemId(detail.taskTypeCatalogItemId)
       setAssignedEmployeeId(detail.assignedEmployeeId || '')
       setAssignedTeamId(detail.assignedTeamId || '')
-      setAssignedTeamName(task.assignedTeamName || '')
       if (detail.propertiesJson) {
         setPropertiesJson(detail.propertiesJson)
       }

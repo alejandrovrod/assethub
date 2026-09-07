@@ -11,10 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { DatePicker } from '@/components/date-picker'
-import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
-import { Loader2, Users, Box, AlertTriangle, CalendarDays, FileText, ClipboardList } from 'lucide-react'
+import { Loader2, Box, AlertTriangle, CalendarDays, FileText, ClipboardList } from 'lucide-react'
 import { workTaskService, type WorkTaskSummary, type CreateWorkTaskRequest } from '@/services/work-task.service'
 import { catalogService, type CatalogItem } from '@/services/catalog.service'
 import { assetService } from '@/services/asset.service'
@@ -22,12 +21,8 @@ import { preventivePlanService } from '@/services/preventive-plan.service'
 import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
 import { PropagatedPropertiesDisplay } from './propagated-properties-display'
 
-import { apiClient as api } from '@/lib/api-client'
-
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
 const PRIORITY_CATALOG_CODE = 'priority'
-
-interface TeamOption { id: string; name: string }
 
 const formSchema = z.object({
   title: z.string().min(1, 'El título es requerido').max(200),
@@ -68,7 +63,6 @@ function toIsoDate(date: Date | undefined): string | undefined {
 export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!task
-  const [assignedTeamName, setAssignedTeamName] = useState(task?.assignedTeamName ?? '')
   const [propertiesJson, setPropertiesJson] = useState((task as any)?.propertiesJson || prefill?.propertiesJson || '{}')
 
   const { data: taskTypes } = useQuery({
@@ -141,7 +135,6 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
       })
       if ((task as any).propertiesJson) setPropertiesJson((task as any).propertiesJson)
     } else {
-      setAssignedTeamName('')
       setPropertiesJson(prefill?.propertiesJson && prefill.propertiesJson !== '{}' ? prefill.propertiesJson : (propagatedPropertiesJson || '{}'))
       form.reset({
         title: '',

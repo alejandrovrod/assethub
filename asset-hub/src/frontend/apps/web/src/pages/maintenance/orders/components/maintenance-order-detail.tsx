@@ -129,17 +129,20 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   })
 
   const stateMutation = useMutation({
-    mutationFn: (action: 'approve' | 'schedule' | 'verify' | 'start' | 'complete' | 'cancel' | 'reject') => {
-      if (action === 'approve') return maintenanceOrderService.approve(order.id)
-      if (action === 'verify') return maintenanceOrderService.verify(order.id)
-      if (action === 'reject') return maintenanceOrderService.reject(order.id, Array.from(checkedTaskIds))
-      if (action === 'start') return maintenanceOrderService.start(order.id)
-      if (action === 'complete') return maintenanceOrderService.complete(order.id)
-      if (action === 'cancel') return maintenanceOrderService.cancel(order.id)
-      if (action === 'schedule') return maintenanceOrderService.schedule(order.id, {
-        scheduledStart: scheduledStart ? new Date(scheduledStart).toISOString() : order.scheduledStart,
-        scheduledEnd: scheduledEnd ? new Date(scheduledEnd).toISOString() : order.scheduledEnd,
-      })
+    mutationFn: async (action: 'approve' | 'schedule' | 'verify' | 'start' | 'complete' | 'cancel' | 'reject') => {
+      switch (action) {
+        case 'approve': return await maintenanceOrderService.approve(order.id)
+        case 'verify': return await maintenanceOrderService.verify(order.id)
+        case 'reject': return await maintenanceOrderService.reject(order.id, Array.from(checkedTaskIds))
+        case 'start': return await maintenanceOrderService.start(order.id)
+        case 'complete': return await maintenanceOrderService.complete(order.id)
+        case 'cancel': return await maintenanceOrderService.cancel(order.id)
+        case 'schedule': return await maintenanceOrderService.schedule(order.id, {
+          scheduledStart: scheduledStart ? new Date(scheduledStart).toISOString() : order.scheduledStart,
+          scheduledEnd: scheduledEnd ? new Date(scheduledEnd).toISOString() : order.scheduledEnd,
+        })
+        default: throw new Error(`Acción no soportada: ${action}`)
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })

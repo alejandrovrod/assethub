@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router'
+import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/store/auth.store'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
@@ -9,7 +9,6 @@ interface SignOutDialogProps {
 
 export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
-  const location = useLocation()
   const logout = useAuthStore(state => state.logout)
 
   const handleSignOut = () => {
@@ -28,9 +27,10 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title='Sign out'
-      desc='Are you sure you want to sign out? You will need to sign in again to access your account.'
-      confirmText='Sign out'
+      title='Cerrar sesión'
+      desc='¿Estás seguro que deseas cerrar sesión? Deberás iniciar sesión nuevamente para acceder a tu cuenta.'
+      confirmText='Cerrar sesión'
+      cancelBtnText='Cancelar'
       destructive
       handleConfirm={handleSignOut}
       className='sm:max-w-sm'

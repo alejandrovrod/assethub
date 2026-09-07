@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,6 +78,18 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Ch
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("PublicApi", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+});
+
 builder.Services.AddScoped<ITenantResolver, TenantResolver>();
 builder.Services.Configure<SchedulerSettings>(builder.Configuration.GetSection(SchedulerSettings.SectionName));
 builder.Services.AddScoped<IBillingProvider, ManualBillingProvider>();
@@ -131,6 +144,17 @@ if (app.Environment.IsDevelopment())
         await platformDb.SaveChangesAsync();
     }
 
+    // Seed Plans
+    if (!await platformDb.Plans.AnyAsync())
+    {
+        platformDb.Plans.AddRange(
+            new AssetHub.Domain.Tenancy.Plan { Code = "free", Name = "Free", PriceMonthly = 0, PriceYearly = 0, MaxAssets = 100, MaxUsers = 3, MaxStorageMB = 1000, IsPublic = true, EnabledModules = "[\"assets\"]" },
+            new AssetHub.Domain.Tenancy.Plan { Code = "pro", Name = "Pro", PriceMonthly = 49, PriceYearly = 490, MaxAssets = 5000, MaxUsers = 20, MaxStorageMB = 50000, IsPublic = true, EnabledModules = "[\"assets\", \"maintenance\"]" },
+            new AssetHub.Domain.Tenancy.Plan { Code = "enterprise", Name = "Enterprise", PriceMonthly = 199, PriceYearly = 1990, MaxAssets = 100000, MaxUsers = 500, MaxStorageMB = 500000, IsPublic = false, EnabledModules = "[\"assets\", \"maintenance\", \"advanced\"]" }
+        );
+        await platformDb.SaveChangesAsync();
+    }
+
     // 3. Seed System Admin (admin@demo.com)
     var adminUser = await userManager.FindByEmailAsync("admin@demo.com");
     if (adminUser == null)
@@ -148,12 +172,25 @@ if (app.Environment.IsDevelopment())
         await userManager.CreateAsync(clientUser, "Cliente123!");
         await userManager.AddToRoleAsync(clientUser, "Tenant Admin");
     }
+
+    // 5. FIX: Assign Tenant Admin to any user missing a role
+    var allUsers = await userManager.Users.ToListAsync();
+    foreach (var u in allUsers)
+    {
+        var userRoles = await userManager.GetRolesAsync(u);
+        if (userRoles.Count == 0 && u.TenantId != null)
+        {
+            await userManager.AddToRoleAsync(u, "Tenant Admin");
+        }
+    }
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseCors("AllowVite");
+
+app.UseRateLimiter();
 
 app.UseMiddleware<AssetHub.Api.Middleware.ExceptionHandlingMiddleware>();
 app.UseAuthentication();

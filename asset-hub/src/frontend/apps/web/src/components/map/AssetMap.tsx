@@ -111,7 +111,7 @@ function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange, assetS
       try {
         const parsed = JSON.parse(geoJson)
         const layer = L.geoJSON(parsed, {
-          pointToLayer: (feature, latlng) => {
+          pointToLayer: (_feature, latlng) => {
             return L.marker(latlng, {
               icon: assetStateColor ? createColoredMarkerIcon(assetStateColor) : defaultIcon
             })

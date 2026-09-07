@@ -23,6 +23,11 @@ const extractTenantFromUrl = () => {
     return parts[0];
   }
   
+  // Si estamos en Netlify y tiene 4 o más partes (ej. coca-cola.velvety-kataifi-268131.netlify.app)
+  if (hostname.endsWith('.netlify.app')) {
+    return parts.length >= 4 ? parts[0] : null;
+  }
+  
   // Si estamos en producción y tiene 3 o más partes, omitiendo www (ej. coca-cola.assethub.com)
   if (!hostname.endsWith('localhost') && parts.length >= 3 && parts[0] !== 'www') {
     return parts[0];

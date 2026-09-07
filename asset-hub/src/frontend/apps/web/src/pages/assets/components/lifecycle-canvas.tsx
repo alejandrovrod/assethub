@@ -28,12 +28,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
@@ -567,7 +566,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     notifyChange(newNodes, edges);
   };
 
-  const onNodeDoubleClick = (_: React.MouseEvent, node: Node) => {
+  const onNodeClick = (_: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
     setEditingNodeId(node.id);
   };
@@ -724,7 +723,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 Estado terminal
               </Badge>
               <Badge variant="outline" className="gap-1">
-                Doble clic en un estado para editarlo
+                Clic en un estado para editarlo
               </Badge>
               <Badge variant="outline" className="gap-1">
                 Arrastrá entre puntos para conectar estados
@@ -775,7 +774,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 onNodeDragStop={onNodeDragStop}
-                onNodeDoubleClick={onNodeDoubleClick}
+                onNodeClick={onNodeClick}
                 onPaneClick={() => setSelectedNodeId(null)}
                 deleteKeyCode={['Backspace', 'Delete']}
                 fitView
@@ -786,17 +785,14 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
             </div>
           </div>
 
-          {/* Node Properties Panel (Sheet) */}
-          <Sheet open={!!selectedNodeId} onOpenChange={(open) => !open && setSelectedNodeId(null)}>
-            <SheetContent 
-              container={isFullscreen ? wrapperRef.current : undefined}
-              className="w-[90vw] sm:max-w-[600px] md:max-w-[700px] overflow-y-auto"
-            >
-              <SheetHeader className="sticky top-0 bg-background z-10 pt-2 pb-4 -mt-2 border-b mb-6">
-                <SheetTitle className="flex items-center gap-2">
+          {/* Node Properties Panel (Dialog) */}
+          <Dialog open={!!selectedNodeId} onOpenChange={(open) => !open && setSelectedNodeId(null)}>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader className="pt-2 pb-4 border-b mb-6">
+                <DialogTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-muted-foreground" />
                   Configurar Estado
-                </SheetTitle>
+                </DialogTitle>
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     value={editingNodeId}
@@ -806,10 +802,10 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                     className="font-semibold text-lg"
                   />
                 </div>
-                <SheetDescription>
+                <p className="text-sm text-muted-foreground mt-2">
                   Configurá las propiedades visuales y reglas de negocio para este estado.
-                </SheetDescription>
-              </SheetHeader>
+                </p>
+              </DialogHeader>
 
               {selectedNode && (
                 <div className="px-4 pb-6 space-y-6">
@@ -1150,8 +1146,8 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                   </div>
                 </div>
               )}
-            </SheetContent>
-          </Sheet>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </TooltipProvider>

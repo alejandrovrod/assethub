@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Loader2, Eye } from 'lucide-react'
+import { Plus, Loader2, Eye, Menu } from 'lucide-react'
 import { incidentService } from '@/services/incident.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -17,6 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check, ChevronsUpDown, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { assetService } from '@/services/asset.service'
 
 export default function MaintenanceIncidents() {
@@ -60,6 +61,94 @@ export default function MaintenanceIncidents() {
     navigate(`/maintenance/incidents/${id}`)
   }
 
+  const renderFilters = () => (
+    <div className="flex flex-col gap-6 h-full overflow-hidden">
+      <div className="shrink-0">
+        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+          <Filter className="h-4 w-4" /> Búsqueda
+        </h3>
+        <Input
+          placeholder="Título o activo..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      <ScrollArea className="flex-1 min-h-0 pr-4">
+        {isLoadingFilters ? (
+          <div className="text-sm text-muted-foreground">Cargando filtros...</div>
+        ) : searchFilters?.map((filter) => (
+          <div key={filter.attributeKey} className="mb-6">
+            <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between"
+                >
+                  <span className="truncate">
+                    {catalogFilters[filter.attributeKey]
+                      ? filter.options.find(
+                        (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
+                      )?.label
+                      : "Todos"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] sm:w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar opción..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró la opción.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => {
+                          const newFilters = { ...catalogFilters }
+                          delete newFilters[filter.attributeKey]
+                          setCatalogFilters(newFilters)
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todos
+                      </CommandItem>
+                      {filter.options.map((opt) => (
+                        <CommandItem
+                          key={opt.catalogItemId}
+                          onSelect={() => {
+                            setCatalogFilters({ ...catalogFilters, [filter.attributeKey]: opt.catalogItemId })
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              catalogFilters[filter.attributeKey] === opt.catalogItemId
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {opt.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        ))}
+      </ScrollArea>
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-4 p-4 pt-0">
       <Card className="flex flex-1 flex-col">
@@ -75,92 +164,30 @@ export default function MaintenanceIncidents() {
           </Button>
         </CardHeader>
         <CardContent className="flex-1 p-0 flex flex-col">
-          <div className="flex flex-1 gap-6 mt-4 p-4 pt-0">
-            {/* Sidebar de Búsqueda y Filtros */}
-            <div className="w-64 flex flex-col gap-6 shrink-0">
-              <div>
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Filter className="h-4 w-4" /> Búsqueda
-                </h3>
-                <Input
-                  placeholder="Título o activo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <ScrollArea className="flex-1 min-h-0 pr-4">
-                {isLoadingFilters ? (
-                  <div className="text-sm text-muted-foreground">Cargando filtros...</div>
-                ) : searchFilters?.map((filter) => (
-                  <div key={filter.attributeKey} className="mb-6">
-                    <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
-
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="w-full justify-between"
-                        >
-                          <span className="truncate">
-                            {catalogFilters[filter.attributeKey]
-                              ? filter.options.find(
-                                (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
-                              )?.label
-                              : "Todos"}
-                          </span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Buscar opción..." />
-                          <CommandList>
-                            <CommandEmpty>No se encontró la opción.</CommandEmpty>
-                            <CommandGroup>
-                              <CommandItem
-                                onSelect={() => {
-                                  const newFilters = { ...catalogFilters }
-                                  delete newFilters[filter.attributeKey]
-                                  setCatalogFilters(newFilters)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                Todos
-                              </CommandItem>
-                              {filter.options.map((opt) => (
-                                <CommandItem
-                                  key={opt.catalogItemId}
-                                  onSelect={() => {
-                                    setCatalogFilters({ ...catalogFilters, [filter.attributeKey]: opt.catalogItemId })
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      catalogFilters[filter.attributeKey] === opt.catalogItemId
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                  {opt.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+          <div className="flex flex-col lg:flex-row flex-1 gap-6 mt-4 p-4 pt-0 overflow-hidden">
+            {/* Filtros Mobile */}
+            <div className="lg:hidden shrink-0">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                    <Menu className="h-4 w-4" />
+                    Filtros y Búsqueda
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-4 flex flex-col">
+                  <SheetHeader className="mb-4 text-left">
+                    <SheetTitle>Filtros</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex-1 overflow-hidden">
+                    {renderFilters()}
                   </div>
-                ))}
-              </ScrollArea>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Sidebar de Filtros Desktop */}
+            <div className="hidden lg:flex w-64 flex-col gap-6 shrink-0 h-full">
+              {renderFilters()}
             </div>
 
             {/* Grilla de Incidencias */}

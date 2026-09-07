@@ -27,8 +27,8 @@ export const sidebarData: SidebarData = {
       title: 'General',
       items: [
         {
-          title: 'Dashboard',
-          url: '/',
+          title: 'Panel de Control',
+          url: '/dashboard',
           icon: LayoutDashboard,
         },
       ],

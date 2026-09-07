@@ -51,6 +51,21 @@
   @apply text-[0.8rem] text-destructive mt-1 block;
 }
 
+.rjsf-tailwind .array-item-toolbox .btn-danger:hover {
+  @apply bg-destructive/90 text-destructive-foreground border-destructive;
+}
+
+@theme {
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+  --color-sidebar: var(--background);
+  --color-sidebar-foreground: var(--foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-accent: var(--accent);
+  --color-sidebar-accent-foreground: var(--accent-foreground);
+  --color-sidebar-ring: var(--ring);
+}
+
 .rjsf-tailwind .panel-danger {
   @apply border border-destructive rounded-md p-4 mb-4;
 }

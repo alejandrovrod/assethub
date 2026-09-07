@@ -82,6 +82,8 @@ public class SignUpTenantCommandHandler : IRequestHandler<SignUpTenantCommand, S
             throw new Exception("Error al crear usuario: " + string.Join(", ", result.Errors.Select(e => e.Description)));
         }
 
+        await _userManager.AddToRoleAsync(user, "Tenant Admin");
+
         // 4. (Simulated) Trigger Seeding Job
         // Here we would enqueue a background job to seed catalogs and activate the tenant.
         // For this iteration we activate it immediately:

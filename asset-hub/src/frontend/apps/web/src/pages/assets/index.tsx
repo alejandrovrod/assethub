@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 const riskLabels: Record<string, string> = {
   Low: 'Bajo',
@@ -116,9 +117,97 @@ export default function AssetsPage() {
 
   // Eliminación usando AlertDialog (ya no necesitamos window.confirm)
 
+  const renderFilters = () => (
+    <div className="flex flex-col gap-6 h-full overflow-hidden">
+      <div className="shrink-0">
+        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+          <Filter className="h-4 w-4" /> Búsqueda
+        </h3>
+        <Input
+          placeholder="Código o nombre..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      <ScrollArea className="flex-1 min-h-0 pr-4">
+        {isLoadingFilters ? (
+          <div className="text-sm text-muted-foreground">Cargando filtros...</div>
+        ) : searchFilters?.map((filter) => (
+          <div key={filter.attributeKey} className="mb-6">
+            <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between"
+                >
+                  <span className="truncate">
+                    {catalogFilters[filter.attributeKey]
+                      ? filter.options.find(
+                        (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
+                      )?.label
+                      : "Todos"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] sm:w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar opción..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró la opción.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => {
+                          const newFilters = { ...catalogFilters }
+                          delete newFilters[filter.attributeKey]
+                          setCatalogFilters(newFilters)
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todos
+                      </CommandItem>
+                      {filter.options.map((opt) => (
+                        <CommandItem
+                          key={opt.catalogItemId}
+                          onSelect={() => {
+                            setCatalogFilters({ ...catalogFilters, [filter.attributeKey]: opt.catalogItemId })
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              catalogFilters[filter.attributeKey] === opt.catalogItemId
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {opt.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        ))}
+      </ScrollArea>
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
-      <div className="flex items-center justify-between shrink-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Activos (Instancias)</h2>
           <p className="text-muted-foreground">
@@ -126,8 +215,8 @@ export default function AssetsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex bg-muted rounded-md p-1 items-center">
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 shrink-0">
+          <div className="flex bg-muted rounded-md p-1 items-center shrink-0">
             <Button 
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
               size="sm" 
@@ -146,7 +235,7 @@ export default function AssetsPage() {
             </Button>
           </div>
           
-          <Button variant="outline" onClick={() => setMapModalOpen(true)} className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setMapModalOpen(true)} className="flex items-center gap-2 shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /><path d="M15 5.764v15" /><path d="M9 3.236v15" /></svg>
             Ver en Mapa
           </Button>
@@ -154,7 +243,7 @@ export default function AssetsPage() {
           <AsyncCombobox
             fetcher={async (query) => {
               const results = await assetTemplateService.getTemplates(query)
-              return results.filter(t => t.isActive)
+              return results.filter(t => t.isActive && !t.isSystemTemplate)
             }}
             labelKey="name"
             valueKey="id"
@@ -162,7 +251,7 @@ export default function AssetsPage() {
             searchPlaceholder="Buscar plantilla por nombre..."
             emptyText="No se encontró ninguna plantilla activa."
             renderTrigger={(onClick) => (
-              <Button onClick={onClick} size="icon" title="Agregar Activo">
+              <Button onClick={onClick} size="icon" title="Agregar Activo" className="shrink-0">
                 <Plus className="h-4 w-4" />
               </Button>
             )}
@@ -170,92 +259,35 @@ export default function AssetsPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-hidden min-h-0 mt-4">
-        {/* Sidebar de Búsqueda y Filtros */}
-        <div className="w-64 flex flex-col gap-6 overflow-hidden min-h-0 shrink-0">
-          <div>
-            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-              <Filter className="h-4 w-4" /> Búsqueda
-            </h3>
-            <Input
-              placeholder="Código o nombre..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          <ScrollArea className="flex-1 min-h-0 pr-4">
-            {isLoadingFilters ? (
-              <div className="text-sm text-muted-foreground">Cargando filtros...</div>
-            ) : searchFilters?.map((filter) => (
-              <div key={filter.attributeKey} className="mb-6">
-                <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between"
-                    >
-                      <span className="truncate">
-                        {catalogFilters[filter.attributeKey]
-                          ? filter.options.find(
-                            (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
-                          )?.label
-                          : "Todos"}
-                      </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Buscar opción..." />
-                      <CommandList>
-                        <CommandEmpty>No se encontró la opción.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            onSelect={() => {
-                              const newFilters = { ...catalogFilters }
-                              delete newFilters[filter.attributeKey]
-                              setCatalogFilters(newFilters)
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            Todos
-                          </CommandItem>
-                          {filter.options.map((opt) => (
-                            <CommandItem
-                              key={opt.catalogItemId}
-                              onSelect={() => {
-                                setCatalogFilters({ ...catalogFilters, [filter.attributeKey]: opt.catalogItemId })
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  catalogFilters[filter.attributeKey] === opt.catalogItemId
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              {opt.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+      <div className="flex flex-col md:flex-row flex-1 gap-6 overflow-hidden min-h-0 mt-4">
+        {/* Mobile Filter Button */}
+        <div className="md:hidden shrink-0">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filtros
+                </div>
+                {Object.keys(catalogFilters).length > 0 && (
+                  <Badge variant="secondary">{Object.keys(catalogFilters).length}</Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-4 pt-10 flex flex-col">
+              <SheetHeader className="mb-4 shrink-0">
+                <SheetTitle>Filtros de Búsqueda</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-hidden">
+                {renderFilters()}
               </div>
-            ))}
-          </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Desktop Sidebar de Búsqueda y Filtros */}
+        <div className="hidden md:flex w-64 flex-col gap-6 overflow-hidden min-h-0 shrink-0">
+          {renderFilters()}
         </div>
 
         {/* Grilla de Activos */}
@@ -365,8 +397,8 @@ export default function AssetsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="border rounded-md">
-                  <Table>
+                <div className="border rounded-md overflow-x-auto">
+                  <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Código</TableHead>
