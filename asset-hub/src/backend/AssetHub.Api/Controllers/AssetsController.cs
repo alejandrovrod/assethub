@@ -205,6 +205,47 @@ public class AssetsController : ControllerBase
         if (result == null) return NotFound();
         return Ok(result);
     }
+
+    [HttpGet("{id}/materials")]
+    public async Task<IActionResult> GetMaterials(Guid id, [FromQuery] bool? isCritical, [FromQuery] string? search)
+    {
+        var result = await _mediator.Send(new GetAssetMaterialsQuery(id, isCritical, search));
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/materials")]
+    public async Task<IActionResult> AddMaterial(Guid id, [FromBody] AddMaterialRequest request)
+    {
+        var materialId = await _mediator.Send(new CreateAssetMaterialCommand(
+            id,
+            request.CatalogItemId,
+            request.Quantity,
+            request.UnitOfMeasure,
+            request.IsCritical,
+            request.Notes
+        ));
+        return Ok(new { id = materialId });
+    }
+
+    [HttpPut("{id}/materials/{materialId}")]
+    public async Task<IActionResult> UpdateMaterial(Guid id, Guid materialId, [FromBody] UpdateMaterialRequest request)
+    {
+        await _mediator.Send(new UpdateAssetMaterialCommand(
+            materialId,
+            request.Quantity,
+            request.UnitOfMeasure,
+            request.IsCritical,
+            request.Notes
+        ));
+        return Ok();
+    }
+
+    [HttpDelete("{id}/materials/{materialId}")]
+    public async Task<IActionResult> DeleteMaterial(Guid id, Guid materialId)
+    {
+        await _mediator.Send(new DeleteAssetMaterialCommand(materialId));
+        return NoContent();
+    }
 }
 
 public class AdvancedSearchRequest
@@ -255,3 +296,21 @@ public class ChangeStateRequest
     public string? Notes { get; set; }
     public Dictionary<string, System.Text.Json.JsonElement>? TransitionData { get; set; }
 }
+
+public class AddMaterialRequest
+{
+    public Guid CatalogItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public string UnitOfMeasure { get; set; } = string.Empty;
+    public bool IsCritical { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class UpdateMaterialRequest
+{
+    public decimal Quantity { get; set; }
+    public string UnitOfMeasure { get; set; } = string.Empty;
+    public bool IsCritical { get; set; }
+    public string? Notes { get; set; }
+}
+

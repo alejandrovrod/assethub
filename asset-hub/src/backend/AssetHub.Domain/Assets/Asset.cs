@@ -20,6 +20,7 @@ public class Asset
     public ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
     public ICollection<PreventivePlan> PreventivePlans { get; set; } = new List<PreventivePlan>();
     public ICollection<AssetHealthPrediction> HealthPredictions { get; set; } = new List<AssetHealthPrediction>();
+    public ICollection<AssetMaterial> Materials { get; set; } = new List<AssetMaterial>();
     public Guid AssetTemplateId { get; set; }
     public AssetTemplate? AssetTemplate { get; set; }
 

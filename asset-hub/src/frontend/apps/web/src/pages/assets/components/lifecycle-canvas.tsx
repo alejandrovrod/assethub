@@ -210,15 +210,6 @@ function ColorSwatchPicker({
 export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [newNodeName, setNewNodeName] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);

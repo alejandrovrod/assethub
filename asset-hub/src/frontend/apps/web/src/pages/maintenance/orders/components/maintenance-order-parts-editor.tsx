@@ -10,9 +10,13 @@ import { toast } from 'sonner'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
 
+import { assetService } from '@/services/asset.service'
+import { Badge } from '@/components/ui/badge'
+
 interface MaintenanceOrderPartsEditorProps {
   orderId: string
   state: MaintenanceOrderState
+  assetId?: string
 }
 
 interface PartForm {
@@ -22,7 +26,7 @@ interface PartForm {
   unitCost: number
 }
 
-export function MaintenanceOrderPartsEditor({ orderId, state }: MaintenanceOrderPartsEditorProps) {
+export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: MaintenanceOrderPartsEditorProps) {
   const queryClient = useQueryClient()
   const [newPart, setNewPart] = useState<PartForm>({
     catalogItemId: '',
@@ -37,6 +41,12 @@ export function MaintenanceOrderPartsEditor({ orderId, state }: MaintenanceOrder
   const { data: parts = [] } = useQuery({
     queryKey: ['maintenance-order-parts', orderId],
     queryFn: () => maintenanceOrderService.getParts(orderId),
+  })
+
+  const { data: bomMaterials = [] } = useQuery({
+    queryKey: ['asset-materials', assetId],
+    queryFn: () => assetService.getMaterials(assetId!),
+    enabled: !!assetId
   })
 
   const removeMutation = useMutation({
@@ -94,7 +104,38 @@ export function MaintenanceOrderPartsEditor({ orderId, state }: MaintenanceOrder
       </div>
 
       {showForm && !isLocked && (
-        <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+        <div className="border rounded-lg p-3 space-y-3 bg-muted/30 mt-2">
+          
+          {bomMaterials.length > 0 && (
+            <div className="space-y-2 mb-4">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                Sugeridos del Activo (BOM)
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {bomMaterials.map(m => (
+                  <Badge
+                    key={m.id}
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-secondary/80 border-primary/20 text-xs font-normal"
+                    onClick={() => {
+                      setNewPart(prev => ({ 
+                        ...prev, 
+                        catalogItemId: m.catalogItemId, 
+                        catalogItemLabel: m.catalogItemLabel,
+                        quantity: m.quantity
+                      }))
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-1 opacity-50" />
+                    {m.catalogItemLabel}
+                    {m.isCritical && <span className="text-destructive ml-1">*</span>}
+                  </Badge>
+                ))}
+              </div>
+              <Separator className="mt-3 mb-1" />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Item del catálogo</Label>
             <AsyncCombobox<{ id: string; name: string }>

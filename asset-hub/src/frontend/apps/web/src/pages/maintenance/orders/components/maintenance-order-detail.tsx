@@ -414,6 +414,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             <MaintenanceOrderPartsEditor
               orderId={order.id}
               state={state}
+              assetId={order.assetId}
             />
 
             {/* Child tasks */}

@@ -135,6 +135,33 @@ export interface AssetEvent {
   userId: string
 }
 
+export interface AssetMaterialDto {
+  id: string
+  assetId: string
+  catalogItemId: string
+  catalogItemCode: string
+  catalogItemLabel: string
+  quantity: number
+  unitOfMeasure: string
+  isCritical: boolean
+  notes?: string
+}
+
+export interface AddMaterialRequest {
+  catalogItemId: string
+  quantity: number
+  unitOfMeasure: string
+  isCritical: boolean
+  notes?: string
+}
+
+export interface UpdateMaterialRequest {
+  quantity: number
+  unitOfMeasure: string
+  isCritical: boolean
+  notes?: string
+}
+
 export const assetService = {
   getAssets: async (q?: string, templateId?: string, state?: string, ancestorId?: string, page: number = 1, pageSize: number = 50) => {
     const { data } = await apiClient.get<PagedResult<Asset>>('/assets', {
@@ -209,6 +236,26 @@ export const assetService = {
     } catch {
       return null
     }
+  },
+
+  getMaterials: async (id: string, isCritical?: boolean, search?: string) => {
+    const { data } = await apiClient.get<AssetMaterialDto[]>(`/assets/${id}/materials`, {
+      params: { isCritical, search }
+    })
+    return data
+  },
+
+  addMaterial: async (id: string, request: AddMaterialRequest) => {
+    const { data } = await apiClient.post<{ id: string }>(`/assets/${id}/materials`, request)
+    return data
+  },
+
+  updateMaterial: async (id: string, materialId: string, request: UpdateMaterialRequest) => {
+    await apiClient.put(`/assets/${id}/materials/${materialId}`, request)
+  },
+
+  deleteMaterial: async (id: string, materialId: string) => {
+    await apiClient.delete(`/assets/${id}/materials/${materialId}`)
   }
 }
 

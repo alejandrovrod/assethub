@@ -34,6 +34,7 @@ import { AssetMaintenanceOrdersWidget } from '@/pages/maintenance/components/ass
 import { ReportIncidentSheet } from '@/pages/maintenance/components/report-incident-sheet'
 import { MaintenanceOrderFormSheet } from '@/pages/maintenance/orders/components/maintenance-order-form-sheet'
 import { AssetMap } from '@/components/map/AssetMap'
+import { AssetMaterialsTable } from './components/asset-materials-table'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -296,23 +297,7 @@ export default function AssetDetailPage() {
                 <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined} className="shrink-0">
                   {asset.state}
                 </Badge>
-                {forecast && (
-                  <Badge
-                    variant="outline"
-                    className={`text-xs font-semibold shrink-0 ${
-                      forecast.riskLevel === 'Critical'
-                        ? 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
-                        : forecast.riskLevel === 'High'
-                        ? 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400'
-                        : forecast.riskLevel === 'Moderate'
-                        ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400'
-                        : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
-                    }`}
-                    title={`Pronóstico XGBoost: ${forecast.riskLevel} (${(forecast.riskProbability * 100).toFixed(0)}% de riesgo)`}
-                  >
-                    Salud: {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
-                  </Badge>
-                )}
+
                 <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8 shrink-0">
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -428,77 +413,14 @@ export default function AssetDetailPage() {
               <div className="w-full sm:w-fit overflow-x-auto pb-2 sm:pb-0">
                 <TabsList className="w-fit flex-nowrap shrink-0">
                   <TabsTrigger value="details">Detalles</TabsTrigger>
+                  <TabsTrigger value="bom">BOM / Materiales</TabsTrigger>
                   <TabsTrigger value="map">Ubicación</TabsTrigger>
                   <TabsTrigger value="timeline">Bitácora</TabsTrigger>
                   <TabsTrigger value="hierarchy">Jerarquía</TabsTrigger>
                 </TabsList>
               </div>
 
-              {forecast && (
-                <div className="flex items-center gap-2.5 bg-card border rounded-lg px-3 py-1.5 shadow-sm text-xs justify-between sm:justify-end flex-wrap">
-                  <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                    <Cpu className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="hidden xl:inline">Salud Predictiva:</span>
-                    <span className="xl:hidden">Salud:</span>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs font-semibold shrink-0 ${
-                        forecast.riskLevel === 'Critical'
-                          ? 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
-                          : forecast.riskLevel === 'High'
-                          ? 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400'
-                          : forecast.riskLevel === 'Moderate'
-                          ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400'
-                          : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
-                      }`}
-                    >
-                      {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
-                    </Badge>
-                  </div>
 
-                  <div className="flex items-center gap-1.5 border-l pl-2.5 border-border/60">
-                    <span className="text-muted-foreground hidden sm:inline">Falla:</span>
-                    <span className="font-medium text-foreground">
-                      {forecast.predictedFailureDays != null
-                        ? (forecast.predictedFailureDays >= 365
-                            ? 'Más de 1 año'
-                            : `~${forecast.predictedFailureDays}d`)
-                        : 'Estable'}
-                    </span>
-                  </div>
-
-                  {(() => {
-                    let factors: Array<{ description: string }> = []
-                    if (forecast.topFeatureContributionsJson) {
-                      try {
-                        factors = JSON.parse(forecast.topFeatureContributionsJson)
-                      } catch {}
-                    }
-                    if (factors.length === 0) return null
-
-                    return (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-1 border-l pl-2.5 border-border/60">
-                              <Info className="h-3.5 w-3.5 opacity-70" />
-                              <span className="underline underline-offset-2 decoration-dotted text-[11px] hidden sm:inline">Factores</span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-xs text-xs p-3">
-                            <p className="font-semibold mb-1 text-primary-foreground">Factores de riesgo identificados:</p>
-                            <ul className="list-disc list-inside space-y-1 text-primary-foreground/80 text-[11px]">
-                              {factors.map((f, idx) => (
-                                <li key={idx}>{f.description}</li>
-                              ))}
-                            </ul>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )
-                  })()}
-                </div>
-              )}
             </div>
             
             <TabsContent value="details" className="flex flex-col gap-6">
@@ -595,6 +517,14 @@ export default function AssetDetailPage() {
                     updateMutation.mutate({ latitude: lat, longitude: lng, geoJson: geoJsonStr })
                   }}
                 />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bom">
+            <Card>
+              <CardContent className="pt-6">
+                <AssetMaterialsTable assetId={id!} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -704,6 +634,66 @@ export default function AssetDetailPage() {
 
         {/* RIGHT COL */}
         <div className="flex flex-col gap-6 md:mt-[56px]">
+          {forecast && (
+            <div className="flex flex-col gap-3 bg-card border rounded-lg p-4 shadow-sm text-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Cpu className="h-4 w-4 text-primary" />
+                  Salud Predictiva
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`font-semibold ${
+                    forecast.riskLevel === 'Critical'
+                      ? 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+                      : forecast.riskLevel === 'High'
+                      ? 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-400'
+                      : forecast.riskLevel === 'Moderate'
+                      ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400'
+                      : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
+                  }`}
+                >
+                  {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-3">
+                <span className="text-muted-foreground text-xs">Tiempo est. de falla:</span>
+                <span className="font-medium">
+                  {forecast.predictedFailureDays != null
+                    ? (forecast.predictedFailureDays >= 365
+                        ? 'Más de 1 año'
+                        : `~${forecast.predictedFailureDays} días`)
+                    : 'Estable'}
+                </span>
+              </div>
+
+              {(() => {
+                let factors: Array<{ description: string }> = []
+                if (forecast.topFeatureContributionsJson) {
+                  try {
+                    factors = JSON.parse(forecast.topFeatureContributionsJson)
+                  } catch {}
+                }
+                if (factors.length === 0) return null
+
+                return (
+                  <div className="border-t pt-3 flex items-start gap-2 text-xs">
+                    <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-muted-foreground font-medium">Factores de riesgo:</span>
+                      <ul className="list-disc list-inside text-muted-foreground/80 space-y-0.5">
+                        {factors.slice(0, 3).map((f, idx) => (
+                          <li key={idx} className="truncate max-w-[200px]" title={f.description}>{f.description}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+
           <Accordion type="single" collapsible defaultValue="incidents" className="w-full space-y-4">
             <AccordionItem value="incidents" className="border rounded-lg bg-card text-card-foreground shadow-sm">
               <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">

@@ -23,6 +23,7 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Assets.AssetLifecycleEvent> AssetLifecycleEvents { get; }
     DbSet<AssetHub.Domain.Assets.AssetAttributeValue> AssetAttributeValues { get; }
     DbSet<AssetHub.Domain.Assets.AssetHealthPrediction> AssetHealthPredictions { get; }
+    DbSet<AssetHub.Domain.Assets.AssetMaterial> AssetMaterials { get; }
     
     DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; }
     DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; }

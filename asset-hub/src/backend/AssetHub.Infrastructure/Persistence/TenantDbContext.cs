@@ -35,6 +35,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Assets.AssetLifecycleEvent> AssetLifecycleEvents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Assets.AssetAttributeValue> AssetAttributeValues { get; set; } = null!;
     public DbSet<AssetHub.Domain.Assets.AssetHealthPrediction> AssetHealthPredictions { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Assets.AssetMaterial> AssetMaterials { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Incidents.Incident> Incidents { get; set; } = null!;
     public DbSet<AssetHub.Domain.Incidents.IncidentAttachment> IncidentAttachments { get; set; } = null!;
@@ -151,6 +152,24 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasMany(a => a.WorkTasks).WithOne(t => t.Asset).HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(a => a.PreventivePlans).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(a => a.HealthPredictions).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(a => a.Materials).WithOne(m => m.Asset).HasForeignKey(m => m.AssetId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Assets.AssetMaterial>(b =>
+        {
+            b.HasKey(m => m.Id);
+            b.HasQueryFilter(m => m.TenantId == CurrentTenantId && !m.IsDeleted);
+            
+            // Unique index for the BOM (TenantId, AssetId, CatalogItemId) excluding deleted items
+            b.HasIndex(m => new { m.TenantId, m.AssetId, m.CatalogItemId })
+             .IsUnique()
+             .HasFilter("\"IsDeleted\" = 0");
+             
+            b.HasIndex(m => new { m.TenantId, m.AssetId });
+            
+            b.Property(m => m.Quantity).HasPrecision(18, 4);
+
+            b.HasOne(m => m.CatalogItem).WithMany().HasForeignKey(m => m.CatalogItemId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Assets.AssetHealthPrediction>(b =>
