@@ -29,6 +29,11 @@ RUN_ONCE = os.getenv("RUN_ONCE", "false").lower() in ("true", "1", "yes")
 BATCH_CRON_HOUR = int(os.getenv("BATCH_CRON_HOUR", "8"))
 BATCH_CRON_MINUTE = int(os.getenv("BATCH_CRON_MINUTE", "27"))
 
+# Training schedule (quincenal: día 1 y 15 de cada mes a las 3:00 UTC)
+TRAIN_CRON_DAYS = os.getenv("TRAIN_CRON_DAYS", "1,15")
+TRAIN_CRON_HOUR = int(os.getenv("TRAIN_CRON_HOUR", "3"))
+TRAIN_CRON_MINUTE = int(os.getenv("TRAIN_CRON_MINUTE", "0"))
+
 def get_db_engine():
     if DB_CONNECTION_STRING:
         return create_engine(DB_CONNECTION_STRING)
@@ -196,7 +201,18 @@ def main():
     # Schedule nightly batch
     scheduler.add_job(run_batch_inference, "cron", hour=BATCH_CRON_HOUR, minute=BATCH_CRON_MINUTE)
     logging.info(f"AssetHub ML Scheduler started. Scheduled daily at {BATCH_CRON_HOUR:02d}:{BATCH_CRON_MINUTE:02d} UTC.")
-    
+
+    # Schedule model training (quincenal: día 1 y 15 a las 3:00 UTC)
+    train_days = [d.strip() for d in TRAIN_CRON_DAYS.split(",")]
+    scheduler.add_job(
+        lambda: train_model_wrapper(),
+        "cron",
+        day=",".join(train_days),
+        hour=TRAIN_CRON_HOUR,
+        minute=TRAIN_CRON_MINUTE
+    )
+    logging.info(f"Model training scheduled on days {TRAIN_CRON_DAYS} at {TRAIN_CRON_HOUR:02d}:{TRAIN_CRON_MINUTE:02d} UTC.")
+
     # Run immediate initial pass on startup
     run_batch_inference()
 
@@ -204,6 +220,16 @@ def main():
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
         logging.info("Scheduler stopped.")
+
+def train_model_wrapper():
+    """Wrapper para entrenar el modelo con logging."""
+    logging.info("Starting scheduled model training...")
+    try:
+        from train import train_model
+        train_model()
+        logging.info("Model training completed successfully.")
+    except Exception as ex:
+        logging.error(f"Model training failed: {ex}")
 
 if __name__ == "__main__":
     main()

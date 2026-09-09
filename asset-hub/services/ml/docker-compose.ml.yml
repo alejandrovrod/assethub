@@ -17,6 +17,9 @@ services:
       - RUN_ONCE=false
       - BATCH_CRON_HOUR=2
       - BATCH_CRON_MINUTE=0
+      - TRAIN_CRON_DAYS=1,15
+      - TRAIN_CRON_HOUR=3
+      - TRAIN_CRON_MINUTE=0
     volumes:
       - .:/app
       - ./models:/app/models
