@@ -17,10 +17,12 @@ public class RemoveMaintenancePartCommand : IRequest<Unit>
 public class RemoveMaintenancePartCommandHandler : IRequestHandler<RemoveMaintenancePartCommand, Unit>
 {
     private readonly ITenantDbContext _db;
+    private readonly IInventoryPostingService _inventoryPostingService;
 
-    public RemoveMaintenancePartCommandHandler(ITenantDbContext db)
+    public RemoveMaintenancePartCommandHandler(ITenantDbContext db, IInventoryPostingService inventoryPostingService)
     {
         _db = db;
+        _inventoryPostingService = inventoryPostingService;
     }
 
     public async Task<Unit> Handle(RemoveMaintenancePartCommand request, CancellationToken cancellationToken)
@@ -36,6 +38,22 @@ public class RemoveMaintenancePartCommandHandler : IRequestHandler<RemoveMainten
 
         if (order?.State == MaintenanceOrderStates.Verified)
             throw new InvalidOperationException("Cannot remove parts from a verified maintenance order");
+
+        if (part.InventoryTransactionId.HasValue && part.WarehouseId.HasValue)
+        {
+            // Reverse the consumption by posting a positive adjustment
+            await _inventoryPostingService.PostTransactionAsync(
+                warehouseId: part.WarehouseId.Value,
+                catalogItemId: part.CatalogItemId,
+                quantity: part.Quantity, // Reversing, so positive back into stock
+                unitCost: part.UnitCost,
+                type: "Reversal",
+                reason: $"Reversal for removed part on Order {order?.Id.ToString()}",
+                idempotencyKey: $"Reverse_{part.Id}",
+                maintenanceOrderId: order?.Id,
+                cancellationToken: cancellationToken
+            );
+        }
 
         _db.MaintenanceParts.Remove(part);
         await _db.SaveChangesAsync(cancellationToken);

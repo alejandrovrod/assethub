@@ -14,17 +14,25 @@ public class AddMaintenancePartCommand : IRequest<Guid>
     public Guid CatalogItemId { get; set; }
     public int Quantity { get; set; }
     public decimal UnitCost { get; set; }
+    
+    // Inventory integration
+    public string SourceType { get; set; } = "None"; // None, Internal, External
+    public Guid? WarehouseId { get; set; }
+    public string? ExternalSupplierName { get; set; }
+    public string? ExternalReference { get; set; }
 }
 
 public class AddMaintenancePartCommandHandler : IRequestHandler<AddMaintenancePartCommand, Guid>
 {
     private readonly ITenantDbContext _db;
     private readonly ITenantResolver _tenantResolver;
+    private readonly IInventoryPostingService _inventoryPostingService;
 
-    public AddMaintenancePartCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver)
+    public AddMaintenancePartCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver, IInventoryPostingService inventoryPostingService)
     {
         _db = db;
         _tenantResolver = tenantResolver;
+        _inventoryPostingService = inventoryPostingService;
     }
 
     public async Task<Guid> Handle(AddMaintenancePartCommand request, CancellationToken cancellationToken)
@@ -49,8 +57,31 @@ public class AddMaintenancePartCommandHandler : IRequestHandler<AddMaintenancePa
             MaintenanceOrderId = order.Id,
             CatalogItemId = request.CatalogItemId,
             Quantity = request.Quantity,
-            UnitCost = request.UnitCost
+            UnitCost = request.UnitCost,
+            SourceType = request.SourceType,
+            WarehouseId = request.WarehouseId,
+            ExternalSupplierName = request.ExternalSupplierName,
+            ExternalReference = request.ExternalReference
         };
+
+        if (request.SourceType == "Internal" && request.WarehouseId.HasValue)
+        {
+            // Post transaction
+            var transaction = await _inventoryPostingService.PostTransactionAsync(
+                warehouseId: request.WarehouseId.Value,
+                catalogItemId: request.CatalogItemId,
+                quantity: -request.Quantity, // Consuming, so negative
+                unitCost: request.UnitCost,
+                type: "Consumption",
+                reason: $"Consumption for Order {order.Id}",
+                idempotencyKey: $"Consume_{part.Id}",
+                maintenanceOrderId: order.Id,
+                cancellationToken: cancellationToken
+            );
+
+            part.InventoryTransactionId = transaction.Id;
+            part.UnitCost = transaction.UnitCost; // Inherit moving average cost
+        }
 
         _db.MaintenanceParts.Add(part);
         await _db.SaveChangesAsync(cancellationToken);

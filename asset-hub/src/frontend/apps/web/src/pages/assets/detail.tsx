@@ -21,7 +21,7 @@ import Form from '@rjsf/core'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { Pencil, Check, X, Cpu, Info } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { handleServerError } from '@/lib/handle-server-error'

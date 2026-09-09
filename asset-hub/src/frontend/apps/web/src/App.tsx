@@ -28,6 +28,9 @@ const SettingsTenant = lazy(() => import("./pages/settings/tenant"));
 const SettingsAudit = lazy(() => import("./pages/settings/audit"));
 const AuthSyncPage = lazy(() => import("./pages/auth-sync"));
 const LogoutSyncPage = lazy(() => import("./pages/logout-sync"));
+const InventoryWarehouses = lazy(() => import("./pages/inventory/warehouses"));
+const InventoryStock = lazy(() => import("./pages/inventory/stock"));
+const InventorySettings = lazy(() => import("./pages/inventory/settings"));
 
 const RouteLoadingFallback = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -66,6 +69,12 @@ export default function App() {
             </Route>
 
             <Route path="catalogs" element={<CatalogsPage />} />
+
+            <Route path="inventory">
+              <Route path="warehouses" element={<InventoryWarehouses />} />
+              <Route path="stock" element={<InventoryStock />} />
+              <Route path="settings" element={<InventorySettings />} />
+            </Route>
 
             <Route path="settings">
               <Route path="tenant" element={<SettingsTenant />} />

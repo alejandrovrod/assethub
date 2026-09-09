@@ -1,17 +1,24 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Trash2 } from 'lucide-react'
-import { maintenanceOrderService, type MaintenanceOrderState } from '@/services/maintenance-order.service'
+import { Plus, Loader2, Trash2, Globe, Zap, Minus } from 'lucide-react'
+import { maintenanceOrderService, type MaintenanceOrderState, type AddPartDto } from '@/services/maintenance-order.service'
+import { inventoryService } from '@/services/inventory.service'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
-
 import { assetService } from '@/services/asset.service'
-import { Badge } from '@/components/ui/badge'
 
 interface MaintenanceOrderPartsEditorProps {
   orderId: string
@@ -19,21 +26,30 @@ interface MaintenanceOrderPartsEditorProps {
   assetId?: string
 }
 
+type SourceType = 'None' | 'Internal' | 'External'
+
 interface PartForm {
   catalogItemId: string
   catalogItemLabel: string
   quantity: number
   unitCost: number
+  sourceType: SourceType
+  warehouseId?: string
+  externalSupplierName?: string
+  externalReference?: string
+}
+
+const DEFAULT_FORM: PartForm = {
+  catalogItemId: '',
+  catalogItemLabel: '',
+  quantity: 1,
+  unitCost: 0,
+  sourceType: 'None',
 }
 
 export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: MaintenanceOrderPartsEditorProps) {
   const queryClient = useQueryClient()
-  const [newPart, setNewPart] = useState<PartForm>({
-    catalogItemId: '',
-    catalogItemLabel: '',
-    quantity: 1,
-    unitCost: 0,
-  })
+  const [newPart, setNewPart] = useState<PartForm>(DEFAULT_FORM)
   const [showForm, setShowForm] = useState(false)
 
   const isLocked = state === 'verified'
@@ -46,8 +62,23 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
   const { data: bomMaterials = [] } = useQuery({
     queryKey: ['asset-materials', assetId],
     queryFn: () => assetService.getMaterials(assetId!),
-    enabled: !!assetId
+    enabled: !!assetId,
   })
+
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: inventoryService.getWarehouses,
+  })
+
+  const { data: inventorySettings } = useQuery({
+    queryKey: ['inventory-settings'],
+    queryFn: inventoryService.getSettings,
+  })
+
+  // Only show source selector when mode is Internal or Hybrid
+  const showSourceSelector =
+    inventorySettings?.operatingMode === 'internal' ||
+    inventorySettings?.operatingMode === 'hybrid'
 
   const removeMutation = useMutation({
     mutationFn: (partId: string) => maintenanceOrderService.removePart(orderId, partId),
@@ -60,29 +91,45 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
   })
 
   const addMutation = useMutation({
-    mutationFn: (payload: { catalogItemId: string; quantity: number; unitCost: number }) => {
-      return maintenanceOrderService.addPart(orderId, payload)
-    },
+    mutationFn: (payload: AddPartDto) => maintenanceOrderService.addPart(orderId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', orderId] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-parts', orderId] })
       toast.success('Parte agregada')
-      setNewPart({ catalogItemId: '', catalogItemLabel: '', quantity: 1, unitCost: 0 })
+      setNewPart(DEFAULT_FORM)
       setShowForm(false)
     },
-    onError: () => toast.error('Error al agregar parte'),
+    onError: (err: any) => {
+      const msg = err.response?.data?.detail || err.response?.data?.title || 'Error al agregar parte'
+      toast.error(msg)
+    },
   })
 
   const handleAddPart = () => {
-    if (!newPart.catalogItemId || newPart.quantity <= 0 || newPart.unitCost <= 0) {
-      toast.error(`Completá todos los campos — id: ${newPart.catalogItemId}, qty: ${newPart.quantity}, cost: ${newPart.unitCost}`)
+    if (!newPart.catalogItemId || newPart.quantity <= 0) {
+      toast.error('Completá el artículo y la cantidad')
       return
     }
+    if (newPart.sourceType === 'Internal' && !newPart.warehouseId) {
+      toast.error('Seleccioná el almacén de origen')
+      return
+    }
+
     addMutation.mutate({
       catalogItemId: newPart.catalogItemId,
       quantity: newPart.quantity,
       unitCost: newPart.unitCost,
+      sourceType: newPart.sourceType,
+      warehouseId: newPart.sourceType === 'Internal' ? newPart.warehouseId : undefined,
+      externalSupplierName: newPart.sourceType === 'External' ? newPart.externalSupplierName : undefined,
+      externalReference: newPart.sourceType === 'External' ? newPart.externalReference : undefined,
     })
+  }
+
+  const sourceIcon = (s: SourceType) => {
+    if (s === 'Internal') return <Zap className="h-3 w-3 text-emerald-500" />
+    if (s === 'External') return <Globe className="h-3 w-3 text-sky-500" />
+    return <Minus className="h-3 w-3 text-muted-foreground" />
   }
 
   return (
@@ -105,7 +152,8 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
 
       {showForm && !isLocked && (
         <div className="border rounded-lg p-3 space-y-3 bg-muted/30 mt-2">
-          
+
+          {/* BOM Suggestions */}
           {bomMaterials.length > 0 && (
             <div className="space-y-2 mb-4">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
@@ -118,11 +166,11 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80 border-primary/20 text-xs font-normal"
                     onClick={() => {
-                      setNewPart(prev => ({ 
-                        ...prev, 
-                        catalogItemId: m.catalogItemId, 
+                      setNewPart(prev => ({
+                        ...prev,
+                        catalogItemId: m.catalogItemId,
                         catalogItemLabel: m.catalogItemLabel,
-                        quantity: m.quantity
+                        quantity: m.quantity,
                       }))
                     }}
                   >
@@ -136,6 +184,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
             </div>
           )}
 
+          {/* Catalog search */}
           <div className="space-y-2">
             <Label>Item del catálogo</Label>
             <AsyncCombobox<{ id: string; name: string }>
@@ -167,6 +216,8 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
               )}
             />
           </div>
+
+          {/* Quantity & Cost */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Cantidad</Label>
@@ -188,6 +239,81 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
               />
             </div>
           </div>
+
+          {/* Source selector — only shown in Internal or Hybrid mode */}
+          {showSourceSelector && (
+            <div className="space-y-3 border-t pt-3 mt-1">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                Origen del repuesto
+              </Label>
+
+              <div className="flex gap-2">
+                {(['None', 'Internal', 'External'] as SourceType[]).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setNewPart(prev => ({ ...prev, sourceType: s, warehouseId: undefined, externalSupplierName: undefined, externalReference: undefined }))}
+                    className={`
+                      flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all
+                      ${newPart.sourceType === s
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/40'
+                      }
+                    `}
+                  >
+                    {sourceIcon(s)}
+                    {s === 'None' ? 'Sin stock' : s === 'Internal' ? 'Inventario' : 'Proveedor externo'}
+                  </button>
+                ))}
+              </div>
+
+              {newPart.sourceType === 'Internal' && (
+                <div className="space-y-2">
+                  <Label>Almacén</Label>
+                  <Select
+                    value={newPart.warehouseId}
+                    onValueChange={v => setNewPart(prev => ({ ...prev, warehouseId: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccioná el almacén" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehouses.filter(w => w.isActive).map(w => (
+                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {warehouses.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      No hay almacenes configurados. <a href="/inventory/warehouses" className="underline text-primary">Crear uno</a>.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {newPart.sourceType === 'External' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Proveedor</Label>
+                    <Input
+                      placeholder="Nombre del proveedor"
+                      value={newPart.externalSupplierName ?? ''}
+                      onChange={e => setNewPart(prev => ({ ...prev, externalSupplierName: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Referencia</Label>
+                    <Input
+                      placeholder="# orden, factura..."
+                      value={newPart.externalReference ?? ''}
+                      onChange={e => setNewPart(prev => ({ ...prev, externalReference: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>
               Cancelar

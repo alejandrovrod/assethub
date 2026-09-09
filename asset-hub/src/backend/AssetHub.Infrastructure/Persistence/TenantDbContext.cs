@@ -46,6 +46,11 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; set; } = null!;
     public DbSet<AssetHub.Domain.Maintenance.MaintenancePart> MaintenanceParts { get; set; } = null!;
 
+    public DbSet<AssetHub.Domain.Inventory.TenantInventorySettings> TenantInventorySettings { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Inventory.Warehouse> Warehouses { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Inventory.StockBalance> StockBalances { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Inventory.InventoryTransaction> InventoryTransactions { get; set; } = null!;
+
     public DbSet<AssetHub.Domain.Notifications.Notification> Notifications { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Staff.Employee> Employees { get; set; } = null!;
@@ -291,6 +296,64 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasKey(mp => mp.Id);
             b.HasQueryFilter(mp => mp.TenantId == CurrentTenantId);
             b.HasIndex(mp => new { mp.TenantId, mp.MaintenanceOrderId });
+            
+            b.Property(mp => mp.Quantity).HasPrecision(18, 4);
+            b.Property(mp => mp.UnitCost).HasPrecision(18, 4);
+            
+            b.HasOne<AssetHub.Domain.Inventory.Warehouse>()
+             .WithMany()
+             .HasForeignKey(mp => mp.WarehouseId)
+             .OnDelete(DeleteBehavior.Restrict);
+             
+            b.HasOne<AssetHub.Domain.Inventory.InventoryTransaction>()
+             .WithMany()
+             .HasForeignKey(mp => mp.InventoryTransactionId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Inventory.TenantInventorySettings>(b =>
+        {
+            b.HasKey(s => s.Id);
+            b.HasQueryFilter(s => s.TenantId == CurrentTenantId);
+            b.HasIndex(s => s.TenantId).IsUnique();
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Inventory.Warehouse>(b =>
+        {
+            b.HasKey(w => w.Id);
+            b.HasQueryFilter(w => w.TenantId == CurrentTenantId && !w.IsDeleted);
+            b.HasIndex(w => new { w.Code, w.TenantId }).IsUnique();
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Inventory.StockBalance>(b =>
+        {
+            b.HasKey(s => s.Id);
+            b.HasQueryFilter(s => s.TenantId == CurrentTenantId);
+            b.HasIndex(s => new { s.TenantId, s.WarehouseId, s.CatalogItemId }).IsUnique();
+            
+            b.Property(s => s.QuantityOnHand).HasPrecision(18, 4);
+            b.Property(s => s.AverageUnitCost).HasPrecision(18, 4);
+            b.Property(s => s.RowVersion).IsRowVersion();
+
+            b.HasOne(s => s.Warehouse).WithMany().HasForeignKey(s => s.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(s => s.CatalogItem).WithMany().HasForeignKey(s => s.CatalogItemId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Inventory.InventoryTransaction>(b =>
+        {
+            b.HasKey(t => t.Id);
+            b.HasQueryFilter(t => t.TenantId == CurrentTenantId);
+            
+            // Idempotency check per tenant
+            b.HasIndex(t => new { t.TenantId, t.IdempotencyKey }).IsUnique();
+            
+            b.Property(t => t.Quantity).HasPrecision(18, 4);
+            b.Property(t => t.UnitCost).HasPrecision(18, 4);
+
+            b.HasOne(t => t.Warehouse).WithMany().HasForeignKey(t => t.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.CatalogItem).WithMany().HasForeignKey(t => t.CatalogItemId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<AssetHub.Domain.Maintenance.MaintenanceOrder>().WithMany().HasForeignKey(t => t.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<AssetHub.Domain.Inventory.InventoryTransaction>().WithMany().HasForeignKey(t => t.ReversalOfId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Staff.Employee>(b =>

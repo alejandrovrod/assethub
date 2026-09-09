@@ -76,7 +76,7 @@ public class AssetMaterialTests
         db.AssetMaterials.Add(existing);
         await db.SaveChangesAsync();
 
-        var handler = new CreateAssetMaterialCommandHandler(db);
+        var handler = new CreateAssetMaterialCommandHandler(db, new FakeTenantResolver(tenantId));
         var command = new CreateAssetMaterialCommand(assetId, catalogItemId, 2, "Unidad", true, null);
 
         // Act & Assert

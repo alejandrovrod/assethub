@@ -73,6 +73,11 @@ export interface AddPartDto {
   catalogItemId: string
   quantity: number
   unitCost: number
+  // Inventory integration (M20)
+  sourceType?: 'None' | 'Internal' | 'External'
+  warehouseId?: string
+  externalSupplierName?: string
+  externalReference?: string
 }
 
 export interface MaintenanceOrdersQueryParams {

@@ -41,7 +41,7 @@ public class SmtpEmailService : IEmailService
         }
 
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(fromEmail, fromEmail));
+        message.From.Add(new MailboxAddress(fromEmail, fromEmail ?? "noreply@assethub.local"));
         message.To.Add(new MailboxAddress(to, to));
         message.Subject = subject;
 

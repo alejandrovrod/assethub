@@ -6,6 +6,7 @@ import {
   BookOpen,
   Settings,
   Command,
+  Package,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -87,6 +88,24 @@ export const sidebarData: SidebarData = {
             {
               title: 'Equipos',
               url: '/staff/teams',
+            },
+          ],
+        },
+        {
+          title: 'Inventario',
+          icon: Package,
+          items: [
+            {
+              title: 'Almacenes',
+              url: '/inventory/warehouses',
+            },
+            {
+              title: 'Stock',
+              url: '/inventory/stock',
+            },
+            {
+              title: 'Configuración',
+              url: '/inventory/settings',
             },
           ],
         },

@@ -47,5 +47,10 @@ public interface ITenantDbContext
 
     DbSet<AssetHub.Domain.Notifications.Notification> Notifications { get; }
 
+    DbSet<AssetHub.Domain.Inventory.Warehouse> Warehouses { get; }
+    DbSet<AssetHub.Domain.Inventory.StockBalance> StockBalances { get; }
+    DbSet<AssetHub.Domain.Inventory.InventoryTransaction> InventoryTransactions { get; }
+    DbSet<AssetHub.Domain.Inventory.TenantInventorySettings> TenantInventorySettings { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
