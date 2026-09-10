@@ -50,7 +50,10 @@ FEATURE_COLUMNS = [
     "TotalMaintenanceOrdersCount",
     "CompletedMaintenanceOrdersCount",
     "DaysSinceLastCompletedMaintenance",
-    "PendingWorkTasksCount"
+    "PendingWorkTasksCount",
+    "MaintenanceOrdersLast30Days",
+    "MaintenanceTasksLast30Days",
+    "OverdueOrdersCount"
 ]
 
 def generate_domain_baseline_dataset(n_samples=600):
@@ -70,7 +73,11 @@ def generate_domain_baseline_dataset(n_samples=600):
         "TotalMaintenanceOrdersCount": np.random.poisson(0.5, n_healthy),
         "CompletedMaintenanceOrdersCount": np.random.poisson(0.5, n_healthy),
         "DaysSinceLastCompletedMaintenance": np.random.uniform(0, 60, n_healthy),
-        "PendingWorkTasksCount": np.zeros(n_healthy)
+        "PendingWorkTasksCount": np.zeros(n_healthy),
+        # Maintenance activity: healthy assets have low order frequency, no overdue
+        "MaintenanceOrdersLast30Days": np.random.poisson(0.5, n_healthy),
+        "MaintenanceTasksLast30Days": np.random.poisson(1.0, n_healthy),
+        "OverdueOrdersCount": np.zeros(n_healthy)
     }
     y_healthy = np.zeros(n_healthy, dtype=int)
 
@@ -86,7 +93,11 @@ def generate_domain_baseline_dataset(n_samples=600):
         "TotalMaintenanceOrdersCount": np.random.randint(1, 6, n_failing),
         "CompletedMaintenanceOrdersCount": np.random.randint(0, 2, n_failing),
         "DaysSinceLastCompletedMaintenance": np.random.uniform(180, 500, n_failing),
-        "PendingWorkTasksCount": np.random.randint(1, 5, n_failing)
+        "PendingWorkTasksCount": np.random.randint(1, 5, n_failing),
+        # Maintenance activity: failing assets have high order frequency, overdue orders
+        "MaintenanceOrdersLast30Days": np.random.randint(3, 10, n_failing),
+        "MaintenanceTasksLast30Days": np.random.randint(5, 20, n_failing),
+        "OverdueOrdersCount": np.random.randint(1, 4, n_failing)
     }
     y_failing = np.ones(n_failing, dtype=int)
 
@@ -108,7 +119,10 @@ def load_data(engine):
         TotalMaintenanceOrdersCount,
         CompletedMaintenanceOrdersCount,
         DaysSinceLastCompletedMaintenance,
-        PendingWorkTasksCount
+        PendingWorkTasksCount,
+        MaintenanceOrdersLast30Days,
+        MaintenanceTasksLast30Days,
+        OverdueOrdersCount
     FROM tenant.v_AssetMLFeatures
     """
     df = pd.read_sql(query, con=engine)
@@ -126,7 +140,12 @@ def train_model():
         if len(df) > 0:
             print(f"Enriching training set with {len(df)} active assets from SQL Server...")
             X_real = df[FEATURE_COLUMNS].copy()
-            y_real = ((X_real["CurrentConditionIndex"] < 50) | (X_real["IncidentsLast30Days"] >= 2)).astype(int).values
+            y_real = (
+                (X_real["CurrentConditionIndex"] < 50)
+                | (X_real["IncidentsLast30Days"] >= 2)
+                | (X_real["OverdueOrdersCount"] >= 2)
+                | (X_real["MaintenanceOrdersLast30Days"] >= 5)
+            ).astype(int).values
             X_train = pd.concat([X_train, X_real], ignore_index=True)
             y_train = np.concatenate([y_train, y_real])
     except Exception as ex:

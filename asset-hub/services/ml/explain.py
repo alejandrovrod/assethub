@@ -15,7 +15,10 @@ FEATURE_DESCRIPTIONS = {
     "TotalMaintenanceOrdersCount": "Volumen de órdenes de mantenimiento",
     "CompletedMaintenanceOrdersCount": "Baja tasa de órdenes completadas",
     "DaysSinceLastCompletedMaintenance": "Tiempo prolongado sin mantenimiento preventivo",
-    "PendingWorkTasksCount": "Tareas operativas pendientes acumuladas"
+    "PendingWorkTasksCount": "Tareas operativas pendientes acumuladas",
+    "MaintenanceOrdersLast30Days": "Alta frecuencia de órdenes de mantenimiento recientes (30d)",
+    "MaintenanceTasksLast30Days": "Volumen elevado de tareas de mantenimiento recientes (30d)",
+    "OverdueOrdersCount": "Órdenes de mantenimiento vencidas sin completar"
 }
 
 def extract_top_contributions(row_dict, top_n=3):
@@ -35,6 +38,13 @@ def extract_top_contributions(row_dict, top_n=3):
 
     if row_dict.get("PendingWorkTasksCount", 0) > 2:
         scores["PendingWorkTasksCount"] = min(row_dict["PendingWorkTasksCount"] * 0.2, 1.0)
+
+    # Maintenance activity signals
+    if row_dict.get("OverdueOrdersCount", 0) > 0:
+        scores["OverdueOrdersCount"] = min(row_dict["OverdueOrdersCount"] * 0.3, 1.0)
+
+    if row_dict.get("MaintenanceOrdersLast30Days", 0) > 3:
+        scores["MaintenanceOrdersLast30Days"] = min(row_dict["MaintenanceOrdersLast30Days"] * 0.2, 1.0)
 
     # Sort descending
     sorted_features = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]

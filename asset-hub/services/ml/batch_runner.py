@@ -63,7 +63,10 @@ FEATURE_COLUMNS = [
     "TotalMaintenanceOrdersCount",
     "CompletedMaintenanceOrdersCount",
     "DaysSinceLastCompletedMaintenance",
-    "PendingWorkTasksCount"
+    "PendingWorkTasksCount",
+    "MaintenanceOrdersLast30Days",
+    "MaintenanceTasksLast30Days",
+    "OverdueOrdersCount"
 ]
 
 def determine_risk_level(prob: float) -> str:
@@ -113,7 +116,10 @@ def run_batch_inference():
             TotalMaintenanceOrdersCount,
             CompletedMaintenanceOrdersCount,
             DaysSinceLastCompletedMaintenance,
-            PendingWorkTasksCount
+            PendingWorkTasksCount,
+            MaintenanceOrdersLast30Days,
+            MaintenanceTasksLast30Days,
+            OverdueOrdersCount
         FROM tenant.v_AssetMLFeatures
         """
         df = pd.read_sql(query, con=engine)

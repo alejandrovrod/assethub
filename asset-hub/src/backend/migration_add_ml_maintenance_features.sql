@@ -1,31 +1,7 @@
--- Migration: Predictive Maintenance with XGBoost
--- Target: SQL Server
+-- Migration: Add Maintenance Activity Features to v_AssetMLFeatures
+-- Run this on top of migration_predictive_maintenance.sql
+-- New columns: MaintenanceOrdersLast30Days, MaintenanceTasksLast30Days, OverdueOrdersCount
 
-BEGIN TRANSACTION;
-
-IF SCHEMA_ID(N'tenant') IS NULL EXEC(N'CREATE SCHEMA [tenant];');
-
--- 1. Create AssetHealthPredictions Table
-IF OBJECT_ID(N'[tenant].[AssetHealthPredictions]', N'U') IS NULL
-BEGIN
-    CREATE TABLE [tenant].[AssetHealthPredictions] (
-        [Id] uniqueidentifier NOT NULL,
-        [TenantId] uniqueidentifier NOT NULL,
-        [AssetId] uniqueidentifier NOT NULL,
-        [RiskProbability] decimal(5, 4) NOT NULL,
-        [RiskLevel] nvarchar(50) NOT NULL,
-        [PredictedFailureDays] int NULL,
-        [TopFeatureContributionsJson] nvarchar(max) NULL,
-        [CreatedAt] datetime2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT [PK_AssetHealthPredictions] PRIMARY KEY ([Id]),
-        CONSTRAINT [FK_AssetHealthPredictions_Assets_AssetId] FOREIGN KEY ([AssetId]) REFERENCES [tenant].[Assets] ([Id]) ON DELETE CASCADE
-    );
-
-    CREATE INDEX [IX_AssetHealthPredictions_TenantId_AssetId] ON [tenant].[AssetHealthPredictions] ([TenantId], [AssetId]);
-    CREATE INDEX [IX_AssetHealthPredictions_CreatedAt] ON [tenant].[AssetHealthPredictions] ([CreatedAt]);
-END;
-
--- 2. Create Feature Extraction View for Machine Learning
 IF OBJECT_ID(N'[tenant].[v_AssetMLFeatures]', N'V') IS NOT NULL
     DROP VIEW [tenant].[v_AssetMLFeatures];
 GO
@@ -40,7 +16,7 @@ SELECT
     a.State AS AssetState,
     COALESCE(a.ConditionIndex, 100.0) AS CurrentConditionIndex,
     DATEDIFF(day, COALESCE(a.CommissionedAt, a.InstalledAt, a.CreatedAt), GETUTCDATE()) AS AssetAgeDays,
-    
+
     -- Histórico de condición (promedio últimos 30 y 90 días)
     COALESCE((
         SELECT AVG(h.ConditionIndex)
@@ -54,7 +30,7 @@ SELECT
         WHERE h.AssetId = a.Id AND h.CapturedAt >= DATEADD(day, -90, GETUTCDATE())
     ), a.ConditionIndex, 100.0) AS AvgConditionLast90Days,
 
-    -- Incidencias previas
+    -- Incidencias
     (
         SELECT COUNT(1)
         FROM [tenant].[Incidents] i
@@ -73,7 +49,7 @@ SELECT
         WHERE i.AssetId = a.Id AND i.IsDeleted = 0 AND i.ReportedAt >= DATEADD(day, -90, GETUTCDATE())
     ) AS IncidentsLast90Days,
 
-    -- Órdenes de Mantenimiento
+    -- Órdenes de Mantenimiento (historial total)
     (
         SELECT COUNT(1)
         FROM [tenant].[MaintenanceOrders] m
@@ -130,5 +106,3 @@ SELECT
 FROM [tenant].[Assets] a
 WHERE a.IsDeleted = 0;
 GO
-
-COMMIT;

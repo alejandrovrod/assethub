@@ -204,16 +204,17 @@ export default function MaintenanceOrders() {
           </div>
 
           <div className="px-4">
-                <Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Título</TableHead>
-                  <TableHead>Creada</TableHead>
+
                   <TableHead>Tipo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Activo</TableHead>
                   <TableHead>Programado</TableHead>
                   <TableHead>Costo</TableHead>
+                  <TableHead>Creada</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -239,13 +240,6 @@ export default function MaintenanceOrders() {
                     >
                       <TableCell className="font-medium">{order.title}</TableCell>
                       <TableCell>
-                        {order.createdAt ? (
-                          <span className="text-xs text-muted-foreground">{format(parseApiDate(order.createdAt), 'dd MMM yyyy', { locale: es })}</span>
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                      <TableCell>
                         <Badge variant="outline">{KIND_LABELS[order.kind] || order.kind}</Badge>
                       </TableCell>
                       <TableCell>
@@ -254,7 +248,7 @@ export default function MaintenanceOrders() {
                       <TableCell>{order.assetName || '—'}</TableCell>
                       <TableCell>
                         {order.scheduledStart ? (
-                          <span className="text-xs">{format(parseApiDate(order.scheduledStart), 'dd MMM', { locale: es })}</span>
+                          <span className="text-xs">{format(parseApiDate(order.scheduledStart), 'dd MMM yyyy', { locale: es })}</span>
                         ) : (
                           '—'
                         )}
@@ -267,6 +261,13 @@ export default function MaintenanceOrders() {
                           <span className="text-xs text-muted-foreground ml-1">
                             ({order.partsCount} parte{order.partsCount > 1 ? 's' : ''})
                           </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {order.createdAt ? (
+                          <span className="text-xs text-muted-foreground">{format(parseApiDate(order.createdAt), 'dd MMM yyyy', { locale: es })}</span>
+                        ) : (
+                          '—'
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -338,9 +339,9 @@ export default function MaintenanceOrders() {
                 </Select>
               </div>
               <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
@@ -349,8 +350,8 @@ export default function MaintenanceOrders() {
                 <div className="flex items-center text-sm px-2">
                   Página {page} de {Math.max(1, Math.ceil((data?.totalCount || 0) / pageSize))}
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setPage(p => p + 1)}
                   disabled={page >= Math.ceil((data?.totalCount || 0) / pageSize)}
