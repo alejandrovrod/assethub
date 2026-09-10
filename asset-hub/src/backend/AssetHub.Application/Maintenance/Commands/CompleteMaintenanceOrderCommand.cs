@@ -30,7 +30,7 @@ public class CompleteMaintenanceOrderCommandHandler : IRequestHandler<CompleteMa
     {
         var order = await _db.MaintenanceOrders.FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
 
         if (!MaintenanceOrderStateTransitionValidator.IsValidTransition(order.State, MaintenanceOrderStates.Done))
             throw new InvalidOperationException(MaintenanceOrderStateTransitionValidator.GetErrorMessage(order.State, MaintenanceOrderStates.Done));

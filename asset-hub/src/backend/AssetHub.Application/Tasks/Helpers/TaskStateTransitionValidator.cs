@@ -37,14 +37,14 @@ public static class TaskStateTransitionValidator
     {
         if (string.IsNullOrWhiteSpace(fromState))
         {
-            return $"A new task must start in '{WorkTaskStates.Todo}' state.";
+            return $"Una nueva tarea debe iniciar en estado '{WorkTaskStates.Todo}'.";
         }
 
         if (TerminalStates.Contains(fromState))
         {
-            return $"Cannot change state from '{fromState}' because it is a terminal state.";
+            return $"No se puede cambiar el estado desde '{fromState}' porque es un estado terminal.";
         }
 
-        return $"Invalid state transition from '{fromState}' to '{toState}'.";
+        return $"Transición de estado inválida de '{fromState}' a '{toState}'.";
     }
 }

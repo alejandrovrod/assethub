@@ -34,6 +34,7 @@ import { WorkTaskFormSheet } from './components/work-task-form-sheet'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 
 const STATE_OPTIONS: { value: WorkTaskState | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -305,7 +306,7 @@ export default function MaintenanceTasks() {
                               </TableCell>
                               <TableCell className="text-sm">
                                 {task.dueAt
-                                  ? format(new Date(task.dueAt), 'dd MMM yyyy', { locale: es })
+                                  ? format(parseApiDate(task.dueAt), 'dd MMM yyyy', { locale: es })
                                   : '—'}
                               </TableCell>
                               <TableCell className="text-sm">
@@ -379,7 +380,7 @@ export default function MaintenanceTasks() {
                                   {task.dueAt && (
                                     <span className="flex items-center gap-1">
                                       <Calendar className="h-3 w-3" />
-                                      {format(new Date(task.dueAt), 'dd MMM', { locale: es })}
+                                      {format(parseApiDate(task.dueAt), 'dd MMM', { locale: es })}
                                     </span>
                                   )}
                                   {(task.assignedEmployeeName || task.assignedTeamName) && (

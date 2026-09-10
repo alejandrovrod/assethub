@@ -20,6 +20,7 @@ import { assetService } from '@/services/asset.service'
 import { preventivePlanService } from '@/services/preventive-plan.service'
 import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
 import { PropagatedPropertiesDisplay } from './propagated-properties-display'
+import { parseApiDate } from '@/lib/utils'
 
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
 const PRIORITY_CATALOG_CODE = 'priority'
@@ -128,7 +129,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
       form.reset({
         title: task.title,
         description: task.description || '',
-        dueAt: task.dueAt ? new Date(task.dueAt) : undefined,
+        dueAt: task.dueAt ? parseApiDate(task.dueAt) : undefined,
         taskTypeCatalogItemId: task.taskTypeCatalogItemId,
         priorityCatalogItemId: task.priorityCatalogItemId,
         assignedTeamId: task.assignedTeamId ?? '',

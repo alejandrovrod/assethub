@@ -28,7 +28,7 @@ public class DeletePreventivePlanCommandHandler : IRequestHandler<DeletePreventi
 
         if (plan == null)
         {
-            throw new ArgumentException($"Preventive plan '{request.Id}' not found.");
+            throw new ArgumentException($"Plan preventivo '{request.Id}' no encontrado.");
         }
 
         plan.IsDeleted = true;

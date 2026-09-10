@@ -8,6 +8,7 @@ public class MaintenanceOrderSummaryDto
     public string Kind { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
     public DateTime? CompletedAt { get; set; }

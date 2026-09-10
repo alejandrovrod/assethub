@@ -40,7 +40,7 @@ public class RejectMaintenanceOrderCommandHandler : IRequestHandler<RejectMainte
             .FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
 
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
 
         if (!MaintenanceOrderStateTransitionValidator.IsValidTransition(order.State, MaintenanceOrderStates.Rescheduled))
             throw new InvalidOperationException(MaintenanceOrderStateTransitionValidator.GetErrorMessage(order.State, MaintenanceOrderStates.Rescheduled));

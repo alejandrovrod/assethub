@@ -31,7 +31,7 @@ public class TogglePreventivePlanActiveCommandHandler : IRequestHandler<TogglePr
 
         if (plan == null)
         {
-            throw new ArgumentException($"Preventive plan '{request.Id}' not found.");
+            throw new ArgumentException($"Plan preventivo '{request.Id}' no encontrado.");
         }
 
         plan.IsActive = !plan.IsActive;

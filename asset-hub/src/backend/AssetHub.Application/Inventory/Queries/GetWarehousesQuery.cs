@@ -17,6 +17,7 @@ public class WarehouseDto
     public string? Description { get; set; }
     public string? SuggestedLocation { get; set; }
     public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public class GetWarehousesQuery : IRequest<List<WarehouseDto>>
@@ -43,7 +44,8 @@ public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, Lis
                 Name = w.Name,
                 Description = w.Description,
                 SuggestedLocation = w.SuggestedLocation,
-                IsActive = w.IsActive
+                IsActive = w.IsActive,
+                CreatedAt = w.CreatedAt
             })
             .ToListAsync(cancellationToken);
     }

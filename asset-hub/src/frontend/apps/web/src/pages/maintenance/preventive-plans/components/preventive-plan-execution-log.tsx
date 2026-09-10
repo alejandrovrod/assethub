@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { preventivePlanService } from '@/services/preventive-plan.service'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -73,7 +74,7 @@ export function PreventivePlanExecutionLog({ planId }: Props) {
               return (
                 <TableRow key={log.id}>
                   <TableCell className="text-sm whitespace-nowrap">
-                    {format(new Date(log.executedAt.endsWith('Z') ? log.executedAt : `${log.executedAt}Z`), 'dd MMM yyyy HH:mm', { locale: es })}
+                    {format(parseApiDate(log.executedAt), 'dd MMM yyyy HH:mm', { locale: es })}
                   </TableCell>
                   <TableCell className="text-sm">{log.assetName ?? log.assetId.slice(0, 8)}</TableCell>
                   <TableCell>

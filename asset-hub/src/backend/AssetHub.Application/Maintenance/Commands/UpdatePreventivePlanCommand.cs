@@ -51,13 +51,13 @@ public class UpdatePreventivePlanCommandHandler : IRequestHandler<UpdatePreventi
 
         if (plan == null)
         {
-            throw new ArgumentException($"Preventive plan '{request.Id}' not found.");
+            throw new ArgumentException($"Plan preventivo '{request.Id}' no encontrado.");
         }
 
         if ((request.AssetTemplateId.HasValue && request.AssetId.HasValue) ||
             (!request.AssetTemplateId.HasValue && !request.AssetId.HasValue))
         {
-            throw new ArgumentException("A preventive plan must target either a TemplateId or an AssetId, but not both.");
+            throw new ArgumentException("Un plan preventivo debe dirigirse a una plantilla o a un activo, pero no a ambos.");
         }
 
         if (!new[] {
@@ -66,12 +66,12 @@ public class UpdatePreventivePlanCommandHandler : IRequestHandler<UpdatePreventi
             PreventivePlanConstants.GeneratedEntityTypeBoth
         }.Contains(request.GeneratedEntityType))
         {
-            throw new ArgumentException($"Invalid GeneratedEntityType: {request.GeneratedEntityType}");
+            throw new ArgumentException($"Tipo de entidad generada inv�lido: {request.GeneratedEntityType}");
         }
 
         if (request.DueDateOffsetDays < 0)
         {
-            throw new ArgumentException("DueDateOffsetDays must be greater than or equal to 0.");
+            throw new ArgumentException("Los d�as de offset para el vencimiento deben ser mayores o iguales a 0.");
         }
 
         DateTime? nextRunAt;
@@ -83,7 +83,7 @@ public class UpdatePreventivePlanCommandHandler : IRequestHandler<UpdatePreventi
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Invalid CronExpression: {ex.Message}");
+            throw new ArgumentException($"Expresi�n Cron inv�lida: {ex.Message}");
         }
 
         plan.Name = request.Name;

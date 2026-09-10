@@ -241,7 +241,7 @@ public class MaintenanceWorkflowIntegrationTests
     }
 
     [Fact]
-    public async Task PreventivePlan_SkipsWhenAssetHasActiveIncident()
+    public async Task PreventivePlan_GeneratesWorkTask_EvenWithActiveIncident()
     {
         var tenantId = Guid.NewGuid();
         await using var db = MaintenanceOrderTestHelper.CreateDbContext(tenantId);
@@ -283,7 +283,7 @@ public class MaintenanceWorkflowIntegrationTests
 
         var result = await handler.Handle(new EvaluatePreventivePlanCommand { PlanId = plan.Id }, CancellationToken.None);
 
-        Assert.Equal(1, result.SkippedAssets);
-        Assert.Equal(0, result.GeneratedWorkTasks);
+        Assert.Equal(0, result.SkippedAssets);
+        Assert.Equal(1, result.GeneratedWorkTasks);
     }
 }

@@ -32,7 +32,7 @@ public class InventoryApiContractTests
             Description = "Test description"
         };
 
-        var handler = new CreateWarehouseCommandHandler(db, new CapturingMediator());
+        var handler = new CreateWarehouseCommandHandler(db, new FakeTenantResolver(_testTenantId));
         var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.NotEqual(Guid.Empty, result);
@@ -50,14 +50,14 @@ public class InventoryApiContractTests
         var command1 = new CreateWarehouseCommand { Name = "WH1", Code = "WH-DUP" };
         var command2 = new CreateWarehouseCommand { Name = "WH2", Code = "WH-DUP" };
 
-        var handler = new CreateWarehouseCommandHandler(db, new CapturingMediator());
+        var handler = new CreateWarehouseCommandHandler(db, new FakeTenantResolver(_testTenantId));
 
         await handler.Handle(command1, CancellationToken.None);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
             handler.Handle(command2, CancellationToken.None));
 
-        Assert.Contains("duplicate", exception.Message.ToLower(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Ya existe un almacén", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class InventoryApiContractTests
 
         var command = new CreateWarehouseCommand { Name = "", Code = "" };
 
-        var handler = new CreateWarehouseCommandHandler(db, new CapturingMediator());
+        var handler = new CreateWarehouseCommandHandler(db, new FakeTenantResolver(_testTenantId));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
             handler.Handle(command, CancellationToken.None));

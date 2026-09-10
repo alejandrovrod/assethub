@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { inventoryService } from '@/services/inventory.service'
+import { catalogService } from '@/services/catalog.service'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -38,6 +39,9 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
+
+const PARTS_CATALOG_CODE = 'parts'
 
 const adjustmentSchema = z.object({
   warehouseId: z.string().min(1, 'Seleccioná un almacén'),
@@ -58,6 +62,11 @@ export default function StockPage() {
   const { data: warehouses = [] } = useQuery({
     queryKey: ['warehouses'],
     queryFn: inventoryService.getWarehouses,
+  })
+
+  const { data: catalogItems = [] } = useQuery({
+    queryKey: ['catalog-items', PARTS_CATALOG_CODE],
+    queryFn: () => catalogService.getCatalogItems(PARTS_CATALOG_CODE, 'es'),
   })
 
   const { data: stock = [], isLoading, refetch } = useQuery({
@@ -207,7 +216,12 @@ export default function StockPage() {
                             ? <ArrowDownCircle className="h-3.5 w-3.5 text-destructive" />
                             : <ArrowUpCircle className="h-3.5 w-3.5 text-emerald-500" />
                           }
-                          <code className="text-xs">{s.catalogItemName}</code>
+                          <div className="flex flex-col">
+                            <span>{s.catalogItemName || s.catalogItemCode}</span>
+                            {s.catalogItemName && s.catalogItemCode && s.catalogItemName !== s.catalogItemCode && (
+                              <code className="text-xs text-muted-foreground">{s.catalogItemCode}</code>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -225,7 +239,7 @@ export default function StockPage() {
                         {totalVal.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
-                        {format(new Date(s.updatedAt), 'dd MMM HH:mm', { locale: es })}
+                        {format(parseApiDate(s.updatedAt), 'dd MMM HH:mm', { locale: es })}
                       </TableCell>
                     </TableRow>
                   )
@@ -263,8 +277,17 @@ export default function StockPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="adj-catalog-id">ID del Artículo de Catálogo</Label>
-              <Input id="adj-catalog-id" placeholder="UUID del artículo" {...register('catalogItemId')} />
+              <Label>Artículo de Catálogo</Label>
+              <Select onValueChange={v => setValue('catalogItemId', v, { shouldValidate: true })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccioná un artículo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {catalogItems.map(item => (
+                    <SelectItem key={item.id} value={item.id}>{item.label || item.code}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.catalogItemId && <p className="text-xs text-destructive">{errors.catalogItemId.message}</p>}
             </div>
 

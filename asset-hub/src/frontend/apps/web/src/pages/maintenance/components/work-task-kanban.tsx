@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { Calendar, User, Clock, AlertCircle, GripVertical } from 'lucide-react'
 import type { WorkTaskSummary } from '@/services/work-task.service'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -155,7 +156,7 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
                         {task.dueAt && (
                           <div className={`flex items-center gap-1.5 ${isOverdue(task.dueAt) ? 'text-red-600 font-medium' : ''}`}>
                             <Calendar className="h-3.5 w-3.5" />
-                            <span>{format(new Date(task.dueAt), 'dd MMM yyyy', { locale: es })}</span>
+                            <span>{format(parseApiDate(task.dueAt), 'dd MMM', { locale: es })}</span>
                             {isOverdue(task.dueAt) && <AlertCircle className="h-3.5 w-3.5" />}
                           </div>
                         )}

@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { WorkTaskFormSheet } from './work-task-form-sheet'
 
 interface AssetTasksWidgetProps {
@@ -58,7 +59,7 @@ export function AssetTasksWidget({ assetId }: AssetTasksWidgetProps) {
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     {task.dueAt && (
-                      <span>Vence {format(new Date(task.dueAt), 'dd MMM', { locale: es })}</span>
+                      <span>Vence {format(parseApiDate(task.dueAt), 'dd MMM', { locale: es })}</span>
                     )}
                     {task.assignedEmployeeName && <span>· {task.assignedEmployeeName}</span>}
                   </div>

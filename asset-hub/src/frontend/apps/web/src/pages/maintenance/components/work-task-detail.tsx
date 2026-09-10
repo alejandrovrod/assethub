@@ -37,6 +37,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Link } from 'react-router'
+import { parseApiDate } from '@/lib/utils'
 
 const PRIORITY_CATALOG_CODE = 'priority'
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
@@ -217,7 +218,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             {displayedTask.dueAt && (
               <span className="text-xs flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                Vence {format(new Date(displayedTask.dueAt), 'dd MMM yyyy', { locale: es })}
+                Vence {format(parseApiDate(displayedTask.dueAt), 'dd MMM yyyy', { locale: es })}
               </span>
             )}
           </CardDescription>
@@ -427,7 +428,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                           <Badge>{STATE_LABELS[entry.toState as WorkTaskState] || entry.toState}</Badge>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {format(new Date(entry.changedAt), 'PPp', { locale: es })}
+                          {format(parseApiDate(entry.changedAt), 'PPp', { locale: es })}
                           {entry.changedByName && ` · ${entry.changedByName}`}
                         </div>
                       </div>
@@ -455,7 +456,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                       <p className="text-sm whitespace-pre-wrap">{comment.text}</p>
                       <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                         <MessageSquare className="h-3 w-3" />
-                        {format(new Date(comment.createdAt), 'PPp', { locale: es })}
+                        {format(parseApiDate(comment.createdAt), 'PPp', { locale: es })}
                         {comment.createdByName && ` · ${comment.createdByName}`}
                       </div>
                     </div>

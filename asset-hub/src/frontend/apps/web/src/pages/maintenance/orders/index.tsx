@@ -38,6 +38,8 @@ import { MaintenanceOrderFormSheet } from './components/maintenance-order-form-s
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
+import { getApiErrorMessage } from '@/lib/handle-server-error'
 
 const STATE_OPTIONS: { value: MaintenanceOrderState | 'all'; label: string }[] = [
   { value: 'all', label: 'Todas' },
@@ -120,7 +122,7 @@ export default function MaintenanceOrders() {
         setSearchParams(searchParams)
       }
     },
-    onError: () => toast.error('Error al eliminar la orden'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al eliminar la orden')),
   })
 
   const handleCreate = () => {
@@ -202,10 +204,11 @@ export default function MaintenanceOrders() {
           </div>
 
           <div className="px-4">
-            <Table>
+                <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Título</TableHead>
+                  <TableHead>Creada</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Activo</TableHead>
@@ -217,13 +220,13 @@ export default function MaintenanceOrders() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No hay órdenes de mantenimiento.
                     </TableCell>
                   </TableRow>
@@ -236,6 +239,13 @@ export default function MaintenanceOrders() {
                     >
                       <TableCell className="font-medium">{order.title}</TableCell>
                       <TableCell>
+                        {order.createdAt ? (
+                          <span className="text-xs text-muted-foreground">{format(parseApiDate(order.createdAt), 'dd MMM yyyy', { locale: es })}</span>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant="outline">{KIND_LABELS[order.kind] || order.kind}</Badge>
                       </TableCell>
                       <TableCell>
@@ -244,7 +254,7 @@ export default function MaintenanceOrders() {
                       <TableCell>{order.assetName || '—'}</TableCell>
                       <TableCell>
                         {order.scheduledStart ? (
-                          <span className="text-xs">{format(new Date(order.scheduledStart), 'dd MMM', { locale: es })}</span>
+                          <span className="text-xs">{format(parseApiDate(order.scheduledStart), 'dd MMM', { locale: es })}</span>
                         ) : (
                           '—'
                         )}

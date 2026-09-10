@@ -20,6 +20,7 @@ import { DatePicker } from '@/components/date-picker'
 import { toast } from 'sonner'
 import { Loader2, Package, Users, User } from 'lucide-react'
 import { apiClient as api } from '@/lib/api-client'
+import { parseApiDate } from '@/lib/utils'
 
 const CRON_PRESETS = [
   { label: 'Diario (medianoche)', value: '0 0 * * *' },
@@ -195,7 +196,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
         defaultAssignedTeamId: plan.defaultAssignedTeamId ?? undefined,
         allowedStates: conditions.allowedStates,
         excludedStates: conditions.excludedStates,
-        endsAt: plan.endsAt ? new Date(plan.endsAt) : undefined,
+        endsAt: plan.endsAt ? parseApiDate(plan.endsAt) : undefined,
       })
     } else {
       setAssetLabel('')

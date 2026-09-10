@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -38,17 +38,17 @@ public class AddTaskEvidenceCommandHandler : IRequestHandler<AddTaskEvidenceComm
     {
         var taskExists = await _db.WorkTasks.AnyAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (!taskExists)
-            throw new ArgumentException("Task not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         if (request.Type == "geocheck")
         {
             if (!request.Latitude.HasValue || !request.Longitude.HasValue)
-                throw new ArgumentException("Geocheck requires Latitude and Longitude");
+                throw new ArgumentException("La evidencia Geocheck requiere latitud y longitud");
         }
         else if (request.Type == "photo")
         {
             if (string.IsNullOrWhiteSpace(request.BlobUri))
-                throw new ArgumentException("Photo requires BlobUri");
+                throw new ArgumentException("La evidencia de foto requiere un BlobUri");
         }
 
         var evidence = new TaskEvidence

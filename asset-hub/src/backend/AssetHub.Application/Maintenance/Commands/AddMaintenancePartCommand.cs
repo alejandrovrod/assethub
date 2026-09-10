@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Exceptions;
 using AssetHub.Domain.Maintenance;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -41,14 +42,14 @@ public class AddMaintenancePartCommandHandler : IRequestHandler<AddMaintenancePa
 
         var order = await _db.MaintenanceOrders.FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
 
         if (order.State == MaintenanceOrderStates.Verified)
-            throw new InvalidOperationException("Cannot add parts to a verified maintenance order");
+            throw new InvalidOperationException("No se pueden agregar partes a una orden verificada");
 
         var catalogItemExists = await _db.CatalogItems.AnyAsync(c => c.Id == request.CatalogItemId, cancellationToken);
         if (!catalogItemExists)
-            throw new ArgumentException($"Catalog item {request.CatalogItemId} not found");
+            throw new ArgumentException($"Artículo de catálogo {request.CatalogItemId} no encontrado");
 
         var part = new MaintenancePart
         {
@@ -64,8 +65,11 @@ public class AddMaintenancePartCommandHandler : IRequestHandler<AddMaintenancePa
             ExternalReference = request.ExternalReference
         };
 
-        if (request.SourceType == "Internal" && request.WarehouseId.HasValue)
+        if (request.SourceType == "Internal")
         {
+            if (!request.WarehouseId.HasValue)
+                throw new DomainException("warehouse_required", $"A warehouse is required to add internal parts. Order: {order.Id}");
+
             // Post transaction
             var transaction = await _inventoryPostingService.PostTransactionAsync(
                 warehouseId: request.WarehouseId.Value,

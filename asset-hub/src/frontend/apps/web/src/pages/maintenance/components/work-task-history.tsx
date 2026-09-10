@@ -5,6 +5,7 @@ import { History, Loader2, ArrowRight, User } from 'lucide-react'
 import { workTaskService, type WorkTaskHistoryEntry } from '@/services/work-task.service'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+import { parseApiDate } from '@/lib/utils'
 
 interface Props {
   taskId: string
@@ -68,7 +69,7 @@ export function WorkTaskHistory({ taskId }: Props) {
                 <StateBadge state={entry.toState} />
               </div>
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                <span>{format(new Date(entry.changedAt), 'dd MMM yyyy HH:mm', { locale: es })}</span>
+                <span>{format(parseApiDate(entry.changedAt), 'dd MMM yyyy HH:mm', { locale: es })}</span>
                 {entry.changedByName && (
                   <span className="flex items-center gap-1">
                     <User className="h-3 w-3" />

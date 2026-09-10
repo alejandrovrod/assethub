@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -32,13 +32,13 @@ public class AssignWorkTaskCommandHandler : IRequestHandler<AssignWorkTaskComman
         var tenantId = _tenantResolver.GetCurrentTenantId()!.Value;
         var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (task == null)
-            throw new ArgumentException("WorkTask not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         if (request.AssignedEmployeeId.HasValue)
         {
             var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.AssignedEmployeeId.Value, cancellationToken);
             if (emp == null || !emp.IsActive)
-                throw new ArgumentException("Employee not found or inactive");
+                throw new ArgumentException("Empleado no encontrado o inactivo");
         }
 
         task.AssignedEmployeeId = request.AssignedEmployeeId;
@@ -60,8 +60,8 @@ public class AssignWorkTaskCommandHandler : IRequestHandler<AssignWorkTaskComman
                     Id = Guid.NewGuid(),
                     TenantId = tenantId,
                     UserId = employee.UserId.Value,
-                    Title = "Nueva asignación de tarea",
-                    Message = $"Se te asignó la tarea '{task.Title}'.",
+                    Title = "Nueva asignaciÃ³n de tarea",
+                    Message = $"Se te asignÃ³ la tarea '{task.Title}'.",
                     RelatedEntityType = "WorkTask",
                     RelatedEntityId = task.Id
                 });

@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 
 
 interface AssetMaintenanceOrdersWidgetProps {
@@ -49,7 +50,7 @@ export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrders
                       {KIND_LABELS[order.kind] || order.kind}
                     </Badge>
                     {order.scheduledStart && (
-                      <span>Prog. {format(new Date(order.scheduledStart), 'dd MMM', { locale: es })}</span>
+                      <span>Prog. {format(parseApiDate(order.scheduledStart), 'dd MMM', { locale: es })}</span>
                     )}
                   </div>
                 </div>

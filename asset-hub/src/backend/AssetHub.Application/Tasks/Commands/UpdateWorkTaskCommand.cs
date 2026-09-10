@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -34,23 +34,23 @@ public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskComman
     {
         var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (task == null)
-            throw new ArgumentException("WorkTask not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         if (WorkTaskStates.TerminalStates.Contains(task.State))
-            throw new InvalidOperationException("Cannot edit a task in a terminal state");
+            throw new InvalidOperationException("No se puede editar una tarea en un estado terminal");
 
         if (request.AssignedEmployeeId.HasValue)
         {
             var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.AssignedEmployeeId.Value, cancellationToken);
             if (emp == null || !emp.IsActive)
-                throw new ArgumentException("Assigned employee not found or inactive");
+                throw new ArgumentException("Empleado asignado no encontrado o inactivo");
         }
 
         if (request.AssignedTeamId.HasValue)
         {
             var team = await _db.Teams.FirstOrDefaultAsync(t => t.Id == request.AssignedTeamId.Value, cancellationToken);
             if (team == null || team.IsDeleted)
-                throw new ArgumentException("Assigned team not found");
+                throw new ArgumentException("Equipo asignado no encontrado");
         }
 
         task.Title = request.Title;

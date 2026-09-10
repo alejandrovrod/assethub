@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
+import { parseApiDate } from '@/lib/utils'
 
 interface Props {
   taskId: string
@@ -63,7 +64,7 @@ export function WorkTaskComments({ taskId }: Props) {
                     {comment.createdByName ?? 'Usuario'}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(comment.createdAt), 'dd MMM yyyy HH:mm', { locale: es })}
+                    {format(parseApiDate(comment.createdAt), 'dd MMM yyyy HH:mm', { locale: es })}
                   </span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{comment.text}</p>

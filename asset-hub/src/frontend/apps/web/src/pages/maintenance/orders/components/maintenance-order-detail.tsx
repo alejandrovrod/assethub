@@ -31,6 +31,8 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
+import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { Link } from 'react-router'
 import { MaintenanceOrderPartsEditor } from './maintenance-order-parts-editor'
 import { MaintenanceOrderTasksWidget } from './maintenance-order-tasks-widget'
@@ -115,7 +117,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-tasks', order.id] })
       toast.success('Orden actualizada')
     },
-    onError: () => toast.error('Error al actualizar la orden'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al actualizar la orden')),
   })
 
   const unlinkPreventivePlanMutation = useMutation({
@@ -125,7 +127,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
       toast.success('Plan preventivo desvinculado')
     },
-    onError: () => toast.error('Error al desvincular el plan'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al desvincular el plan')),
   })
 
   const stateMutation = useMutation({
@@ -151,7 +153,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       setCheckedTaskIds(new Set())
       toast.success('Estado actualizado')
     },
-    onError: () => toast.error('Error al cambiar el estado'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al cambiar el estado')),
   })
 
   const displayedOrder = detail || order
@@ -178,7 +180,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {displayedOrder.scheduledStart && (
               <span className="text-xs flex items-center gap-1 text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(displayedOrder.scheduledStart), 'dd MMM HH:mm', { locale: es })}
+                {format(parseApiDate(displayedOrder.scheduledStart), 'dd MMM', { locale: es })}
               </span>
             )}
           </div>

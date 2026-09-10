@@ -8,6 +8,7 @@ export interface MaintenanceOrderSummary {
   kind: MaintenanceOrderKind
   state: MaintenanceOrderState
   title: string
+  createdAt?: string
   scheduledStart?: string
   scheduledEnd?: string
   completedAt?: string

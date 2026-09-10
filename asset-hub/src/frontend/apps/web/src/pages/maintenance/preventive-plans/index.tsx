@@ -25,6 +25,7 @@ import { PreventivePlanGeneratedItems } from './components/preventive-plan-gener
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
   WorkTask: 'Tarea',
@@ -202,7 +203,7 @@ export default function PreventivePlansPage() {
                         </TableCell>
                         <TableCell className="text-sm">
                           {plan.nextRunAt
-                            ? format(new Date(plan.nextRunAt.endsWith('Z') ? plan.nextRunAt : `${plan.nextRunAt}Z`), 'dd MMM yyyy HH:mm', { locale: es })
+                            ? format(parseApiDate(plan.nextRunAt), 'dd MMM yyyy HH:mm', { locale: es })
                             : '—'}
                         </TableCell>
                         <TableCell>
@@ -393,10 +394,10 @@ export default function PreventivePlansPage() {
                     <DetailRow label="Asignación automática" value={selectedPlan.autoAssign ? 'Sí' : 'No'} />
                     <DetailRow label="Estado" value={selectedPlan.isActive ? 'Activo' : 'Pausado'} />
                     {selectedPlan.lastRunAt && (
-                      <DetailRow label="Última ejecución" value={format(new Date(selectedPlan.lastRunAt.endsWith('Z') ? selectedPlan.lastRunAt : `${selectedPlan.lastRunAt}Z`), 'dd MMM yyyy HH:mm', { locale: es })} />
+                      <DetailRow label="Última ejecución" value={format(parseApiDate(selectedPlan.lastRunAt), 'dd MMM yyyy HH:mm', { locale: es })} />
                     )}
                     {selectedPlan.endsAt && (
-                      <DetailRow label="Finaliza el" value={format(new Date(selectedPlan.endsAt.endsWith('Z') ? selectedPlan.endsAt : `${selectedPlan.endsAt}Z`), 'dd MMM yyyy', { locale: es })} />
+                      <DetailRow label="Finaliza el" value={format(parseApiDate(selectedPlan.endsAt), 'dd MMM yyyy', { locale: es })} />
                     )}
                   </div>
                 </TabsContent>

@@ -174,7 +174,11 @@ public class MaintenanceOrdersController : ControllerBase
             MaintenanceOrderId = id,
             CatalogItemId = request.CatalogItemId,
             Quantity = request.Quantity,
-            UnitCost = request.UnitCost
+            UnitCost = request.UnitCost,
+            SourceType = request.SourceType,
+            WarehouseId = request.WarehouseId,
+            ExternalSupplierName = request.ExternalSupplierName,
+            ExternalReference = request.ExternalReference
         };
         var partId = await _mediator.Send(command);
         return Ok(new { id = partId });

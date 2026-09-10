@@ -51,7 +51,7 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
             if (plan == null)
             {
                 _logger.LogWarning("Preventive plan {PlanId} not found.", request.PlanId);
-                throw new ArgumentException($"Preventive plan '{request.PlanId}' not found.");
+                throw new ArgumentException($"Plan preventivo '{request.PlanId}' no encontrado.");
             }
 
             if (!plan.IsActive)

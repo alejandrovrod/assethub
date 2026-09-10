@@ -60,6 +60,25 @@ export function getPageNumbers(currentPage: number, totalPages: number) {
 }
 
 /**
+ * Parses a timestamp coming from the API into a Date interpreted as UTC.
+ *
+ * The backend serializes DateTime values without a trailing "Z" (Kind is
+ * lost after the EF Core roundtrip), so the browser would parse them as
+ * local time and display the UTC wall clock without conversion. This
+ * helper appends the UTC designator when it is missing.
+ */
+export function parseApiDate(value: string | number | Date): Date {
+  if (value instanceof Date) return value
+  if (typeof value === 'number') return new Date(value)
+  const str = value.trim()
+  // Already has an explicit offset or is an epoch-style date-only value.
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(str) || str.startsWith('0001-')) return new Date(str)
+  // ISO-like local timestamp without offset: treat as UTC.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) return new Date(`${str}Z`)
+  return new Date(str)
+}
+
+/**
  * Initials from a display name: first character of the first word + first
  * character of the last word. One word only: first two characters. Empty: `?`.
  */

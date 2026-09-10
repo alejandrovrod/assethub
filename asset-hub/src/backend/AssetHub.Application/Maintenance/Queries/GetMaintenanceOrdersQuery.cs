@@ -75,7 +75,8 @@ public class GetMaintenanceOrdersQueryHandler : IRequestHandler<GetMaintenanceOr
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
-            .OrderByDescending(o => o.Id)
+            .OrderByDescending(o => o.CreatedAt)
+            .ThenByDescending(o => o.Id)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(o => new MaintenanceOrderSummaryDto
@@ -84,6 +85,7 @@ public class GetMaintenanceOrdersQueryHandler : IRequestHandler<GetMaintenanceOr
                 Kind = o.Kind,
                 State = o.State,
                 Title = o.Title,
+                CreatedAt = o.CreatedAt,
                 ScheduledStart = o.ScheduledStart,
                 ScheduledEnd = o.ScheduledEnd,
                 CompletedAt = o.CompletedAt,

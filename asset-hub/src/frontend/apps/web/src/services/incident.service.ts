@@ -14,7 +14,7 @@ export interface IncidentSummary {
   state: string
   assetId: string
   assetName: string
-  createdAt: string
+  reportedAt: string
   resolvedAt?: string
   closedAt?: string
 }
@@ -38,7 +38,7 @@ export interface IncidentDetail {
   workflowTemplateId?: string
   propertiesJson: string
   state: string
-  createdAt: string
+  reportedAt: string
   resolvedAt?: string
   closedAt?: string
   attachments: IncidentAttachment[]

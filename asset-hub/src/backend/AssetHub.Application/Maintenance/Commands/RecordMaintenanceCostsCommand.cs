@@ -41,10 +41,10 @@ public class RecordMaintenanceCostsCommandHandler : IRequestHandler<RecordMainte
         
         var order = await _db.MaintenanceOrders.FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
             
         if (order.State == MaintenanceOrderStates.Verified)
-            throw new InvalidOperationException("Cannot record costs on a verified maintenance order");
+            throw new InvalidOperationException("No se pueden registrar costos en una orden verificada");
             
         order.LaborCost = request.LaborCost;
 
@@ -52,7 +52,7 @@ public class RecordMaintenanceCostsCommandHandler : IRequestHandler<RecordMainte
         {
             var itemExists = await _db.CatalogItems.AnyAsync(c => c.Id == part.CatalogItemId, cancellationToken);
             if (!itemExists)
-                throw new ArgumentException($"Catalog item {part.CatalogItemId} not found");
+                throw new ArgumentException($"Artículo de catálogo {part.CatalogItemId} no encontrado");
 
             _db.MaintenanceParts.Add(new MaintenancePart
             {

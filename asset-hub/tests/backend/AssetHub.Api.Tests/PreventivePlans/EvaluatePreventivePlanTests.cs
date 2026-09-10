@@ -7,6 +7,7 @@ using AssetHub.Application.Interfaces;
 using AssetHub.Application.Maintenance.Commands;
 using AssetHub.Application.Maintenance.Events;
 using AssetHub.Domain.Assets;
+using AssetHub.Domain.AssetTemplates;
 using AssetHub.Domain.Maintenance;
 using AssetHub.Infrastructure.Persistence;
 using MediatR;
@@ -69,13 +70,34 @@ public static class PreventivePlanTestHelper
         return new TenantDbContext(options, resolver);
     }
 
-    public static Asset CreateAsset(Guid tenantId, Guid templateId, string state = "Activo")
+    public static AssetTemplate CreateTemplate(Guid tenantId)
+    {
+        return new AssetTemplate
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            Code = "T-001",
+            Name = "Test Template",
+            LifecycleStates = new LifecycleConfig
+            {
+                InitialState = "Activo",
+                States = new Dictionary<string, StateConfig>
+                {
+                    ["Activo"] = new(),
+                    ["Obsoleta"] = new()
+                }
+            }
+        };
+    }
+
+    public static Asset CreateAsset(Guid tenantId, AssetTemplate template, string state = "Activo")
     {
         return new Asset
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
-            AssetTemplateId = templateId,
+            AssetTemplateId = template.Id,
+            AssetTemplate = template,
             Code = "A-001",
             Name = "Test Asset",
             State = state,
@@ -110,11 +132,12 @@ public class EvaluatePreventivePlanTests
     public async Task EvaluatePlan_ForSingleAsset_GeneratesWorkTask()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, templateId);
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, template);
         var plan = PreventivePlanTestHelper.CreatePlan(tenantId, assetId: asset.Id);
 
+        db.AssetTemplates.Add(template);
         db.Assets.Add(asset);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
@@ -133,14 +156,15 @@ public class EvaluatePreventivePlanTests
     public async Task EvaluatePlan_ForTemplate_GeneratesOneWorkTaskPerAsset()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset1 = PreventivePlanTestHelper.CreateAsset(tenantId, templateId, "Activo");
-        var asset2 = PreventivePlanTestHelper.CreateAsset(tenantId, templateId, "Activo");
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset1 = PreventivePlanTestHelper.CreateAsset(tenantId, template, "Activo");
+        var asset2 = PreventivePlanTestHelper.CreateAsset(tenantId, template, "Activo");
         asset2.Code = "A-002";
         asset2.Name = "Test Asset 2";
-        var plan = PreventivePlanTestHelper.CreatePlan(tenantId, templateId: templateId);
+        var plan = PreventivePlanTestHelper.CreatePlan(tenantId, templateId: template.Id);
 
+        db.AssetTemplates.Add(template);
         db.Assets.AddRange(asset1, asset2);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
@@ -157,12 +181,13 @@ public class EvaluatePreventivePlanTests
     public async Task EvaluatePlan_SkipsExcludedAssetState_AndLogsReason()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, templateId, "Obsoleta");
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, template, "Obsoleta");
         var plan = PreventivePlanTestHelper.CreatePlan(tenantId, assetId: asset.Id);
         plan.ConditionRuleJson = """{"excludedStates":["Obsoleta"]}""";
 
+        db.AssetTemplates.Add(template);
         db.Assets.Add(asset);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
@@ -182,12 +207,13 @@ public class EvaluatePreventivePlanTests
     public async Task EvaluatePlan_GeneratesBothTaskAndOrder()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, templateId);
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, template);
         var plan = PreventivePlanTestHelper.CreatePlan(tenantId, assetId: asset.Id);
         plan.GeneratedEntityType = PreventivePlanConstants.GeneratedEntityTypeBoth;
 
+        db.AssetTemplates.Add(template);
         db.Assets.Add(asset);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
@@ -206,13 +232,14 @@ public class EvaluatePreventivePlanTests
     public async Task EvaluatePlan_IsIdempotent_ForSameOccurrence()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, templateId);
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, template);
         var occurrence = DateTime.UtcNow.AddMinutes(-5);
         var plan = PreventivePlanTestHelper.CreatePlan(tenantId, assetId: asset.Id);
         plan.NextRunAt = occurrence;
 
+        db.AssetTemplates.Add(template);
         db.Assets.Add(asset);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
@@ -233,12 +260,13 @@ public class EvaluatePreventivePlanTests
     public async Task PausePlan_PreventsGeneration()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, templateId);
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, template);
         var plan = PreventivePlanTestHelper.CreatePlan(tenantId, assetId: asset.Id);
         plan.IsActive = false;
 
+        db.AssetTemplates.Add(template);
         db.Assets.Add(asset);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();
@@ -255,14 +283,15 @@ public class EvaluatePreventivePlanTests
     public async Task EvaluatePlan_SetsDueDateRelativeToExecution()
     {
         var tenantId = Guid.NewGuid();
-        var templateId = Guid.NewGuid();
         await using var db = PreventivePlanTestHelper.CreateDbContext(tenantId);
-        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, templateId);
+        var template = PreventivePlanTestHelper.CreateTemplate(tenantId);
+        var asset = PreventivePlanTestHelper.CreateAsset(tenantId, template);
         var occurrence = DateTime.UtcNow.AddMinutes(-5);
         var plan = PreventivePlanTestHelper.CreatePlan(tenantId, assetId: asset.Id);
         plan.NextRunAt = occurrence;
         plan.DueDateOffsetDays = 10;
 
+        db.AssetTemplates.Add(template);
         db.Assets.Add(asset);
         db.PreventivePlans.Add(plan);
         await db.SaveChangesAsync();

@@ -45,13 +45,13 @@ public class CreateMaintenanceOrderCommandHandler : IRequestHandler<CreateMainte
             .FirstOrDefaultAsync(a => a.Id == request.AssetId, cancellationToken);
             
         if (asset == null)
-            throw new ArgumentException("Asset not found");
+            throw new ArgumentException("Activo no encontrado");
 
         if (string.IsNullOrWhiteSpace(request.Kind))
-            throw new ArgumentException("Kind cannot be empty.");
+            throw new ArgumentException("El tipo de orden no puede estar vacío.");
 
         if (request.PreventivePlanId.HasValue && request.IncidentId.HasValue)
-            throw new ArgumentException("Order cannot have both a PreventivePlanId and an IncidentId");
+            throw new ArgumentException("La orden no puede tener tanto un plan preventivo como un incidente asociados");
 
         var order = new MaintenanceOrder
         {

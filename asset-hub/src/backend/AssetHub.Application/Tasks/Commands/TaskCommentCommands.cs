@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -31,7 +31,7 @@ public class AddTaskCommentCommandHandler : IRequestHandler<AddTaskCommentComman
     {
         var taskExists = await _db.WorkTasks.AnyAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (!taskExists)
-            throw new ArgumentException("Task not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         var comment = new TaskComment
         {
@@ -71,10 +71,10 @@ public class UpdateTaskCommentCommandHandler : IRequestHandler<UpdateTaskComment
     {
         var comment = await _db.TaskComments.FirstOrDefaultAsync(c => c.Id == request.CommentId, cancellationToken);
         if (comment == null)
-            throw new ArgumentException("Comment not found");
+            throw new ArgumentException("Comentario no encontrado");
 
         if (comment.AuthorUserId != _currentUser.Id)
-            throw new UnauthorizedAccessException("Cannot edit someone else's comment");
+            throw new UnauthorizedAccessException("No se puede editar un comentario de otro usuario");
 
         comment.Text = request.Text;
         comment.UpdatedAt = DateTime.UtcNow;
@@ -105,10 +105,10 @@ public class DeleteTaskCommentCommandHandler : IRequestHandler<DeleteTaskComment
     {
         var comment = await _db.TaskComments.FirstOrDefaultAsync(c => c.Id == request.CommentId, cancellationToken);
         if (comment == null)
-            throw new ArgumentException("Comment not found");
+            throw new ArgumentException("Comentario no encontrado");
 
         if (comment.AuthorUserId != _currentUser.Id)
-            throw new UnauthorizedAccessException("Cannot delete someone else's comment");
+            throw new UnauthorizedAccessException("No se puede eliminar un comentario de otro usuario");
 
         _db.TaskComments.Remove(comment);
         await _db.SaveChangesAsync(cancellationToken);

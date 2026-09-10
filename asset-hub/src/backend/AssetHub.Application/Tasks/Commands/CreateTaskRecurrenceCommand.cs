@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +36,7 @@ public class CreateTaskRecurrenceCommandHandler : IRequestHandler<CreateTaskRecu
         var tenantId = _tenantResolver.GetCurrentTenantId();
 
         if (string.IsNullOrWhiteSpace(request.CronExpression) && !request.IntervalDays.HasValue)
-            throw new ArgumentException("Must provide either CronExpression or IntervalDays");
+            throw new ArgumentException("Debe proporcionar una expresión Cron o un intervalo en días");
 
         DateTime nextRunAt = DateTime.UtcNow;
 
@@ -47,12 +47,12 @@ public class CreateTaskRecurrenceCommandHandler : IRequestHandler<CreateTaskRecu
                 var expression = CronExpression.Parse(request.CronExpression);
                 var next = expression.GetNextOccurrence(DateTime.UtcNow);
                 if (!next.HasValue)
-                    throw new ArgumentException("Invalid CronExpression: no future occurrences");
+                    throw new ArgumentException("Expresión Cron inválida: no hay ocurrencias futuras");
                 nextRunAt = next.Value;
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Invalid CronExpression: {ex.Message}");
+                throw new ArgumentException($"Expresión Cron inválida: {ex.Message}");
             }
         }
         else if (request.IntervalDays.HasValue)

@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { Loader2, Package, Clock, FileText, Link as LinkIcon, Wrench } from 'lucide-react'
 import {
   maintenanceOrderService,
@@ -129,7 +130,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       setAssetLabel('')
       onSuccess?.(data)
     },
-    onError: () => toast.error('Error al crear la orden'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al crear la orden')),
   })
 
   const updateMutation = useMutation({
@@ -145,7 +146,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       toast.success('Orden actualizada')
       onSuccess?.()
     },
-    onError: () => toast.error('Error al actualizar la orden'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al actualizar la orden')),
   })
 
   const onSubmit = (values: FormValues) => {

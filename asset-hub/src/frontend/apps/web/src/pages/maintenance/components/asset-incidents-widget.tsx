@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 
 interface AssetIncidentsWidgetProps {
   assetId: string
@@ -103,7 +104,7 @@ export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetInc
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <FileText className="h-3 w-3" />
-                    <span>Reportado {format(new Date(incident.createdAt), 'dd MMM', { locale: es })}</span>
+                    <span>Reportado {incident.reportedAt ? format(parseApiDate(incident.reportedAt), 'dd MMM', { locale: es }) : '—'}</span>
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs shrink-0 capitalize">

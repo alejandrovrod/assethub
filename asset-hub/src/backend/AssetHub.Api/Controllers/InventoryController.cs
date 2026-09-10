@@ -21,6 +21,22 @@ public class InventoryController : ControllerBase
         _mediator = mediator;
     }
 
+    // SETTINGS
+
+    [HttpGet("settings")]
+    public async Task<ActionResult<TenantInventorySettingsDto>> GetSettings()
+    {
+        var result = await _mediator.Send(new GetInventorySettingsQuery());
+        return Ok(result);
+    }
+
+    [HttpPut("settings")]
+    public async Task<ActionResult<InventorySettingsDto>> UpdateSettings([FromBody] UpdateInventorySettingsCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
     // WAREHOUSES
 
     [HttpPost("warehouses")]

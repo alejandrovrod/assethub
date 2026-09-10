@@ -48,7 +48,7 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
         if ((request.AssetTemplateId.HasValue && request.AssetId.HasValue) ||
             (!request.AssetTemplateId.HasValue && !request.AssetId.HasValue))
         {
-            throw new ArgumentException("A preventive plan must target either a TemplateId or an AssetId, but not both.");
+            throw new ArgumentException("Un plan preventivo debe dirigirse a una plantilla o a un activo, pero no a ambos.");
         }
 
         if (!new[] {
@@ -57,12 +57,12 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
             PreventivePlanConstants.GeneratedEntityTypeBoth
         }.Contains(request.GeneratedEntityType))
         {
-            throw new ArgumentException($"Invalid GeneratedEntityType: {request.GeneratedEntityType}");
+            throw new ArgumentException($"Tipo de entidad generada inválido: {request.GeneratedEntityType}");
         }
 
         if (request.DueDateOffsetDays < 0)
         {
-            throw new ArgumentException("DueDateOffsetDays must be greater than or equal to 0.");
+            throw new ArgumentException("Los días de offset para el vencimiento deben ser mayores o iguales a 0.");
         }
 
         DateTime? nextRunAt;
@@ -74,7 +74,7 @@ public class CreatePreventivePlanCommandHandler : IRequestHandler<CreatePreventi
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Invalid CronExpression: {ex.Message}");
+            throw new ArgumentException($"Expresión Cron inválida: {ex.Message}");
         }
 
         var plan = new PreventivePlan

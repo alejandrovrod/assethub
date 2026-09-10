@@ -26,10 +26,10 @@ public class DeleteMaintenanceOrderCommandHandler : IRequestHandler<DeleteMainte
     {
         var order = await _db.MaintenanceOrders.FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
 
         if (order.State == MaintenanceOrderStates.Verified)
-            throw new InvalidOperationException("Cannot delete a verified maintenance order");
+            throw new InvalidOperationException("No se puede eliminar una orden verificada");
 
         // Soft delete: also soft-delete child work tasks
         var childTasks = await _db.WorkTasks

@@ -65,6 +65,10 @@ public class InventoryPostingService : IInventoryPostingService
             throw new DomainException("invalid_mode", "Inventory operating mode is not set to Internal or Hybrid.");
         }
 
+        // 2b. Load settings once for negative-stock policy
+        var settings = await _dbContext.TenantInventorySettings
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+
         // 3. Load or create StockBalance (Pessimistic-like concurrency can be handled by RowVersion later, or we lock)
         var stock = await _dbContext.StockBalances
             .FirstOrDefaultAsync(s => s.WarehouseId == warehouseId && s.CatalogItemId == catalogItemId, cancellationToken);
@@ -93,7 +97,9 @@ public class InventoryPostingService : IInventoryPostingService
         var oldQuantity = stock.QuantityOnHand;
         var newQuantity = oldQuantity + quantity;
 
-        if (newQuantity < 0)
+        var allowNegative = settings?.AllowNegativeStock ?? false;
+
+        if (newQuantity < 0 && !allowNegative)
         {
             throw new DomainException("insufficient_stock", $"Insufficient stock. Current: {oldQuantity}, Requested: {Math.Abs(quantity)}");
         }

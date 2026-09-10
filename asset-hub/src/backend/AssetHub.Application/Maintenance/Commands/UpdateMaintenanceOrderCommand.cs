@@ -39,10 +39,10 @@ public class UpdateMaintenanceOrderCommandHandler : IRequestHandler<UpdateMainte
             .Include(o => o.AssignedEmployee)
             .FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
 
         if (order.State == MaintenanceOrderStates.Verified)
-            throw new InvalidOperationException("Cannot update a verified maintenance order");
+            throw new InvalidOperationException("No se puede actualizar una orden verificada");
 
         if (request.Title != null)
             order.Title = request.Title;
@@ -67,6 +67,7 @@ public class UpdateMaintenanceOrderCommandHandler : IRequestHandler<UpdateMainte
             Kind = order.Kind,
             State = order.State,
             Title = order.Title,
+            CreatedAt = order.CreatedAt,
             ScheduledStart = order.ScheduledStart,
             ScheduledEnd = order.ScheduledEnd,
             CompletedAt = order.CompletedAt,

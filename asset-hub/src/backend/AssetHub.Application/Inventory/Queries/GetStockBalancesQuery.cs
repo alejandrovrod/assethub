@@ -14,6 +14,7 @@ public class StockBalanceDto
     public Guid WarehouseId { get; set; }
     public string WarehouseName { get; set; } = string.Empty;
     public Guid CatalogItemId { get; set; }
+    public string CatalogItemCode { get; set; } = string.Empty;
     public string CatalogItemName { get; set; } = string.Empty;
     public decimal QuantityOnHand { get; set; }
     public decimal AverageUnitCost { get; set; }
@@ -39,7 +40,7 @@ public class GetStockBalancesQueryHandler : IRequestHandler<GetStockBalancesQuer
     {
         var query = _dbContext.StockBalances
             .Include(s => s.Warehouse)
-            .Include(s => s.CatalogItem)
+            .Include(s => s.CatalogItem!.Translations)
             .AsQueryable();
 
         if (request.WarehouseId.HasValue)
@@ -52,19 +53,24 @@ public class GetStockBalancesQueryHandler : IRequestHandler<GetStockBalancesQuer
             query = query.Where(s => s.CatalogItemId == request.CatalogItemId.Value);
         }
 
-        return await query
+        var balances = await query
             .OrderBy(s => s.Warehouse!.Name)
             .ThenBy(s => s.CatalogItem!.Code)
-            .Select(s => new StockBalanceDto
-            {
-                WarehouseId = s.WarehouseId,
-                WarehouseName = s.Warehouse!.Name,
-                CatalogItemId = s.CatalogItemId,
-                CatalogItemName = s.CatalogItem!.Code, // Using Code since CatalogItem does not have Name directly
-                QuantityOnHand = s.QuantityOnHand,
-                AverageUnitCost = s.AverageUnitCost,
-                UpdatedAt = s.UpdatedAt
-            })
             .ToListAsync(cancellationToken);
+
+        return balances.Select(s => new StockBalanceDto
+        {
+            WarehouseId = s.WarehouseId,
+            WarehouseName = s.Warehouse!.Name,
+            CatalogItemId = s.CatalogItemId,
+            CatalogItemCode = s.CatalogItem!.Code,
+            CatalogItemName = s.CatalogItem!.Translations
+                .FirstOrDefault(t => t.Locale == "es")?.Label
+                ?? s.CatalogItem!.Translations.FirstOrDefault()?.Label
+                ?? s.CatalogItem!.Code,
+            QuantityOnHand = s.QuantityOnHand,
+            AverageUnitCost = s.AverageUnitCost,
+            UpdatedAt = s.UpdatedAt
+        }).ToList();
     }
 }

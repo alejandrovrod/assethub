@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
 import { assetService } from '@/services/asset.service'
@@ -87,7 +88,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-parts', orderId] })
       toast.success('Parte eliminada')
     },
-    onError: () => toast.error('Error al eliminar parte'),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al eliminar parte')),
   })
 
   const addMutation = useMutation({

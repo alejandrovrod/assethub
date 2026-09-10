@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { preventivePlanService } from '@/services/preventive-plan.service'
 import { Badge } from '@/components/ui/badge'
@@ -53,7 +54,7 @@ export function PreventivePlanAssetWidget({ assetId, assetTemplateId }: Props) {
                 <p className="font-medium">{plan.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {plan.nextRunAt
-                    ? `Próxima: ${format(new Date(plan.nextRunAt), 'dd MMM yyyy', { locale: es })}`
+                    ? `Próxima: ${format(parseApiDate(plan.nextRunAt), 'dd MMM yyyy', { locale: es })}`
                     : 'Sin programación'}
                 </p>
               </div>

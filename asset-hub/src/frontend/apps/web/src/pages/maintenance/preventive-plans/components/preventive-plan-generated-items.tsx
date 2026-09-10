@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { STATE_LABELS as TASK_STATE_LABELS } from '@/services/work-task.service'
 
 export function PreventivePlanGeneratedItems({ planId }: { planId: string }) {
@@ -60,7 +61,7 @@ export function PreventivePlanGeneratedItems({ planId }: { planId: string }) {
                         {task.assetName && <span>Activo: {task.assetName}</span>}
                         {task.dueAt && (
                           <span className="ml-auto">
-                            Vence: {format(new Date(task.dueAt), 'dd MMM', { locale: es })}
+                            Vence: {format(parseApiDate(task.dueAt), 'dd MMM', { locale: es })}
                           </span>
                         )}
                       </div>
@@ -93,7 +94,7 @@ export function PreventivePlanGeneratedItems({ planId }: { planId: string }) {
                         {order.assetName && <span>Activo: {order.assetName}</span>}
                         {order.scheduledStart && (
                           <span className="ml-auto">
-                            Prog: {format(new Date(order.scheduledStart), 'dd MMM', { locale: es })}
+                            Prog: {format(parseApiDate(order.scheduledStart), 'dd MMM', { locale: es })}
                           </span>
                         )}
                       </div>

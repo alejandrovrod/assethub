@@ -3,6 +3,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { assetService } from "../../../services/asset.service"
 import { Loader2, ArrowLeft, User, FileText } from "lucide-react"
+import { parseApiDate } from "@/lib/utils"
 
 export function AssetTimeline({ assetId }: { assetId: string }) {
   const { data: events, isLoading, error } = useQuery({
@@ -47,7 +48,7 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
           <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <span className="font-bold text-sm text-foreground capitalize">Cambio de estado</span>
-              <time className="text-xs text-muted-foreground">{format(new Date(evt.at), 'PPp', { locale: es })}</time>
+              <time className="text-xs text-muted-foreground">{format(parseApiDate(evt.at), 'PPp', { locale: es })}</time>
             </div>
 
             <div className="text-sm text-muted-foreground mb-2">

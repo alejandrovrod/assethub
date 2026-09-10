@@ -35,6 +35,7 @@ import { ReportIncidentSheet } from '@/pages/maintenance/components/report-incid
 import { MaintenanceOrderFormSheet } from '@/pages/maintenance/orders/components/maintenance-order-form-sheet'
 import { AssetMap } from '@/components/map/AssetMap'
 import { AssetMaterialsTable } from './components/asset-materials-table'
+import { parseApiDate } from '@/lib/utils'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -361,7 +362,7 @@ export default function AssetDetailPage() {
             {asset.installedAt && (
               <div className="flex flex-col justify-center border-l pl-4 h-full">
                 <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">Instalado</span>
-                <span className="text-xs">{new Date(asset.installedAt).toLocaleDateString()}</span>
+                <span className="text-xs">{parseApiDate(asset.installedAt).toLocaleDateString()}</span>
               </div>
             )}
           </div>

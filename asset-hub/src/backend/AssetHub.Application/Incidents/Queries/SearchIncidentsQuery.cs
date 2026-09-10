@@ -16,7 +16,7 @@ public record IncidentSummaryDto(
     string State,
     Guid AssetId,
     string AssetName,
-    DateTime CreatedAt,
+    DateTime ReportedAt,
     DateTime? ResolvedAt,
     DateTime? ClosedAt
 );
@@ -71,7 +71,7 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
-            .OrderByDescending(i => i.Id) // Id is Guid, usually we'd order by date if we had a CreateDate in base entity, assuming they don't have CreatedAt base property we'll order by Id or just don't order for now
+            .OrderByDescending(i => i.ReportedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(i => new IncidentSummaryDto(
@@ -80,9 +80,9 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
                 i.State,
                 i.AssetId,
                 i.Asset != null ? i.Asset.Name : "",
-                DateTime.UtcNow, // Fallback if no CreatedAt
+                i.ReportedAt,
                 i.ResolvedAt,
-                i.ClosedAt ?? (i.State == "Resuelta" || i.State == "Cancelada" || i.State == "Closed" || i.State == "Resolved" ? DateTime.UtcNow : null)
+                i.ClosedAt
             ))
             .ToListAsync(cancellationToken);
 

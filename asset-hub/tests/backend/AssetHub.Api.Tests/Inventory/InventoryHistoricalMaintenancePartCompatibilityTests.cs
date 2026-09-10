@@ -141,6 +141,7 @@ public class InventoryHistoricalMaintenancePartCompatibilityTests
         var legacyPart = new MaintenancePart
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             MaintenanceOrderId = orderId,
             CatalogItemId = catalogItemId,
             Quantity = 5,
@@ -170,6 +171,7 @@ public class InventoryHistoricalMaintenancePartCompatibilityTests
         var legacyPart = new MaintenancePart
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             MaintenanceOrderId = orderId,
             CatalogItemId = catalogItemId,
             Quantity = 5,
@@ -199,6 +201,7 @@ public class InventoryHistoricalMaintenancePartCompatibilityTests
         var legacyPart = new MaintenancePart
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             MaintenanceOrderId = orderId,
             CatalogItemId = catalogItemId,
             Quantity = 5,
@@ -228,6 +231,7 @@ public class InventoryHistoricalMaintenancePartCompatibilityTests
         var legacyPart = new MaintenancePart
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             MaintenanceOrderId = orderId,
             CatalogItemId = catalogItemId,
             Quantity = 5,
@@ -311,6 +315,7 @@ public class InventoryHistoricalMaintenancePartCompatibilityTests
         var legacyPart = new MaintenancePart
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             MaintenanceOrderId = orderId,
             CatalogItemId = catalogItemId,
             Quantity = 5,
@@ -367,6 +372,7 @@ public class InventoryHistoricalMaintenancePartCompatibilityTests
         var legacyPart = new MaintenancePart
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             MaintenanceOrderId = orderId,
             CatalogItemId = catalogItemId,
             Quantity = 5,

@@ -23,6 +23,7 @@ import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 import { IncidentTasksWidget } from './components/incident-tasks-widget'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 
@@ -241,7 +242,7 @@ export default function IncidentDetailPage() {
               <Badge variant="outline" className="text-sm">Estado: {incident.state}</Badge>
               <span className="text-muted-foreground text-sm">Activo: {incident.assetName}</span>
               <span className="text-muted-foreground text-sm">
-                | Reportado: {format(new Date(incident.createdAt || new Date()), 'PPp', { locale: es })}
+                | Reportado: {format(parseApiDate(incident.reportedAt || new Date()), 'PPp', { locale: es })}
               </span>
             </div>
           </div>
@@ -372,7 +373,7 @@ export default function IncidentDetailPage() {
                             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card border rounded-lg p-4 shadow-sm">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="font-bold text-sm text-foreground capitalize">{event.eventType}</span>
-                                <time className="text-xs text-muted-foreground">{format(new Date(event.at), 'PPp', { locale: es })}</time>
+                                <time className="text-xs text-muted-foreground">{format(parseApiDate(event.at), 'PPp', { locale: es })}</time>
                               </div>
                               <div className="text-sm text-muted-foreground mb-2">
                                 {event.notes || 'Sin detalles adicionales'}
@@ -431,12 +432,12 @@ export default function IncidentDetailPage() {
               </div>
               <div>
                 <span className="text-muted-foreground block mb-1">Fecha de Creación</span>
-                <span>{incident.createdAt ? new Date(incident.createdAt).toLocaleDateString() : '-'}</span>
+                <span>{incident.reportedAt ? parseApiDate(incident.reportedAt).toLocaleDateString() : '-'}</span>
               </div>
               {incident.resolvedAt && (
                 <div>
                   <span className="text-muted-foreground block mb-1">Fecha de Resolución</span>
-                  <span>{new Date(incident.resolvedAt).toLocaleDateString()}</span>
+                  <span>{parseApiDate(incident.resolvedAt).toLocaleDateString()}</span>
                 </div>
               )}
             </CardContent>
@@ -458,7 +459,7 @@ export default function IncidentDetailPage() {
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       {incident.maintenanceOrder.scheduledStart && (
-                        <span>Prog. {format(new Date(incident.maintenanceOrder.scheduledStart), 'dd MMM', { locale: es })}</span>
+                        <span>Prog. {format(parseApiDate(incident.maintenanceOrder.scheduledStart), 'dd MMM', { locale: es })}</span>
                       )}
                       {incident.maintenanceOrder.assignedEmployeeName && (
                         <span>· {incident.maintenanceOrder.assignedEmployeeName}</span>

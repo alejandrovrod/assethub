@@ -43,14 +43,14 @@ public static class MaintenanceOrderStateTransitionValidator
     {
         if (string.IsNullOrWhiteSpace(fromState))
         {
-            return $"A new maintenance order must start in '{MaintenanceOrderStates.Draft}' state.";
+            return $"Una nueva orden de mantenimiento debe iniciar en estado '{MaintenanceOrderStates.Draft}'.";
         }
 
         if (MaintenanceOrderStates.TerminalStates.Contains(fromState))
         {
-            return $"Cannot change state from '{fromState}' because it is a terminal state.";
+            return $"No se puede cambiar el estado desde '{fromState}' porque es un estado terminal.";
         }
 
-        return $"Invalid state transition from '{fromState}' to '{toState}'.";
+        return $"Transición de estado inválida de '{fromState}' a '{toState}'.";
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +38,7 @@ public class ChangeWorkTaskStateCommandHandler : IRequestHandler<ChangeWorkTaskS
     {
         var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (task == null)
-            throw new ArgumentException("Task not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         var oldState = task.State;
         var newState = request.NewState;

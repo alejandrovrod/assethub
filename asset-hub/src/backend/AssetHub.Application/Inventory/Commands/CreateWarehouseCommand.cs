@@ -29,14 +29,19 @@ public class CreateWarehouseCommandHandler : IRequestHandler<CreateWarehouseComm
 
     public async Task<Guid> Handle(CreateWarehouseCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new InvalidOperationException("El nombre del almacén es requerido.");
+        if (string.IsNullOrWhiteSpace(request.Code))
+            throw new InvalidOperationException("El código del almacén es requerido.");
+
         var tenantId = _tenantResolver.GetCurrentTenantId().Value;
 
         // Check uniqueness
         var existing = await _dbContext.Warehouses
             .AnyAsync(w => w.TenantId == tenantId && w.Code == request.Code, cancellationToken);
-            
+
         if (existing)
-            throw new InvalidOperationException($"Warehouse with code {request.Code} already exists.");
+            throw new InvalidOperationException($"Ya existe un almacén con el código {request.Code}.");
 
         var warehouse = new Warehouse
         {

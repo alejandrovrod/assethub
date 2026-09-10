@@ -73,6 +73,7 @@ public class GetMaintenanceOrderByIdQueryHandler : IRequestHandler<GetMaintenanc
             Kind = order.Kind,
             State = order.State,
             Title = order.Title,
+            CreatedAt = order.CreatedAt,
             Description = order.Description,
             ScheduledStart = order.ScheduledStart,
             ScheduledEnd = order.ScheduledEnd,

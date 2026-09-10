@@ -9,6 +9,7 @@ public class TenantInventorySettings
     
     public bool Enabled { get; set; }
     public string OperatingMode { get; set; } = InventoryOperatingMode.External;
+    public bool AllowNegativeStock { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

@@ -33,6 +33,7 @@ public class MaintenanceOrder
     public AssetHub.Domain.Staff.Employee? AssignedEmployee { get; set; }
     
 
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
     public DateTime? CompletedAt { get; set; }

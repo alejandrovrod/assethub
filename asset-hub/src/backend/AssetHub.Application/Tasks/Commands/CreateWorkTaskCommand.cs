@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -57,10 +57,10 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
             || request.TaskRecurrenceId.HasValue;
 
         if (!request.IsIndependent && !hasAnyLink)
-            throw new ArgumentException("Task must be linked to an Asset, MaintenanceOrder, Incident, PreventivePlan or TaskRecurrence, unless marked as IsIndependent");
+            throw new ArgumentException("La tarea debe vincularse a un Activo, Orden de mantenimiento, Incidente, Plan preventivo o Recurrencia, salvo que se marque como independiente");
 
         if (request.IsIndependent && hasAnyLink)
-            throw new ArgumentException("An independent task cannot be linked to other entities");
+            throw new ArgumentException("Una tarea independiente no puede vincularse a otras entidades");
 
         var parentLinkCount = new[]
         {
@@ -72,7 +72,7 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
         }.Count(id => id.HasValue);
 
         if (parentLinkCount > 1)
-            throw new ArgumentException("A task can only be linked to one parent entity (Asset, Incident, MaintenanceOrder, PreventivePlan or TaskRecurrence)");
+            throw new ArgumentException("Una tarea solo puede vincularse a una entidad padre (Activo, Incidente, Orden de mantenimiento, Plan preventivo o Recurrencia)");
 
         // Ensure default catalog items if not provided
         Guid taskTypeCatalogItemId;
@@ -94,14 +94,14 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
         {
             var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.AssignedEmployeeId.Value, cancellationToken);
             if (emp == null || !emp.IsActive)
-                throw new ArgumentException("Assigned employee not found or inactive");
+                throw new ArgumentException("Empleado asignado no encontrado o inactivo");
         }
 
         if (request.AssignedTeamId.HasValue)
         {
             var team = await _db.Teams.FirstOrDefaultAsync(t => t.Id == request.AssignedTeamId.Value, cancellationToken);
             if (team == null || team.IsDeleted)
-                throw new ArgumentException("Assigned team not found");
+                throw new ArgumentException("Equipo asignado no encontrado");
         }
 
         var task = new WorkTask

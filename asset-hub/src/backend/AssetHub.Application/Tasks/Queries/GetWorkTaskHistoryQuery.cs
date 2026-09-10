@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,7 +25,7 @@ public class GetWorkTaskHistoryQueryHandler : IRequestHandler<GetWorkTaskHistory
     {
         var taskExists = await _db.WorkTasks.AnyAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (!taskExists)
-            throw new ArgumentException("Task not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         var history = await _db.TaskStatusHistories
             .AsNoTracking()

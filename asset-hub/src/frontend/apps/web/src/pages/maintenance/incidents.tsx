@@ -11,6 +11,7 @@ import { ReportIncidentSheet } from './components/report-incident-sheet'
 import { useNavigate, useSearchParams } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -220,7 +221,7 @@ export default function MaintenanceIncidents() {
                             <Badge variant="outline">{incident.state}</Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {format(new Date(incident.createdAt), 'PPp', { locale: es })}
+                            {incident.reportedAt ? format(parseApiDate(incident.reportedAt), 'PPp', { locale: es }) : '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

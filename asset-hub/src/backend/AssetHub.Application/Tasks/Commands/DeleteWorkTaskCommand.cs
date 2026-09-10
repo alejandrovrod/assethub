@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -22,7 +22,7 @@ public class DeleteWorkTaskCommandHandler : IRequestHandler<DeleteWorkTaskComman
     {
         var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (task == null)
-            throw new ArgumentException("WorkTask not found");
+            throw new ArgumentException("Tarea no encontrada");
 
         task.IsDeleted = true;
         task.DeletedAt = DateTime.UtcNow;

@@ -30,6 +30,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { parseApiDate } from '@/lib/utils'
 
 const schema = z.object({
   name: z.string().min(2, 'El nombre es requerido'),
@@ -148,7 +149,7 @@ export default function WarehousesPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {format(new Date(w.createdAt), 'dd MMM yyyy', { locale: es })}
+                      {w.createdAt ? format(parseApiDate(w.createdAt), 'dd MMM yyyy', { locale: es }) : '—'}
                     </TableCell>
                   </TableRow>
                 ))}

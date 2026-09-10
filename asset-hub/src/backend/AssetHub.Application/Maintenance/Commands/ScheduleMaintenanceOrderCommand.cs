@@ -32,11 +32,11 @@ public class ScheduleMaintenanceOrderCommandHandler : IRequestHandler<ScheduleMa
     public async Task<Unit> Handle(ScheduleMaintenanceOrderCommand request, CancellationToken cancellationToken)
     {
         if (request.ScheduledStart.HasValue && request.ScheduledEnd.HasValue && request.ScheduledEnd < request.ScheduledStart)
-            throw new ArgumentException("ScheduledEnd cannot be before ScheduledStart");
+            throw new ArgumentException("La fecha de fin no puede ser anterior a la fecha de inicio");
 
         var order = await _db.MaintenanceOrders.FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId, cancellationToken);
         if (order == null)
-            throw new ArgumentException("Maintenance order not found");
+            throw new ArgumentException("Orden de mantenimiento no encontrada");
 
         bool changedState = order.State != MaintenanceOrderStates.Scheduled;
         if (changedState && !MaintenanceOrderStateTransitionValidator.IsValidTransition(order.State, MaintenanceOrderStates.Scheduled))
@@ -46,7 +46,7 @@ public class ScheduleMaintenanceOrderCommandHandler : IRequestHandler<ScheduleMa
         {
             if (!order.ScheduledStart.HasValue || !order.ScheduledEnd.HasValue)
             {
-                throw new InvalidOperationException("ScheduledStart and ScheduledEnd are required to schedule an order");
+                throw new InvalidOperationException("Las fechas de programación (inicio y fin) son requeridas para programar la orden");
             }
         }
 

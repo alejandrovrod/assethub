@@ -39,7 +39,7 @@ public class GetPreventivePlanNextOccurrencesQueryHandler
 
         if (plan == null)
         {
-            throw new ArgumentException($"Preventive plan '{request.PlanId}' not found.");
+            throw new ArgumentException($"Plan preventivo '{request.PlanId}' no encontrado.");
         }
 
         var result = new GetPreventivePlanNextOccurrencesResult();

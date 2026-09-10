@@ -23,6 +23,7 @@ export interface StockBalance {
   warehouseId: string
   warehouseName: string
   catalogItemId: string
+  catalogItemCode: string
   catalogItemName: string
   quantityOnHand: number
   averageUnitCost: number
@@ -66,7 +67,7 @@ export interface UpdateInventorySettingsRequest {
 
 // ─── Service ────────────────────────────────────────────────────────────────
 
-const BASE = '/api/v1/inventory'
+const BASE = '/inventory'
 
 export const inventoryService = {
   // Settings
