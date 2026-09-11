@@ -6,11 +6,11 @@ Analítica por activo y global del tenant: costo acumulado (órdenes de mantenim
 
 | CU | Actor | Descripción |
 |---|---|---|
-| CU-16.1 | Lectura | Consulta costo acumulado de un activo: Σ labor + parts de sus órdenes (y opcionalmente de su subárbol) |
+| CU-16.1 | Lectura | Consulta costo acumulado de un activo (TCO, sumando cost_entries) incluyendo labor, parts, downtime |
 | CU-16.2 | Lectura | Consulta línea temporal de intervenciones del activo (órdenes, incidencias, eventos de ciclo de vida) |
 | CU-16.3 | Lectura | Consulta evolución del `conditionIndex` a lo largo del tiempo |
 | CU-16.4 | Lectura | Ve proyección simple de vida útil (regresión sobre `conditionIndex` vs. tiempo) |
-| CU-16.5 | Lectura | Dashboard: activos por estado (del ciclo de vida) |
+| CU-16.5 | Lectura | Dashboard: métricas avanzadas de confiabilidad (MTBF, MTTR_restore, MTTR_repair) y estados |
 | CU-16.6 | Lectura | Dashboard: incidencias por prioridad y estado |
 | CU-16.7 | Lectura | Dashboard: cumplimiento de tareas (% a tiempo vs. vencidas SLA) |
 | CU-16.8 | Gestor | Exporta reportes (CSV) de costos e intervenciones |
@@ -18,12 +18,13 @@ Analítica por activo y global del tenant: costo acumulado (órdenes de mantenim
 ## Reglas de negocio
 
 - RN-16.1: Todo es de solo lectura y tenant-scoped (R1, R2); los agregados se calculan server-side con filtro de tenant y RLS activa.
-- RN-16.2: Costo acumulado = Σ(`LaborCost` + parts) de órdenes `done`/`verified` del activo; modo "con subárbol" usa la closure `AssetHierarchy`.
+- RN-16.2: Costo acumulado (TCO) = Σ(`CostEntry.Amount`) del activo. Permite anualizar costos en base a los días de antigüedad del activo.
 - RN-16.3: La evolución de `conditionIndex` se alimenta de auditoría/eventos; nunca se recalcula mutando el activo.
-- RN-16.4: Proyección de vida útil = regresión lineal simple sobre los puntos (fecha, conditionIndex); con < 3 puntos se devuelve "datos insuficientes", nunca una proyección inventada.
-- RN-16.5: Dashboards cacheados por tenant (p.ej. 60 s) para no golpear OLTP; los rangos de fecha siempre en UTC (R5).
-- RN-16.6: Toda métrica respeta soft-delete: excluye entidades `IsDeleted` salvo que se pida explícitamente (R8).
-- RN-16.7: Permiso de lectura (`reports.read` o rol Lectura); accesos registrados en auditoría si incluyen datos sensibles (R3).
+- RN-16.4: Proyección de vida útil = regresión lineal simple; con < 3 puntos se devuelve "datos insuficientes".
+- RN-16.5: Dashboards cacheados por tenant (p.ej. 60 s) para no golpear OLTP.
+- RN-16.6: Toda métrica respeta soft-delete: excluye entidades `IsDeleted`.
+- RN-16.7: Permiso de lectura (`reports.read` o rol Lectura).
+- RN-16.8: MTBF promedia fechas de fallas consecutivas; MTTR promedia resolución de correctivas. Priorizan fechas físicas sobre administrativas.
 
 ## Criterios de aceptación
 

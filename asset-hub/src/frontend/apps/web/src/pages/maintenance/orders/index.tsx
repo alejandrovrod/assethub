@@ -80,21 +80,23 @@ export default function MaintenanceOrders() {
   const [kindFilter, setKindFilter] = useState<MaintenanceOrderKind | 'all'>('all')
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedOrderId = searchParams.get('selected')
+  const assetIdFilter = searchParams.get('assetId')
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
   useEffect(() => {
     setPage(1)
-  }, [searchTerm, stateFilter, kindFilter, pageSize])
+  }, [searchTerm, stateFilter, kindFilter, pageSize, assetIdFilter])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['maintenance-orders', stateFilter, kindFilter, searchTerm, page, pageSize],
+    queryKey: ['maintenance-orders', stateFilter, kindFilter, searchTerm, page, pageSize, assetIdFilter],
     queryFn: () =>
       maintenanceOrderService.getAll({
         state: stateFilter === 'all' ? undefined : stateFilter,
         kind: kindFilter === 'all' ? undefined : kindFilter,
         search: searchTerm || undefined,
+        assetId: assetIdFilter || undefined,
         page,
         pageSize,
       }),

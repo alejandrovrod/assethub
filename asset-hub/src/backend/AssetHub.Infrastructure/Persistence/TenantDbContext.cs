@@ -45,6 +45,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
 
     public DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; set; } = null!;
     public DbSet<AssetHub.Domain.Maintenance.MaintenancePart> MaintenanceParts { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Analytics.CostEntry> CostEntries { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Inventory.TenantInventorySettings> TenantInventorySettings { get; set; } = null!;
     public DbSet<AssetHub.Domain.Inventory.Warehouse> Warehouses { get; set; } = null!;
@@ -309,6 +310,23 @@ public class TenantDbContext : DbContext, ITenantDbContext
              .WithMany()
              .HasForeignKey(mp => mp.InventoryTransactionId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Analytics.CostEntry>(b =>
+        {
+            b.HasKey(c => c.Id);
+            b.HasQueryFilter(c => c.TenantId == CurrentTenantId && !c.IsDeleted);
+            b.HasIndex(c => new { c.TenantId, c.AssetId, c.OccurredAt });
+            b.HasIndex(c => new { c.TenantId, c.WorkOrderId });
+            b.HasIndex(c => new { c.TenantId, c.IncidentId });
+
+            b.Property(c => c.Amount).HasPrecision(18, 4);
+            b.Property(c => c.Currency).HasMaxLength(3);
+            b.Property(c => c.CostType).HasMaxLength(50);
+
+            b.HasOne(c => c.Asset).WithMany().HasForeignKey(c => c.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(c => c.Incident).WithMany().HasForeignKey(c => c.IncidentId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(c => c.WorkOrder).WithMany().HasForeignKey(c => c.WorkOrderId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Inventory.TenantInventorySettings>(b =>

@@ -46,7 +46,9 @@ export default function App() {
           <Route path="/" element={<RootRoute />} />
           
           <Route element={<AuthenticatedLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />}>
+              <Route path=":assetId" element={<DashboardPage />} />
+            </Route>
             
             <Route path="assets">
               <Route index element={<AssetsPage />} />

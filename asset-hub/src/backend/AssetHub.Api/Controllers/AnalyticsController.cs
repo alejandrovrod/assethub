@@ -29,6 +29,38 @@ public class AnalyticsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("assets/{id}/reliability")]
+    [RequirePlanLimits("reports")]
+    public async Task<IActionResult> GetAssetReliability(string id)
+    {
+        var assetId = ResolveAssetIdOrGlobal(id);
+        if (assetId == Guid.Empty) return NotFound();
+
+        var result = await _mediator.Send(new GetAssetReliabilityMetricsQuery { AssetId = assetId });
+        return Ok(result);
+    }
+
+    [HttpGet("assets/{id}/tco")]
+    [RequirePlanLimits("reports")]
+    public async Task<IActionResult> GetAssetTco(string id, [FromQuery] bool includeSubtree = false)
+    {
+        var assetId = ResolveAssetIdOrGlobal(id);
+        if (assetId == Guid.Empty) return NotFound();
+
+        var result = await _mediator.Send(new GetAssetTcoQuery { AssetId = assetId, IncludeSubtree = includeSubtree });
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    private static Guid? ResolveAssetIdOrGlobal(string id)
+    {
+        if (string.Equals(id, "global", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+        return Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty;
+    }
+
     [HttpPost("reports/export-costs")]
     [RequirePlanLimits("reports")]
     public async Task<IActionResult> ExportCostsReport([FromBody] GenerateCostsReportCommand command)

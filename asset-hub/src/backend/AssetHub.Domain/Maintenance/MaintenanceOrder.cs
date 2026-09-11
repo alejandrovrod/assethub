@@ -37,6 +37,10 @@ public class MaintenanceOrder
     public DateTime? ScheduledStart { get; set; }
     public DateTime? ScheduledEnd { get; set; }
     public DateTime? CompletedAt { get; set; }
+
+    // Physical dates (reliability analytics). Administrative dates above are fallbacks.
+    public DateTime? FailureOccurredAt { get; set; }
+    public DateTime? RepairStartedAt { get; set; }
     
     public decimal LaborCost { get; set; }
     

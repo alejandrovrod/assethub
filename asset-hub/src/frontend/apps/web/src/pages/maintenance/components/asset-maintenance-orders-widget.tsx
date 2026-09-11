@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2, AlertCircle } from 'lucide-react'
 import { maintenanceOrderService, STATE_LABELS, KIND_LABELS } from '@/services/maintenance-order.service'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
@@ -33,7 +34,7 @@ export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrders
           <p>No hay órdenes para este activo.</p>
         </div>
       ) : (
-        <ScrollArea className="max-h-[240px]">
+        <>
           <div className="space-y-2">
             {orders.map((order) => (
               <Link
@@ -60,7 +61,12 @@ export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrders
               </Link>
             ))}
           </div>
-        </ScrollArea>
+          <Button variant="ghost" size="sm" asChild className="w-full mt-2">
+            <Link to={`/maintenance/orders?assetId=${assetId}`}>
+              Ver todas las órdenes
+            </Link>
+          </Button>
+        </>
       )}
     </div>
   )

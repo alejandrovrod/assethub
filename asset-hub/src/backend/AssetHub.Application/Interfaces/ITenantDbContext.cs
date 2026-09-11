@@ -33,6 +33,7 @@ public interface ITenantDbContext
 
     DbSet<AssetHub.Domain.Maintenance.MaintenanceOrder> MaintenanceOrders { get; }
     DbSet<AssetHub.Domain.Maintenance.MaintenancePart> MaintenanceParts { get; }
+    DbSet<AssetHub.Domain.Analytics.CostEntry> CostEntries { get; }
     
     DbSet<AssetHub.Domain.Staff.Employee> Employees { get; }
     DbSet<AssetHub.Domain.Staff.EmployeeAvailability> EmployeeAvailabilities { get; }
