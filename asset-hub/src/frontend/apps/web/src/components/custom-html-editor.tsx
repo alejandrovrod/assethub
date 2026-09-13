@@ -100,7 +100,17 @@ export function CustomHtmlEditor({
     }
   }, [value])
 
-  const previewSrcDoc = useMemo(() => buildPreviewDocument(value), [value])
+  const previewSrcDoc = useMemo(() => {
+    let previewHtml = value
+    // Reemplazar variables comunes con datos de prueba visuales para la vista previa
+    previewHtml = previewHtml.replace(/\{\{\s*tenant\.logo_url\s*\}\}/g, 'https://placehold.co/400x100/f3f4f6/666?text=Logo+de+Tu+Empresa')
+    previewHtml = previewHtml.replace(/\{\{\s*tenant\.name\s*\}\}/g, 'Empresa Demo S.A.')
+    previewHtml = previewHtml.replace(/\{\{\s*tenant\.support_email\s*\}\}/g, 'soporte@empresademo.com')
+    previewHtml = previewHtml.replace(/\{\{\s*order\.title\s*\}\}/g, 'Mantenimiento Preventivo')
+    previewHtml = previewHtml.replace(/\{\{\s*order\.state\s*\}\}/g, 'En Progreso')
+    
+    return buildPreviewDocument(previewHtml)
+  }, [value])
 
   return (
     <div className={cn('flex flex-col overflow-hidden rounded-md border bg-zinc-950 transition-all duration-200',

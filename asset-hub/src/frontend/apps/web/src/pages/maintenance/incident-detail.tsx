@@ -490,7 +490,7 @@ export default function IncidentDetailPage() {
             </SheetHeader>
           </div>
           <div className="flex-1 overflow-y-auto px-6 pb-6">
-            <div className="rjsf-tailwind rjsf-single-column mt-6">
+            <div className="rjsf-tailwind mt-6">
               {isResolving ? (
                 <div className="flex h-[200px] items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
