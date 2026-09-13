@@ -21,18 +21,31 @@ builder.Services.AddControllers()
     {
         var factory = new NetTopologySuite.IO.Converters.GeoJsonConverterFactory();
         options.JsonSerializerOptions.Converters.Add(factory);
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
     });
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVite", builder =>
+    options.AddPolicy("AllowVite", policy =>
     {
-        builder.WithOrigins("http://localhost:5173", "http://localhost:4173", "http://localhost:5174")
-               .SetIsOriginAllowed(origin => new Uri(origin).Host.EndsWith("localhost"))
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .AllowCredentials();
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "http://localhost:4173",
+                "http://localhost:5174",
+                "https://assethubweb.netlify.app",
+                "https://*.dev.sonnora.mx"
+              )
+              .SetIsOriginAllowed(origin =>
+              {
+                  var host = new Uri(origin).Host;
+                  return host.EndsWith("localhost") || 
+                         host.EndsWith(".netlify.app") || 
+                         host.EndsWith(".sonnora.mx");
+              })
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -102,6 +115,9 @@ builder.Services.AddScoped<IAssetHierarchyService, AssetHub.Infrastructure.Servi
 builder.Services.AddScoped<IInventoryPostingService, AssetHub.Infrastructure.Services.InventoryPostingService>();
 builder.Services.AddScoped<IFileStorageService, AssetHub.Infrastructure.Storage.LocalDiskFileStorageService>();
 builder.Services.AddScoped<IEmailService, AssetHub.Infrastructure.Services.Email.SmtpEmailService>();
+builder.Services.AddScoped<AssetHub.Application.Interfaces.ITemplateRenderEngine, AssetHub.Infrastructure.Services.Templates.ScribanTemplateRenderEngine>();
+builder.Services.AddScoped<AssetHub.Application.Interfaces.ICommunicationTemplateService, AssetHub.Application.CommunicationTemplates.Rendering.CommunicationTemplateService>();
+builder.Services.AddScoped<AssetHub.Application.CommunicationTemplates.Rendering.TemplateVariableBuilder>();
 builder.Services.AddHostedService<AssetHub.Api.Workers.PreventivePlanSchedulerService>();
 
 var app = builder.Build();

@@ -5,5 +5,5 @@ namespace AssetHub.Application.Interfaces;
 
 public interface IEmailService
 {
-    Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default);
+    Task SendEmailAsync(string to, string subject, string body, bool isHtml = false, CancellationToken cancellationToken = default);
 }

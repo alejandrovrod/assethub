@@ -12,6 +12,9 @@ public class Employee
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+
+    // Idioma preferido para comunicaciones (codigo ISO, ej. "es", "en")
+    public string PreferredLocale { get; set; } = "es";
     
     public Guid RoleCatalogItemId { get; set; }
     public CatalogItem? RoleCatalogItem { get; set; }

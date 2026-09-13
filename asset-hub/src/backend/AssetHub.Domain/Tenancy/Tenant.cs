@@ -13,6 +13,8 @@ public class Tenant
     public Guid PlanId { get; set; }
     public string Locale { get; set; } = "es";
     public string TimeZone { get; set; } = "UTC";
+    public string? LogoUrl { get; set; }
+    public string? SupportEmail { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     // Configuración base de auditoría requerida por el spec (R3, R5, R8 - si aplica)

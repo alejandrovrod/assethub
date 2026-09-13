@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: assethub_api
+    restart: unless-stopped
+    ports:
+      - "5000:8080" # ASP.NET Core listens on 8080 by default in .NET 8/10
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Add database connection strings and other config here
+      # - ConnectionStrings__DefaultConnection=Host=...
+
+  web:
+    build:
+      context: .
+      dockerfile: src/frontend/Dockerfile
+      args:
+        VITE_API_URL: https://assetshub-api.dev.sonnora.mx/api/v1
+    container_name: assethub_web
+    restart: unless-stopped
+    ports:
+      - "3000:80"

@@ -747,7 +747,7 @@ export default function AssetDetailPage() {
             </SheetHeader>
           </div>
           <div className="flex-1 overflow-y-auto px-6 pb-6">
-            <div className="rjsf-tailwind mt-6">
+            <div className="rjsf-tailwind rjsf-single-column mt-6">
               <Form
                 schema={schema} 
                 uiSchema={uiSchema}
@@ -825,7 +825,7 @@ export default function AssetDetailPage() {
               </div>
             )}
             {transitionSchema && (
-              <div className="rjsf-tailwind">
+              <div className="rjsf-tailwind rjsf-single-column">
                 <Form
                   schema={transitionSchema}
                   uiSchema={uiSchema}

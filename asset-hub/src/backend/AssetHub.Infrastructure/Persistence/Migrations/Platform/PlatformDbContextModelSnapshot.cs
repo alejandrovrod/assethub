@@ -161,6 +161,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Platform
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Mode")
                         .HasColumnType("int");
 
@@ -177,6 +180,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Platform
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("SupportEmail")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TimeZone")
                         .IsRequired()

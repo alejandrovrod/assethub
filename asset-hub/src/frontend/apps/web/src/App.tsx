@@ -31,6 +31,7 @@ const LogoutSyncPage = lazy(() => import("./pages/logout-sync"));
 const InventoryWarehouses = lazy(() => import("./pages/inventory/warehouses"));
 const InventoryStock = lazy(() => import("./pages/inventory/stock"));
 const InventorySettings = lazy(() => import("./pages/inventory/settings"));
+const CommunicationTemplates = lazy(() => import("./pages/communication-templates"));
 
 const RouteLoadingFallback = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -63,6 +64,7 @@ export default function App() {
               <Route path="tasks" element={<MaintenanceTasks />} />
               <Route path="preventive-plans" element={<PreventivePlansPage />} />
               <Route path="orders" element={<MaintenanceOrders />} />
+              <Route path="communication-templates" element={<CommunicationTemplates />} />
             </Route>
 
             <Route path="staff">

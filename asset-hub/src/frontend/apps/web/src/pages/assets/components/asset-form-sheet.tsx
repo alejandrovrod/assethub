@@ -230,7 +230,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
               {Object.keys(schema).length > 0 && (
                 <div className="mt-8 border-t pt-4">
                   <h4 className="text-sm font-medium mb-4">Atributos Dinámicos</h4>
-                  <div className="rjsf-tailwind">
+                  <div className="rjsf-tailwind rjsf-single-column">
                   {isResolving ? (
                     <div className="text-center p-4 text-muted-foreground text-sm">Cargando catálogos...</div>
                   ) : template?.schemaJson && (

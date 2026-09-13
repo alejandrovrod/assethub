@@ -21,7 +21,7 @@ public class SmtpEmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    public async Task SendEmailAsync(string to, string subject, string body, bool isHtml = false, CancellationToken cancellationToken = default)
     {
         var fromEmail = _config["Email:From"] ?? _config["Email__From"];
         var host = _config["Email:SmtpHost"] ?? _config["Email__SmtpHost"];
@@ -45,7 +45,8 @@ public class SmtpEmailService : IEmailService
         message.To.Add(new MailboxAddress(to, to));
         message.Subject = subject;
 
-        message.Body = new TextPart("plain")
+        var format = isHtml ? "html" : "plain";
+        message.Body = new TextPart(format)
         {
             Text = body
         };

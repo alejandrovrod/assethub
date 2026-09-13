@@ -15,6 +15,7 @@ public class UpdateEmployeeCommand : IRequest<Unit>
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string? PreferredLocale { get; set; }
     public Guid RoleCatalogItemId { get; set; }
     public Guid[] Skills { get; set; } = Array.Empty<Guid>();
 }
@@ -44,6 +45,10 @@ public class UpdateEmployeeCommandHandler : IRequestHandler<UpdateEmployeeComman
         emp.LastName = request.LastName;
         emp.Email = request.Email;
         emp.PhoneNumber = request.PhoneNumber;
+        if (!string.IsNullOrWhiteSpace(request.PreferredLocale))
+        {
+            emp.PreferredLocale = request.PreferredLocale.Trim();
+        }
         emp.RoleCatalogItemId = request.RoleCatalogItemId;
         emp.SkillsJson = JsonSerializer.Serialize(request.Skills);
 

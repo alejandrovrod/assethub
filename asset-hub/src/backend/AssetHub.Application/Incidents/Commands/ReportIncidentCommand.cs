@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AssetHub.Application.Assets.Commands;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Incidents;
+using AssetHub.Application.Incidents.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.IO;
@@ -153,6 +154,8 @@ public class ReportIncidentCommandHandler : IRequestHandler<ReportIncidentComman
         });
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _mediator.Publish(new IncidentReportedEvent(incident.Id, incident.Title, incident.AssetId, incident.TenantId, incident.PropertiesJson), cancellationToken);
 
         // --- Flujo Dual: Lock the asset and propagate upward ---
         // After saving the incident, transition the affected asset to its "incidents-locked" state.

@@ -353,7 +353,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                   <ClipboardList className="h-4 w-4 text-primary" />
                   <h4 className="text-sm font-semibold text-primary">Propiedades Adicionales</h4>
                 </div>
-                <div className="p-4 rjsf-tailwind">
+                <div className="p-4 rjsf-tailwind rjsf-single-column">
                   {isResolving ? (
                     <div className="text-sm text-muted-foreground">Cargando catálogos...</div>
                   ) : (

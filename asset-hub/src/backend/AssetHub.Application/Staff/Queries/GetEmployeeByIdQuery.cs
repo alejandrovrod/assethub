@@ -22,6 +22,7 @@ public class EmployeeDetailDto
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string PreferredLocale { get; set; } = "es";
     public Guid RoleCatalogItemId { get; set; }
     public string? RoleLabel { get; set; }
     public Guid[] Skills { get; set; } = Array.Empty<Guid>();
@@ -104,6 +105,7 @@ public class GetEmployeeByIdQueryHandler : IRequestHandler<GetEmployeeByIdQuery,
             LastName = emp.LastName,
             Email = emp.Email,
             PhoneNumber = emp.PhoneNumber,
+            PreferredLocale = emp.PreferredLocale,
             RoleCatalogItemId = emp.RoleCatalogItemId,
             RoleLabel = emp.RoleCatalogItem?.Translations
                 .Where(t => t.Locale == "es")

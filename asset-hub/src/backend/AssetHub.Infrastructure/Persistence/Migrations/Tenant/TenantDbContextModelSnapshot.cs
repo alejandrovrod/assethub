@@ -596,6 +596,133 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("CatalogItemTranslations", "tenant");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActiveVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("EntityScope")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TemplateType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActiveVersionId");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "EntityScope", "TemplateType");
+
+                    b.ToTable("CommunicationTemplates", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DesignJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("VersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VersionId", "Locale")
+                        .IsUnique();
+
+                    b.ToTable("CommunicationTemplateTranslations", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("CommunicationTemplateVersions", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.NotificationMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SystemEvent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.HasIndex("TenantId", "SystemEvent")
+                        .IsUnique();
+
+                    b.ToTable("NotificationMappings", "tenant");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.EntityTypes.BusinessEntityType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1317,6 +1444,10 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PreferredLocale")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("RoleCatalogItemId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1907,6 +2038,49 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplate", b =>
+                {
+                    b.HasOne("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion", "ActiveVersion")
+                        .WithMany()
+                        .HasForeignKey("ActiveVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ActiveVersion");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateTranslation", b =>
+                {
+                    b.HasOne("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion", "Version")
+                        .WithMany("Translations")
+                        .HasForeignKey("VersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Version");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion", b =>
+                {
+                    b.HasOne("AssetHub.Domain.CommunicationTemplates.CommunicationTemplate", "Template")
+                        .WithMany("Versions")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.NotificationMapping", b =>
+                {
+                    b.HasOne("AssetHub.Domain.CommunicationTemplates.CommunicationTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Template");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Incidents.Incident", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
@@ -2273,6 +2447,16 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Catalogs.CatalogItem", b =>
+                {
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplate", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion", b =>
                 {
                     b.Navigation("Translations");
                 });

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Assets.Events;
+using AssetHub.Application.CommunicationTemplates.Rendering;
 using AssetHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,15 +13,26 @@ namespace AssetHub.Application.Assets.EventHandlers;
 
 public class AssetOnEnterTriggerHandler : INotificationHandler<AssetStateChangedEvent>
 {
+    private const string TemplateCode = "ASSET-STATE-CHANGED";
+
     private readonly ITenantDbContext _db;
     private readonly ILogger<AssetOnEnterTriggerHandler> _logger;
     private readonly IEmailService _emailService;
+    private readonly ICommunicationTemplateService _templateService;
+    private readonly TemplateVariableBuilder _variableBuilder;
 
-    public AssetOnEnterTriggerHandler(ITenantDbContext db, ILogger<AssetOnEnterTriggerHandler> logger, IEmailService emailService)
+    public AssetOnEnterTriggerHandler(
+        ITenantDbContext db,
+        ILogger<AssetOnEnterTriggerHandler> logger,
+        IEmailService emailService,
+        ICommunicationTemplateService templateService,
+        TemplateVariableBuilder variableBuilder)
     {
         _db = db;
         _logger = logger;
         _emailService = emailService;
+        _templateService = templateService;
+        _variableBuilder = variableBuilder;
     }
 
     public async Task Handle(AssetStateChangedEvent notification, CancellationToken cancellationToken)
@@ -82,10 +94,41 @@ public class AssetOnEnterTriggerHandler : INotificationHandler<AssetStateChanged
                                     var employee = await _db.Employees.FirstOrDefaultAsync(e => e.Id == targetEmployeeId, cancellationToken);
                                     if (employee != null && !string.IsNullOrEmpty(employee.Email))
                                     {
-                                        var subject = $"Notificación de Cambio de Estado: Activo {asset.Code}";
-                                        var body = $"El activo '{asset.Name}' ha transicionado al estado '{notification.ToState}'.\nPor favor revise el sistema para más detalles.";
+                                        // Buscar plantilla activa del tenant; si no hay, fallback hardcodeado
+                                        var tenantId = asset.TenantId;
+                                        var variables = await _variableBuilder.ForAssetAsync(asset.Id, notification.ToState, employee.Id, cancellationToken);
                                         
-                                        await _emailService.SendEmailAsync(employee.Email, subject, body, cancellationToken);
+                                        // Lookup Notification Mapping for "Asset.StateChanged"
+                                        var mapping = await _db.NotificationMappings
+                                            .FirstOrDefaultAsync(m => m.SystemEvent == "Asset.StateChanged" && m.IsActive, cancellationToken);
+
+                                        RenderedCommunication rendered = null;
+
+                                        if (mapping != null)
+                                        {
+                                            rendered = await _templateService.RenderByIdAsync(
+                                                tenantId, mapping.TemplateId, employee.PreferredLocale, variables, cancellationToken);
+                                        }
+                                        else
+                                        {
+                                            rendered = await _templateService.RenderActiveAsync(
+                                                tenantId, TemplateCode, employee.PreferredLocale, variables, cancellationToken);
+                                        }
+
+                                        string subject;
+                                        string body;
+                                        if (rendered != null)
+                                        {
+                                            subject = rendered.Subject ?? $"Notificación de Cambio de Estado: Activo {asset.Code}";
+                                            body = rendered.Body;
+                                        }
+                                        else
+                                        {
+                                            subject = $"Notificación de Cambio de Estado: Activo {asset.Code}";
+                                            body = $"El activo '{asset.Name}' ha transicionado al estado '{notification.ToState}'.\nPor favor revise el sistema para más detalles.";
+                                        }
+
+                                        await _emailService.SendEmailAsync(employee.Email, subject, body, isHtml: true, cancellationToken: cancellationToken);
                                         _logger.LogInformation("=> Correo enviado exitosamente a {Email}", employee.Email);
                                     }
                                     else

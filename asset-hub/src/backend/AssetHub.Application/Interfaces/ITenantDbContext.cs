@@ -53,5 +53,10 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Inventory.InventoryTransaction> InventoryTransactions { get; }
     DbSet<AssetHub.Domain.Inventory.TenantInventorySettings> TenantInventorySettings { get; }
 
+    DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplate> CommunicationTemplates { get; }
+    DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion> CommunicationTemplateVersions { get; }
+    DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateTranslation> CommunicationTemplateTranslations { get; }
+    DbSet<AssetHub.Domain.CommunicationTemplates.NotificationMapping> NotificationMappings { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

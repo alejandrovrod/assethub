@@ -12,6 +12,7 @@
     <PackageReference Include="NetTopologySuite" Version="2.6.0" />
     <PackageReference Include="NetTopologySuite.IO.GeoJSON" Version="4.0.0" />
     <PackageReference Include="NJsonSchema" Version="11.6.1" />
+    <PackageReference Include="Scriban" Version="7.4.0" />
   </ItemGroup>
 
   <PropertyGroup>

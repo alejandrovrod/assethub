@@ -42,5 +42,17 @@ public class TenantsController : ControllerBase
         return Ok(result);
     }
 
-    // PATCH /current and Onboarding step will go here
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings()
+    {
+        var result = await _mediator.Send(new AssetHub.Application.Tenants.Queries.GetTenantSettingsQuery());
+        return Ok(result);
+    }
+
+    [HttpPut("settings")]
+    public async Task<IActionResult> UpdateSettings([FromBody] AssetHub.Application.Tenants.Commands.UpdateTenantSettingsCommand command)
+    {
+        await _mediator.Send(command);
+        return NoContent();
+    }
 }

@@ -52,6 +52,11 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Inventory.StockBalance> StockBalances { get; set; } = null!;
     public DbSet<AssetHub.Domain.Inventory.InventoryTransaction> InventoryTransactions { get; set; } = null!;
 
+    public DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplate> CommunicationTemplates { get; set; } = null!;
+    public DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion> CommunicationTemplateVersions { get; set; } = null!;
+    public DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateTranslation> CommunicationTemplateTranslations { get; set; } = null!;
+    public DbSet<AssetHub.Domain.CommunicationTemplates.NotificationMapping> NotificationMappings { get; set; } = null!;
+
     public DbSet<AssetHub.Domain.Notifications.Notification> Notifications { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Staff.Employee> Employees { get; set; } = null!;
@@ -456,6 +461,56 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasKey(c => c.Id);
             b.HasQueryFilter(c => c.TenantId == CurrentTenantId);
             b.HasIndex(c => new { c.TenantId, c.WorkTaskId });
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.CommunicationTemplates.CommunicationTemplate>(b =>
+        {
+            b.HasKey(t => t.Id);
+            b.HasQueryFilter(t => t.TenantId == CurrentTenantId);
+            // Code unico por tenant
+            b.HasIndex(t => new { t.TenantId, t.Code }).IsUnique();
+            b.HasIndex(t => new { t.TenantId, t.EntityScope, t.TemplateType });
+
+            b.HasOne(t => t.ActiveVersion)
+             .WithMany()
+             .HasForeignKey(t => t.ActiveVersionId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion>(b =>
+        {
+            b.HasKey(v => v.Id);
+            // Sin query filter: las versiones se alcanzan a traves del template padre,
+            // que ya esta aislado por tenant (mismo patron que CatalogItemTranslation).
+            b.HasIndex(v => new { v.TemplateId, v.VersionNumber }).IsUnique();
+
+            b.HasOne(v => v.Template)
+             .WithMany(t => t.Versions)
+             .HasForeignKey(v => v.TemplateId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateTranslation>(b =>
+        {
+            b.HasKey(tr => tr.Id);
+            b.HasIndex(tr => new { tr.VersionId, tr.Locale }).IsUnique();
+
+            b.HasOne(tr => tr.Version)
+             .WithMany(v => v.Translations)
+             .HasForeignKey(tr => tr.VersionId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.CommunicationTemplates.NotificationMapping>(b =>
+        {
+            b.HasKey(m => m.Id);
+            b.HasQueryFilter(m => m.TenantId == CurrentTenantId);
+            b.HasIndex(m => new { m.TenantId, m.SystemEvent }).IsUnique();
+
+            b.HasOne(m => m.Template)
+             .WithMany()
+             .HasForeignKey(m => m.TemplateId)
+             .OnDelete(DeleteBehavior.Restrict);
         });
 
         base.OnModelCreating(modelBuilder);

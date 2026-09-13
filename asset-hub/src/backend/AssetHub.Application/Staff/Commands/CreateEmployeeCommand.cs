@@ -17,6 +17,7 @@ public class CreateEmployeeCommand : IRequest<Guid>
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string? PreferredLocale { get; set; }
     public Guid RoleCatalogItemId { get; set; }
     public Guid[] Skills { get; set; } = Array.Empty<Guid>();
 }
@@ -51,6 +52,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             LastName = request.LastName,
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
+            PreferredLocale = string.IsNullOrWhiteSpace(request.PreferredLocale) ? "es" : request.PreferredLocale.Trim(),
             RoleCatalogItemId = request.RoleCatalogItemId,
             SkillsJson = JsonSerializer.Serialize(request.Skills)
         };

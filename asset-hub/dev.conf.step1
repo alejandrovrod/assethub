@@ -1,0 +1,215 @@
+# Dev environment (sonnora-dev 10.0.0.6) - userbrew.dev.sonnora.mx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+# userbrew.dev.sonnora.mx - HTTP (acme-challenge + redirect)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name userbrew.dev.sonnora.mx;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/astro;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# userbrew.dev.sonnora.mx - HTTPS
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name userbrew.dev.sonnora.mx;
+
+    ssl_certificate /etc/letsencrypt/live/userbrew.dev.sonnora.mx/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/userbrew.dev.sonnora.mx/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    client_max_body_size 60m;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+
+    # Backend routes: auth API, sentinel federated login, WS
+    location ~ ^/(sentinel|auth|ws)(/|$) {
+        proxy_pass http://10.0.0.6:38123;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+
+    # Frontend (Bun/React SPA)
+    location / {
+        proxy_pass http://10.0.0.6:38231;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name mercadomio.dev.sonnora.mx;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/astro;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name mercadomio.dev.sonnora.mx;
+
+    ssl_certificate /etc/letsencrypt/live/mercadomio.dev.sonnora.mx/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mercadomio.dev.sonnora.mx/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    location / {
+        proxy_pass http://10.0.0.6:28080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 86400;
+    }
+}
+
+# rideshare.dev.sonnora.mx - HTTP (acme-challenge + redirect)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name rideshare.dev.sonnora.mx;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/astro;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# rideshare.dev.sonnora.mx - HTTPS
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name rideshare.dev.sonnora.mx;
+
+    ssl_certificate /etc/letsencrypt/live/rideshare.dev.sonnora.mx/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/rideshare.dev.sonnora.mx/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    client_max_body_size 60m;
+
+    # Proxy everything to sonnora-dev nginx (SPA + API)
+    location / {
+        proxy_pass http://10.0.0.6:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 86400;
+    }
+}
+server {
+    listen 80;
+    server_name imgvault.dev.sonnora.mx;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/astro;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name imgvault.dev.sonnora.mx;
+
+    ssl_certificate /etc/letsencrypt/live/imgvault.dev.sonnora.mx/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/imgvault.dev.sonnora.mx/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/imgvault.dev.sonnora.mx/chain.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    client_max_body_size 60m;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+
+    location /images/ {
+        proxy_pass http://10.0.0.6:19000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://10.0.0.6:38321;
+        proxy_http_version 1.1;
+        proxy_set_header Host 1a10f3ab-b3a4-4069-98e0-278366437721.sentinel.local;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect https://1a10f3ab-b3a4-4069-98e0-278366437721.sentinel.local/ https://imgvault.dev.sonnora.mx/;
+    }
+}
+
+# ==========================================
+# assetshub.dev.sonnora.mx / assetshub-api.dev.sonnora.mx
+# (HTTP ONLY FOR CERTBOT CHALLENGE)
+# ==========================================
+server {
+    listen 80;
+    listen [::]:80;
+    server_name assetshub.dev.sonnora.mx assetshub-api.dev.sonnora.mx;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/astro;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}

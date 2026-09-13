@@ -7,6 +7,8 @@ using AssetHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Linq;
+using AssetHub.Domain.Incidents;
 
 namespace AssetHub.Application.Incidents.EventHandlers;
 
@@ -49,6 +51,39 @@ public class IncidentClosedEventHandler : INotificationHandler<IncidentStateChan
 
         // Quitamos la restricción de que aborte si ya está en estado inicial.
         // Siempre forzamos el disparo del evento para reevaluar la jerarquía del abuelo.
+
+        var otherIncidents = await _db.Incidents
+            .Include(i => i.WorkflowTemplate)
+            .Where(i => i.AssetId == asset.Id && i.Id != notification.IncidentId && !i.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        bool hasOtherActiveIncidents = false;
+        foreach (var i in otherIncidents)
+        {
+            bool isOtherTerminal = false;
+            if (i.WorkflowTemplate != null && i.WorkflowTemplate.LifecycleStates != null && 
+                i.WorkflowTemplate.LifecycleStates.States != null && 
+                i.WorkflowTemplate.LifecycleStates.States.TryGetValue(i.State, out var stateConfig))
+            {
+                isOtherTerminal = stateConfig.IsTerminal;
+            }
+            else
+            {
+                isOtherTerminal = IncidentStates.TerminalStates.Contains(i.State);
+            }
+
+            if (!isOtherTerminal)
+            {
+                hasOtherActiveIncidents = true;
+                break;
+            }
+        }
+
+        if (hasOtherActiveIncidents)
+        {
+            _logger.LogInformation("Activo {AssetId} tiene otras incidencias activas. Omitiendo liberación por cierre de {IncidentId}", asset.Id, notification.IncidentId);
+            return;
+        }
 
         _logger.LogInformation("Liberando/Re-evaluando activo {AssetId} hacia estado {State} tras cerrar incidencia {IncidentId}", 
             asset.Id, initialState, notification.IncidentId);

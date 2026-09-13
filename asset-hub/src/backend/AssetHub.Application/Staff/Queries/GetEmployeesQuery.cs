@@ -34,6 +34,7 @@ public class EmployeeSummaryDto
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string PreferredLocale { get; set; } = "es";
     public Guid RoleCatalogItemId { get; set; }
     public string? RoleLabel { get; set; }
     public Guid? UserId { get; set; }
@@ -91,6 +92,7 @@ public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, GetEm
                 LastName = e.LastName,
                 Email = e.Email,
                 PhoneNumber = e.PhoneNumber,
+                PreferredLocale = e.PreferredLocale,
                 RoleCatalogItemId = e.RoleCatalogItemId,
                 RoleLabel = e.RoleCatalogItem != null
                     ? e.RoleCatalogItem.Translations

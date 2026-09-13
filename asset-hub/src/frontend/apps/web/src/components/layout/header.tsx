@@ -60,6 +60,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
               
               const breadcrumbTranslations: Record<string, string> = {
                 'assets': 'Activos',
+                'dashboard': 'Dashboard',
                 'templates': 'Plantillas',
                 'maintenance': 'Mantenimiento',
                 'incidents': 'Incidencias',
@@ -67,6 +68,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
                 'tasks': 'Tareas',
                 'orders': 'Órdenes',
                 'preventive-plans': 'Planes preventivos',
+                'communication-templates': 'Plantillas de Comunicación',
                 'staff': 'Personal',
                 'employees': 'Empleados',
                 'teams': 'Equipos',

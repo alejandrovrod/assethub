@@ -75,6 +75,10 @@ export const sidebarData: SidebarData = {
               title: 'Planes de Mantenimiento',
               url: '/maintenance/preventive-plans',
             },
+            {
+              title: 'Plantillas de Comunicación',
+              url: '/maintenance/communication-templates',
+            },
           ],
         },
         {
