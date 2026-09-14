@@ -16,6 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const riskLabels: Record<string, string> = {
   Low: 'Bajo',
@@ -53,6 +54,9 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export default function AssetsPage() {
+  const { can } = usePermissions()
+  const canCreate = can('assets:create')
+  const canDelete = can('assets:delete')
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -240,22 +244,24 @@ export default function AssetsPage() {
             Ver en Mapa
           </Button>
 
-          <AsyncCombobox
-            fetcher={async (query) => {
-              const results = await assetTemplateService.getTemplates(query)
-              return results.filter(t => t.isActive && !t.isSystemTemplate)
-            }}
-            labelKey="name"
-            valueKey="id"
-            onSelect={handleCreate}
-            searchPlaceholder="Buscar plantilla por nombre..."
-            emptyText="No se encontró ninguna plantilla activa."
-            renderTrigger={(onClick) => (
-              <Button onClick={onClick} size="icon" title="Agregar Activo" className="shrink-0">
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
-          />
+          {canCreate && (
+            <AsyncCombobox
+              fetcher={async (query) => {
+                const results = await assetTemplateService.getTemplates(query)
+                return results.filter(t => t.isActive && !t.isSystemTemplate)
+              }}
+              labelKey="name"
+              valueKey="id"
+              onSelect={handleCreate}
+              searchPlaceholder="Buscar plantilla por nombre..."
+              emptyText="No se encontró ninguna plantilla activa."
+              renderTrigger={(onClick) => (
+                <Button onClick={onClick} size="icon" title="Agregar Activo" className="shrink-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            />
+          )}
         </div>
       </div>
 
@@ -308,10 +314,10 @@ export default function AssetsPage() {
                       className="border rounded-lg p-4 bg-card hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors shadow-sm flex flex-col justify-between"
                       onClick={() => navigate(`/assets/${asset.id}`)}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h4 className="font-semibold">{asset.name}</h4>
+                       <div className="flex justify-between items-start mb-2">
+                         <div>
+                           <div className="flex items-center gap-2 mb-1 flex-wrap">
+                             <h4 className="font-semibold">{asset.name}</h4>
                             {asset.state && (
                               <Badge
                                 variant="secondary"
@@ -351,40 +357,42 @@ export default function AssetsPage() {
                             )}
                           </div>
                         </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                              onClick={(e) => e.stopPropagation()}
-                              disabled={deleteMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                ¿Estás seguro de que deseas eliminar este activo?.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteMutation.mutate(asset.id)
-                                }}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                         {canDelete && (
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                 onClick={(e) => e.stopPropagation()}
+                                 disabled={deleteMutation.isPending}
+                               >
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                               <AlertDialogHeader>
+                                 <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
+                                 <AlertDialogDescription>
+                                   ¿Estás seguro de que deseas eliminar este activo?.
+                                 </AlertDialogDescription>
+                               </AlertDialogHeader>
+                               <AlertDialogFooter>
+                                 <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                 <AlertDialogAction
+                                   onClick={(e) => {
+                                     e.stopPropagation()
+                                     deleteMutation.mutate(asset.id)
+                                   }}
+                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                 >
+                                   Eliminar
+                                 </AlertDialogAction>
+                               </AlertDialogFooter>
+                             </AlertDialogContent>
+                           </AlertDialog>
+                         )}
+                       </div>
                       <div className="mt-2 pt-2 border-t text-xs text-muted-foreground break-all">
                         <span className="font-semibold">Padre:</span> {getParentName(asset.pathNames, asset.parentId)}
                         {asset.pathNames && asset.pathNames !== '/' && (
@@ -462,39 +470,41 @@ export default function AssetsPage() {
                             ) : '-'}
                           </TableCell>
                           <TableCell className="text-right">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                  onClick={(e) => e.stopPropagation()}
-                                  disabled={deleteMutation.isPending}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    ¿Estás seguro de que deseas eliminar este activo?.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      deleteMutation.mutate(asset.id)
-                                    }}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            {canDelete && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={(e) => e.stopPropagation()}
+                                    disabled={deleteMutation.isPending}
                                   >
-                                    Eliminar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      ¿Estás seguro de que deseas eliminar este activo?.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        deleteMutation.mutate(asset.id)
+                                      }}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}

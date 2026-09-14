@@ -19,7 +19,7 @@ public class MediaController : ControllerBase
     }
 
     [HttpPost("upload")]
-    [Authorize(Roles = "admin,Tenant Admin")] // Permisos para subir media del tenant
+    [Authorize(Policy = "permission:tenant:write")] // Permisos para subir media del tenant
     public async Task<IActionResult> UploadMedia(IFormFile file)
     {
         if (file == null || file.Length == 0)

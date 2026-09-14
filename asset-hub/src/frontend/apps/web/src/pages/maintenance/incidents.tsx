@@ -20,8 +20,11 @@ import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { assetService } from '@/services/asset.service'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function MaintenanceIncidents() {
+  const { can } = usePermissions()
+  const canCreate = can('incidents:create')
   const navigate = useNavigate()
   const [isReportOpen, setIsReportOpen] = useState(false)
 
@@ -160,9 +163,11 @@ export default function MaintenanceIncidents() {
               Gestioná las incidencias reportadas en los activos.
             </CardDescription>
           </div>
-          <Button size="icon" onClick={handleCreate}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          {canCreate && (
+            <Button size="icon" onClick={handleCreate}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="flex-1 p-0 flex flex-col">
           <div className="flex flex-col lg:flex-row flex-1 gap-6 mt-4 p-4 pt-0 overflow-hidden">

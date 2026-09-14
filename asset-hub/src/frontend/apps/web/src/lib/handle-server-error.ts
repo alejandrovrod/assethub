@@ -12,6 +12,11 @@ import { toast } from 'sonner'
  * Falls back to the provided generic message when none is present.
  */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
+  // Fix for cases where error is passed as { error } (e.g., handleServerError({ error }))
+  if (error && typeof error === 'object' && 'error' in error && Object.keys(error).length === 1) {
+    error = (error as any).error
+  }
+
   if (error && typeof error === 'object' && 'response' in error) {
     const data = (error as AxiosError).response?.data as
       | { detail?: unknown; title?: unknown; message?: unknown }
@@ -34,6 +39,11 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function handleServerError(error: unknown) {
+  // Fix for cases where error is passed as { error } (e.g., handleServerError({ error }))
+  if (error && typeof error === 'object' && 'error' in error && Object.keys(error).length === 1) {
+    error = (error as any).error
+  }
+
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
     console.log(error)

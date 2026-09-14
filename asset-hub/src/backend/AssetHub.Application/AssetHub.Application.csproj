@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Base32" Version="1.1.0.2" />
     <PackageReference Include="Cronos" Version="0.13.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.2.0" />
@@ -12,6 +13,7 @@
     <PackageReference Include="NetTopologySuite" Version="2.6.0" />
     <PackageReference Include="NetTopologySuite.IO.GeoJSON" Version="4.0.0" />
     <PackageReference Include="NJsonSchema" Version="11.6.1" />
+    <PackageReference Include="Otp.NET" Version="1.4.1" />
     <PackageReference Include="Scriban" Version="7.4.0" />
   </ItemGroup>
 

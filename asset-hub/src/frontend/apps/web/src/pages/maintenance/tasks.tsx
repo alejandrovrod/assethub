@@ -35,6 +35,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const STATE_OPTIONS: { value: WorkTaskState | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -54,6 +55,9 @@ const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructi
 }
 
 export default function MaintenanceTasks() {
+  const { can } = usePermissions()
+  const canCreate = can('tasks:create')
+  const canDelete = can('tasks:delete')
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedTaskId = searchParams.get('selected')
@@ -197,9 +201,11 @@ export default function MaintenanceTasks() {
                 Seguimiento de tareas de mantenimiento, asignaciones y vencimientos.
               </CardDescription>
             </div>
-            <Button size="icon" onClick={handleCreate}>
-              <Plus className="h-4 w-4" />
-            </Button>
+            {canCreate && (
+              <Button size="icon" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
 
           <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-b">
@@ -321,7 +327,8 @@ export default function MaintenanceTasks() {
                               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                 <TooltipProvider>
                                   <div className="flex items-center justify-end gap-1">
-                                    <AlertDialog>
+                                    {canDelete && (
+                                      <AlertDialog>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <AlertDialogTrigger asChild>
@@ -346,8 +353,9 @@ export default function MaintenanceTasks() {
                                             Eliminar
                                           </AlertDialogAction>
                                         </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
+                                       </AlertDialogContent>
+                                      </AlertDialog>
+                                    )}
                                   </div>
                                 </TooltipProvider>
                               </TableCell>
@@ -412,9 +420,11 @@ export default function MaintenanceTasks() {
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-8 w-8 mb-2 opacity-50" />
                   <p>No hay tareas de mantenimiento.</p>
-                  <Button variant="link" onClick={handleCreate}>
-                    Crear la primera
-                  </Button>
+                  {canCreate && (
+                    <Button variant="link" onClick={handleCreate}>
+                      Crear la primera
+                    </Button>
+                  )}
                 </div>
               )}
             </ScrollArea>

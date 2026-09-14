@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
@@ -90,6 +91,52 @@ public class SignUpTenantCommandHandler : IRequestHandler<SignUpTenantCommand, S
         tenant.Status = TenantStatus.Active;
         await _catalogDb.SaveChangesAsync(cancellationToken);
 
+        // 5. Seed Role-Permission Matrix para el tenant nuevo (R-ROLE-1)
+        await SeedDefaultRolePermissionsAsync(tenant.Id, cancellationToken);
+
         return new SignUpTenantResult(tenant.Id, tenant.Status.ToString());
+    }
+
+    /// <summary>
+    /// R-ROLE-1: al crear un tenant se puebla la matriz con los permisos
+    /// default de los roles base (Tenant Admin = todo).
+    /// </summary>
+    private async Task SeedDefaultRolePermissionsAsync(Guid tenantId, CancellationToken ct)
+    {
+        var roles = await _securityDb.Roles
+            .Where(r => r.IsSystemDefault)
+            .ToListAsync(ct);
+        if (roles.Count == 0) return;
+
+        var permissions = await _securityDb.Permissions.ToListAsync(ct);
+        if (permissions.Count == 0) return;
+
+        var permissionsByCode = permissions.ToDictionary(p => p.Code);
+
+        void AddRole(string roleName, IEnumerable<string> codes)
+        {
+            var role = roles.FirstOrDefault(r => r.Name == roleName);
+            if (role == null) return;
+            foreach (var code in codes)
+            {
+                if (permissionsByCode.TryGetValue(code, out var perm))
+                {
+                    _securityDb.RolePermissions.Add(new RolePermission
+                    {
+                        TenantId = tenantId,
+                        RoleId = role.Id,
+                        PermissionId = perm.Id
+                    });
+                }
+            }
+        }
+
+        var allCodes = permissions.Select(p => p.Code).ToList();
+
+        AddRole("Tenant Admin", allCodes);
+        AddRole("admin", allCodes);
+        AddRole("Viewer", allCodes.Where(c => c.EndsWith(":read")));
+
+        await _securityDb.SaveChangesAsync(ct);
     }
 }

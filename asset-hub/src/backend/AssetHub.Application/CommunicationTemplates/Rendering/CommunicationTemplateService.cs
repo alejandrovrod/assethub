@@ -25,8 +25,8 @@ public class CommunicationTemplateService : ICommunicationTemplateService
     private readonly IConfiguration _configuration;
 
     public CommunicationTemplateService(
-        ITenantDbContext db, 
-        IPlatformDbContext platformDb, 
+        ITenantDbContext db,
+        IPlatformDbContext platformDb,
         ITemplateRenderEngine renderEngine,
         IConfiguration configuration)
     {
@@ -43,10 +43,8 @@ public class CommunicationTemplateService : ICommunicationTemplateService
         IReadOnlyDictionary<string, object> variables,
         CancellationToken cancellationToken = default)
     {
-        // Buscar la plantilla por codigo dentro del tenant (el query filter de TenantId ya aplica,
-        // pero se filtra explicitamente porque este servicio puede llamarse desde event handlers
-        // que no necesariamente corren con el resolver del tenant correcto).
         var template = await _db.CommunicationTemplates
+            .AsNoTracking()
             .Where(t => t.TenantId == tenantId && t.Code == templateCode)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -55,54 +53,14 @@ public class CommunicationTemplateService : ICommunicationTemplateService
             return null; // Sin plantilla definida => el caller usa su fallback hardcodeado
         }
 
-        // Cargar la version activa con sus traducciones
-        var version = await _db.CommunicationTemplateVersions
-            .Where(v => v.Id == template.ActiveVersionId)
-            .Include(v => v.Translations)
-            .FirstOrDefaultAsync(cancellationToken);
-
+        var version = await LoadVersionAsync(tenantId, template.ActiveVersionId.Value, cancellationToken);
         if (version == null || version.Translations.Count == 0)
         {
             return null;
         }
 
-        // Resolver traduccion: idioma del destinatario => "es" => la primera disponible
-        var locale = string.IsNullOrWhiteSpace(recipientLocale) ? DefaultLocale : recipientLocale;
-        var translation = version.Translations.FirstOrDefault(t => t.Locale == locale)
-            ?? version.Translations.FirstOrDefault(t => t.Locale == DefaultLocale)
-            ?? version.Translations.First();
-
-        var mergedVariables = new Dictionary<string, object>(variables);
-        var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
-        if (tenant != null)
-        {
-            var logoUrl = tenant.LogoUrl;
-            if (string.IsNullOrWhiteSpace(logoUrl))
-            {
-                logoUrl = "https://placehold.co/400x100?text=Logo+Tenant";
-            }
-            else if (!logoUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
-                     !logoUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                var baseUrl = _configuration["App:BaseUrl"] ?? "https://localhost:7184";
-                baseUrl = baseUrl.TrimEnd('/');
-                logoUrl = baseUrl + (logoUrl.StartsWith("/") ? "" : "/") + logoUrl;
-            }
-
-            mergedVariables["tenant"] = new
-            {
-                name = tenant.Name,
-                logo_url = logoUrl,
-                support_email = tenant.SupportEmail ?? "soporte@sonnora.mx"
-            };
-        }
-
-        var subject = translation.Subject != null
-            ? _renderEngine.Render(translation.Subject, mergedVariables)
-            : null;
-        var body = _renderEngine.Render(translation.Content, mergedVariables);
-
-        return new RenderedCommunication(subject, body);
+        return await RenderTranslationsAsync(
+            tenantId, version.Translations, recipientLocale, variables, cancellationToken);
     }
 
     public async Task<RenderedCommunication?> RenderByIdAsync(
@@ -113,6 +71,7 @@ public class CommunicationTemplateService : ICommunicationTemplateService
         CancellationToken cancellationToken = default)
     {
         var template = await _db.CommunicationTemplates
+            .AsNoTracking()
             .Where(t => t.TenantId == tenantId && t.Id == templateId)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -121,45 +80,33 @@ public class CommunicationTemplateService : ICommunicationTemplateService
             return null;
         }
 
-        var version = await _db.CommunicationTemplateVersions
-            .Where(v => v.Id == template.ActiveVersionId)
-            .Include(v => v.Translations)
-            .FirstOrDefaultAsync(cancellationToken);
-
+        var version = await LoadVersionAsync(tenantId, template.ActiveVersionId.Value, cancellationToken);
         if (version == null || version.Translations.Count == 0)
         {
             return null;
         }
 
-        var locale = string.IsNullOrWhiteSpace(recipientLocale) ? DefaultLocale : recipientLocale;
-        var translation = version.Translations.FirstOrDefault(t => t.Locale == locale)
-            ?? version.Translations.FirstOrDefault(t => t.Locale == DefaultLocale)
-            ?? version.Translations.First();
+        return await RenderTranslationsAsync(
+            tenantId, version.Translations, recipientLocale, variables, cancellationToken);
+    }
 
-        var mergedVariables = new Dictionary<string, object>(variables);
-        var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
-        if (tenant != null)
-        {
-            var logoUrl = tenant.LogoUrl;
-            if (string.IsNullOrWhiteSpace(logoUrl))
-            {
-                logoUrl = "https://placehold.co/400x100?text=Logo+Tenant";
-            }
-            else if (!logoUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
-                     !logoUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                var baseUrl = _configuration["App:BaseUrl"] ?? "https://localhost:7184";
-                baseUrl = baseUrl.TrimEnd('/');
-                logoUrl = baseUrl + (logoUrl.StartsWith("/") ? "" : "/") + logoUrl;
-            }
+    public async Task<RenderedCommunication> RenderTranslationsAsync(
+        Guid tenantId,
+        IEnumerable<CommunicationTemplateTranslation> translations,
+        string locale,
+        IReadOnlyDictionary<string, object> variables,
+        CancellationToken cancellationToken = default)
+    {
+        var translationList = translations?.ToList() ?? new List<CommunicationTemplateTranslation>();
+        if (translationList.Count == 0)
+            throw new ArgumentException("No hay traducciones para renderizar.");
 
-            mergedVariables["tenant"] = new
-            {
-                name = tenant.Name,
-                logo_url = logoUrl,
-                support_email = tenant.SupportEmail ?? "soporte@sonnora.mx"
-            };
-        }
+        var resolvedLocale = string.IsNullOrWhiteSpace(locale) ? DefaultLocale : locale;
+        var translation = translationList.FirstOrDefault(t => t.Locale == resolvedLocale)
+            ?? translationList.FirstOrDefault(t => t.Locale == DefaultLocale)
+            ?? translationList.First();
+
+        var mergedVariables = await MergeTenantVariablesAsync(tenantId, variables, cancellationToken);
 
         var subject = translation.Subject != null
             ? _renderEngine.Render(translation.Subject, mergedVariables)
@@ -167,5 +114,54 @@ public class CommunicationTemplateService : ICommunicationTemplateService
         var body = _renderEngine.Render(translation.Content, mergedVariables);
 
         return new RenderedCommunication(subject, body);
+    }
+
+    private async Task<CommunicationTemplateVersion?> LoadVersionAsync(
+        Guid tenantId, Guid versionId, CancellationToken cancellationToken)
+    {
+        return await _db.CommunicationTemplateVersions
+            .AsNoTracking()
+            .Where(v => v.Id == versionId)
+            .Include(v => v.Translations)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Agrega tenant.name / tenant.logo_url / tenant.support_email sobre las
+    /// variables provistas (datos reales del tenant o placeholders).
+    /// </summary>
+    private async Task<IReadOnlyDictionary<string, object>> MergeTenantVariablesAsync(
+        Guid tenantId, IReadOnlyDictionary<string, object> variables, CancellationToken cancellationToken)
+    {
+        var merged = new Dictionary<string, object>(variables);
+
+        var tenant = await _platformDb.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
+
+        if (tenant != null)
+        {
+            var logoUrl = tenant.LogoUrl;
+            if (string.IsNullOrWhiteSpace(logoUrl))
+            {
+                logoUrl = "https://placehold.co/400x100?text=Logo+Tenant";
+            }
+            else if (!logoUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                     !logoUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                var baseUrl = _configuration["App:BaseUrl"] ?? "https://localhost:7184";
+                baseUrl = baseUrl.TrimEnd('/');
+                logoUrl = baseUrl + (logoUrl.StartsWith("/") ? "" : "/") + logoUrl;
+            }
+
+            merged["tenant"] = new
+            {
+                name = tenant.Name,
+                logo_url = logoUrl,
+                support_email = tenant.SupportEmail ?? "soporte@sonnora.mx"
+            };
+        }
+
+        return merged;
     }
 }

@@ -14,6 +14,7 @@ import {
 import { communicationTemplateService } from '@/services/communication-template.service'
 import { handleServerError } from '@/lib/handle-server-error'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 interface VersionHistorySheetProps {
   templateId: string | null
@@ -24,6 +25,8 @@ export function VersionHistorySheet({
   templateId,
   onOpenChange,
 }: VersionHistorySheetProps) {
+  const { can } = usePermissions()
+  const canManage = can('communication-templates:manage')
   const queryClient = useQueryClient()
   const isOpen = templateId !== null
 
@@ -99,7 +102,7 @@ export function VersionHistorySheet({
                       ))}
                     </div>
                   </div>
-                  {!isActive && (
+                  {!isActive && canManage && (
                     <Button
                       size="sm"
                       variant="outline"

@@ -16,8 +16,14 @@ import {
 } from '@/components/ui/select'
 import { AssetTemplateFormSheet } from './components/asset-template-form-sheet'
 import { SystemTemplateLibraryModal } from './components/system-template-library-modal'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function AssetsTemplates() {
+  const { can } = usePermissions()
+  const canCreate = can('asset-templates:create')
+  const canUpdate = can('asset-templates:update')
+  const canDelete = can('asset-templates:delete')
+  const canClone = can('asset-templates:clone')
   const queryClient = useQueryClient()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -89,9 +95,11 @@ export default function AssetsTemplates() {
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <SystemTemplateLibraryModal />
-            <Button size="icon" onClick={handleCreate} title="Crear plantilla desde cero">
-              <Plus className="h-4 w-4" />
-            </Button>
+            {canCreate && (
+              <Button size="icon" onClick={handleCreate} title="Crear plantilla desde cero">
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
@@ -134,35 +142,41 @@ export default function AssetsTemplates() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => handleEdit(template)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          title="Clonar plantilla"
-                          onClick={() => handleClone(template)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            if (confirm('¿Estás seguro de eliminar esta plantilla?')) {
-                              deleteMutation.mutate(template.id)
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canUpdate && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleEdit(template)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canClone && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            title="Clonar plantilla"
+                            onClick={() => handleClone(template)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de eliminar esta plantilla?')) {
+                                deleteMutation.mutate(template.id)
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

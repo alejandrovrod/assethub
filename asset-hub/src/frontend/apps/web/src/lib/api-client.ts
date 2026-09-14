@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // You can override this in a .env file later with VITE_API_URL
-const baseURL = import.meta.env.VITE_API_URL || 'https://asset-hub.runasp.net/api/v1' //'https://localhost:7184/api/v1'
+const baseURL = import.meta.env.VITE_API_URL || 'https://localhost:7184/api/v1' //'https://asset-hub.runasp.net/api/v1'  
 
 export const apiClient = axios.create({
   baseURL,
@@ -13,7 +13,7 @@ export const apiClient = axios.create({
 export const getMediaUrl = (path?: string | null): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  
+
   const rootUrl = baseURL.replace('/api/v1', '');
   return `${rootUrl}${path.startsWith('/') ? '' : '/'}${path}`;
 }

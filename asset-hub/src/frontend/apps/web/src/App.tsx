@@ -26,8 +26,10 @@ const SettingsUsers = lazy(() => import("./pages/settings/users"));
 const SettingsRoles = lazy(() => import("./pages/settings/roles"));
 const SettingsTenant = lazy(() => import("./pages/settings/tenant"));
 const SettingsAudit = lazy(() => import("./pages/settings/audit"));
+const SettingsAccount = lazy(() => import("./pages/settings/account"));
 const AuthSyncPage = lazy(() => import("./pages/auth-sync"));
 const LogoutSyncPage = lazy(() => import("./pages/logout-sync"));
+const AcceptInvitationPage = lazy(() => import("./pages/accept-invitation"));
 const InventoryWarehouses = lazy(() => import("./pages/inventory/warehouses"));
 const InventoryStock = lazy(() => import("./pages/inventory/stock"));
 const InventorySettings = lazy(() => import("./pages/inventory/settings"));
@@ -82,6 +84,7 @@ export default function App() {
 
             <Route path="settings">
               <Route path="tenant" element={<SettingsTenant />} />
+              <Route path="account" element={<SettingsAccount />} />
               <Route path="users" element={<SettingsUsers />} />
               <Route path="roles" element={<SettingsRoles />} />
               <Route path="audit" element={<SettingsAudit />} />
@@ -91,6 +94,7 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth-sync" element={<AuthSyncPage />} />
           <Route path="/logout-sync" element={<LogoutSyncPage />} />
+          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         </Routes>
       </Suspense>
       <Toaster />

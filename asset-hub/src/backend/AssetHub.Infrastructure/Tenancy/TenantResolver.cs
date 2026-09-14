@@ -79,6 +79,30 @@ public class TenantResolver : ITenantResolver
 
     public Guid? GetCurrentTenantId() => GetCurrentTenant()?.Id;
 
+    public Guid? GetCurrentUserId()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
+        var subClaim = httpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(subClaim, out var userId))
+        {
+            return userId;
+        }
+
+        // Fallback: try 'sub' claim (JWT standard)
+        subClaim = httpContext.User?.FindFirst("sub")?.Value;
+        if (Guid.TryParse(subClaim, out userId))
+        {
+            return userId;
+        }
+
+        return null;
+    }
+
     public static string? ResolveSlug(HttpContext context)
     {
         if (context.Request.Headers.TryGetValue("X-Tenant", out var headerVal))

@@ -38,6 +38,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Link } from 'react-router'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const PRIORITY_CATALOG_CODE = 'priority'
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
@@ -64,6 +65,11 @@ interface WorkTaskDetailProps {
 }
 
 export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
+  const { can } = usePermissions()
+  const canUpdate = can('tasks:update')
+  const canAssign = can('tasks:assign')
+  const canChangeState = can('task-status:update')
+  const canComment = can('tasks:comment')
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('details')
 
@@ -175,7 +181,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
   const handleSave = () => {
     updateMutation.mutate({})
-    if (assignedEmployeeId !== (detail?.assignedEmployeeId || '') || assignedTeamId !== (detail?.assignedTeamId || '')) {
+    if (canAssign && (assignedEmployeeId !== (detail?.assignedEmployeeId || '') || assignedTeamId !== (detail?.assignedTeamId || ''))) {
       assignMutation.mutate()
     }
   }
@@ -197,7 +203,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     displayedTask.maintenanceOrderState !== 'in_progress'
   )
 
-  const isInfoEditBlocked = state === 'done' || state === 'cancelled' || Boolean(
+  const isInfoEditBlocked = state === 'done' || state === 'cancelled' || !canUpdate || Boolean(
     displayedTask.maintenanceOrderState && 
     ['done', 'verified', 'cancelled'].includes(displayedTask.maintenanceOrderState)
   )
@@ -371,7 +377,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    {allowedStates.length === 0 ? (
+                    {allowedStates.length === 0 || !canChangeState ? (
                       <span className="text-sm text-muted-foreground">No hay transiciones disponibles</span>
                     ) : (
                       allowedStates.map((target) => (
@@ -465,17 +471,19 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
               )}
             </ScrollArea>
 
-            <form onSubmit={handleAddComment} className="mt-4 flex gap-2">
-              <Textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Escribir comentario..."
-                className="min-h-[60px] resize-none"
-              />
-              <Button type="submit" size="icon" disabled={commentMutation.isPending || !commentText.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+            {canComment && (
+              <form onSubmit={handleAddComment} className="mt-4 flex gap-2">
+                <Textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Escribir comentario..."
+                  className="min-h-[60px] resize-none"
+                />
+                <Button type="submit" size="icon" disabled={commentMutation.isPending || !commentText.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

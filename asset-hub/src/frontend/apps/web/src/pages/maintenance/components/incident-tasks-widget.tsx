@@ -10,6 +10,7 @@ import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 import { WorkTaskFormSheet } from './work-task-form-sheet'
 
 interface IncidentTasksWidgetProps {
@@ -24,6 +25,8 @@ const STATE_LABELS: Record<string, string> = {
 }
 
 export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
+  const { can } = usePermissions()
+  const canCreate = can('tasks:create')
   const [isFormOpen, setIsFormOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
@@ -38,10 +41,12 @@ export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg">Tareas derivadas</CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Crear tarea
-        </Button>
+        {canCreate && (
+          <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Crear tarea
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading ? (

@@ -9,6 +9,7 @@ import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 import { WorkTaskFormSheet } from './work-task-form-sheet'
 
 interface AssetTasksWidgetProps {
@@ -23,6 +24,8 @@ const STATE_LABELS: Record<string, string> = {
 }
 
 export function AssetTasksWidget({ assetId }: AssetTasksWidgetProps) {
+  const { can } = usePermissions()
+  const canCreate = can('tasks:create')
   const [isFormOpen, setIsFormOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
@@ -73,10 +76,12 @@ export function AssetTasksWidget({ assetId }: AssetTasksWidgetProps) {
         </ScrollArea>
       )}
 
-      <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)} className="w-full mt-2">
-        <Plus className="h-4 w-4 mr-1" />
-        Crear tarea
-      </Button>
+      {canCreate && (
+        <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)} className="w-full mt-2">
+          <Plus className="h-4 w-4 mr-1" />
+          Crear tarea
+        </Button>
+      )}
 
       <WorkTaskFormSheet
         open={isFormOpen}

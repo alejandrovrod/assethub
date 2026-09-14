@@ -28,7 +28,7 @@ public class CatalogItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:catalog-items:create")]
     public async Task<IActionResult> CreateItem([FromRoute] string catalogCode, [FromBody] CreateCatalogItemRequest request)
     {
         var id = await _mediator.Send(new CreateCatalogItemCommand(
@@ -42,7 +42,7 @@ public class CatalogItemsController : ControllerBase
     }
 
     [HttpPut("{itemCode}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:catalog-items:update")]
     public async Task<IActionResult> UpdateItem([FromRoute] string catalogCode, [FromRoute] string itemCode, [FromBody] UpdateCatalogItemRequest request)
     {
         var success = await _mediator.Send(new UpdateCatalogItemCommand(
@@ -59,7 +59,7 @@ public class CatalogItemsController : ControllerBase
     }
 
     [HttpDelete("{itemCode}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:catalog-items:delete")]
     public async Task<IActionResult> DeleteItem([FromRoute] string catalogCode, [FromRoute] string itemCode)
     {
         var success = await _mediator.Send(new DeleteCatalogItemCommand(catalogCode, itemCode));

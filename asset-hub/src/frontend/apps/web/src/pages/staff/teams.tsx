@@ -15,8 +15,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function StaffTeams() {
+  const { can } = usePermissions()
   const queryClient = useQueryClient()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTeamId, setEditingTeamId] = useState<string | undefined>()
@@ -58,9 +60,11 @@ export default function StaffTeams() {
               Organiza empleados en equipos de trabajo para asignación colectiva.
             </CardDescription>
           </div>
-          <Button size="icon" onClick={handleCreate}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          {can('teams:create') && (
+            <Button size="icon" onClick={handleCreate}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
 
         <div className="px-4 py-3 flex items-center gap-3 border-b">
@@ -113,16 +117,19 @@ export default function StaffTeams() {
                       <TableCell className="text-right">
                         <TooltipProvider>
                           <div className="flex items-center justify-end gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => handleEdit(team)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Editar</TooltipContent>
-                            </Tooltip>
+                            {can('teams:update') && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" onClick={() => handleEdit(team)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Editar</TooltipContent>
+                              </Tooltip>
+                            )}
 
-                            <AlertDialog>
+                            {can('teams:delete') && (
+                              <AlertDialog>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <AlertDialogTrigger asChild>
@@ -147,7 +154,8 @@ export default function StaffTeams() {
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
-                            </AlertDialog>
+                              </AlertDialog>
+                            )}
                           </div>
                         </TooltipProvider>
                       </TableCell>
@@ -158,9 +166,11 @@ export default function StaffTeams() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <p>No hay equipos registrados.</p>
-                <Button variant="link" onClick={handleCreate}>
-                  Crear el primero
-                </Button>
+                {can('teams:create') && (
+                  <Button variant="link" onClick={handleCreate}>
+                    Crear el primero
+                  </Button>
+                )}
               </div>
             )}
           </ScrollArea>

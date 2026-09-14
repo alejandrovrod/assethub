@@ -31,6 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const schema = z.object({
   name: z.string().min(2, 'El nombre es requerido'),
@@ -41,6 +42,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function WarehousesPage() {
+  const { can } = usePermissions()
+  const canCreate = can('warehouses:create')
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
 
@@ -78,10 +81,12 @@ export default function WarehousesPage() {
             Gestión de ubicaciones físicas de inventario.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo Almacén
-        </Button>
+        {canCreate && (
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Almacén
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -104,10 +109,12 @@ export default function WarehousesPage() {
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
               <WarehouseIcon className="h-10 w-10 opacity-30" />
               <p className="text-sm">No hay almacenes configurados.</p>
-              <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Crear el primero
-              </Button>
+              {canCreate && (
+                <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear el primero
+                </Button>
+              )}
             </div>
           ) : (
             <Table>

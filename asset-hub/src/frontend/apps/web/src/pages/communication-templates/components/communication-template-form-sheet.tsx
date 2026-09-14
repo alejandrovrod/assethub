@@ -3,10 +3,18 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plus, Trash2 } from 'lucide-react'
+import { Loader2, Plus, Send, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -85,6 +93,8 @@ export function CommunicationTemplateFormSheet({
   const queryClient = useQueryClient()
   const [activeLocaleTab, setActiveLocaleTab] = useState('es')
   const [createNewVersion, setCreateNewVersion] = useState(false)
+  const [testEmailOpen, setTestEmailOpen] = useState(false)
+  const [testEmail, setTestEmail] = useState('')
 
   const isEditing = templateId !== null
 
@@ -193,6 +203,35 @@ export function CommunicationTemplateFormSheet({
     onError: (error) => handleServerError({ error }),
   })
 
+  const sendTestEmailMutation = useMutation({
+    mutationFn: (to: string) =>
+      communicationTemplateService.sendTestEmail(templateId!, {
+        to,
+        locale: activeLocaleTab,
+        // Envía el contenido actual del editor (aún sin guardar) para que la
+        // prueba refleje exactamente lo que el usuario está viendo; si el
+        // editor está vacío, el backend usa la versión activa guardada
+        translations: (form.getValues('translations') ?? [])
+          .filter((t) => (t.content ?? '').trim().length > 0)
+          .map((t) => ({
+            locale: t.locale,
+            subject: templateType === 'email' ? t.subject || null : null,
+            content: t.content ?? '',
+          })),
+      }),
+    onMutate: () => toast.loading('Enviando correo de prueba...'),
+    onSuccess: (_data, _to, ctx) => {
+      if (ctx) toast.dismiss(ctx)
+      toast.success(`Correo de prueba enviado a ${_to}`)
+      setTestEmailOpen(false)
+    },
+    onError: (error, _to, ctx) => {
+      if (ctx) toast.dismiss(ctx)
+      handleServerError({ error })
+    },
+  })
+
+
   const variables = useMemo(
     () => VARIABLE_HINTS[entityScope] ?? [],
     [entityScope]
@@ -284,7 +323,21 @@ export function CommunicationTemplateFormSheet({
                       Guardar como versión nueva
                     </Label>
                   </div>
-                  <Button 
+                  {templateType === 'email' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setTestEmail('')
+                        setTestEmailOpen(true)
+                      }}
+                      disabled={isPending || sendTestEmailMutation.isPending}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar Prueba
+                    </Button>
+                  )}
+                  <Button
                     type="button" 
                     onClick={form.handleSubmit((v) => onSubmit(v, createNewVersion ? 'new_version' : 'update_version'))} 
                     disabled={isPending || (!createNewVersion && !detail?.activeVersionId)}
@@ -505,6 +558,50 @@ export function CommunicationTemplateFormSheet({
           </Form>
         </FormSheetLayout>
       </SheetContent>
+
+      <Dialog open={testEmailOpen} onOpenChange={setTestEmailOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enviar correo de prueba</DialogTitle>
+            <DialogDescription>
+              Se enviará la plantilla actual ({activeLocaleTab.toUpperCase()}) con
+              datos de ejemplo a la dirección que indiques. No se generan eventos
+              reales en el sistema.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (testEmail.trim()) sendTestEmailMutation.mutate(testEmail.trim())
+            }}
+          >
+            <div className="flex flex-col gap-4">
+              <Input
+                type="email"
+                required
+                autoFocus
+                placeholder="destino@empresa.com"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTestEmailOpen(false)}
+                  disabled={sendTestEmailMutation.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={sendTestEmailMutation.isPending || !testEmail.trim()}>
+                  {sendTestEmailMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Enviar
+                </Button>
+              </DialogFooter>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   )
 }

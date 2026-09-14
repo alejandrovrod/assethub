@@ -40,16 +40,19 @@ public class EmployeesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeCommand command)
     {
-        var id = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetEmployeeById), new { id }, new { id });
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(
+            nameof(GetEmployeeById),
+            new { id = result.Id },
+            new { id = result.Id, userId = result.UserId, temporalPassword = result.TemporalPassword });
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(Guid id, [FromBody] UpdateEmployeeCommand command)
     {
         command.EmployeeId = id;
-        await _mediator.Send(command);
-        return NoContent();
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     [HttpPatch("{id}/link-user")]

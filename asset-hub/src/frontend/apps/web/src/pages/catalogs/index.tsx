@@ -18,8 +18,15 @@ import { cn } from '@/lib/utils'
 import { CatalogForm, type CatalogFormValues } from './components/catalog-form'
 import { CatalogItemForm, type CatalogItemFormValues } from './components/catalog-item-form'
 import { toast } from 'sonner'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function CatalogsPage() {
+  const { can } = usePermissions()
+  const canCreateCatalog = can('catalogs:create')
+  const canUpdateCatalog = can('catalogs:update')
+  const canCreateItem = can('catalog-items:create')
+  const canUpdateItem = can('catalog-items:update')
+  const canDeleteItem = can('catalog-items:delete')
   const queryClient = useQueryClient()
   const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null)
   
@@ -186,9 +193,11 @@ export default function CatalogsPage() {
             </CardTitle>
             <CardDescription>Gestioná los catálogos base del sistema.</CardDescription>
           </div>
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={openNewCatalogDialog}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          {canCreateCatalog && (
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={openNewCatalogDialog}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden">
           <ScrollArea className="h-full px-4 pb-4">
@@ -212,14 +221,16 @@ export default function CatalogsPage() {
                       <span className="truncate">{catalog.label}</span>
                       <ChevronRight className="h-4 w-4 opacity-50" />
                     </button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => openEditCatalogDialog(catalog)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    {canUpdateCatalog && (
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => openEditCatalogDialog(catalog)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -237,10 +248,12 @@ export default function CatalogsPage() {
                 <CardTitle>{selectedCatalog.label}</CardTitle>
                 <CardDescription>Código: {selectedCatalog.code}</CardDescription>
               </div>
-              <Button onClick={openNewItemDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Elemento
-              </Button>
+              {canCreateItem && (
+                <Button onClick={openNewItemDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Elemento
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
               <ScrollArea className="flex-1 min-h-0">
@@ -270,22 +283,26 @@ export default function CatalogsPage() {
                           <TableCell className="text-right">{item.order}</TableCell>
                           <TableCell>
                              <div className="flex items-center gap-1">
-                               <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={() => openEditItemDialog(item)}
-                                >
-                                 <Edit className="h-4 w-4" />
-                               </Button>
-                               <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => deleteItemMutation.mutate(item.code)}
-                                >
-                                 <Trash2 className="h-4 w-4" />
-                               </Button>
+                              {canUpdateItem && (
+                                <Button 
+                                   variant="ghost" 
+                                   size="icon" 
+                                   className="h-8 w-8"
+                                   onClick={() => openEditItemDialog(item)}
+                                 >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canDeleteItem && (
+                                <Button 
+                                   variant="ghost" 
+                                   size="icon" 
+                                   className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                   onClick={() => deleteItemMutation.mutate(item.code)}
+                                 >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                              </div>
                           </TableCell>
                         </TableRow>

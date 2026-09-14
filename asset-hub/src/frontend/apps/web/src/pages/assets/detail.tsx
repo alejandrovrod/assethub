@@ -36,11 +36,16 @@ import { MaintenanceOrderFormSheet } from '@/pages/maintenance/orders/components
 import { AssetMap } from '@/components/map/AssetMap'
 import { AssetMaterialsTable } from './components/asset-materials-table'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { can } = usePermissions()
+  const canUpdate = can('assets:update')
+  const canChangeState = can('assets:change-state')
+  const canMove = can('assets:move')
 
   const [formData, setFormData] = useState<any>({})
   const [isEditingGeneral, setIsEditingGeneral] = useState(false)
@@ -299,9 +304,11 @@ export default function AssetDetailPage() {
                   {asset.state}
                 </Badge>
 
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8 shrink-0">
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                {canUpdate && (
+                  <Button variant="ghost" size="icon" onClick={() => setIsEditingGeneral(true)} className="ml-2 h-8 w-8 shrink-0">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               <p className="text-muted-foreground text-sm mt-1">
                 Plantilla: <span className="font-medium text-foreground">{asset.templateName}</span>
@@ -375,7 +382,7 @@ export default function AssetDetailPage() {
                 Activo bloqueado. Gestión delegada al módulo: <span className="uppercase">{currentStateConfig.associatedModule}</span>
               </span>
             </div>
-          ) : !currentStateConfig.isTerminal && (
+          ) : !currentStateConfig.isTerminal && canChangeState && (
             <div className="flex flex-wrap items-center gap-2 bg-card border rounded-lg px-3 py-2 xl:h-12 shadow-sm w-full sm:w-auto">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-2">
                 Cambiar estado a:
@@ -433,9 +440,11 @@ export default function AssetDetailPage() {
                   Atributos dinámicos del activo.
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setIsEditingDynamic(true)}>
-                <Pencil className="mr-2 h-4 w-4" /> Editar
-              </Button>
+              {canUpdate && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditingDynamic(true)}>
+                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {isResolving ? (
@@ -506,14 +515,15 @@ export default function AssetDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AssetMap 
-                  latitude={asset.latitude} 
-                  longitude={asset.longitude} 
+                <AssetMap
+                  latitude={asset.latitude}
+                  longitude={asset.longitude}
                   geoJson={asset.geoJson}
                   assetName={asset.name}
                   riskLevel={forecast?.riskLevel}
                   assetState={asset.state}
                   assetStateColor={asset.stateColor}
+                  readOnly={!canUpdate}
                   onChange={(lat, lng, geoJsonStr) => {
                     updateMutation.mutate({ latitude: lat, longitude: lng, geoJson: geoJsonStr })
                   }}
@@ -542,10 +552,11 @@ export default function AssetDetailPage() {
                   <Network className="h-5 w-5" /> Jerarquía
                 </CardTitle>
                 
-                <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedParentId(asset.parentId || 'none')}>Cambiar Padre</Button>
-                  </DialogTrigger>
+                {canMove && (
+                  <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedParentId(asset.parentId || 'none')}>Cambiar Padre</Button>
+                    </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Cambiar Activo Padre</DialogTitle>
@@ -574,7 +585,8 @@ export default function AssetDetailPage() {
                       </Button>
                     </DialogFooter>
                   </DialogContent>
-                </Dialog>
+                  </Dialog>
+                )}
               </CardHeader>
               <CardContent className="text-sm space-y-4">
                 <div>

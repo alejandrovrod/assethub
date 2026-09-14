@@ -21,8 +21,11 @@ import { communicationTemplateService, CommunicationTemplateSummary } from '@/se
 import { mediaService } from '@/services/media.service'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getMediaUrl } from '@/lib/api-client'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function SettingsTenant() {
+  const { can } = usePermissions()
+  const canWrite = can('tenant:write')
   const [activeTab, setActiveTab] = useState('branding')
   const [settings, setSettings] = useState<TenantSettings>({})
   const [loading, setLoading] = useState(false)
@@ -160,7 +163,7 @@ export default function SettingsTenant() {
                     type="file" 
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    disabled={uploading}
+                    disabled={uploading || !canWrite}
                     className="max-w-xs"
                   />
                   {uploading && <span className="text-sm text-muted-foreground">Subiendo...</span>}
@@ -174,17 +177,20 @@ export default function SettingsTenant() {
                 <Label htmlFor="supportEmail">Correo Electrónico de Soporte</Label>
                 <Input 
                   id="supportEmail" 
-                  type="email" 
+                  type="email"
                   placeholder="soporte@tuempresa.com"
                   value={settings.supportEmail || ''}
                   onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                  disabled={!canWrite}
                   className="max-w-md"
                 />
               </div>
 
-              <Button onClick={handleSaveSettings} disabled={isSaving}>
-                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-              </Button>
+              {canWrite && (
+                <Button onClick={handleSaveSettings} disabled={isSaving}>
+                  {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -212,6 +218,7 @@ export default function SettingsTenant() {
                   <Select 
                     value={getMappingForEvent('Incident.Created')}
                     onValueChange={(val) => handleMappingChange('Incident.Created', val)}
+                    disabled={!canWrite}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar plantilla..." />
@@ -237,6 +244,7 @@ export default function SettingsTenant() {
                   <Select 
                     value={getMappingForEvent('Incident.StatusChanged')}
                     onValueChange={(val) => handleMappingChange('Incident.StatusChanged', val)}
+                    disabled={!canWrite}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar plantilla..." />
@@ -265,6 +273,7 @@ export default function SettingsTenant() {
                   <Select 
                     value={getMappingForEvent('Task.Created')}
                     onValueChange={(val) => handleMappingChange('Task.Created', val)}
+                    disabled={!canWrite}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar plantilla..." />
@@ -293,6 +302,7 @@ export default function SettingsTenant() {
                   <Select 
                     value={getMappingForEvent('MaintenanceOrder.Created')}
                     onValueChange={(val) => handleMappingChange('MaintenanceOrder.Created', val)}
+                    disabled={!canWrite}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar plantilla..." />
@@ -321,6 +331,7 @@ export default function SettingsTenant() {
                   <Select 
                     value={getMappingForEvent('Asset.StateChanged')}
                     onValueChange={(val) => handleMappingChange('Asset.StateChanged', val)}
+                    disabled={!canWrite}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar plantilla..." />

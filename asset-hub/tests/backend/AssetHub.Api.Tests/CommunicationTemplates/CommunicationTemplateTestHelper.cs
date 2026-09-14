@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.CommunicationTemplates.Rendering;
 using AssetHub.Application.Interfaces;
 using AssetHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace AssetHub.Api.Tests.CommunicationTemplates;
 
@@ -36,5 +38,27 @@ public static class CommunicationTemplateTestHelper
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         return new TenantDbContext(options, resolver);
+    }
+
+    public static PlatformDbContext CreatePlatformDbContext()
+    {
+        var options = new DbContextOptionsBuilder<PlatformDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new PlatformDbContext(options);
+    }
+
+    /// <summary>
+    /// CommunicationTemplateService con platform db en memoria y config vacia
+    /// (usa los defaults de logo/BaseUrl cuando no hay tenant cargado).
+    /// </summary>
+    public static CommunicationTemplateService CreateTemplateService(
+        TenantDbContext db, PlatformDbContext? platformDb = null)
+    {
+        return new CommunicationTemplateService(
+            db,
+            platformDb ?? CreatePlatformDbContext(),
+            new AssetHub.Infrastructure.Services.Templates.ScribanTemplateRenderEngine(),
+            new ConfigurationBuilder().Build());
     }
 }

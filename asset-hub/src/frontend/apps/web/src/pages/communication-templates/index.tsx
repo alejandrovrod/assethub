@@ -34,6 +34,7 @@ import type {
   CommunicationTemplateType,
 } from '@/services/communication-template.service'
 import { handleServerError } from '@/lib/handle-server-error'
+import { usePermissions } from '@/hooks/use-permissions'
 import { CommunicationTemplateFormSheet } from './components/communication-template-form-sheet'
 import { VersionHistorySheet } from './components/version-history-sheet'
 import { RenderPreviewDialog } from './components/render-preview-dialog'
@@ -51,6 +52,8 @@ const TYPE_LABELS: Record<CommunicationTemplateType, string> = {
 }
 
 export default function CommunicationTemplatesPage() {
+  const { can } = usePermissions()
+  const canManage = can('communication-templates:manage')
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -106,15 +109,17 @@ export default function CommunicationTemplatesPage() {
             Plantillas de email y documentos multi-idioma para notificaciones del sistema
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingTemplateId(null)
-            setIsFormOpen(true)
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Plantilla
-        </Button>
+        {canManage && (
+          <Button
+            onClick={() => {
+              setEditingTemplateId(null)
+              setIsFormOpen(true)
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Plantilla
+          </Button>
+        )}
       </div>
 
       <Card className="flex flex-1 flex-col overflow-hidden">
@@ -244,25 +249,29 @@ export default function CommunicationTemplatesPage() {
                         >
                           <History className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Nueva versión"
-                          onClick={() => {
-                            setEditingTemplateId(t.id)
-                            setIsFormOpen(true)
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Eliminar"
-                          onClick={() => handleDelete(t)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {canManage && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Nueva versión"
+                              onClick={() => {
+                                setEditingTemplateId(t.id)
+                                setIsFormOpen(true)
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Eliminar"
+                              onClick={() => handleDelete(t)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

@@ -40,6 +40,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/handle-server-error'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const STATE_OPTIONS: { value: MaintenanceOrderState | 'all'; label: string }[] = [
   { value: 'all', label: 'Todas' },
@@ -71,6 +72,10 @@ const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'd
 }
 
 export default function MaintenanceOrders() {
+  const { can } = usePermissions()
+  const canCreate = can('maintenance:create')
+  const canUpdate = can('maintenance:update')
+  const canDelete = can('maintenance:delete')
   const queryClient = useQueryClient()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<MaintenanceOrderSummary | undefined>()
@@ -161,9 +166,11 @@ export default function MaintenanceOrders() {
                 Seguimiento de órdenes de mantenimiento, costos y verificación.
               </CardDescription>
             </div>
-            <Button size="icon" onClick={handleCreate}>
-              <Plus className="h-4 w-4" />
-            </Button>
+            {canCreate && (
+              <Button size="icon" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
 
           <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-b">
@@ -274,16 +281,19 @@ export default function MaintenanceOrders() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEdit(order)}
-                            disabled={order.state === 'verified'}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
+                          {canUpdate && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEdit(order)}
+                              disabled={order.state === 'verified'}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -311,7 +321,8 @@ export default function MaintenanceOrders() {
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
-                          </AlertDialog>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

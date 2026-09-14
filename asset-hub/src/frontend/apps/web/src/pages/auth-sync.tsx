@@ -19,7 +19,8 @@ export default function AuthSyncPage() {
             data.refreshToken,
             data.tenantSlug,
             data.tenantName,
-            data.roles || []
+            data.roles || [],
+            data.permissions || []
           );
           // Redirigir al dashboard eliminando los parámetros de la URL
           navigate("/", { replace: true });

@@ -16,8 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { WorkflowTemplateFormSheet } from './components/workflow-template-form-sheet'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function WorkflowTemplates() {
+  const { can } = usePermissions()
+  const canCreate = can('workflow-templates:create')
+  const canUpdate = can('workflow-templates:update')
+  const canDelete = can('workflow-templates:delete')
   const queryClient = useQueryClient()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -71,9 +76,11 @@ export default function WorkflowTemplates() {
               Gestioná las plantillas (esquemas y ciclo de vida) para incidencias y planes de mantenimiento.
             </CardDescription>
           </div>
-          <Button size="icon" onClick={handleCreate}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          {canCreate && (
+            <Button size="icon" onClick={handleCreate}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
           <ScrollArea className="flex-1 min-h-0">
@@ -116,24 +123,28 @@ export default function WorkflowTemplates() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(template)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (window.confirm('¿Estás seguro de eliminar esta plantilla?')) {
-                              deleteMutation.mutate(template.id)
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {canUpdate && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(template)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (window.confirm('¿Estás seguro de eliminar esta plantilla?')) {
+                                deleteMutation.mutate(template.id)
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -27,6 +27,17 @@ public interface ICommunicationTemplateService
         string recipientLocale,
         IReadOnlyDictionary<string, object> variables,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Renderiza un set de traducciones arbitrario (ej. contenido no guardado
+    /// que el usuario esta editando) en el idioma indicado (fallback "es").
+    /// </summary>
+    Task<RenderedCommunication> RenderTranslationsAsync(
+        Guid tenantId,
+        System.Collections.Generic.IEnumerable<CommunicationTemplateTranslation> translations,
+        string locale,
+        IReadOnlyDictionary<string, object> variables,
+        CancellationToken cancellationToken = default);
 }
 
 public record RenderedCommunication(string? Subject, string Body);

@@ -75,7 +75,7 @@ public class WorkTaskCreatedEventHandlerTests
         var handler = new WorkTaskCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<WorkTaskCreatedEventHandler>.Instance);
 
@@ -119,7 +119,7 @@ public class WorkTaskCreatedEventHandlerTests
         var handler = new WorkTaskCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<WorkTaskCreatedEventHandler>.Instance);
 
@@ -140,7 +140,7 @@ public class WorkTaskCreatedEventHandlerTests
         var handler = new WorkTaskCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<WorkTaskCreatedEventHandler>.Instance);
 

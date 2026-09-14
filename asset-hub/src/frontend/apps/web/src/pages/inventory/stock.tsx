@@ -40,6 +40,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const PARTS_CATALOG_CODE = 'parts'
 
@@ -55,6 +56,8 @@ const adjustmentSchema = z.object({
 type AdjForm = z.infer<typeof adjustmentSchema>
 
 export default function StockPage() {
+  const { canAny } = usePermissions()
+  const canRegisterMovements = canAny(['stock:adjust', 'receipts:create'])
   const qc = useQueryClient()
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>()
   const [adjOpen, setAdjOpen] = useState(false)
@@ -116,10 +119,12 @@ export default function StockPage() {
           <Button variant="outline" size="icon" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <Button onClick={() => setAdjOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Registrar Entrada
-          </Button>
+          {canRegisterMovements && (
+            <Button onClick={() => setAdjOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Registrar Entrada
+            </Button>
+          )}
         </div>
       </div>
 

@@ -30,7 +30,7 @@ public class AssetTemplatesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:asset-templates:create")]
     public async Task<IActionResult> Create([FromBody] CreateAssetTemplateRequest request)
     {
         var id = await _mediator.Send(new CreateAssetTemplateCommand(
@@ -47,7 +47,7 @@ public class AssetTemplatesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:asset-templates:update")]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateAssetTemplateRequest request)
     {
         var newId = await _mediator.Send(new UpdateAssetTemplateCommand(
@@ -65,7 +65,7 @@ public class AssetTemplatesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:asset-templates:delete")]
     public async Task<IActionResult> Delete([FromRoute] Guid id)
     {
         var success = await _mediator.Send(new DeleteAssetTemplateCommand(id));
@@ -74,7 +74,7 @@ public class AssetTemplatesController : ControllerBase
     }
 
     [HttpPost("clone")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:asset-templates:clone")]
     public async Task<IActionResult> Clone([FromBody] CloneAssetTemplateRequest request)
     {
         var id = await _mediator.Send(new CloneAssetTemplateCommand(
@@ -86,7 +86,7 @@ public class AssetTemplatesController : ControllerBase
     }
 
     [HttpPost("{id}/clone-system")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:asset-templates:clone")]
     public async Task<IActionResult> CloneSystem([FromRoute] Guid id)
     {
         var newId = await _mediator.Send(new CloneSystemTemplateCommand(id));

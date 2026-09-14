@@ -8,6 +8,7 @@ import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
 import { SkipToMain } from '@/components/skip-to-main'
 import { useAuthStore } from '@/store/auth.store'
+import { useProfile } from '@/hooks/use-profile'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -20,6 +21,8 @@ type AuthenticatedLayoutProps = {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const defaultOpen = getCookie('sidebar_state') !== 'false'
+  
+  useProfile()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

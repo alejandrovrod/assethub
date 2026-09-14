@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using AssetHub.Application.CommunicationTemplates.Commands;
 using AssetHub.Application.CommunicationTemplates.Queries;
@@ -37,7 +38,7 @@ public class TemplatesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:communication-templates:manage")]
     public async Task<IActionResult> CreateTemplate([FromBody] CreateCommunicationTemplateCommand command)
     {
         var id = await _mediator.Send(command);
@@ -45,7 +46,7 @@ public class TemplatesController : ControllerBase
     }
 
     [HttpPost("{id}/versions")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:communication-templates:manage")]
     public async Task<IActionResult> AddVersion(Guid id, [FromBody] AddCommunicationTemplateVersionCommand command)
     {
         command.TemplateId = id;
@@ -54,7 +55,7 @@ public class TemplatesController : ControllerBase
     }
 
     [HttpPut("{id}/versions/{versionId}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:communication-templates:manage")]
     public async Task<IActionResult> UpdateVersion(Guid id, Guid versionId, [FromBody] UpdateCommunicationTemplateVersionCommand command)
     {
         command.TemplateId = id;
@@ -64,7 +65,7 @@ public class TemplatesController : ControllerBase
     }
 
     [HttpPut("{id}/versions/{versionId}/activate")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:communication-templates:manage")]
     public async Task<IActionResult> ActivateVersion(Guid id, Guid versionId)
     {
         await _mediator.Send(new ActivateCommunicationTemplateVersionCommand { TemplateId = id, VersionId = versionId });
@@ -84,8 +85,29 @@ public class TemplatesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{id}/test-email")]
+    [Authorize(Policy = "permission:communication-templates:manage")]
+    public async Task<IActionResult> SendTestEmail(Guid id, [FromBody] SendTestEmailRequest request)
+    {
+        await _mediator.Send(new SendTestEmailCommand
+        {
+            TemplateId = id,
+            To = request.To,
+            Locale = request.Locale,
+            Translations = request.Translations?
+                .Select(t => new SendTestEmailCommand.TestTranslationInput
+                {
+                    Locale = t.Locale,
+                    Subject = t.Subject,
+                    Content = t.Content
+                })
+                .ToList()
+        });
+        return Ok(new { sent = true });
+    }
+
     [HttpDelete("{id}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:communication-templates:manage")]
     public async Task<IActionResult> DeleteTemplate(Guid id)
     {
         await _mediator.Send(new DeleteCommunicationTemplateCommand { TemplateId = id });
@@ -97,4 +119,18 @@ public class RenderTemplateRequest
 {
     public string Locale { get; set; } = "es";
     public System.Collections.Generic.Dictionary<string, string>? Variables { get; set; }
+}
+
+public class SendTestEmailRequest
+{
+    public string To { get; set; } = string.Empty;
+    public string Locale { get; set; } = "es";
+    public System.Collections.Generic.List<TestTranslationDto>? Translations { get; set; }
+
+    public class TestTranslationDto
+    {
+        public string Locale { get; set; } = string.Empty;
+        public string? Subject { get; set; }
+        public string Content { get; set; } = string.Empty;
+    }
 }

@@ -29,7 +29,7 @@ public class EntityTypesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:entity-types:create")]
     public async Task<IActionResult> Create([FromBody] CreateEntityTypeRequest request)
     {
         var id = await _mediator.Send(new CreateEntityTypeCommand(
@@ -44,7 +44,7 @@ public class EntityTypesController : ControllerBase
     }
 
     [HttpPut("{code}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:entity-types:update")]
     public async Task<IActionResult> Update([FromRoute] string code, [FromBody] UpdateEntityTypeRequest request)
     {
         var success = await _mediator.Send(new UpdateEntityTypeCommand(
@@ -61,7 +61,7 @@ public class EntityTypesController : ControllerBase
     }
 
     [HttpDelete("{code}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:entity-types:delete")]
     public async Task<IActionResult> Delete([FromRoute] string code)
     {
         var success = await _mediator.Send(new DeleteEntityTypeCommand(code));

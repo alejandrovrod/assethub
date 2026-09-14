@@ -26,11 +26,15 @@ import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export default function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { can } = usePermissions()
+  const canUpdate = can('incidents:update')
+  const canChangeState = can('incidents:change-state')
 
   const [formData, setFormData] = useState<any>({})
   const [isEditingDynamic, setIsEditingDynamic] = useState(false)
@@ -248,31 +252,33 @@ export default function IncidentDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
-          <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
-            Cambiar estado a:
-          </span>
-          {availableTransitions.length === 0 ? (
-            <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
-          ) : (
-            availableTransitions.map((targetState: string) => {
-              const blockReason = getTransitionBlockReason(targetState)
-              return (
-                <Button 
-                  key={targetState} 
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={() => handleStateClick(targetState)}
-                  disabled={stateMutation.isPending || !!blockReason}
-                  title={blockReason || `Cambiar a ${targetState}`}
-                >
-                  {targetState}
-                </Button>
-              )
-            })
-          )}
-        </div>
+        {canChangeState && (
+          <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
+              Cambiar estado a:
+            </span>
+            {availableTransitions.length === 0 ? (
+              <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
+            ) : (
+              availableTransitions.map((targetState: string) => {
+                const blockReason = getTransitionBlockReason(targetState)
+                return (
+                  <Button 
+                    key={targetState} 
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => handleStateClick(targetState)}
+                    disabled={stateMutation.isPending || !!blockReason}
+                    title={blockReason || `Cambiar a ${targetState}`}
+                  >
+                    {targetState}
+                  </Button>
+                )
+              })
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -303,9 +309,11 @@ export default function IncidentDetailPage() {
                         Atributos específicos ({template?.name}).
                       </CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditingDynamic(true)}>
-                      <Pencil className="mr-2 h-4 w-4" /> Editar
-                    </Button>
+                    {canUpdate && (
+                      <Button variant="outline" size="sm" onClick={() => setIsEditingDynamic(true)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Editar
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     {isResolving ? (

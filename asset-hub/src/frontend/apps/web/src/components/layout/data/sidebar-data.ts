@@ -123,28 +123,32 @@ export const sidebarData: SidebarData = {
           url: '/catalogs',
           icon: BookOpen,
         },
-        {
-          title: 'Configuración',
-          icon: Settings,
-          items: [
-            {
-              title: 'Organización',
-              url: '/settings/tenant',
-            },
-            {
-              title: 'Usuarios',
-              url: '/settings/users',
-            },
-            {
-              title: 'Roles',
-              url: '/settings/roles',
-            },
-            {
-              title: 'Auditoría',
-              url: '/settings/audit',
-            },
-          ],
-        },
+{
+  title: 'Configuración',
+  icon: Settings,
+  items: [
+    {
+      title: 'Organización',
+      url: '/settings/tenant',
+    },
+    {
+      title: 'Mi Cuenta',
+      url: '/settings/account',
+    },
+    {
+      title: 'Usuarios',
+      url: '/settings/users',
+    },
+    {
+      title: 'Roles',
+      url: '/settings/roles',
+    },
+    {
+      title: 'Auditoría',
+      url: '/settings/audit',
+    },
+  ],
+},
       ],
     },
   ],

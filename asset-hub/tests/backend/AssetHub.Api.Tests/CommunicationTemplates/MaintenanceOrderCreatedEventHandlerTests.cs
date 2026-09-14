@@ -70,7 +70,7 @@ public class MaintenanceOrderCreatedEventHandlerTests
         var handler = new MaintenanceOrderCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<MaintenanceOrderCreatedEventHandler>.Instance);
 
@@ -115,7 +115,7 @@ public class MaintenanceOrderCreatedEventHandlerTests
         var handler = new MaintenanceOrderCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<MaintenanceOrderCreatedEventHandler>.Instance);
 
@@ -173,7 +173,7 @@ public class MaintenanceOrderCreatedEventHandlerTests
         var handler = new MaintenanceOrderCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<MaintenanceOrderCreatedEventHandler>.Instance);
 
@@ -194,7 +194,7 @@ public class MaintenanceOrderCreatedEventHandlerTests
         var handler = new MaintenanceOrderCreatedEventHandler(
             db,
             email,
-            new CommunicationTemplateService(db, new ScribanTemplateRenderEngine()),
+            CommunicationTemplateTestHelper.CreateTemplateService(db),
             new TemplateVariableBuilder(db),
             NullLogger<MaintenanceOrderCreatedEventHandler>.Instance);
 

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { useState } from 'react'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const MODES: {
   value: InventoryOperatingMode
@@ -41,6 +42,8 @@ const MODES: {
 ]
 
 export default function InventorySettingsPage() {
+  const { can } = usePermissions()
+  const canConfigure = can('inventory:configure')
   const qc = useQueryClient()
 
   const { data: settings, isLoading } = useQuery({
@@ -110,6 +113,7 @@ export default function InventorySettingsPage() {
                   <button
                     key={m.value}
                     type="button"
+                    disabled={!canConfigure}
                     onClick={() => setMode(m.value)}
                     className={`
                       w-full text-left rounded-lg border p-4 flex items-start gap-4 transition-all
@@ -158,29 +162,32 @@ export default function InventorySettingsPage() {
                   id="allow-negative"
                   checked={effectiveNegative}
                   onCheckedChange={v => setAllowNegative(v)}
+                  disabled={!canConfigure}
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Save */}
-          <div className="flex justify-end gap-2">
-            {hasChanges && (
+          {canConfigure && (
+            <div className="flex justify-end gap-2">
+              {hasChanges && (
+                <Button
+                  variant="ghost"
+                  onClick={() => { setMode(null); setAllowNegative(null) }}
+                >
+                  Descartar cambios
+                </Button>
+              )}
               <Button
-                variant="ghost"
-                onClick={() => { setMode(null); setAllowNegative(null) }}
+                onClick={() => updateMutation.mutate()}
+                disabled={updateMutation.isPending || !hasChanges}
               >
-                Descartar cambios
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Guardar configuración
               </Button>
-            )}
-            <Button
-              onClick={() => updateMutation.mutate()}
-              disabled={updateMutation.isPending || !hasChanges}
-            >
-              {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Guardar configuración
-            </Button>
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>

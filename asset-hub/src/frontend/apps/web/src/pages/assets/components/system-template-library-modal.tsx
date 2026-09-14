@@ -13,8 +13,11 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export function SystemTemplateLibraryModal() {
+  const { can } = usePermissions()
+  const canClone = can('asset-templates:clone')
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
@@ -42,12 +45,14 @@ export function SystemTemplateLibraryModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5">
-          <Library className="h-4 w-4" />
-          Importar de Biblioteca
-        </Button>
-      </DialogTrigger>
+      {canClone && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5">
+            <Library className="h-4 w-4" />
+            Importar de Biblioteca
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-[95vw] sm:max-w-[95vw] h-[95vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Biblioteca de Plantillas Globales</DialogTitle>

@@ -7,4 +7,5 @@ public interface ITenantResolver
 {
     Tenant? GetCurrentTenant();
     Guid? GetCurrentTenantId();
+    Guid? GetCurrentUserId();
 }

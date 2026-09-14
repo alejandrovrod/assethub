@@ -17,12 +17,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { usePermissions } from '@/hooks/use-permissions'
 
 interface Props {
   assetId: string
 }
 
 export function AssetMaterialsTable({ assetId }: Props) {
+  const { can } = usePermissions()
+  const canUpdate = can('assets:update')
   const queryClient = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
   const [editingMaterial, setEditingMaterial] = useState<AssetMaterialDto | undefined>()
@@ -69,10 +72,12 @@ export function AssetMaterialsTable({ assetId }: Props) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">BOM / Materiales del Activo</h3>
-        <Button onClick={handleAdd} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Repuesto
-        </Button>
+        {canUpdate && (
+          <Button onClick={handleAdd} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Repuesto
+          </Button>
+        )}
       </div>
 
       <div className="border rounded-md">
@@ -117,12 +122,16 @@ export function AssetMaterialsTable({ assetId }: Props) {
                     )}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(m)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(m.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canUpdate && (
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(m)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canUpdate && (
+                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(m.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

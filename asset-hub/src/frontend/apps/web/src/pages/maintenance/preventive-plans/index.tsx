@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
   WorkTask: 'Tarea',
@@ -50,6 +51,11 @@ function cronToHuman(cron: string): string {
 }
 
 export default function PreventivePlansPage() {
+  const { can } = usePermissions()
+  const canCreate = can('preventive-plans:create')
+  const canUpdate = can('preventive-plans:update')
+  const canDelete = can('preventive-plans:delete')
+  const canExecute = can('preventive-plans:execute')
   const queryClient = useQueryClient()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PreventivePlanSummary | undefined>()
@@ -140,9 +146,11 @@ export default function PreventivePlansPage() {
                 Programá tareas y órdenes de mantenimiento preventivo recurrentes.
               </CardDescription>
             </div>
-            <Button size="icon" onClick={handleCreate}>
-              <Plus className="h-4 w-4" />
-            </Button>
+            {canCreate && (
+              <Button size="icon" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
 
           <div className="px-4 py-3 flex items-center gap-3 border-b">
@@ -214,55 +222,62 @@ export default function PreventivePlansPage() {
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <TooltipProvider>
                             <div className="flex items-center justify-end gap-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleEdit(plan)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
-                              </Tooltip>
+                              {canUpdate && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEdit(plan)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Editar</TooltipContent>
+                                </Tooltip>
+                              )}
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => toggleMutation.mutate(plan.id)}
-                                  >
-                                    {plan.isActive ? (
-                                      <Pause className="h-4 w-4" />
-                                    ) : (
-                                      <Play className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {plan.isActive ? 'Pausar' : 'Reanudar'}
-                                </TooltipContent>
-                              </Tooltip>
+                              {canUpdate && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => toggleMutation.mutate(plan.id)}
+                                    >
+                                      {plan.isActive ? (
+                                        <Pause className="h-4 w-4" />
+                                      ) : (
+                                        <Play className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {plan.isActive ? 'Pausar' : 'Reanudar'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => evaluateMutation.mutate(plan.id)}
-                                    disabled={evaluateMutation.isPending}
-                                  >
-                                    <RotateCw
-                                      className={`h-4 w-4 ${evaluateMutation.isPending ? 'animate-spin' : ''}`}
-                                    />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Ejecutar ahora</TooltipContent>
-                              </Tooltip>
+                              {canExecute && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => evaluateMutation.mutate(plan.id)}
+                                      disabled={evaluateMutation.isPending}
+                                    >
+                                      <RotateCw
+                                        className={`h-4 w-4 ${evaluateMutation.isPending ? 'animate-spin' : ''}`}
+                                      />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Ejecutar ahora</TooltipContent>
+                                </Tooltip>
+                              )}
 
-                              <AlertDialog>
+                              {canDelete && (
+                                <AlertDialog>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <AlertDialogTrigger asChild>
@@ -288,24 +303,27 @@ export default function PreventivePlansPage() {
                                     >
                                       Eliminar
                                     </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TooltipProvider>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <p>No hay planes de mantenimiento.</p>
-                  <Button variant="link" onClick={handleCreate}>
-                    Crear el primero
-                  </Button>
-                </div>
-              )}
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                               )}
+                             </div>
+                           </TooltipProvider>
+                         </TableCell>
+                       </TableRow>
+                     ))}
+                   </TableBody>
+                 </Table>
+               ) : (
+                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                   <p>No hay planes de mantenimiento.</p>
+                   {canCreate && (
+                     <Button variant="link" onClick={handleCreate}>
+                       Crear el primero
+                     </Button>
+                   )}
+                 </div>
+               )}
             </ScrollArea>
             {/* Pagination Controls */}
             {!isLoading && (

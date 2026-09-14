@@ -115,7 +115,7 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
 
         if (isTerminal && !await IncidentClosingGuard.CanCloseAsync(_db, incident.Id, incident.TenantId, cancellationToken))
         {
-            throw new InvalidOperationException("Cannot close the incident while it has active maintenance orders or open tasks.");
+            throw new InvalidOperationException("No se puede cerrar el incidente mientras tenga órdenes de mantenimiento activas o tareas abiertas.");
         }
 
         incident.State = request.TargetState;

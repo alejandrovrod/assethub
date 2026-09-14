@@ -72,7 +72,8 @@ public class RefreshCommandHandler : IRequestHandler<RefreshCommand, RefreshResu
         rt.RevokedAt = DateTime.UtcNow;
 
         var roles = await _userManager.GetRolesAsync(user);
-        
+
+        // Permisos filtrados por tenant (misma logica que LoginCommandHandler)
         var permissions = new System.Collections.Generic.List<string>();
         if (roles.Any())
         {
@@ -81,9 +82,17 @@ public class RefreshCommandHandler : IRequestHandler<RefreshCommand, RefreshResu
                 .Select(r => r.Id)
                 .ToListAsync(cancellationToken);
 
-            var permissionIds = await _securityDb.RolePermissions
-                .Where(rp => roleIds.Contains(rp.RoleId))
+            var permQuery = _securityDb.RolePermissions
+                .Where(rp => roleIds.Contains(rp.RoleId));
+
+            if (user.TenantId.HasValue)
+            {
+                permQuery = permQuery.Where(rp => rp.TenantId == user.TenantId.Value);
+            }
+
+            var permissionIds = await permQuery
                 .Select(rp => rp.PermissionId)
+                .Distinct()
                 .ToListAsync(cancellationToken);
 
             permissions = await _securityDb.Permissions

@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
+import { usePermissions } from '@/hooks/use-permissions'
 import { WorkTaskFormSheet } from '../../components/work-task-form-sheet'
 
 const TASK_STATE_ICONS: Record<string, React.ReactNode> = {
@@ -36,6 +37,8 @@ interface MaintenanceOrderTasksWidgetProps {
 }
 
 export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplateId, propertiesJson, state, validationMode, checkedTaskIds, onToggleTaskCheck }: MaintenanceOrderTasksWidgetProps) {
+  const { can } = usePermissions()
+  const canCreateTasks = can('tasks:create')
   const queryClient = useQueryClient()
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
 
@@ -53,16 +56,18 @@ export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplate
             <span className="text-xs text-muted-foreground font-normal">({tasks.length})</span>
           )}
         </h4>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8"
-          onClick={() => setIsTaskFormOpen(true)}
-          disabled={state === 'verified'}
-        >
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          Agregar
-        </Button>
+        {canCreateTasks && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8"
+            onClick={() => setIsTaskFormOpen(true)}
+            disabled={state === 'verified'}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Agregar
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

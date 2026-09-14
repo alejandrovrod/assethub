@@ -15,6 +15,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { assetService, AssetMaterialDto } from '@/services/asset.service'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const schema = z.object({
   catalogItemId: z.string().min(1, 'El material es requerido'),
@@ -35,6 +36,8 @@ interface Props {
 }
 
 export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialToEdit }: Props) {
+  const { can } = usePermissions()
+  const canUpdate = can('assets:update')
   const queryClient = useQueryClient()
   const isEditing = !!materialToEdit
 
@@ -249,7 +252,7 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !canUpdate}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar
               </Button>

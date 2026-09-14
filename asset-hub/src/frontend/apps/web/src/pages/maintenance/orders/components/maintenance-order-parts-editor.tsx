@@ -20,6 +20,7 @@ import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
 import { assetService } from '@/services/asset.service'
+import { usePermissions } from '@/hooks/use-permissions'
 
 interface MaintenanceOrderPartsEditorProps {
   orderId: string
@@ -49,11 +50,13 @@ const DEFAULT_FORM: PartForm = {
 }
 
 export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: MaintenanceOrderPartsEditorProps) {
+  const { can } = usePermissions()
+  const canManageParts = can('maintenance-parts:manage')
   const queryClient = useQueryClient()
   const [newPart, setNewPart] = useState<PartForm>(DEFAULT_FORM)
   const [showForm, setShowForm] = useState(false)
 
-  const isLocked = state === 'verified'
+  const isLocked = state === 'verified' || !canManageParts
 
   const { data: parts = [] } = useQuery({
     queryKey: ['maintenance-order-parts', orderId],

@@ -31,8 +31,7 @@ public class SmtpEmailService : IEmailService
 
         if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
         {
-            _logger.LogWarning("SMTP configuration is incomplete. Skipping email to {To}", to);
-            return;
+            throw new InvalidOperationException("La configuración SMTP está incompleta. Configure Email:SmtpHost, Email:SmtpUser y Email:SmtpPassword.");
         }
 
         if (!int.TryParse(portStr, out int port))

@@ -38,6 +38,10 @@ export interface CreateEmployeeDto {
   phoneNumber?: string
   roleCatalogItemId: string
   skills: string[]
+  /** Cuando es true, el backend crea el ApplicationUser y lo vincula. */
+  createUserAccess?: boolean
+  /** Rol de sistema (Identity) requerido si createUserAccess es true. */
+  systemRoleId?: string
 }
 
 export interface UpdateEmployeeDto {
@@ -47,6 +51,21 @@ export interface UpdateEmployeeDto {
   phoneNumber?: string
   roleCatalogItemId: string
   skills: string[]
+  createUserAccess?: boolean
+  systemRoleId?: string
+}
+
+export interface CreateEmployeeResult {
+  id: string
+  userId?: string | null
+  /** Solo viene cuando se creó acceso al sistema. */
+  temporalPassword?: string | null
+}
+
+export interface UpdateEmployeeResult {
+  id: string
+  userId?: string | null
+  temporalPassword?: string | null
 }
 
 export interface PaginatedResult<T> {
@@ -76,12 +95,13 @@ export const employeeService = {
   },
 
   create: async (payload: CreateEmployeeDto) => {
-    const { data } = await api.post<{ id: string }>('/employees', payload)
+    const { data } = await api.post<CreateEmployeeResult>('/employees', payload)
     return data
   },
 
   update: async (id: string, payload: UpdateEmployeeDto) => {
-    await api.put(`/employees/${id}`, payload)
+    const { data } = await api.put<UpdateEmployeeResult>(`/employees/${id}`, payload)
+    return data
   },
 
   deactivate: async (id: string) => {

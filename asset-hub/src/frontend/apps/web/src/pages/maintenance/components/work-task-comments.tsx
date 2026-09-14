@@ -9,12 +9,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { parseApiDate } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 interface Props {
   taskId: string
 }
 
 export function WorkTaskComments({ taskId }: Props) {
+  const { can } = usePermissions()
+  const canComment = can('tasks:comment')
   const queryClient = useQueryClient()
   const [text, setText] = useState('')
 
@@ -74,25 +77,27 @@ export function WorkTaskComments({ taskId }: Props) {
         )}
       </ScrollArea>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-        <Textarea
-          rows={3}
-          placeholder="Agregar un comentario..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={addMutation.isPending}
-        />
-        <div className="flex justify-end">
-          <Button type="submit" disabled={!text.trim() || addMutation.isPending}>
-            {addMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="mr-2 h-4 w-4" />
-            )}
-            Comentar
-          </Button>
-        </div>
-      </form>
+      {canComment && (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <Textarea
+            rows={3}
+            placeholder="Agregar un comentario..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={addMutation.isPending}
+          />
+          <div className="flex justify-end">
+            <Button type="submit" disabled={!text.trim() || addMutation.isPending}>
+              {addMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Comentar
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

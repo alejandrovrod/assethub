@@ -18,6 +18,7 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser, ApplicationR
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<UserInvitation> UserInvitations { get; set; } = null!;
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+    public DbSet<PermissionAssignmentAudit> PermissionAssignmentAudits { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -25,6 +26,13 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser, ApplicationR
         builder.HasDefaultSchema("security");
 
         builder.Entity<RolePermission>()
-            .HasKey(rp => new { rp.RoleId, rp.PermissionId });
+            .HasKey(rp => new { rp.TenantId, rp.RoleId, rp.PermissionId });
+
+        builder.Entity<RolePermission>()
+            .HasIndex(rp => new { rp.TenantId, rp.RoleId });
+
+        builder.Entity<Permission>()
+            .HasIndex(p => p.Code)
+            .IsUnique();
     }
 }

@@ -57,7 +57,7 @@ public class RenderingTests
             enContent: "Hi {{recipient.name}}, order {{order.title}}",
             enSubject: "New order {{order.title}}");
 
-        var service = new CommunicationTemplateService(db, new ScribanTemplateRenderEngine());
+        var service = CommunicationTemplateTestHelper.CreateTemplateService(db);
 
         var variables = new Dictionary<string, object>
         {
@@ -80,7 +80,7 @@ public class RenderingTests
             "Hola {{recipient.name}}",
             "Nueva orden");
 
-        var service = new CommunicationTemplateService(db, new ScribanTemplateRenderEngine());
+        var service = CommunicationTemplateTestHelper.CreateTemplateService(db);
 
         var rendered = await service.RenderActiveAsync(
             tenantId, "ORDER-CREATED", "en",
@@ -98,7 +98,7 @@ public class RenderingTests
             "A: {{unknown.variable}} | B: {{order.title}}",
             null);
 
-        var service = new CommunicationTemplateService(db, new ScribanTemplateRenderEngine());
+        var service = CommunicationTemplateTestHelper.CreateTemplateService(db);
 
         var rendered = await service.RenderActiveAsync(
             tenantId, "ORDER-CREATED", "es",
@@ -113,7 +113,7 @@ public class RenderingTests
     {
         var tenantId = Guid.NewGuid();
         var db = CommunicationTemplateTestHelper.CreateDbContext(tenantId);
-        var service = new CommunicationTemplateService(db, new ScribanTemplateRenderEngine());
+        var service = CommunicationTemplateTestHelper.CreateTemplateService(db);
 
         var rendered = await service.RenderActiveAsync(
             tenantId, "NO-EXISTE", "es",

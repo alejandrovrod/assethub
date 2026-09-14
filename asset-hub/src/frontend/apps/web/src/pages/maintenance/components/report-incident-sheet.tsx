@@ -25,6 +25,7 @@ import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
 import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
 import { cn } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Título es requerido').max(200),
@@ -49,6 +50,8 @@ interface Props {
 }
 
 export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hideAssetSelector, targetAssetState, title, description }: Props) {
+  const { can } = usePermissions()
+  const canCreate = can('incidents:create')
   const queryClient = useQueryClient()
   
   const [schemaData, setSchemaData] = useState<any>({})
@@ -220,7 +223,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={reportMutation.isPending} className="min-w-[150px]">
+                <Button type="submit" disabled={reportMutation.isPending || !canCreate} className="min-w-[150px]">
                   {reportMutation.isPending ? 'Guardando...' : 'Reportar Incidencia'}
                 </Button>
               </>

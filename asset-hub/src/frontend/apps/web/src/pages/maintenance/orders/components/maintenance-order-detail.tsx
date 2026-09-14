@@ -34,6 +34,7 @@ import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { Link } from 'react-router'
+import { usePermissions } from '@/hooks/use-permissions'
 import { MaintenanceOrderPartsEditor } from './maintenance-order-parts-editor'
 import { MaintenanceOrderTasksWidget } from './maintenance-order-tasks-widget'
 
@@ -54,6 +55,15 @@ interface MaintenanceOrderDetailProps {
 }
 
 export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetailProps) {
+  const { can } = usePermissions()
+  const canUpdate = can('maintenance:update')
+  const canApprove = can('maintenance:approve')
+  const canSchedule = can('maintenance:schedule')
+  const canStart = can('maintenance:start')
+  const canComplete = can('maintenance:complete')
+  const canVerify = can('maintenance:verify')
+  const canReject = can('maintenance:reject')
+  const canCancel = can('maintenance:cancel')
   const queryClient = useQueryClient()
 
   const { data: detail, isLoading: isLoadingDetail } = useQuery({
@@ -285,7 +295,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                     <Link to={`/maintenance/preventive-plans`} className="text-sm font-medium hover:underline truncate">
                       {displayedOrder.preventivePlanName || displayedOrder.preventivePlanId}
                     </Link>
-                    {state !== 'verified' && (
+                    {state !== 'verified' && canUpdate && (
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -321,7 +331,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                   <span className="text-sm text-muted-foreground">No hay transiciones disponibles</span>
                 ) : (
                   <>
-                    {allowedActions.includes('approved') && (
+                    {allowedActions.includes('approved') && canApprove && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -331,7 +341,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         <Check className="h-4 w-4 mr-1" /> Aprobar
                       </Button>
                     )}
-                    {allowedActions.includes('scheduled') && (
+                    {allowedActions.includes('scheduled') && canSchedule && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -341,7 +351,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         <Calendar className="h-4 w-4 mr-1" /> Programar
                       </Button>
                     )}
-                    {allowedActions.includes('in_progress') && (
+                    {allowedActions.includes('in_progress') && canStart && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -351,7 +361,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         <Clock className="h-4 w-4 mr-1" /> Iniciar
                       </Button>
                     )}
-                    {allowedActions.includes('done') && (
+                    {allowedActions.includes('done') && canComplete && (
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -371,7 +381,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         )}
                       </div>
                     )}
-                    {allowedActions.includes('verified') && (
+                    {allowedActions.includes('verified') && canVerify && (
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -381,7 +391,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         >
                           <Check className="h-4 w-4 mr-1" /> Verificar
                         </Button>
-                        {checkedTaskIds.size < totalTasks && (
+                        {checkedTaskIds.size < totalTasks && canReject && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -394,7 +404,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         )}
                       </div>
                     )}
-                    {allowedActions.includes('cancelled') && (
+                    {allowedActions.includes('cancelled') && canCancel && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -432,11 +442,13 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             />
 
             {/* Save */}
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => updateMutation.mutate({})} disabled={updateMutation.isPending || isInfoEditBlocked}>
-                {updateMutation.isPending ? 'Guardando...' : 'Guardar Información'}
-              </Button>
-            </div>
+            {canUpdate && (
+              <div className="flex justify-end gap-2">
+                <Button onClick={() => updateMutation.mutate({})} disabled={updateMutation.isPending || isInfoEditBlocked}>
+                  {updateMutation.isPending ? 'Guardando...' : 'Guardar Información'}
+                </Button>
+              </div>
+            )}
           </>
         )}
       </CardContent>

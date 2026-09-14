@@ -27,7 +27,7 @@ public class CatalogsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "admin,Tenant Admin")] // En un entorno real se validaría policies / permissions
+    [Authorize(Policy = "permission:catalogs:create")] // En un entorno real se validaría policies / permissions
     public async Task<IActionResult> CreateCatalog([FromBody] CreateCatalogRequest request)
     {
         var id = await _mediator.Send(new CreateCatalogCommand(request.Code, request.Label, request.TargetModules));
@@ -35,7 +35,7 @@ public class CatalogsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "admin,Tenant Admin")]
+    [Authorize(Policy = "permission:catalogs:update")]
     public async Task<IActionResult> UpdateCatalog([FromRoute] System.Guid id, [FromBody] UpdateCatalogRequest request)
     {
         var success = await _mediator.Send(new UpdateCatalogCommand(id, request.Label, request.TargetModules));

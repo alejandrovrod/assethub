@@ -63,7 +63,8 @@ builder.Services.AddScoped<ISecurityDbContext>(provider => provider.GetRequiredS
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<SecurityDbContext>()
-    .AddDefaultTokenProviders();
+    .AddDefaultTokenProviders()
+    .AddErrorDescriber<AssetHub.Infrastructure.Security.SpanishIdentityErrorDescriber>();
 
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "SuperSecretKeyThatIsAtLeast32BytesLongForHS256!!!";
 builder.Services.AddAuthentication(options =>
@@ -85,6 +86,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, AssetHub.Infrastructure.Security.PermissionPolicyProvider>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, AssetHub.Infrastructure.Security.PermissionAuthorizationHandler>();
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CheckSlugCommand>());
@@ -141,15 +144,70 @@ if (app.Environment.IsDevelopment())
     
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
-    
-    // 1. Seed Roles
-    var roles = new[] { "admin", "Tenant Admin", "Asset Manager", "Technician" };
+
+    // 1. Seed Roles (base del sistema, marcados como IsSystemDefault)
+    var roles = new[] { "admin", "Tenant Admin", "Asset Manager", "Technician", "Viewer" };
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
-            await roleManager.CreateAsync(new ApplicationRole { Name = role, NormalizedName = role.ToUpper() });
+            await roleManager.CreateAsync(new ApplicationRole
+            {
+                Name = role,
+                NormalizedName = role.ToUpper(),
+                IsSystemDefault = true,
+                Description = role switch
+                {
+                    "admin" => "Administrador del sistema",
+                    "Tenant Admin" => "Administración completa del tenant",
+                    "Asset Manager" => "Gestión de activos y plantillas",
+                    "Technician" => "Ejecución de mantenimiento y tareas",
+                    _ => "Acceso de solo lectura"
+                }
+            });
         }
+        else
+        {
+            // Backfill de roles existentes creados antes de la matriz
+            var existing = await roleManager.FindByNameAsync(role);
+            if (existing != null && !existing.IsSystemDefault)
+            {
+                existing.IsSystemDefault = true;
+                await roleManager.UpdateAsync(existing);
+            }
+        }
+    }
+
+    // 1b. Seed Permission Catalog (catalogo global, una sola vez)
+    var securityDbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
+    var existingPermCodes = await securityDbContext.Permissions.Select(p => p.Code).ToListAsync();
+    var catalogByCode = AssetHub.Domain.Security.PermissionCatalog.All.ToDictionary(p => p.Code);
+    var newPermissions = catalogByCode
+        .Where(kvp => !existingPermCodes.Contains(kvp.Key))
+        .Select(kvp => new AssetHub.Domain.Security.Permission
+        {
+            Id = Guid.NewGuid(),
+            Code = kvp.Value.Code,
+            Description = kvp.Value.Description,
+            Module = kvp.Value.Module,
+            PlanModule = kvp.Value.PlanModule
+        })
+        .ToList();
+    if (newPermissions.Count > 0)
+    {
+        securityDbContext.Permissions.AddRange(newPermissions);
+        await securityDbContext.SaveChangesAsync();
+    }
+
+    // Limpieza: RolePermissions huerfanos con TenantId vacio (default Guid del
+    // cambio de PK) de corridas previas; la tabla estaba vacia antes de la matriz.
+    var orphanRolePerms = await securityDbContext.RolePermissions
+        .Where(rp => rp.TenantId == Guid.Empty)
+        .ToListAsync();
+    if (orphanRolePerms.Count > 0)
+    {
+        securityDbContext.RolePermissions.RemoveRange(orphanRolePerms);
+        await securityDbContext.SaveChangesAsync();
     }
     
     // 2. Ensure Demo Tenant exists
@@ -167,8 +225,16 @@ if (app.Environment.IsDevelopment())
         platformDb.Plans.AddRange(
             new AssetHub.Domain.Tenancy.Plan { Code = "free", Name = "Free", PriceMonthly = 0, PriceYearly = 0, MaxAssets = 100, MaxUsers = 3, MaxStorageMB = 1000, IsPublic = true, EnabledModules = "[\"assets\"]" },
             new AssetHub.Domain.Tenancy.Plan { Code = "pro", Name = "Pro", PriceMonthly = 49, PriceYearly = 490, MaxAssets = 5000, MaxUsers = 20, MaxStorageMB = 50000, IsPublic = true, EnabledModules = "[\"assets\", \"maintenance\"]" },
-            new AssetHub.Domain.Tenancy.Plan { Code = "enterprise", Name = "Enterprise", PriceMonthly = 199, PriceYearly = 1990, MaxAssets = 100000, MaxUsers = 500, MaxStorageMB = 500000, IsPublic = false, EnabledModules = "[\"assets\", \"maintenance\", \"advanced\"]" }
+            new AssetHub.Domain.Tenancy.Plan { Code = "enterprise", Name = "Enterprise", PriceMonthly = 199, PriceYearly = 1990, MaxAssets = 100000, MaxUsers = 500, MaxStorageMB = 500000, IsPublic = false, EnabledModules = "[\"assets\", \"maintenance\", \"advanced\", \"core\", \"incidents\", \"preventive-plans\", \"tasks\", \"employees\", \"geo\", \"reports\"]" }
         );
+        await platformDb.SaveChangesAsync();
+    }
+
+    // Asegurarse de que el Demo Tenant tenga el plan Enterprise (que tiene todos los módulos)
+    var enterprisePlan = await platformDb.Plans.FirstOrDefaultAsync(p => p.Code == "enterprise");
+    if (enterprisePlan != null && demoTenant.PlanId != enterprisePlan.Id)
+    {
+        demoTenant.PlanId = enterprisePlan.Id;
         await platformDb.SaveChangesAsync();
     }
 
@@ -200,12 +266,14 @@ if (app.Environment.IsDevelopment())
             await userManager.AddToRoleAsync(u, "Tenant Admin");
         }
     }
+    // 6. Seed Role-Permission Matrix por tenant (R-ROLE-1: roles base con
+    //    permisos default del catalogo; tenants ya creados en corridas previas)
+    await RolePermissionMatrixSeeder.SeedAsync(securityDbContext, platformDb);
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
-
 app.UseCors("AllowVite");
+app.UseStaticFiles();
 
 app.UseRateLimiter();
 
@@ -220,5 +288,81 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapGet("/api/v1/ping", () => Results.Ok(new { message = "pong" }));
 
 app.Run();
+
+/// <summary>
+/// Popula la matriz RolePermissions (por tenant) para cada tenant que no
+/// tenga asignaciones. Definiciones default: Tenant Admin/admin = todo;
+/// Asset Manager = assets full + lecturas; Technician = ejecucion;
+/// Viewer = solo :read.
+/// </summary>
+public static class RolePermissionMatrixSeeder
+{
+    public static async Task SeedAsync(
+        SecurityDbContext securityDb, PlatformDbContext platformDb)
+    {
+        var tenants = await platformDb.Tenants.ToListAsync();
+        if (tenants.Count == 0) return;
+
+        var allPermissions = await securityDb.Permissions.ToListAsync();
+        var permissionsByCode = allPermissions.ToDictionary(p => p.Code);
+        var roles = await securityDb.Roles.ToListAsync();
+        var roleByName = roles.ToDictionary(r => r.Name ?? string.Empty);
+
+        foreach (var tenant in tenants)
+        {
+            var hasAssignments = await securityDb.RolePermissions
+                .AnyAsync(rp => rp.TenantId == tenant.Id);
+            if (hasAssignments) continue;
+
+            var allCodes = allPermissions.Select(p => p.Code).ToList();
+
+            void AddRole(string roleName, IEnumerable<string> codes)
+            {
+                if (!roleByName.TryGetValue(roleName, out var role)) return;
+                foreach (var code in codes)
+                {
+                    if (permissionsByCode.TryGetValue(code, out var perm))
+                    {
+                        securityDb.RolePermissions.Add(new AssetHub.Domain.Security.RolePermission
+                        {
+                            TenantId = tenant.Id,
+                            RoleId = role.Id,
+                            PermissionId = perm.Id
+                        });
+                    }
+                }
+            }
+
+            // Tenant Admin y admin: todos los permisos
+            AddRole("Tenant Admin", allCodes);
+            AddRole("admin", allCodes);
+
+            // Viewer: solo permisos :read
+            AddRole("Viewer", allCodes.Where(c => c.EndsWith(":read")));
+
+            // Asset Manager: assets full + mantenimiento lectura + tareas lectura + analytics
+            AddRole("Asset Manager", allCodes.Where(c =>
+                c.StartsWith("assets") || c.StartsWith("asset-templates") ||
+                c.StartsWith("geo:") || c.StartsWith("analytics") || c.StartsWith("predictions") ||
+                c.StartsWith("entity-types") || c.StartsWith("catalogs") || c.StartsWith("catalog-items") ||
+                c == "incidents:read" || c == "maintenance:read" || c == "maintenance-parts:read" ||
+                c == "tasks:read" || c == "employees:read" || c == "teams:read" ||
+                c == "preventive-plans:read" || c == "warehouses:read" || c == "stock:read" ||
+                c == "transactions:read" || c == "inventory:read" || c == "tasks-board:read" ||
+                c == "task-status:read" || c == "communication-templates:read"));
+
+            // Technician: ejecucion de mantenimiento y tareas
+            AddRole("Technician", allCodes.Where(c =>
+                c.StartsWith("incidents:") || c.StartsWith("maintenance") ||
+                c.StartsWith("tasks:") || c.StartsWith("task-status") || c.StartsWith("tasks-board") ||
+                c == "assets:read" || c == "assets:attachments" || c == "assets-properties:read" ||
+                c == "geo:read" || c == "employees:read" || c == "teams:read" ||
+                c == "warehouses:read" || c == "stock:read" || c == "transactions:read" ||
+                c == "preventive-plans:read" || c == "inventory:read"));
+        }
+
+        await securityDb.SaveChangesAsync();
+    }
+}
 
 public partial class Program;

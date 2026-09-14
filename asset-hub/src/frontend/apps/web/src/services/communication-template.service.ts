@@ -72,6 +72,18 @@ export interface RenderTemplateRequest {
   variables?: Record<string, string>
 }
 
+export interface TestTranslationInput {
+  locale: string
+  subject?: string | null
+  content: string
+}
+
+export interface SendTestEmailRequest {
+  to: string
+  locale: string
+  translations?: TestTranslationInput[]
+}
+
 export interface RenderedTemplate {
   subject: string | null
   body: string
@@ -133,6 +145,10 @@ export const communicationTemplateService = {
   ): Promise<RenderedTemplate> => {
     const { data } = await api.post<RenderedTemplate>(`/templates/${id}/render`, request)
     return data
+  },
+
+  sendTestEmail: async (id: string, request: SendTestEmailRequest): Promise<void> => {
+    await api.post(`/templates/${id}/test-email`, request)
   },
 
   deleteTemplate: async (id: string): Promise<void> => {
