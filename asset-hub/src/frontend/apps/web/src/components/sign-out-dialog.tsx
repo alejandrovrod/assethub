@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/auth.store'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
@@ -10,8 +11,10 @@ interface SignOutDialogProps {
 export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
   const logout = useAuthStore(state => state.logout)
+  const queryClient = useQueryClient()
 
   const handleSignOut = () => {
+    queryClient.clear()
     logout()
     
     const currentHost = window.location.hostname;

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,6 +35,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
   const [requiresMfa, setRequiresMfa] = useState(false);
@@ -55,6 +57,7 @@ export default function LoginPage() {
         password: values.password,
         mfaCode: values.mfaCode,
       });
+      queryClient.clear(); // Limpiar el caché de sesiones anteriores
       setAuth(data.accessToken, data.refreshToken, data.tenantSlug, data.tenantName, data.roles, data.permissions);
       toast.success("¡Bienvenido a AssetHub!");
 

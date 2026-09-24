@@ -21,6 +21,7 @@ public class AssetMaterialTests
         public FakeTenantResolver(Guid tenantId) => _tenantId = tenantId;
         public Domain.Tenancy.Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     private static TenantDbContext CreateDbContext(Guid tenantId)

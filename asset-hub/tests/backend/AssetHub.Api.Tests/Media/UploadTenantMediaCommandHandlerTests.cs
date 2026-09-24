@@ -188,6 +188,7 @@ public class UploadTenantMediaCommandHandlerTests : IDisposable
     {
         public Domain.Tenancy.Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => null;
+        public Guid? GetCurrentUserId() => null;
     }
 
     private UploadTenantMediaCommandHandler CreateHandler()

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NetTopologySuite.Geometries;
 using AssetHub.Domain.AssetTemplates;
+using AssetHub.Domain.Finance;
 using AssetHub.Domain.Incidents;
 using AssetHub.Domain.Maintenance;
 using AssetHub.Domain.Tasks;
@@ -21,6 +22,16 @@ public class Asset
     public ICollection<PreventivePlan> PreventivePlans { get; set; } = new List<PreventivePlan>();
     public ICollection<AssetHealthPrediction> HealthPredictions { get; set; } = new List<AssetHealthPrediction>();
     public ICollection<AssetMaterial> Materials { get; set; } = new List<AssetMaterial>();
+
+    // Finance navigation properties
+    public AssetFinanceBook? FinanceBook { get; set; }
+    public ICollection<AssetDepreciationSchedule> DepreciationSchedules { get; set; } = new List<AssetDepreciationSchedule>();
+    public ICollection<AssetDepreciationEntry> DepreciationEntries { get; set; } = new List<AssetDepreciationEntry>();
+    public ICollection<AssetValueAdjustment> ValueAdjustments { get; set; } = new List<AssetValueAdjustment>();
+    public ICollection<AssetDisposal> Disposals { get; set; } = new List<AssetDisposal>();
+    public ICollection<AssetCustodyTransfer> CustodyTransfers { get; set; } = new List<AssetCustodyTransfer>();
+    public ICollection<AssetRepairCapitalization> RepairCapitalizations { get; set; } = new List<AssetRepairCapitalization>();
+
     public Guid AssetTemplateId { get; set; }
     public AssetTemplate? AssetTemplate { get; set; }
 

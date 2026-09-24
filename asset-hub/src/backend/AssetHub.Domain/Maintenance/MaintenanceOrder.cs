@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using AssetHub.Domain.Assets;
+using AssetHub.Domain.Finance;
 using AssetHub.Domain.Incidents;
 using AssetHub.Domain.Tasks;
 
@@ -46,7 +47,10 @@ public class MaintenanceOrder
     
     public List<MaintenancePart> Parts { get; set; } = new();
     
-    public string PropertiesJson { get; set; } = "{}";
-    
+public string PropertiesJson { get; set; } = "{}";
+
+    // Finance navigation
+    public AssetRepairCapitalization? RepairCapitalization { get; set; }
+
     public bool IsDeleted { get; set; }
 }

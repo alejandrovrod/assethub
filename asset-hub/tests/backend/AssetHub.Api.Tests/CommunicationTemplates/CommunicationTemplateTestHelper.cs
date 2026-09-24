@@ -18,6 +18,7 @@ public static class CommunicationTemplateTestHelper
         public FakeTenantResolver(Guid tenantId) => _tenantId = tenantId;
         public Domain.Tenancy.Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     public sealed class CapturingEmailService : IEmailService

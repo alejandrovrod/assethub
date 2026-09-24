@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using AssetHub.Domain.AssetTemplates;
 using AssetHub.Domain.Catalogs;
 using AssetHub.Domain.EntityTypes;
+using AssetHub.Domain.Finance;
 using Microsoft.EntityFrameworkCore;
 
 namespace AssetHub.Application.Interfaces;
@@ -45,6 +46,14 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Tasks.TaskStatusHistory> TaskStatusHistories { get; }
     DbSet<AssetHub.Domain.Tasks.TaskEvidence> TaskEvidences { get; }
     DbSet<AssetHub.Domain.Tasks.TaskComment> TaskComments { get; }
+
+    DbSet<AssetFinanceBook> AssetFinanceBooks { get; }
+    DbSet<AssetDepreciationSchedule> AssetDepreciationSchedules { get; }
+    DbSet<AssetDepreciationEntry> AssetDepreciationEntries { get; }
+    DbSet<AssetValueAdjustment> AssetValueAdjustments { get; }
+    DbSet<AssetDisposal> AssetDisposals { get; }
+    DbSet<AssetCustodyTransfer> AssetCustodyTransfers { get; }
+    DbSet<AssetRepairCapitalization> AssetRepairCapitalizations { get; }
 
     DbSet<AssetHub.Domain.Notifications.Notification> Notifications { get; }
 

@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 import { AssetTimeline } from './components/timeline'
+import { FinanzasTab } from './components/finance/FinanzasTab'
 import { PreventivePlanAssetWidget } from '@/pages/maintenance/preventive-plans/components/preventive-plan-asset-widget'
 import { AssetTasksWidget } from '@/pages/maintenance/components/asset-tasks-widget'
 import { AssetIncidentsWidget } from '@/pages/maintenance/components/asset-incidents-widget'
@@ -425,6 +426,7 @@ export default function AssetDetailPage() {
                   <TabsTrigger value="map">Ubicación</TabsTrigger>
                   <TabsTrigger value="timeline">Bitácora</TabsTrigger>
                   <TabsTrigger value="hierarchy">Jerarquía</TabsTrigger>
+                  <TabsTrigger value="finanzas">Finanzas</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -642,6 +644,11 @@ export default function AssetDetailPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="finanzas" className="flex-1 overflow-y-auto p-4">
+            <FinanzasTab assetId={id!} assetState={asset.state} onAssetStateChange={() => queryClient.invalidateQueries({ queryKey: ['asset', id] })} />
+          </TabsContent>
+
         </Tabs>
         </div>
 

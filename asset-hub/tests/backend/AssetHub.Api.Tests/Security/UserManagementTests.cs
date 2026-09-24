@@ -69,6 +69,7 @@ public class UserCommandsTests
         public Guid? TenantId { get; set; }
         public Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => TenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     private async Task<ApplicationUser> CreateTenantUserAsync(TestContext ctx, string email, Guid tenantId)
@@ -224,6 +225,7 @@ public class InvitationFlowTests
         public FixedResolver(Guid tenantId) => _tenantId = tenantId;
         public Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     [Fact]

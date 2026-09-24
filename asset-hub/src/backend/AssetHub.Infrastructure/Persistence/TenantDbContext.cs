@@ -4,6 +4,7 @@ using System.Text.Json;
 using AssetHub.Domain.AssetTemplates;
 using AssetHub.Domain.Catalogs;
 using AssetHub.Domain.EntityTypes;
+using AssetHub.Domain.Finance;
 using AssetHub.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -69,6 +70,14 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Tasks.TaskStatusHistory> TaskStatusHistories { get; set; } = null!;
     public DbSet<AssetHub.Domain.Tasks.TaskEvidence> TaskEvidences { get; set; } = null!;
     public DbSet<AssetHub.Domain.Tasks.TaskComment> TaskComments { get; set; } = null!;
+
+    public DbSet<AssetFinanceBook> AssetFinanceBooks { get; set; } = null!;
+    public DbSet<AssetDepreciationSchedule> AssetDepreciationSchedules { get; set; } = null!;
+    public DbSet<AssetDepreciationEntry> AssetDepreciationEntries { get; set; } = null!;
+    public DbSet<AssetValueAdjustment> AssetValueAdjustments { get; set; } = null!;
+    public DbSet<AssetDisposal> AssetDisposals { get; set; } = null!;
+    public DbSet<AssetCustodyTransfer> AssetCustodyTransfers { get; set; } = null!;
+    public DbSet<AssetRepairCapitalization> AssetRepairCapitalizations { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -164,6 +173,15 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasMany(a => a.PreventivePlans).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(a => a.HealthPredictions).WithOne(p => p.Asset).HasForeignKey(p => p.AssetId).OnDelete(DeleteBehavior.Cascade);
             b.HasMany(a => a.Materials).WithOne(m => m.Asset).HasForeignKey(m => m.AssetId).OnDelete(DeleteBehavior.Restrict);
+
+            // Finance navigation
+            b.HasOne(a => a.FinanceBook).WithOne().HasForeignKey<AssetFinanceBook>(f => f.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.DepreciationSchedules).WithOne().HasForeignKey(s => s.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.DepreciationEntries).WithOne().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.ValueAdjustments).WithOne().HasForeignKey(v => v.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.Disposals).WithOne().HasForeignKey(d => d.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.CustodyTransfers).WithOne().HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(a => a.RepairCapitalizations).WithOne().HasForeignKey(c => c.AssetId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Assets.AssetMaterial>(b =>
@@ -295,6 +313,7 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasIndex(m => new { m.TenantId, m.State });
             b.HasIndex(m => new { m.TenantId, m.AssetId });
             b.HasOne(m => m.AssignedEmployee).WithMany().HasForeignKey(m => m.AssignedEmployeeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(m => m.RepairCapitalization).WithOne().HasForeignKey<AssetRepairCapitalization>(c => c.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Maintenance.MaintenancePart>(b =>
@@ -384,6 +403,9 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasKey(e => e.Id);
             b.HasQueryFilter(e => e.TenantId == CurrentTenantId && !e.IsDeleted);
             b.HasIndex(e => new { e.TenantId, e.UserId }).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
+
+            b.HasMany(e => e.CustodyTransfersFrom).WithOne(t => t.FromEmployee).HasForeignKey(t => t.FromEmployeeId).OnDelete(DeleteBehavior.SetNull);
+            b.HasMany(e => e.CustodyTransfersTo).WithOne(t => t.ToEmployee).HasForeignKey(t => t.ToEmployeeId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AssetHub.Domain.Staff.EmployeeAvailability>(b =>
@@ -511,6 +533,105 @@ public class TenantDbContext : DbContext, ITenantDbContext
              .WithMany()
              .HasForeignKey(m => m.TemplateId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== M21 FINANCE ENTITIES =====
+        modelBuilder.Entity<AssetFinanceBook>(b =>
+        {
+            b.HasKey(f => f.Id);
+            b.HasQueryFilter(f => f.TenantId == CurrentTenantId && !f.IsDeleted);
+            b.HasIndex(f => new { f.TenantId, f.AssetId }).IsUnique();
+            b.Property(f => f.AcquisitionCost).HasPrecision(18, 4);
+            b.Property(f => f.ResidualValue).HasPrecision(18, 4);
+            b.Property(f => f.DepreciationRatePct).HasPrecision(5, 2);
+            b.Property(f => f.Currency).HasMaxLength(3);
+            b.Property(f => f.RowVersion).IsRowVersion();
+
+            b.HasOne(f => f.Asset).WithMany().HasForeignKey(f => f.AssetId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetDepreciationSchedule>(b =>
+        {
+            b.HasKey(s => s.Id);
+            b.HasQueryFilter(s => s.TenantId == CurrentTenantId && !s.IsDeleted);
+            b.HasIndex(s => new { s.TenantId, s.AssetId, s.PeriodNumber }).IsUnique();
+            b.HasIndex(s => new { s.TenantId, s.AssetId, s.IsPosted });
+            b.Property(s => s.ProjectedDepreciationAmount).HasPrecision(18, 4);
+            b.Property(s => s.ProjectedAccumulatedDepreciation).HasPrecision(18, 4);
+            b.Property(s => s.ProjectedNetBookValue).HasPrecision(18, 4);
+            b.Property(s => s.RowVersion).IsRowVersion();
+
+            b.HasOne(s => s.Asset).WithMany().HasForeignKey(s => s.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(s => s.FinanceBook).WithMany().HasForeignKey(s => s.FinanceBookId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(s => s.PostedEntry).WithOne().HasForeignKey<AssetDepreciationSchedule>(s => s.PostedEntryId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<AssetDepreciationEntry>(b =>
+        {
+            b.HasKey(e => e.Id);
+            b.HasQueryFilter(e => e.TenantId == CurrentTenantId);
+            b.HasIndex(e => new { e.TenantId, e.IdempotencyKey }).IsUnique();
+            b.HasIndex(e => new { e.TenantId, e.AssetId, e.PeriodNumber });
+            b.Property(e => e.DepreciationAmount).HasPrecision(18, 4);
+            b.Property(e => e.AccumulatedDepreciation).HasPrecision(18, 4);
+            b.Property(e => e.NetBookValue).HasPrecision(18, 4);
+            b.Property(e => e.IdempotencyKey).HasMaxLength(64);
+
+            b.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(e => e.FinanceBook).WithMany().HasForeignKey(e => e.FinanceBookId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(e => e.Schedule).WithOne().HasForeignKey<AssetDepreciationEntry>(e => e.ScheduleId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetValueAdjustment>(b =>
+        {
+            b.HasKey(a => a.Id);
+            b.HasQueryFilter(a => a.TenantId == CurrentTenantId);
+            b.HasIndex(a => new { a.TenantId, a.AssetId, a.EffectiveDate });
+            b.Property(a => a.PreviousNetBookValue).HasPrecision(18, 4);
+            b.Property(a => a.AdjustmentAmount).HasPrecision(18, 4);
+            b.Property(a => a.NewNetBookValue).HasPrecision(18, 4);
+            b.Property(a => a.Reason).HasMaxLength(2000);
+
+            b.HasOne(a => a.Asset).WithMany().HasForeignKey(a => a.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(a => a.FinanceBook).WithMany().HasForeignKey(a => a.FinanceBookId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetDisposal>(b =>
+        {
+            b.HasKey(d => d.Id);
+            b.HasQueryFilter(d => d.TenantId == CurrentTenantId);
+            b.HasIndex(d => new { d.TenantId, d.AssetId }).IsUnique();
+            b.Property(d => d.NetBookValueAtDisposal).HasPrecision(18, 4);
+            b.Property(d => d.ProceedsAmount).HasPrecision(18, 4);
+            b.Property(d => d.GainLossAmount).HasPrecision(18, 4);
+            b.Property(d => d.Reason).HasMaxLength(2000);
+            b.Property(d => d.DocumentReference).HasMaxLength(500);
+
+            b.HasOne(d => d.Asset).WithMany().HasForeignKey(d => d.AssetId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetCustodyTransfer>(b =>
+        {
+            b.HasKey(t => t.Id);
+            b.HasQueryFilter(t => t.TenantId == CurrentTenantId && !t.IsDeleted);
+            b.HasIndex(t => new { t.TenantId, t.AssetId, t.TransferDate });
+            b.Property(t => t.Reason).HasMaxLength(2000);
+            b.Property(t => t.DocumentUrl).HasMaxLength(1000);
+
+            b.HasOne(t => t.Asset).WithMany().HasForeignKey(t => t.AssetId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(t => t.FromEmployee).WithMany().HasForeignKey(t => t.FromEmployeeId).OnDelete(DeleteBehavior.SetNull);
+            b.HasOne(t => t.ToEmployee).WithMany().HasForeignKey(t => t.ToEmployeeId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetRepairCapitalization>(b =>
+        {
+            b.HasKey(c => c.Id);
+            b.HasQueryFilter(c => c.TenantId == CurrentTenantId && !c.IsDeleted);
+            b.HasIndex(c => new { c.TenantId, c.MaintenanceOrderId }).IsUnique();
+            b.Property(c => c.CapitalizedAmount).HasPrecision(18, 4);
+
+            b.HasOne(c => c.MaintenanceOrder).WithMany().HasForeignKey(c => c.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(c => c.Asset).WithMany().HasForeignKey(c => c.AssetId).OnDelete(DeleteBehavior.Restrict);
         });
 
         base.OnModelCreating(modelBuilder);

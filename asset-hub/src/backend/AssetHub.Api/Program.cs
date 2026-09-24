@@ -1,4 +1,5 @@
 using System.Text;
+using AssetHub.Application.Finance.Mapping;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Tenancy.Commands;
 using AssetHub.Domain.Security;
@@ -91,6 +92,7 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHand
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CheckSlugCommand>());
+builder.Services.AddAutoMapper(typeof(FinanceMappingProfile).Assembly);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 
@@ -310,9 +312,9 @@ public static class RolePermissionMatrixSeeder
 
         foreach (var tenant in tenants)
         {
-            var hasAssignments = await securityDb.RolePermissions
-                .AnyAsync(rp => rp.TenantId == tenant.Id);
-            if (hasAssignments) continue;
+            var existingAssignments = await securityDb.RolePermissions
+                .Where(rp => rp.TenantId == tenant.Id)
+                .ToListAsync();
 
             var allCodes = allPermissions.Select(p => p.Code).ToList();
 
@@ -323,12 +325,16 @@ public static class RolePermissionMatrixSeeder
                 {
                     if (permissionsByCode.TryGetValue(code, out var perm))
                     {
-                        securityDb.RolePermissions.Add(new AssetHub.Domain.Security.RolePermission
+                        var alreadyAssigned = existingAssignments.Any(a => a.RoleId == role.Id && a.PermissionId == perm.Id);
+                        if (!alreadyAssigned)
                         {
-                            TenantId = tenant.Id,
-                            RoleId = role.Id,
-                            PermissionId = perm.Id
-                        });
+                            securityDb.RolePermissions.Add(new AssetHub.Domain.Security.RolePermission
+                            {
+                                TenantId = tenant.Id,
+                                RoleId = role.Id,
+                                PermissionId = perm.Id
+                            });
+                        }
                     }
                 }
             }
@@ -337,10 +343,10 @@ public static class RolePermissionMatrixSeeder
             AddRole("Tenant Admin", allCodes);
             AddRole("admin", allCodes);
 
-            // Viewer: solo permisos :read
-            AddRole("Viewer", allCodes.Where(c => c.EndsWith(":read")));
+            // Viewer: solo permisos :read + finanzas lectura
+            AddRole("Viewer", allCodes.Where(c => c.EndsWith(":read") || c.EndsWith("finance:read") || c.EndsWith("depreciation:read") || c.EndsWith("value-adjustment:read") || c.EndsWith("disposal:read") || c.EndsWith("custody:read") || c.EndsWith("capitalization:read")));
 
-            // Asset Manager: assets full + mantenimiento lectura + tareas lectura + analytics
+            // Asset Manager: assets full + mantenimiento lectura + tareas lectura + analytics + finanzas lectura
             AddRole("Asset Manager", allCodes.Where(c =>
                 c.StartsWith("assets") || c.StartsWith("asset-templates") ||
                 c.StartsWith("geo:") || c.StartsWith("analytics") || c.StartsWith("predictions") ||
@@ -349,16 +355,19 @@ public static class RolePermissionMatrixSeeder
                 c == "tasks:read" || c == "employees:read" || c == "teams:read" ||
                 c == "preventive-plans:read" || c == "warehouses:read" || c == "stock:read" ||
                 c == "transactions:read" || c == "inventory:read" || c == "tasks-board:read" ||
-                c == "task-status:read" || c == "communication-templates:read"));
+                c == "task-status:read" || c == "communication-templates:read" ||
+                c.EndsWith("finance:read") || c.EndsWith("depreciation:read") || c.EndsWith("disposal:read") ||
+                c.EndsWith("custody:read") || c.EndsWith("capitalization:read")));
 
-            // Technician: ejecucion de mantenimiento y tareas
+            // Technician: ejecucion de mantenimiento y tareas + capitalización
             AddRole("Technician", allCodes.Where(c =>
                 c.StartsWith("incidents:") || c.StartsWith("maintenance") ||
                 c.StartsWith("tasks:") || c.StartsWith("task-status") || c.StartsWith("tasks-board") ||
                 c == "assets:read" || c == "assets:attachments" || c == "assets-properties:read" ||
                 c == "geo:read" || c == "employees:read" || c == "teams:read" ||
                 c == "warehouses:read" || c == "stock:read" || c == "transactions:read" ||
-                c == "preventive-plans:read" || c == "inventory:read"));
+                c == "preventive-plans:read" || c == "inventory:read" ||
+                c == "assets.capitalization:propose"));
         }
 
         await securityDb.SaveChangesAsync();

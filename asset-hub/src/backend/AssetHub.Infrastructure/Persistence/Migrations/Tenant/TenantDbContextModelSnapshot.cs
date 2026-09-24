@@ -768,6 +768,517 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("BusinessEntityTypes", "tenant");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetCustodyTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DocumentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("EmployeeId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FromDepartmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FromEmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid?>("SignedByFrom")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SignedByTo")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ToDepartmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ToEmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("TransferDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TransferType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EmployeeId1");
+
+                    b.HasIndex("FromEmployeeId");
+
+                    b.HasIndex("ToEmployeeId");
+
+                    b.HasIndex("TenantId", "AssetId", "TransferDate");
+
+                    b.ToTable("AssetCustodyTransfers", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetDepreciationEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AccountingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("AccumulatedDepreciation")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("DepreciationAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("FinanceBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<decimal>("NetBookValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("PeriodNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PostedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1");
+
+                    b.HasIndex("FinanceBookId");
+
+                    b.HasIndex("ScheduleId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "AssetId", "PeriodNumber");
+
+                    b.ToTable("AssetDepreciationEntries", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetDepreciationSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FinanceBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPosted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("PeriodEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PeriodNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PeriodStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PostedEntryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("ProjectedAccumulatedDepreciation")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ProjectedDepreciationAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ProjectedNetBookValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1");
+
+                    b.HasIndex("FinanceBookId");
+
+                    b.HasIndex("PostedEntryId")
+                        .IsUnique()
+                        .HasFilter("[PostedEntryId] IS NOT NULL");
+
+                    b.HasIndex("TenantId", "AssetId", "IsPosted");
+
+                    b.HasIndex("TenantId", "AssetId", "PeriodNumber")
+                        .IsUnique();
+
+                    b.ToTable("AssetDepreciationSchedules", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetDisposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DisposalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisposalType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DocumentReference")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("GainLossAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("NetBookValueAtDisposal")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ProceedsAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1");
+
+                    b.HasIndex("TenantId", "AssetId")
+                        .IsUnique();
+
+                    b.ToTable("AssetDisposals", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetFinanceBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AcquisitionCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DepreciationMethod")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DepreciationRatePct")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("FrequencyMonths")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("ResidualValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsefulLifeMonths")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1")
+                        .IsUnique()
+                        .HasFilter("[AssetId1] IS NOT NULL");
+
+                    b.HasIndex("TenantId", "AssetId")
+                        .IsUnique();
+
+                    b.ToTable("AssetFinanceBooks", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetRepairCapitalization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("CapitalizedAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("MaintenanceOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MaintenanceOrderId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("NewUsefulLifeMonths")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1");
+
+                    b.HasIndex("MaintenanceOrderId");
+
+                    b.HasIndex("MaintenanceOrderId1")
+                        .IsUnique()
+                        .HasFilter("[MaintenanceOrderId1] IS NOT NULL");
+
+                    b.HasIndex("TenantId", "MaintenanceOrderId")
+                        .IsUnique();
+
+                    b.ToTable("AssetRepairCapitalizations", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetValueAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AdjustmentAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("AdjustmentType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FinanceBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("NewNetBookValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("PreviousNetBookValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("AssetId1");
+
+                    b.HasIndex("FinanceBookId");
+
+                    b.HasIndex("TenantId", "AssetId", "EffectiveDate");
+
+                    b.ToTable("AssetValueAdjustments", "tenant");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Incidents.Incident", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2081,6 +2592,185 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Template");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetCustodyTransfer", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithMany("CustodyTransfers")
+                        .HasForeignKey("AssetId1");
+
+                    b.HasOne("AssetHub.Domain.Staff.Employee", null)
+                        .WithMany("CustodyTransfersFrom")
+                        .HasForeignKey("EmployeeId");
+
+                    b.HasOne("AssetHub.Domain.Staff.Employee", null)
+                        .WithMany("CustodyTransfersTo")
+                        .HasForeignKey("EmployeeId1");
+
+                    b.HasOne("AssetHub.Domain.Staff.Employee", "FromEmployee")
+                        .WithMany()
+                        .HasForeignKey("FromEmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AssetHub.Domain.Staff.Employee", "ToEmployee")
+                        .WithMany()
+                        .HasForeignKey("ToEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("FromEmployee");
+
+                    b.Navigation("ToEmployee");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetDepreciationEntry", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithMany("DepreciationEntries")
+                        .HasForeignKey("AssetId1");
+
+                    b.HasOne("AssetHub.Domain.Finance.AssetFinanceBook", "FinanceBook")
+                        .WithMany()
+                        .HasForeignKey("FinanceBookId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Finance.AssetDepreciationSchedule", "Schedule")
+                        .WithOne()
+                        .HasForeignKey("AssetHub.Domain.Finance.AssetDepreciationEntry", "ScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("FinanceBook");
+
+                    b.Navigation("Schedule");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetDepreciationSchedule", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithMany("DepreciationSchedules")
+                        .HasForeignKey("AssetId1");
+
+                    b.HasOne("AssetHub.Domain.Finance.AssetFinanceBook", "FinanceBook")
+                        .WithMany()
+                        .HasForeignKey("FinanceBookId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Finance.AssetDepreciationEntry", "PostedEntry")
+                        .WithOne()
+                        .HasForeignKey("AssetHub.Domain.Finance.AssetDepreciationSchedule", "PostedEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("FinanceBook");
+
+                    b.Navigation("PostedEntry");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetDisposal", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithMany("Disposals")
+                        .HasForeignKey("AssetId1");
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetFinanceBook", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithOne("FinanceBook")
+                        .HasForeignKey("AssetHub.Domain.Finance.AssetFinanceBook", "AssetId1");
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetRepairCapitalization", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithMany("RepairCapitalizations")
+                        .HasForeignKey("AssetId1");
+
+                    b.HasOne("AssetHub.Domain.Maintenance.MaintenanceOrder", "MaintenanceOrder")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Maintenance.MaintenanceOrder", null)
+                        .WithOne("RepairCapitalization")
+                        .HasForeignKey("AssetHub.Domain.Finance.AssetRepairCapitalization", "MaintenanceOrderId1");
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("MaintenanceOrder");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Finance.AssetValueAdjustment", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetHub.Domain.Assets.Asset", null)
+                        .WithMany("ValueAdjustments")
+                        .HasForeignKey("AssetId1");
+
+                    b.HasOne("AssetHub.Domain.Finance.AssetFinanceBook", "FinanceBook")
+                        .WithMany()
+                        .HasForeignKey("FinanceBookId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("FinanceBook");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Incidents.Incident", b =>
                 {
                     b.HasOne("AssetHub.Domain.Assets.Asset", "Asset")
@@ -2431,6 +3121,16 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                 {
                     b.Navigation("ConditionHistory");
 
+                    b.Navigation("CustodyTransfers");
+
+                    b.Navigation("DepreciationEntries");
+
+                    b.Navigation("DepreciationSchedules");
+
+                    b.Navigation("Disposals");
+
+                    b.Navigation("FinanceBook");
+
                     b.Navigation("HealthPredictions");
 
                     b.Navigation("Incidents");
@@ -2442,6 +3142,10 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Materials");
 
                     b.Navigation("PreventivePlans");
+
+                    b.Navigation("RepairCapitalizations");
+
+                    b.Navigation("ValueAdjustments");
 
                     b.Navigation("WorkTasks");
                 });
@@ -2472,6 +3176,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                 {
                     b.Navigation("Parts");
 
+                    b.Navigation("RepairCapitalization");
+
                     b.Navigation("WorkTasks");
                 });
 
@@ -2480,6 +3186,13 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("MaintenanceOrders");
 
                     b.Navigation("WorkTasks");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Staff.Employee", b =>
+                {
+                    b.Navigation("CustodyTransfersFrom");
+
+                    b.Navigation("CustodyTransfersTo");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Staff.Team", b =>

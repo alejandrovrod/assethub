@@ -1,0 +1,1070 @@
+openapi: 3.0.3
+info:
+  title: AssetHub Finance & Depreciation API
+  version: 1.0.0
+  description: |
+    API para gestión financiera, depreciación y bajas de activos fijos en AssetHub.
+    Basado en estándares enterprise (ERPNext-style) con arquitectura multi-tenant.
+servers:
+  - url: /api/v1
+    description: Base path
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    # ===== COMMON =====
+    PagedResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+      required: [items, page, pageSize, totalCount]
+
+    ErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    # ===== ENUMS =====
+    DepreciationMethod:
+      type: string
+      enum: [StraightLine, DoubleDeclining, WrittenDownValue, Manual]
+
+    ValueAdjustmentType:
+      type: string
+      enum: [Revaluation, Impairment]
+
+    DisposalType:
+      type: string
+      enum: [Scrapped, Sold, Lost, Donated, Transferred]
+
+    CustodyTransferType:
+      type: string
+      enum: [Assignment, Transfer, Return, Relocation]
+
+    # ===== FINANCE BOOK =====
+    AssetFinanceBookDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        assetId:
+          type: string
+          format: uuid
+        acquisitionCost:
+          type: number
+          format: decimal
+        residualValue:
+          type: number
+          format: decimal
+        usefulLifeMonths:
+          type: integer
+        depreciationMethod:
+          $ref: '#/components/schemas/DepreciationMethod'
+        depreciationRatePct:
+          type: number
+          format: decimal
+        frequencyMonths:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        currency:
+          type: string
+          maxLength: 3
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, assetId, acquisitionCost, residualValue, usefulLifeMonths, depreciationMethod, frequencyMonths, startDate, currency, isActive, createdAt, updatedAt]
+
+    UpsertFinanceBookRequest:
+      type: object
+      required: [acquisitionCost, residualValue, usefulLifeMonths, depreciationMethod, frequencyMonths, startDate]
+      properties:
+        acquisitionCost:
+          type: number
+          format: decimal
+          minimum: 0
+        residualValue:
+          type: number
+          format: decimal
+          minimum: 0
+        usefulLifeMonths:
+          type: integer
+          minimum: 1
+        depreciationMethod:
+          $ref: '#/components/schemas/DepreciationMethod'
+        depreciationRatePct:
+          type: number
+          format: decimal
+        frequencyMonths:
+          type: integer
+          minimum: 1
+        startDate:
+          type: string
+          format: date-time
+        currency:
+          type: string
+          maxLength: 3
+          default: MXN
+
+    # ===== DEPRECIATION SCHEDULE =====
+    AssetDepreciationScheduleDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        periodNumber:
+          type: integer
+        periodStartDate:
+          type: string
+          format: date-time
+        periodEndDate:
+          type: string
+          format: date-time
+        projectedDepreciationAmount:
+          type: number
+          format: decimal
+        projectedAccumulatedDepreciation:
+          type: number
+          format: decimal
+        projectedNetBookValue:
+          type: number
+          format: decimal
+        isPosted:
+          type: boolean
+        postedEntryId:
+          type: string
+          format: uuid
+          nullable: true
+
+    ManualScheduleItemDto:
+      type: object
+      required: [periodNumber, periodStartDate, periodEndDate, depreciationAmount]
+      properties:
+        periodNumber:
+          type: integer
+        periodStartDate:
+          type: string
+          format: date-time
+        periodEndDate:
+          type: string
+          format: date-time
+        depreciationAmount:
+          type: number
+          format: decimal
+
+    GenerateScheduleRequest:
+      type: object
+      properties:
+        forceRegenerate:
+          type: boolean
+          default: false
+        manualSchedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManualScheduleItemDto'
+
+    GenerateScheduleResponse:
+      type: object
+      properties:
+        periodsGenerated:
+          type: integer
+        lastPeriodEndDate:
+          type: string
+          format: date-time
+
+    RecalculateScheduleRequest:
+      type: object
+      required: [effectiveFromDate, reason]
+      properties:
+        effectiveFromDate:
+          type: string
+          format: date-time
+        reason:
+          type: string
+
+    RecalculateScheduleResponse:
+      type: object
+      properties:
+        periodsRecalculated:
+          type: integer
+        lastPeriodEndDate:
+          type: string
+          format: date-time
+
+    # ===== DEPRECIATION ENTRIES =====
+    AssetDepreciationEntryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        periodNumber:
+          type: integer
+        accountingDate:
+          type: string
+          format: date-time
+        depreciationAmount:
+          type: number
+          format: decimal
+        accumulatedDepreciation:
+          type: number
+          format: decimal
+        netBookValue:
+          type: number
+          format: decimal
+        idempotencyKey:
+          type: string
+        postedBy:
+          type: string
+          format: uuid
+        postedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    PostDepreciationRequest:
+      type: object
+      required: [periodsToPost]
+      properties:
+        periodsToPost:
+          type: integer
+          minimum: 1
+        accountingDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    PostDepreciationResponse:
+      type: object
+      properties:
+        postedEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetDepreciationEntryDto'
+        periodsPosted:
+          type: integer
+        newNetBookValue:
+          type: number
+          format: decimal
+
+    # ===== VALUE ADJUSTMENTS =====
+    AssetValueAdjustmentDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        adjustmentType:
+          $ref: '#/components/schemas/ValueAdjustmentType'
+        previousNetBookValue:
+          type: number
+          format: decimal
+        adjustmentAmount:
+          type: number
+          format: decimal
+        newNetBookValue:
+          type: number
+          format: decimal
+        reason:
+          type: string
+        effectiveDate:
+          type: string
+          format: date-time
+        approvedBy:
+          type: string
+          format: uuid
+        approvedAt:
+          type: string
+          format: date-time
+
+    CreateValueAdjustmentRequest:
+      type: object
+      required: [adjustmentType, adjustmentAmount, reason, effectiveDate]
+      properties:
+        adjustmentType:
+          $ref: '#/components/schemas/ValueAdjustmentType'
+        adjustmentAmount:
+          type: number
+          format: decimal
+        reason:
+          type: string
+          minLength: 10
+        effectiveDate:
+          type: string
+          format: date-time
+
+    # ===== DISPOSAL =====
+    AssetDisposalDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        disposalType:
+          $ref: '#/components/schemas/DisposalType'
+        disposalDate:
+          type: string
+          format: date-time
+        netBookValueAtDisposal:
+          type: number
+          format: decimal
+        proceedsAmount:
+          type: number
+          format: decimal
+        gainLossAmount:
+          type: number
+          format: decimal
+        reason:
+          type: string
+        documentReference:
+          type: string
+        approvedBy:
+          type: string
+          format: uuid
+        approvedAt:
+          type: string
+          format: date-time
+
+    CreateDisposalRequest:
+      type: object
+      required: [disposalType, disposalDate, proceedsAmount, reason]
+      properties:
+        disposalType:
+          $ref: '#/components/schemas/DisposalType'
+        disposalDate:
+          type: string
+          format: date-time
+        proceedsAmount:
+          type: number
+          format: decimal
+          minimum: 0
+        reason:
+          type: string
+          minLength: 10
+        documentReference:
+          type: string
+
+    # ===== CUSTODY TRANSFERS =====
+    AssetCustodyTransferDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fromEmployeeId:
+          type: string
+          format: uuid
+          nullable: true
+        fromEmployeeName:
+          type: string
+          nullable: true
+        toEmployeeId:
+          type: string
+          format: uuid
+        toEmployeeName:
+          type: string
+        fromDepartmentId:
+          type: string
+          format: uuid
+          nullable: true
+        fromDepartmentName:
+          type: string
+          nullable: true
+        toDepartmentId:
+          type: string
+          format: uuid
+          nullable: true
+        toDepartmentName:
+          type: string
+          nullable: true
+        transferDate:
+          type: string
+          format: date-time
+        transferType:
+          $ref: '#/components/schemas/CustodyTransferType'
+        reason:
+          type: string
+        documentUrl:
+          type: string
+        signedByFrom:
+          type: string
+          format: uuid
+          nullable: true
+        signedByTo:
+          type: string
+          format: uuid
+          nullable: true
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCustodyTransferRequest:
+      type: object
+      required: [toEmployeeId, transferDate, transferType, reason]
+      properties:
+        toEmployeeId:
+          type: string
+          format: uuid
+        toDepartmentId:
+          type: string
+          format: uuid
+        transferDate:
+          type: string
+          format: date-time
+        transferType:
+          $ref: '#/components/schemas/CustodyTransferType'
+        reason:
+          type: string
+          minLength: 5
+        documentUrl:
+          type: string
+        signedByFrom:
+          type: string
+          format: uuid
+        signedByTo:
+          type: string
+          format: uuid
+
+    # ===== MAINTENANCE CAPITALIZATION =====
+    AssetRepairCapitalizationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        maintenanceOrderId:
+          type: string
+          format: uuid
+        capitalizedAmount:
+          type: number
+          format: decimal
+        newUsefulLifeMonths:
+          type: integer
+          nullable: true
+        effectiveDate:
+          type: string
+          format: date-time
+        approvedBy:
+          type: string
+          format: uuid
+        approvedAt:
+          type: string
+          format: date-time
+
+    CapitalizeMaintenanceRequest:
+      type: object
+      properties:
+        newUsefulLifeMonths:
+          type: integer
+        effectiveDate:
+          type: string
+          format: date-time
+
+    # ===== FINANCE SUMMARY =====
+    AssetFinanceSummaryDto:
+      type: object
+      properties:
+        assetId:
+          type: string
+          format: uuid
+        assetCode:
+          type: string
+        assetName:
+          type: string
+        acquisitionCost:
+          type: number
+          format: decimal
+        residualValue:
+          type: number
+          format: decimal
+        usefulLifeMonths:
+          type: integer
+        depreciationMethod:
+          $ref: '#/components/schemas/DepreciationMethod'
+        currentNetBookValue:
+          type: number
+          format: decimal
+        accumulatedDepreciation:
+          type: number
+          format: decimal
+        depreciationThisPeriod:
+          type: number
+          format: decimal
+        nextDepreciationDate:
+          type: string
+          format: date-time
+        remainingPeriods:
+          type: integer
+        hasFinanceBook:
+          type: boolean
+        isDisposed:
+          type: boolean
+        disposalType:
+          type: string
+        disposalDate:
+          type: string
+          format: date-time
+
+paths:
+  # ===== FINANCE PROFILE =====
+  /assets/{id}/finance-profile:
+    get:
+      summary: Obtener perfil financiero del activo
+      operationId: GetFinanceProfile
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Perfil financiero encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetFinanceBookDto'
+        '404':
+          description: No tiene perfil financiero configurado
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sin permiso assets.finance.read
+    put:
+      summary: Crear o actualizar perfil financiero
+      operationId: UpsertFinanceProfile
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertFinanceBookRequest'
+      responses:
+        '200':
+          description: Perfil actualizado/creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetFinanceBookDto'
+        '400':
+          description: Validación fallida
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sin permiso assets.finance.write
+        '404':
+          description: Activo no encontrado
+    delete:
+      summary: Desactivar perfil financiero (soft delete)
+      operationId: DeleteFinanceProfile
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Desactivado
+        '403':
+          description: Sin permiso assets.finance.write
+        '404':
+          description: No existe perfil
+
+  # ===== DEPRECIATION SCHEDULES =====
+  /assets/{id}/depreciation-schedules:
+    get:
+      summary: Listar cronograma de depreciación (proyectado + histórico)
+      operationId: GetDepreciationSchedules
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: onlyPending
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResult'
+                items:
+                  $ref: '#/components/schemas/AssetDepreciationScheduleDto'
+        '403':
+          description: Sin permiso assets.finance.read
+
+  /assets/{id}/depreciation-schedules/generate:
+    post:
+      summary: Generar o regenerar cronograma completo de depreciación
+      operationId: GenerateDepreciationSchedule
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateScheduleRequest'
+      responses:
+        '200':
+          description: Cronograma generado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateScheduleResponse'
+        '400':
+          description: Validación fallida (ej. método Manual sin schedule manual)
+        '403':
+          description: Sin permiso assets.finance.write
+        '409':
+          description: Ya existe cronograma (usar forceRegenerate=true)
+
+  /assets/{id}/depreciation-schedules/recalculate:
+    post:
+      summary: Recalcular prospectivamente cuotas futuras desde fecha efectiva
+      operationId: RecalculateDepreciationSchedule
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecalculateScheduleRequest'
+      responses:
+        '200':
+          description: Recalculado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecalculateScheduleResponse'
+        '400':
+          description: Fecha inválida o sin cuotas futuras
+        '403':
+          description: Sin permiso assets.finance.write
+
+  # ===== DEPRECIATION ENTRIES (POSTING) =====
+  /assets/{id}/depreciation-entries:
+    get:
+      summary: Historial de asientos de depreciación devengados
+      operationId: GetDepreciationEntries
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResult'
+                items:
+                  $ref: '#/components/schemas/AssetDepreciationEntryDto'
+
+  /assets/{id}/depreciation-entries/post:
+    post:
+      summary: Devengar (post) cuotas de depreciación periódicas
+      operationId: PostDepreciationEntries
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostDepreciationRequest'
+      responses:
+        '200':
+          description: Cuotas devengadas (idempotente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDepreciationResponse'
+        '400':
+          description: No hay cuotas pendientes o período ya devengado
+        '403':
+          description: Sin permiso assets.depreciation.post
+        '409':
+          description: Conflicto de idempotencia (reintentar con mismo key retorna 200)
+
+  # ===== VALUE ADJUSTMENTS =====
+  /assets/{id}/value-adjustments:
+    get:
+      summary: Historial de ajustes de valor (revaluaciones/deterioros)
+      operationId: GetValueAdjustments
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResult'
+                items:
+                  $ref: '#/components/schemas/AssetValueAdjustmentDto'
+
+    post:
+      summary: Registrar revaluación o deterioro (recalcula prospectivo)
+      operationId: CreateValueAdjustment
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateValueAdjustmentRequest'
+      responses:
+        '201':
+          description: Ajuste registrado y schedule futuro recalculado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetValueAdjustmentDto'
+        '400':
+          description: Validación fallida (ej. impairment bajo residual)
+        '403':
+          description: Sin permiso assets.finance.write
+        '409':
+          description: Activo en estado terminal (Disposed/Scrapped)
+
+  # ===== DISPOSAL =====
+  /assets/{id}/disposal:
+    get:
+      summary: Consultar registro de baja del activo
+      operationId: GetDisposal
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Registro de baja
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDisposalDto'
+        '404':
+          description: No tiene baja registrada
+        '403':
+          description: Sin permiso assets.disposal.read
+
+    post:
+      summary: Procesar baja definitiva del activo
+      operationId: CreateDisposal
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDisposalRequest'
+      responses:
+        '201':
+          description: Baja procesada, activo en estado terminal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDisposalDto'
+        '400':
+          description: Validación fallida
+        '403':
+          description: Sin permiso assets.disposal.write
+        '409':
+          description: Ya tiene baja registrada
+
+  # ===== CUSTODY TRANSFERS =====
+  /assets/{id}/custody-transfers:
+    get:
+      summary: Historial de transferencias de custodia
+      operationId: GetCustodyTransfers
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResult'
+                items:
+                  $ref: '#/components/schemas/AssetCustodyTransferDto'
+
+    post:
+      summary: Registrar nueva transferencia/asignación de custodia
+      operationId: CreateCustodyTransfer
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustodyTransferRequest'
+      responses:
+        '201':
+          description: Transferencia registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetCustodyTransferDto'
+        '400':
+          description: Validación fallida
+        '403':
+          description: Sin permiso assets.custody.write
+        '409':
+          description: Activo en estado terminal
+
+  # ===== MAINTENANCE CAPITALIZATION =====
+  /maintenance-orders/{id}/capitalize:
+    post:
+      summary: Capitalizar costos de orden de mantenimiento completada
+      operationId: CapitalizeMaintenanceOrder
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapitalizeMaintenanceRequest'
+      responses:
+        '201':
+          description: Capitalización registrada, valor del activo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetRepairCapitalizationDto'
+        '400':
+          description: Orden no está Completed/Verified o activo sin perfil financiero
+        '403':
+          description: Sin permiso assets.capitalization.propose
+        '409':
+          description: Ya capitalizada
+
+  # ===== FINANCE SUMMARY =====
+  /assets/{id}/finance-summary:
+    get:
+      summary: Resumen financiero consolidado para UI (dashboard en ficha de activo)
+      operationId: GetFinanceSummary
+      tags: [Finance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Resumen financiero
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetFinanceSummaryDto'
+        '403':
+          description: Sin permiso assets.finance.read
+        '404':
+          description: Activo no encontrado

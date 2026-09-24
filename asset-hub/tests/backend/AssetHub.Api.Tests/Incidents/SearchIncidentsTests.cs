@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +24,7 @@ public class SearchIncidentsTests
         public FakeTenantResolver(Guid tenantId) => _tenantId = tenantId;
         public Domain.Tenancy.Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     private static TenantDbContext CreateDbContext(Guid tenantId)

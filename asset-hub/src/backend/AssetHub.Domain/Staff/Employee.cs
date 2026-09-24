@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using AssetHub.Domain.Catalogs;
+using AssetHub.Domain.Finance;
 
 namespace AssetHub.Domain.Staff;
 
@@ -26,4 +28,8 @@ public class Employee
     
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; }
+
+    // Finance navigation
+    public ICollection<AssetCustodyTransfer> CustodyTransfersFrom { get; set; } = new List<AssetCustodyTransfer>();
+    public ICollection<AssetCustodyTransfer> CustodyTransfersTo { get; set; } = new List<AssetCustodyTransfer>();
 }

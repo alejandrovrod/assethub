@@ -39,6 +39,7 @@ public class MediaUploadEndpointTests : IClassFixture<WebApplicationFactory<Prog
         public FixedTenantResolver(Guid tenantId) => _tenantId = tenantId;
         public Domain.Tenancy.Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     private HttpClient CreateAuthenticatedClient(string role)

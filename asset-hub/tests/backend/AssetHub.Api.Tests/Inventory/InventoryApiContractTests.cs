@@ -148,6 +148,7 @@ public class InventoryApiContractTests
         public FakeTenantResolver(Guid tenantId) => _tenantId = tenantId;
         public AssetHub.Domain.Tenancy.Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     private sealed class CapturingMediator : IMediator

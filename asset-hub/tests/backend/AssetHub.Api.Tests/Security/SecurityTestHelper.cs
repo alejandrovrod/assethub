@@ -24,6 +24,7 @@ public static class SecurityTestHelper
         public FakeTenantResolver(Guid tenantId) => _tenantId = tenantId;
         public Tenant? GetCurrentTenant() => null;
         public Guid? GetCurrentTenantId() => _tenantId;
+        public Guid? GetCurrentUserId() => null;
     }
 
     public sealed class FakeCurrentUser : ICurrentUser

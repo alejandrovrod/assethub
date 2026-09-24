@@ -164,6 +164,17 @@ public static class PermissionCatalog
         // Plantillas de comunicación (extensión M11/M12 del sistema real)
         new PermissionDefinition("communication-templates:read", "Comunicación", "maintenance", "Ver plantillas de comunicación"),
         new PermissionDefinition("communication-templates:manage", "Comunicación", "maintenance", "Crear/actualizar/eliminar plantillas de comunicación"),
+
+        // M21 — Finanzas, Depreciación y Bajas
+        new PermissionDefinition("assets.finance:read", "Finanzas Activos", "assets", "Ver perfil financiero, cronogramas y ajustes"),
+        new PermissionDefinition("assets.finance:write", "Finanzas Activos", "assets", "Crear/actualizar perfil financiero, generar schedule"),
+        new PermissionDefinition("assets.depreciation:post", "Finanzas Activos", "assets", "Devengar cuotas de depreciación"),
+        new PermissionDefinition("assets.value-adjustment:write", "Finanzas Activos", "assets", "Registrar revaluaciones y deterioros"),
+        new PermissionDefinition("assets.disposal:read", "Finanzas Activos", "assets", "Ver bajas/desincorporaciones"),
+        new PermissionDefinition("assets.disposal:write", "Finanzas Activos", "assets", "Procesar bajas definitivas de activos"),
+        new PermissionDefinition("assets.custody:read", "Finanzas Activos", "assets", "Ver historial de custodias"),
+        new PermissionDefinition("assets.custody:write", "Finanzas Activos", "assets", "Registrar transferencias/asignaciones de custodia"),
+        new PermissionDefinition("assets.capitalization:propose", "Finanzas Activos", "assets", "Capitalizar costos de mantenimiento (CAPEX)"),
     };
 
     public static bool TryGet(string code, out PermissionDefinition definition)
