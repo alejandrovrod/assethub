@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using AssetHub.Api.Configuration;
 using AssetHub.Domain.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -24,13 +25,15 @@ public class ExceptionHandlingMiddlewareTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddRouting();
+        builder.Services.AddAssetHubLocalization();
 
         var app = builder.Build();
+        app.UseRequestLocalization();
         app.UseRouting();
         app.UseMiddleware<AssetHub.Api.Middleware.ExceptionHandlingMiddleware>();
         app.UseEndpoints(e =>
         {
-            e.MapGet("/throw-domain", async ctx => throw new DomainException("test_code", "Domain rule message"));
+            e.MapGet("/throw-domain", async ctx => throw new DomainException("asset_disposed", "Asset is disposed"));
             e.MapGet("/throw-invalid-op", async ctx => throw new InvalidOperationException("Domain rule message"));
             e.MapGet("/throw-argument", async ctx => throw new ArgumentException("Validation message"));
             e.MapGet("/throw-unexpected", async ctx => throw new Exception("Unexpected message"));
@@ -50,8 +53,12 @@ public class ExceptionHandlingMiddlewareTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("test_code", body);
-        Assert.Contains("Domain rule message", body);
+        // The error code doubles as the localization key and is always echoed back.
+        Assert.Contains("asset_disposed", body);
+        // Default culture is es, so the title comes back from SharedResource.es.resx
+        // (the raw "Asset is disposed" message is only the fallback).
+        Assert.Contains("El activo ha sido dado de baja", body);
+        Assert.DoesNotContain("Asset is disposed", body);
     }
 
     [Fact]

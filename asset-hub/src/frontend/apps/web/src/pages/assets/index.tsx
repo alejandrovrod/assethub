@@ -18,11 +18,11 @@ import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { usePermissions } from '@/hooks/use-permissions'
 
-const riskLabels: Record<string, string> = {
-  Low: 'Bajo',
-  Moderate: 'Moderado',
-  High: 'Alto',
-  Critical: 'Crítico'
+const riskKeys: Record<string, 'risk.low' | 'risk.moderate' | 'risk.high' | 'risk.critical'> = {
+  Low: 'risk.low',
+  Moderate: 'risk.moderate',
+  High: 'risk.high',
+  Critical: 'risk.critical'
 }
 
 const riskBadgeStyles: Record<string, string> = {
@@ -33,6 +33,7 @@ const riskBadgeStyles: Record<string, string> = {
 }
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useTranslation } from 'react-i18next'
 import {
   Table,
   TableBody,
@@ -54,6 +55,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export default function AssetsPage() {
+  const { t } = useTranslation(['assets', 'common'])
   const { can } = usePermissions()
   const canCreate = can('assets:create')
   const canDelete = can('assets:delete')
@@ -72,8 +74,14 @@ export default function AssetsPage() {
 
   const isSearching = searchTerm.trim().length > 0 || Object.keys(catalogFilters).length > 0
 
+  const riskLabel = (level?: string) => {
+    if (!level) return level
+    const key = riskKeys[level]
+    return key ? t(key) : level
+  }
+
   const getParentName = (pathNames?: string, parentId?: string) => {
-    if (!parentId) return 'Ninguno (Raíz)'
+    if (!parentId) return t('list.rootNone')
     if (!pathNames || pathNames === '/') return '-'
     const parts = pathNames.split('/').filter(Boolean)
     return parts.length > 1 ? parts[parts.length - 2] : '-'
@@ -105,11 +113,11 @@ export default function AssetsPage() {
     mutationFn: (id: string) => assetService.deleteAsset(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] })
-      toast.success('Activo eliminado correctamente')
+      toast.success(t('toast.deleted'))
     },
     onError: (error) => {
       console.error("Error deleting asset:", error)
-      toast.error('Error al eliminar activo')
+      toast.error(t('toast.deleteError'))
     }
   })
 
@@ -125,10 +133,10 @@ export default function AssetsPage() {
     <div className="flex flex-col gap-6 h-full overflow-hidden">
       <div className="shrink-0">
         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-          <Filter className="h-4 w-4" /> Búsqueda
+          <Filter className="h-4 w-4" /> {t('filters.search')}
         </h3>
         <Input
-          placeholder="Código o nombre..."
+          placeholder={t('filters.codeOrNamePlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full"
@@ -137,7 +145,7 @@ export default function AssetsPage() {
 
       <ScrollArea className="flex-1 min-h-0 pr-4">
         {isLoadingFilters ? (
-          <div className="text-sm text-muted-foreground">Cargando filtros...</div>
+          <div className="text-sm text-muted-foreground">{t('filters.loading')}</div>
         ) : searchFilters?.map((filter) => (
           <div key={filter.attributeKey} className="mb-6">
             <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
@@ -154,16 +162,16 @@ export default function AssetsPage() {
                       ? filter.options.find(
                         (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
                       )?.label
-                      : "Todos"}
+                      : t('common:labels.all')}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[calc(100vw-3rem)] sm:w-full p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar opción..." />
+                  <CommandInput placeholder={t('filters.searchOptionPlaceholder')} />
                   <CommandList>
-                    <CommandEmpty>No se encontró la opción.</CommandEmpty>
+                    <CommandEmpty>{t('filters.optionNotFound')}</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         onSelect={() => {
@@ -178,7 +186,7 @@ export default function AssetsPage() {
                             !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
                           )}
                         />
-                        Todos
+                        {t('common:labels.all')}
                       </CommandItem>
                       {filter.options.map((opt) => (
                         <CommandItem
@@ -213,9 +221,9 @@ export default function AssetsPage() {
     <div className="flex flex-col gap-4 p-4 pt-0 h-[calc(100vh-theme(spacing.16))] overflow-hidden">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Activos (Instancias)</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t('list.instancesTitle')}</h2>
           <p className="text-muted-foreground">
-            Gestione sus activos físicos reales basados en plantillas.
+            {t('list.subtitle')}
           </p>
         </div>
 
@@ -241,7 +249,7 @@ export default function AssetsPage() {
           
           <Button variant="outline" onClick={() => setMapModalOpen(true)} className="flex items-center gap-2 shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /><path d="M15 5.764v15" /><path d="M9 3.236v15" /></svg>
-            Ver en Mapa
+            {t('list.viewOnMap')}
           </Button>
 
           {canCreate && (
@@ -253,10 +261,10 @@ export default function AssetsPage() {
               labelKey="name"
               valueKey="id"
               onSelect={handleCreate}
-              searchPlaceholder="Buscar plantilla por nombre..."
-              emptyText="No se encontró ninguna plantilla activa."
+              searchPlaceholder={t('list.searchTemplatePlaceholder')}
+              emptyText={t('list.noActiveTemplateFound')}
               renderTrigger={(onClick) => (
-                <Button onClick={onClick} size="icon" title="Agregar Activo" className="shrink-0">
+                <Button onClick={onClick} size="icon" title={t('list.addAssetTitle')} className="shrink-0">
                   <Plus className="h-4 w-4" />
                 </Button>
               )}
@@ -273,7 +281,7 @@ export default function AssetsPage() {
               <Button variant="outline" className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
-                  Filtros
+                  {t('filters.title')}
                 </div>
                 {Object.keys(catalogFilters).length > 0 && (
                   <Badge variant="secondary">{Object.keys(catalogFilters).length}</Badge>
@@ -282,7 +290,7 @@ export default function AssetsPage() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-4 pt-10 flex flex-col">
               <SheetHeader className="mb-4 shrink-0">
-                <SheetTitle>Filtros de Búsqueda</SheetTitle>
+                <SheetTitle>{t('filters.sheetTitle')}</SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-hidden">
                 {renderFilters()}
@@ -299,12 +307,12 @@ export default function AssetsPage() {
         {/* Grilla de Activos */}
         <div className="flex-1 rounded-lg border shadow-sm p-4 overflow-auto">
           {isLoadingAssets ? (
-            <div className="text-center w-full py-10">Cargando activos...</div>
+            <div className="text-center w-full py-10">{t('list.loading')}</div>
           ) : (
             <div className="w-full">
               {assets?.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
-                  No se encontraron activos con estos filtros.
+                  {t('list.emptyFiltered')}
                 </div>
               ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -336,12 +344,14 @@ export default function AssetsPage() {
                                 )}
                                 title={
                                   asset.healthPredictedFailureDays != null
-                                    ? `Falla estimada: ${asset.healthPredictedFailureDays >= 365 ? 'Más de 1 año (Óptimo)' : `${asset.healthPredictedFailureDays} días`}`
+                                    ? (asset.healthPredictedFailureDays >= 365
+                                      ? t('risk.estimatedFailureOverYear')
+                                      : t('risk.estimatedFailureDays', { days: asset.healthPredictedFailureDays }))
                                     : undefined
                                 }
                               >
                                 <Activity className="h-2.5 w-2.5" />
-                                <span>Salud {riskLabels[asset.healthRiskLevel] || asset.healthRiskLevel}</span>
+                                <span>{t('risk.healthLabel', { risk: riskLabel(asset.healthRiskLevel) })}</span>
                                 {asset.healthRiskProbability != null && (
                                   <span className="opacity-80">({(asset.healthRiskProbability * 100).toFixed(0)}%)</span>
                                 )}
@@ -352,7 +362,7 @@ export default function AssetsPage() {
                             <p className="text-sm font-medium text-muted-foreground">{asset.code}</p>
                             {asset.childrenCount > 0 && (
                               <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal text-muted-foreground">
-                                {asset.childrenCount} {asset.childrenCount === 1 ? 'hijo' : 'hijos'}
+                                {asset.childrenCount} {asset.childrenCount === 1 ? t('list.child') : t('list.children')}
                               </Badge>
                             )}
                           </div>
@@ -372,13 +382,13 @@ export default function AssetsPage() {
                              </AlertDialogTrigger>
                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                                <AlertDialogHeader>
-                                 <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
+                                 <AlertDialogTitle>{t('dialog.deleteAssetTitle')}</AlertDialogTitle>
                                  <AlertDialogDescription>
-                                   ¿Estás seguro de que deseas eliminar este activo?.
+                                   {t('dialog.deleteAssetBody')}
                                  </AlertDialogDescription>
                                </AlertDialogHeader>
                                <AlertDialogFooter>
-                                 <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                 <AlertDialogCancel onClick={(e) => e.stopPropagation()}>{t('common:actions.cancel')}</AlertDialogCancel>
                                  <AlertDialogAction
                                    onClick={(e) => {
                                      e.stopPropagation()
@@ -386,7 +396,7 @@ export default function AssetsPage() {
                                    }}
                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                  >
-                                   Eliminar
+                                   {t('common:actions.delete')}
                                  </AlertDialogAction>
                                </AlertDialogFooter>
                              </AlertDialogContent>
@@ -394,9 +404,9 @@ export default function AssetsPage() {
                          )}
                        </div>
                       <div className="mt-2 pt-2 border-t text-xs text-muted-foreground break-all">
-                        <span className="font-semibold">Padre:</span> {getParentName(asset.pathNames, asset.parentId)}
+                        <span className="font-semibold">{t('list.parent')}</span> {getParentName(asset.pathNames, asset.parentId)}
                         {asset.pathNames && asset.pathNames !== '/' && (
-                          <div className="text-[10px] mt-1 opacity-70">Ruta completa: {asset.pathNames}</div>
+                          <div className="text-[10px] mt-1 opacity-70">{t('list.fullPath', { path: asset.pathNames })}</div>
                         )}
                       </div>
 
@@ -409,13 +419,13 @@ export default function AssetsPage() {
                   <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Salud Predictiva</TableHead>
-                        <TableHead>Padre</TableHead>
-                        <TableHead>Hijos</TableHead>
-                        <TableHead className="w-[80px] text-right">Acciones</TableHead>
+                        <TableHead>{t('common:labels.code')}</TableHead>
+                        <TableHead>{t('common:labels.name')}</TableHead>
+                        <TableHead>{t('common:labels.status')}</TableHead>
+                        <TableHead>{t('table.headers.predictiveHealth')}</TableHead>
+                        <TableHead>{t('table.headers.parent')}</TableHead>
+                        <TableHead>{t('table.headers.children')}</TableHead>
+                        <TableHead className="w-[80px] text-right">{t('common:labels.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -447,12 +457,14 @@ export default function AssetsPage() {
                                 )}
                                 title={
                                   asset.healthPredictedFailureDays != null
-                                    ? `Falla estimada: ${asset.healthPredictedFailureDays >= 365 ? 'Más de 1 año (Óptimo)' : `${asset.healthPredictedFailureDays} días`}`
+                                    ? (asset.healthPredictedFailureDays >= 365
+                                      ? t('risk.estimatedFailureOverYear')
+                                      : t('risk.estimatedFailureDays', { days: asset.healthPredictedFailureDays }))
                                     : undefined
                                 }
                               >
                                 <Activity className="h-3 w-3 shrink-0" />
-                                <span>{riskLabels[asset.healthRiskLevel] || asset.healthRiskLevel}</span>
+                                <span>{riskLabel(asset.healthRiskLevel)}</span>
                                 {asset.healthRiskProbability != null && (
                                   <span className="opacity-80">({(asset.healthRiskProbability * 100).toFixed(0)}%)</span>
                                 )}
@@ -485,13 +497,13 @@ export default function AssetsPage() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Eliminar el activo</AlertDialogTitle>
+                                    <AlertDialogTitle>{t('dialog.deleteAssetTitle')}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      ¿Estás seguro de que deseas eliminar este activo?.
+                                      {t('dialog.deleteAssetBody')}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>{t('common:actions.cancel')}</AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={(e) => {
                                         e.stopPropagation()
@@ -499,7 +511,7 @@ export default function AssetsPage() {
                                       }}
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
-                                      Eliminar
+                                      {t('common:actions.delete')}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -520,17 +532,17 @@ export default function AssetsPage() {
             <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
-                  Total: {pagedResult?.totalCount || 0} activos
+                  {t('list.totalAssets', { count: pagedResult?.totalCount || 0 })}
                 </span>
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                   <SelectTrigger className="w-[100px] h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10 / pág</SelectItem>
-                    <SelectItem value="20">20 / pág</SelectItem>
-                    <SelectItem value="50">50 / pág</SelectItem>
-                    <SelectItem value="100">100 / pág</SelectItem>
+                    <SelectItem value="10">{t('pagination.perPage', { size: 10 })}</SelectItem>
+                    <SelectItem value="20">{t('pagination.perPage', { size: 20 })}</SelectItem>
+                    <SelectItem value="50">{t('pagination.perPage', { size: 50 })}</SelectItem>
+                    <SelectItem value="100">{t('pagination.perPage', { size: 100 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -541,10 +553,10 @@ export default function AssetsPage() {
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Anterior
+                  {t('common:pagination.previous')}
                 </Button>
                 <div className="flex items-center text-sm px-2">
-                  Página {page} de {pagedResult?.totalPages || 1}
+                  {t('common:pagination.page', { page })} {t('common:pagination.of', { total: pagedResult?.totalPages || 1 })}
                 </div>
                 <Button 
                   variant="outline" 
@@ -552,7 +564,7 @@ export default function AssetsPage() {
                   onClick={() => setPage(p => p + 1)}
                   disabled={page >= (pagedResult?.totalPages || 1)}
                 >
-                  Siguiente
+                  {t('common:pagination.next')}
                 </Button>
               </div>
             </div>

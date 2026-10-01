@@ -10,6 +10,8 @@ import { CustodyTransfersTimeline } from './CustodyTransfersTimeline'
 import { FinanceSummaryCard } from './FinanceSummaryCard'
 import { usePermissions } from '@/hooks/use-permissions'
 import { Loader2, AlertCircle, Shield } from 'lucide-react'
+import { useFormat } from '@/lib/format'
+import { useTranslation } from 'react-i18next'
 
 interface FinanzasTabProps {
   assetId: string
@@ -18,6 +20,8 @@ interface FinanzasTabProps {
 }
 
 export function FinanzasTab({ assetId, assetState, onAssetStateChange }: FinanzasTabProps) {
+  const { t } = useTranslation('assets')
+  const { formatNumber } = useFormat()
   const { can } = usePermissions()
   const canRead = can('assets.finance.read')
 
@@ -35,9 +39,9 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
         <Shield className="h-12 w-12 text-muted-foreground/50 mb-4" />
-        <h3 className="text-lg font-medium text-muted-foreground">Sin permisos</h3>
+        <h3 className="text-lg font-medium text-muted-foreground">{t('finance.noPermissionsTitle')}</h3>
         <p className="text-sm text-muted-foreground/70 mt-1">
-          Necesitas el permiso <code>assets.finance.read</code> para acceder a esta sección.
+          {t('finance.noPermissionsPrefix')} <code>assets.finance.read</code> {t('finance.noPermissionsSuffix')}
         </p>
       </div>
     )
@@ -49,25 +53,25 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
       <Tabs defaultValue="profile" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="profile" disabled={isDisposed}>
-            Perfil Financiero
+            {t('finance.tabs.profile')}
           </TabsTrigger>
           <TabsTrigger value="schedule" disabled={isDisposed || !hasFinanceBook}>
-            Cronograma
+            {t('finance.tabs.schedule')}
           </TabsTrigger>
           <TabsTrigger value="entries" disabled={isDisposed || !hasFinanceBook}>
-            Asientos Devengados
+            {t('finance.tabs.entries')}
           </TabsTrigger>
           <TabsTrigger value="adjustments" disabled={isDisposed || !hasFinanceBook}>
-            Ajustes Valor
+            {t('finance.tabs.adjustments')}
           </TabsTrigger>
           <TabsTrigger value="disposal">
-            Baja / Desincorp.
+            {t('finance.tabs.disposal')}
           </TabsTrigger>
           <TabsTrigger value="custody">
-            Custodias
+            {t('finance.tabs.custody')}
           </TabsTrigger>
           <TabsTrigger value="summary" disabled={!hasFinanceBook}>
-            Resumen
+            {t('finance.tabs.summary')}
           </TabsTrigger>
         </TabsList>
 
@@ -104,9 +108,9 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
             ) : (
               <div className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="font-medium text-muted-foreground">Sin perfil financiero</h3>
+                <h3 className="font-medium text-muted-foreground">{t('finance.empty.noFinanceProfileTitle')}</h3>
                 <p className="text-sm text-muted-foreground/70 mt-1">
-                  Configura el perfil financiero en la pestaña "Perfil Financiero" para generar el cronograma.
+                  {t('finance.empty.noFinanceProfileScheduleHint')}
                 </p>
               </div>
             )}
@@ -118,9 +122,9 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
             ) : (
               <div className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="font-medium text-muted-foreground">Sin perfil financiero</h3>
+                <h3 className="font-medium text-muted-foreground">{t('finance.empty.noFinanceProfileTitle')}</h3>
                 <p className="text-sm text-muted-foreground/70 mt-1">
-                  Configura el perfil financiero para devengar cuotas.
+                  {t('finance.empty.noFinanceProfileEntriesHint')}
                 </p>
               </div>
             )}
@@ -132,9 +136,9 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
             ) : (
               <div className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="font-medium text-muted-foreground">Sin perfil financiero</h3>
+                <h3 className="font-medium text-muted-foreground">{t('finance.empty.noFinanceProfileTitle')}</h3>
                 <p className="text-sm text-muted-foreground/70 mt-1">
-                  Configura el perfil financiero para registrar ajustes de valor.
+                  {t('finance.empty.noFinanceProfileAdjustmentsHint')}
                 </p>
               </div>
             )}
@@ -154,35 +158,35 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
                 <FinanceSummaryCard assetId={assetId} assetState={assetState} />
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium mb-3">Configuración Actual</h4>
+                    <h4 className="font-medium mb-3">{t('finance.summary.currentConfig')}</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Método:</span>
+                        <span className="text-muted-foreground">{t('finance.summary.method')}:</span>
                         <span>{financeProfile?.depreciationMethod}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Frecuencia:</span>
-                        <span>{financeProfile?.frequencyMonths} mes(es)</span>
+                        <span className="text-muted-foreground">{t('finance.summary.frequency')}:</span>
+                        <span>{t('finance.summary.frequencyMonths', { count: financeProfile?.frequencyMonths })}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Vida Útil:</span>
-                        <span>{financeProfile?.usefulLifeMonths} meses</span>
+                        <span className="text-muted-foreground">{t('finance.summary.usefulLife')}:</span>
+                        <span>{t('finance.summary.months', { count: financeProfile?.usefulLifeMonths })}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Costo Adquisición:</span>
-                        <span className="font-medium">{financeProfile?.acquisitionCost?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-muted-foreground">{t('finance.summary.acquisitionCost')}:</span>
+                        <span className="font-medium">{financeProfile?.acquisitionCost != null ? formatNumber(financeProfile.acquisitionCost, { minimumFractionDigits: 2 }) : undefined}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Valor Residual:</span>
-                        <span className="font-medium">{financeProfile?.residualValue?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-muted-foreground">{t('finance.summary.residualValue')}:</span>
+                        <span className="font-medium">{financeProfile?.residualValue != null ? formatNumber(financeProfile.residualValue, { minimumFractionDigits: 2 }) : undefined}</span>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-3">Estado del Cronograma</h4>
+                    <h4 className="font-medium mb-3">{t('finance.summary.scheduleStatus')}</h4>
                     {/* This would need a separate query to get counts */}
                     <p className="text-sm text-muted-foreground">
-                      Usa la pestaña "Cronograma" para ver el estado detallado de cada período.
+                      {t('finance.summary.scheduleStatusHint')}
                     </p>
                   </div>
                 </div>
@@ -190,9 +194,9 @@ export function FinanzasTab({ assetId, assetState, onAssetStateChange }: Finanza
             ) : (
               <div className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="font-medium text-muted-foreground">Sin perfil financiero configurado</h3>
+                <h3 className="font-medium text-muted-foreground">{t('finance.empty.noFinanceProfileConfiguredTitle')}</h3>
                 <p className="text-sm text-muted-foreground/70 mt-1">
-                  Ve a la pestaña "Perfil Financiero" para crear la configuración.
+                  {t('finance.empty.noFinanceProfileSummaryHint')}
                 </p>
               </div>
             )}

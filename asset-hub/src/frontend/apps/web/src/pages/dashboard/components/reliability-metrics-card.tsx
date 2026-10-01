@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Activity, Clock, Wrench, Timer } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { analyticsService } from '@/services/analytics.service'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -41,6 +42,7 @@ function MetricTile({
 }
 
 export function ReliabilityMetricsCard({ assetId = 'global' }: ReliabilityMetricsCardProps) {
+  const { t } = useTranslation('dashboard')
   const { data, isLoading } = useQuery({
     queryKey: ['analytics', 'reliability', assetId],
     queryFn: () => analyticsService.getReliability(assetId),
@@ -72,34 +74,34 @@ export function ReliabilityMetricsCard({ assetId = 'global' }: ReliabilityMetric
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="h-4 w-4" />
-          Confiabilidad
+          {t('metrics.title')}
         </CardTitle>
         <CardDescription>
-          {data?.scope === 'asset' ? 'Métricas del activo' : 'Métricas del tenant'} · {data?.correctiveOrderCount ?? 0}{' '}
-          órdenes correctivas
+          {data?.scope === 'asset' ? t('metrics.scopeAsset') : t('metrics.scopeTenant')} ·{' '}
+          {t('metrics.correctiveOrders', { count: data?.correctiveOrderCount ?? 0 })}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {noData ? (
-          <p className="text-sm text-muted-foreground">{data?.mtbfMessage ?? 'No hay datos suficientes.'}</p>
+          <p className="text-sm text-muted-foreground">{data?.mtbfMessage ?? t('metrics.noData')}</p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricTile
               label="MTBF"
               value={formatHours(data?.mtbfHours)}
-              hint={hasMtbf ? 'Tiempo medio entre fallas' : data?.mtbfMessage}
+              hint={hasMtbf ? t('metrics.mtbfHint') : data?.mtbfMessage}
               icon={Timer}
             />
             <MetricTile
-              label="MTTR Restauración"
+              label={t('metrics.mttrRestoreLabel')}
               value={formatHours(data?.mttrRestoreHours)}
-              hint={hasMttrRestore ? 'De falla a completado' : data?.mttrMessage}
+              hint={hasMttrRestore ? t('metrics.mttrRestoreHint') : data?.mttrMessage}
               icon={Clock}
             />
             <MetricTile
-              label="MTTR Reparación"
+              label={t('metrics.mttrRepairLabel')}
               value={formatHours(data?.mttrRepairHours)}
-              hint={hasMttrRepair ? 'De inicio de trabajo a completado' : data?.mttrMessage}
+              hint={hasMttrRepair ? t('metrics.mttrRepairHint') : data?.mttrMessage}
               icon={Wrench}
             />
           </div>

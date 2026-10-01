@@ -59,6 +59,8 @@ import { rolesService } from '@/services/roles.service'
 import type { RoleSummary } from '@/services/roles.service'
 import { handleServerError } from '@/lib/handle-server-error'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useFormat } from '@/lib/format'
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsUsers() {
   const queryClient = useQueryClient()
@@ -66,6 +68,9 @@ export default function SettingsUsers() {
   const canRead = can('users:read')
   const canManage = can('users:manage')
   const canInvite = can('user:invite')
+  const { t } = useTranslation('settings')
+  const { t: tCommon } = useTranslation('common')
+  const { formatDate, formatDateTime } = useFormat()
 
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -151,7 +156,7 @@ export default function SettingsUsers() {
       }
     },
     onSuccess: () => {
-      toast.success(editingUser ? 'Usuario actualizado' : 'Usuario creado')
+      toast.success(editingUser ? t('users.toast.updated') : t('users.toast.created'))
       setUserModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
@@ -161,7 +166,7 @@ export default function SettingsUsers() {
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => userService.deactivateUser(id),
     onSuccess: () => {
-      toast.success('Usuario desactivado')
+      toast.success(t('users.toast.deactivated'))
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => handleServerError({ error }),
@@ -170,7 +175,7 @@ export default function SettingsUsers() {
   const activateMutation = useMutation({
     mutationFn: (id: string) => userService.activateUser(id),
     onSuccess: () => {
-      toast.success('Usuario reactivado')
+      toast.success(t('users.toast.reactivated'))
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => handleServerError({ error }),
@@ -184,9 +189,9 @@ export default function SettingsUsers() {
       const link = `${window.location.origin}/accept-invitation?token=${result.token}`
       navigator.clipboard
         .writeText(link)
-        .then(() => toast.success(`Invitación creada. Link copiado al portapapeles`))
+        .then(() => toast.success(t('users.toast.invitationCreatedLinkCopied')))
         .catch(() =>
-          toast.success('Invitación creada', { description: link })
+          toast.success(t('users.toast.invitationCreated'), { description: link })
         )
       setInviteOpen(false)
       setInviteEmail('')
@@ -202,8 +207,8 @@ export default function SettingsUsers() {
       const link = `${window.location.origin}/accept-invitation?token=${result.token}`
       navigator.clipboard
         .writeText(link)
-        .then(() => toast.success('Invitación reenviada. Link nuevo copiado al portapapeles'))
-        .catch(() => toast.success('Invitación reenviada', { description: link }))
+        .then(() => toast.success(t('users.toast.invitationResentLinkCopied')))
+        .catch(() => toast.success(t('users.toast.invitationResent'), { description: link }))
       queryClient.invalidateQueries({ queryKey: ['user-invitations'] })
     },
     onError: (error) => handleServerError({ error }),
@@ -212,7 +217,7 @@ export default function SettingsUsers() {
   const cancelMutation = useMutation({
     mutationFn: (id: string) => userService.cancelInvitation(id),
     onSuccess: () => {
-      toast.success('Invitación cancelada')
+      toast.success(t('users.toast.invitationCancelled'))
       queryClient.invalidateQueries({ queryKey: ['user-invitations'] })
     },
     onError: (error) => handleServerError({ error }),
@@ -245,9 +250,9 @@ export default function SettingsUsers() {
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
           <div className="flex flex-col items-center gap-1 text-center">
             <UserRound className="h-8 w-8 text-muted-foreground" />
-            <h3 className="text-lg font-bold tracking-tight">Sin acceso</h3>
+            <h3 className="text-lg font-bold tracking-tight">{t('users.noAccess.title')}</h3>
             <p className="text-sm text-muted-foreground">
-              No tenés permiso para ver los usuarios (users:read).
+              {t('users.noAccess.body')}
             </p>
           </div>
         </div>
@@ -259,22 +264,22 @@ export default function SettingsUsers() {
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Usuarios</h1>
+          <h1 className="text-2xl font-semibold">{t('users.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Gestión de usuarios del tenant, roles e invitaciones
+            {t('users.pageSubtitle')}
           </p>
         </div>
         <div className="flex gap-2">
           {canInvite && (
             <Button variant="outline" onClick={() => setInviteOpen(true)}>
               <MailPlus className="mr-2 h-4 w-4" />
-              Invitar
+              {t('users.actions.invite')}
             </Button>
           )}
           {canManage && (
             <Button onClick={openCreateUser}>
               <Plus className="mr-2 h-4 w-4" />
-              Nuevo Usuario
+              {t('users.newUser')}
             </Button>
           )}
         </div>
@@ -282,9 +287,9 @@ export default function SettingsUsers() {
 
       <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="users">Usuarios</TabsTrigger>
+          <TabsTrigger value="users">{t('users.title')}</TabsTrigger>
           <TabsTrigger value="invitations">
-            Invitaciones
+            {t('users.tabs.invitations')}
             {pendingInvitations.length > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {pendingInvitations.length}
@@ -296,7 +301,7 @@ export default function SettingsUsers() {
         {/* Tab Usuarios */}
         <TabsContent value="users" className="flex flex-col gap-4">
           <Input
-            placeholder="Buscar por nombre o email..."
+            placeholder={t('users.searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -315,11 +320,11 @@ export default function SettingsUsers() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Usuario</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Roles</TableHead>
-                      <TableHead>Estado</TableHead>
-                      {canManage && <TableHead className="w-40">Acciones</TableHead>}
+                      <TableHead>{tCommon('labels.user')}</TableHead>
+                      <TableHead>{tCommon('labels.email')}</TableHead>
+                      <TableHead>{t('roles.title')}</TableHead>
+                      <TableHead>{tCommon('labels.status')}</TableHead>
+                      {canManage && <TableHead className="w-40">{tCommon('labels.actions')}</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -330,7 +335,7 @@ export default function SettingsUsers() {
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {user.roles.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">Sin rol</span>
+                              <span className="text-xs text-muted-foreground">{t('users.table.noRole')}</span>
                             ) : (
                               user.roles.map((r) => (
                                 <Badge key={r.id} variant="secondary" className="gap-1">
@@ -345,12 +350,12 @@ export default function SettingsUsers() {
                           {user.isActive ? (
                             <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                               <CheckCircle2 className="h-3 w-3" />
-                              Activo
+                              {tCommon('status.active')}
                             </Badge>
                           ) : (
                             <Badge variant="destructive" className="gap-1">
                               <XCircle className="h-3 w-3" />
-                              Inactivo
+                              {tCommon('status.inactive')}
                             </Badge>
                           )}
                         </TableCell>
@@ -366,7 +371,7 @@ export default function SettingsUsers() {
                                   size="sm"
                                   disabled={deactivateMutation.isPending}
                                   onClick={() => {
-                                    if (confirm(`¿Desactivar a "${user.fullName}"? No podrá iniciar sesión.`)) {
+                                    if (confirm(t('users.confirmDeactivate', { name: user.fullName }))) {
                                       deactivateMutation.mutate(user.id)
                                     }
                                   }}
@@ -402,7 +407,7 @@ export default function SettingsUsers() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Anterior
+                {tCommon('pagination.previous')}
               </Button>
               <span className="text-sm text-muted-foreground">
                 {page} / {totalPages}
@@ -413,7 +418,7 @@ export default function SettingsUsers() {
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Siguiente
+                {tCommon('pagination.next')}
               </Button>
             </div>
           )}
@@ -423,27 +428,27 @@ export default function SettingsUsers() {
         <TabsContent value="invitations" className="flex flex-col gap-4">
           <Card>
             <CardHeader className="border-b">
-              <CardTitle>Pendientes</CardTitle>
+              <CardTitle>{t('users.invitations.pendingTitle')}</CardTitle>
               <CardDescription>
-                El invitado define su contraseña al aceptar; el link expira en 72hs
+                {t('users.invitations.pendingDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Expira</TableHead>
-                    <TableHead>Estado</TableHead>
-                    {canInvite && <TableHead className="w-32">Acciones</TableHead>}
+                    <TableHead>{tCommon('labels.email')}</TableHead>
+                    <TableHead>{tCommon('labels.role')}</TableHead>
+                    <TableHead>{t('users.table.headers.expires')}</TableHead>
+                    <TableHead>{tCommon('labels.status')}</TableHead>
+                    {canInvite && <TableHead className="w-32">{tCommon('labels.actions')}</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingInvitations.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
-                        No hay invitaciones pendientes
+                        {t('users.invitations.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -456,15 +461,15 @@ export default function SettingsUsers() {
                             <Badge variant="secondary">{inv.roleName}</Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {new Date(inv.expiresAt).toLocaleString()}
+                            {formatDateTime(inv.expiresAt)}
                           </TableCell>
                           <TableCell>
                             {expired ? (
-                              <Badge variant="destructive">Expirada</Badge>
+                              <Badge variant="destructive">{t('users.invitations.expired')}</Badge>
                             ) : (
                               <Badge variant="outline" className="gap-1">
                                 <Link2 className="h-3 w-3" />
-                                Pendiente
+                                {tCommon('status.pending')}
                               </Badge>
                             )}
                           </TableCell>
@@ -474,7 +479,7 @@ export default function SettingsUsers() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  title="Reenviar (renueva el link)"
+                                  title={t('users.invitations.resendTitle')}
                                   disabled={resendMutation.isPending}
                                   onClick={() => resendMutation.mutate(inv.id)}
                                 >
@@ -485,7 +490,7 @@ export default function SettingsUsers() {
                                   size="sm"
                                   disabled={cancelMutation.isPending}
                                   onClick={() => {
-                                    if (confirm(`¿Cancelar la invitación a "${inv.email}"?`)) {
+                                    if (confirm(t('users.confirmCancelInvitation', { email: inv.email }))) {
                                       cancelMutation.mutate(inv.id)
                                     }
                                   }}
@@ -507,16 +512,16 @@ export default function SettingsUsers() {
           {historyInvitations.length > 0 && (
             <Card>
               <CardHeader className="border-b">
-                <CardTitle>Historial</CardTitle>
+                <CardTitle>{t('users.invitations.historyTitle')}</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead>Creada</TableHead>
-                      <TableHead>Estado</TableHead>
+                      <TableHead>{tCommon('labels.email')}</TableHead>
+                      <TableHead>{tCommon('labels.role')}</TableHead>
+                      <TableHead>{t('users.table.headers.created')}</TableHead>
+                      <TableHead>{tCommon('labels.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -527,13 +532,13 @@ export default function SettingsUsers() {
                           <Badge variant="secondary">{inv.roleName}</Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(inv.createdAt).toLocaleDateString()}
+                          {formatDate(inv.createdAt)}
                         </TableCell>
                         <TableCell>
                           {inv.acceptedAt ? (
-                            <Badge className="bg-emerald-100 text-emerald-700">Aceptada</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700">{t('users.invitations.accepted')}</Badge>
                           ) : (
-                            <Badge variant="outline">Cancelada</Badge>
+                            <Badge variant="outline">{t('users.invitations.cancelled')}</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -551,53 +556,53 @@ export default function SettingsUsers() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingUser ? `Editar — ${editingUser.fullName}` : 'Nuevo usuario'}
+              {editingUser ? t('users.dialog.editTitle', { name: editingUser.fullName }) : t('users.dialog.newTitle')}
             </DialogTitle>
             <DialogDescription>
               {editingUser
-                ? 'Actualizá el nombre, estado y roles del usuario.'
-                : 'Creá el usuario con contraseña inicial y roles.'}
+                ? t('users.dialog.editDescription')
+                : t('users.dialog.createDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="user-name">Nombre completo</Label>
+              <Label htmlFor="user-name">{t('form.fullName')}</Label>
               <Input
                 id="user-name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ana García"
+                placeholder={t('users.dialog.namePlaceholder')}
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="user-email">Email</Label>
+              <Label htmlFor="user-email">{tCommon('labels.email')}</Label>
               <Input
                 id="user-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={!!editingUser}
-                placeholder="ana@empresa.com"
+                placeholder={t('users.dialog.emailPlaceholder')}
               />
             </div>
 
             {!editingUser && (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="user-password">Contraseña inicial</Label>
+                <Label htmlFor="user-password">{t('users.dialog.passwordLabel')}</Label>
                 <Input
                   id="user-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={t('users.dialog.passwordPlaceholder')}
                 />
               </div>
             )}
 
             <div className="flex flex-col gap-2">
-              <Label>Roles</Label>
+              <Label>{t('roles.title')}</Label>
               <div className="flex flex-wrap gap-2">
                 {(roles ?? []).map((role: RoleSummary) => (
                   <label
@@ -618,9 +623,9 @@ export default function SettingsUsers() {
 
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Usuario activo</span>
+                <span className="text-sm font-medium">{t('users.dialog.activeUser')}</span>
                 <span className="text-xs text-muted-foreground">
-                  Los usuarios inactivos no pueden iniciar sesión
+                  {t('users.dialog.inactiveHint')}
                 </span>
               </div>
               <Switch checked={isActive} onCheckedChange={setIsActive} />
@@ -633,7 +638,7 @@ export default function SettingsUsers() {
               onClick={() => setUserModalOpen(false)}
               disabled={saveUserMutation.isPending}
             >
-              Cancelar
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               onClick={() => saveUserMutation.mutate()}
@@ -646,7 +651,7 @@ export default function SettingsUsers() {
               {saveUserMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {editingUser ? 'Guardar cambios' : 'Crear usuario'}
+              {editingUser ? tCommon('actions.saveChanges') : t('users.dialog.createUser')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -656,30 +661,29 @@ export default function SettingsUsers() {
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Invitar usuario</DialogTitle>
+            <DialogTitle>{t('users.invite')}</DialogTitle>
             <DialogDescription>
-              Se genera un link de invitación (72hs de validez) para que el
-              invitado defina su contraseña. Copialo y compartilo.
+              {t('users.inviteDialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="invite-email">Email del invitado</Label>
+              <Label htmlFor="invite-email">{t('users.inviteDialog.emailLabel')}</Label>
               <Input
                 id="invite-email"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="companero@empresa.com"
+                placeholder={t('users.inviteDialog.emailPlaceholder')}
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Rol al aceptar</Label>
+              <Label>{t('users.inviteDialog.roleLabel')}</Label>
               <Select value={inviteRoleId} onValueChange={setInviteRoleId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Elegir rol..." />
+                  <SelectValue placeholder={t('users.inviteDialog.rolePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {(roles ?? []).map((role: RoleSummary) => (
@@ -698,7 +702,7 @@ export default function SettingsUsers() {
               onClick={() => setInviteOpen(false)}
               disabled={inviteMutation.isPending}
             >
-              Cancelar
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               onClick={() => inviteMutation.mutate()}
@@ -713,7 +717,7 @@ export default function SettingsUsers() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               <Copy className="mr-2 h-4 w-4" />
-              Crear y copiar link
+              {t('users.inviteDialog.createAndCopy')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,0 +1,92 @@
+{
+  "employees": {
+    "title": "Employees",
+    "description": "Manage maintenance and operations staff.",
+    "searchPlaceholder": "Search by name or email...",
+    "tabs": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "deactivate": "Deactivate",
+    "dialog": {
+      "deactivateTitle": "Deactivate employee?",
+      "deactivateBody": "{{firstName}} {{lastName}} will be deactivated. They will not be able to be assigned to new tasks."
+    },
+    "empty": "No registered employees.",
+    "form": {
+      "editTitle": "Edit Employee",
+      "newTitle": "New Employee",
+      "editDescription": "Update the employee's details.",
+      "newDescription": "Add a new member of the work team.",
+      "accessCreated": "System access created",
+      "tempPasswordHint": "Share this temporary password with {{firstName}} {{lastName}}. They will have to change it when signing in.",
+      "done": "Done",
+      "personalInfo": "Personal information",
+      "firstNamePlaceholder": "John",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Doe",
+      "emailPlaceholder": "john.doe@company.com",
+      "contact": "Contact",
+      "roleAndPermissions": "Role and permissions",
+      "jobTitle": "Job Title",
+      "selectJobPlaceholder": "Select the employee's position...",
+      "noPositions": "No positions available. Create the \"employee-role\" catalog in the Catalogs module.",
+      "createAccessLabel": "Grant system access?",
+      "createAccessHint": "A user will be created with this email, a temporary password, and the system role you choose.",
+      "systemRole": "System Role",
+      "selectSystemRolePlaceholder": "Select a system role...",
+      "noSystemRoles": "No system roles configured. Create roles in Settings > Roles.",
+      "linkedAccessHint": "This employee has linked system access; changes to their first name, last name, and email will sync to their user.",
+      "saving": "Saving...",
+      "createEmployee": "Create Employee"
+    }
+  },
+  "teams": {
+    "title": "Teams",
+    "description": "Organize employees into work teams for collective assignment.",
+    "searchPlaceholder": "Search by name...",
+    "table": {
+      "headers": {
+        "members": "Members",
+        "lead": "Lead"
+      }
+    },
+    "dialog": {
+      "deleteTitle": "Delete team?",
+      "deleteBody": "The team \"{{name}}\" will be deleted. Employees will not be affected."
+    },
+    "empty": "No registered teams.",
+    "form": {
+      "editTitle": "Edit Team",
+      "newTitle": "New Team",
+      "sheetDescription": "Update the team details and its members.",
+      "infoSection": "Team information",
+      "namePlaceholder": "e.g. Preventive Maintenance",
+      "descriptionPlaceholder": "Brief description (optional)",
+      "membersSection": "Members",
+      "leader": "Leader",
+      "makeLeader": "Make leader",
+      "noEmployees": "No employees available",
+      "createTeam": "Create Team"
+    }
+  },
+  "empty": {
+    "createFirst": "Create the first one"
+  },
+  "toast": {
+    "employeeDeactivated": "Employee deactivated",
+    "deactivateEmployeeError": "Error deactivating employee",
+    "employeeCreated": "Employee created successfully",
+    "createEmployeeError": "Error creating employee",
+    "employeeUpdated": "Employee updated",
+    "updateEmployeeError": "Error updating employee",
+    "passwordCopied": "Password copied to clipboard",
+    "passwordCopyError": "Could not copy the password",
+    "teamDeleted": "Team deleted",
+    "deleteTeamError": "Error deleting team",
+    "teamCreated": "Team created",
+    "createTeamError": "Error creating team",
+    "teamUpdated": "Team updated",
+    "updateTeamError": "Error updating team"
+  }
+}

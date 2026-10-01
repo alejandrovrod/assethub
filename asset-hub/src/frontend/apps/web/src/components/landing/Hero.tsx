@@ -1,31 +1,9 @@
 import { ArrowRight, Box, Activity, Users, Settings } from "lucide-react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 
-const t = {
-  en: {
-    badge: "AssetHub 2.0 is now live",
-    title1: "Intelligent Asset Management for",
-    title2: "Modern Enterprises",
-    subtitle: "Centralize your equipment, track maintenance schedules, and reduce downtime with our powerful multi-tenant platform.",
-    cta: "Start for free",
-    pricing: "View Pricing",
-    assets: "Assets",
-    telemetry: "Live Telemetry Data"
-  },
-  es: {
-    badge: "AssetHub 2.0 ya está disponible",
-    title1: "Gestión Inteligente de Activos para",
-    title2: "Empresas Modernas",
-    subtitle: "Centralizá tus equipos, controlá mantenimientos y reducí los tiempos muertos con nuestra potente plataforma multi-tenant.",
-    cta: "Empezar gratis",
-    pricing: "Ver Precios",
-    assets: "Activos",
-    telemetry: "Datos de Telemetría en Vivo"
-  }
-};
-
-export default function Hero({ lang = "es" }: { lang?: "en" | "es" }) {
-  const content = t[lang];
+export default function Hero({ lang: _lang = "es" }: { lang?: "en" | "es" }) {
+  const { t } = useTranslation('landing');
 
   return (
     <div className="relative overflow-hidden bg-background pt-[120px] pb-[80px]">
@@ -38,18 +16,18 @@ export default function Hero({ lang = "es" }: { lang?: "en" | "es" }) {
         <div className="text-center max-w-4xl mx-auto space-y-8">
           <div className="inline-flex items-center rounded-full border bg-background/50 px-3 py-1 text-sm font-medium backdrop-blur-md">
             <span className="flex h-2 w-2 rounded-full bg-primary mr-2"></span>
-            {content.badge}
+            {t('heroBlock.badge')}
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
-            {content.title1} <br/>
+            {t('heroBlock.title1')} <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">
-              {content.title2}
+              {t('heroBlock.title2')}
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed">
-            {content.subtitle}
+            {t('heroBlock.subtitle')}
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -57,14 +35,14 @@ export default function Hero({ lang = "es" }: { lang?: "en" | "es" }) {
               to="/signup"
               className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3.5 text-sm font-medium text-primary-foreground shadow transition-all hover:bg-primary/90 hover:scale-105"
             >
-              {content.cta}
+              {t('heroBlock.cta')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
             <a
               href="#pricing"
               className="inline-flex items-center justify-center rounded-full border bg-background/50 backdrop-blur-sm px-8 py-3.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              {content.pricing}
+              {t('heroBlock.pricing')}
             </a>
           </div>
         </div>
@@ -85,7 +63,7 @@ export default function Hero({ lang = "es" }: { lang?: "en" | "es" }) {
                 
                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
                   <div className="col-span-1 border rounded-xl p-4 bg-background/50 shadow-sm flex flex-col gap-4">
-                    <div className="flex items-center gap-2 font-medium"><Box className="h-4 w-4 text-primary" /> Assets</div>
+                    <div className="flex items-center gap-2 font-medium"><Box className="h-4 w-4 text-primary" /> {t('heroBlock.assets')}</div>
                     <div className="h-10 rounded bg-muted/50 w-full animate-pulse"></div>
                     <div className="h-10 rounded bg-muted/50 w-3/4 animate-pulse"></div>
                     <div className="h-10 rounded bg-muted/50 w-5/6 animate-pulse"></div>
@@ -108,7 +86,7 @@ export default function Hero({ lang = "es" }: { lang?: "en" | "es" }) {
                      <div className="row-span-2 border rounded-xl p-4 bg-background/50 shadow-sm flex flex-col">
                         <div className="h-6 w-32 bg-muted/80 rounded mb-4"></div>
                         <div className="flex-1 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 flex items-center justify-center">
-                           <p className="text-muted-foreground text-sm font-medium flex items-center gap-2"><Activity className="h-4 w-4" /> Live Telemetry Data</p>
+                           <p className="text-muted-foreground text-sm font-medium flex items-center gap-2"><Activity className="h-4 w-4" /> {t('heroBlock.telemetry')}</p>
                         </div>
                      </div>
                   </div>

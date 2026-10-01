@@ -17,11 +17,14 @@ import { useAuthStore } from '@/store/auth.store'
 import { usePermissions } from '@/hooks/use-profile'
 import { handleServerError } from '@/lib/handle-server-error'
 import { getMediaUrl } from '@/lib/api-client'
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsAccount() {
   const queryClient = useQueryClient()
   const { can } = usePermissions()
   const { userProfile, setUserProfile } = useAuthStore()
+  const { t } = useTranslation('settings')
+  const { t: tCommon } = useTranslation('common')
 
   const canManageProfile = can('users:manage') || can('profile:update')
   const canManageMfa = can('mfa:configure')
@@ -67,7 +70,7 @@ export default function SettingsAccount() {
       authService.updateProfile(data),
     onSuccess: (data) => {
       setUserProfile(data)
-      toast.success('Perfil actualizado correctamente')
+      toast.success(t('account.toasts.profileUpdated'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -79,7 +82,7 @@ export default function SettingsAccount() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      toast.success('Contraseña cambiada correctamente')
+      toast.success(t('account.toasts.passwordChanged'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -91,7 +94,7 @@ export default function SettingsAccount() {
       setAvatarPreview(null)
       setAvatarFile(null)
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Avatar actualizado correctamente')
+      toast.success(t('account.toasts.avatarUpdated'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -100,7 +103,7 @@ export default function SettingsAccount() {
     mutationFn: () => authService.setupMfa(),
     onSuccess: (data) => {
       setMfaSetupData(data)
-      toast.success('Escanea el código QR con tu app de autenticación')
+      toast.success(t('account.toasts.scanQr'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -111,7 +114,7 @@ export default function SettingsAccount() {
       setMfaVerificationCode('')
       setMfaSetupData(null)
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('MFA habilitado correctamente')
+      toast.success(t('account.toasts.mfaEnabled'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -121,7 +124,7 @@ export default function SettingsAccount() {
     onSuccess: () => {
       setMfaDisablePassword('')
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('MFA deshabilitado correctamente')
+      toast.success(t('account.toasts.mfaDisabled'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -138,7 +141,7 @@ export default function SettingsAccount() {
     mutationFn: () => authService.regenerateBackupCodes(),
     onSuccess: (data) => {
       setBackupCodes(data)
-      toast.success('Códigos de respaldo regenerados')
+      toast.success(t('account.toasts.backupCodesRegenerated'))
     },
     onError: (error) => handleServerError({ error }),
   })
@@ -147,11 +150,11 @@ export default function SettingsAccount() {
     const file = e.target.files?.[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
-        toast.error('El archivo debe ser una imagen')
+        toast.error(t('account.toasts.avatarMustBeImage'))
         return
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('La imagen no debe superar 5MB')
+        toast.error(t('account.toasts.avatarTooLarge'))
         return
       }
       setAvatarFile(file)
@@ -177,7 +180,7 @@ export default function SettingsAccount() {
         setUserProfile({ ...userProfile, avatarUrl: '' })
       }
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Avatar eliminado')
+      toast.success(t('account.toasts.avatarRemoved'))
     } catch (error) {
       handleServerError({ error })
     }
@@ -185,7 +188,7 @@ export default function SettingsAccount() {
 
   const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text)
-    toast.success('Copiado al portapapeles')
+    toast.success(t('account.toasts.copied'))
   }, [])
 
   const saveProfile = () => {
@@ -198,11 +201,11 @@ export default function SettingsAccount() {
 
   const handleChangePassword = () => {
     if (newPassword !== confirmPassword) {
-      toast.error('Las contraseñas no coinciden')
+      toast.error(tCommon('validation.mustMatch'))
       return
     }
     if (newPassword.length < 12) {
-      toast.error('La contraseña debe tener al menos 12 caracteres')
+      toast.error(tCommon('validation.minLength', { min: 12 }))
       return
     }
     changePasswordMutation.mutate({
@@ -220,9 +223,9 @@ export default function SettingsAccount() {
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
           <div className="flex flex-col items-center gap-1 text-center">
             <Shield className="h-8 w-8 text-muted-foreground" />
-            <h3 className="text-lg font-bold tracking-tight">Sin acceso</h3>
+            <h3 className="text-lg font-bold tracking-tight">{t('account.noAccess.title')}</h3>
             <p className="text-sm text-muted-foreground">
-              No tenés permiso para acceder a esta página.
+              {t('account.noAccess.body')}
             </p>
           </div>
         </div>
@@ -234,9 +237,9 @@ export default function SettingsAccount() {
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Cuenta y Perfil</h1>
+          <h1 className="text-2xl font-semibold">{t('account.pageTitle')}</h1>
           <p className="text-sm text-muted-foreground">
-            Gestioná tu información personal, seguridad y preferencias
+            {t('account.pageSubtitle')}
           </p>
         </div>
       </div>
@@ -245,27 +248,27 @@ export default function SettingsAccount() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" />
-            Perfil
+            {t('account.profile')}
           </TabsTrigger>
           <TabsTrigger value="security">
             <Shield className="mr-2 h-4 w-4" />
-            Seguridad
+            {t('account.security')}
           </TabsTrigger>
           <TabsTrigger value="mfa" disabled={!canManageMfa}>
             <Key className="mr-2 h-4 w-4" />
-            MFA
+            {t('account.tabs.mfa')}
           </TabsTrigger>
           <TabsTrigger value="employee">
             <Image className="mr-2 h-4 w-4" />
-            Empleado vinculado
+            {t('account.tabs.linkedEmployee')}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="flex flex-1 flex-col gap-6 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Información Personal</CardTitle>
-              <CardDescription>Actualizá tu nombre, email y preferencias</CardDescription>
+              <CardTitle>{t('account.profileCard.title')}</CardTitle>
+              <CardDescription>{t('account.profileCard.description')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex items-center gap-6">
@@ -291,18 +294,18 @@ export default function SettingsAccount() {
                   </label>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground">PNG, JPG hasta 5MB</p>
+                  <p className="text-sm text-muted-foreground">{t('account.avatar.hint')}</p>
                   <div className="flex gap-2">
                     {avatarFile && (
                       <Button variant="default" onClick={handleUploadAvatar} disabled={uploadAvatarMutation.isPending}>
                         <Loader2 className={`mr-2 h-4 w-4 ${uploadAvatarMutation.isPending ? 'animate-spin' : ''}`} />
-                        Subir
+                        {tCommon('actions.upload')}
                       </Button>
                     )}
                     {avatarUrl && (
                       <Button variant="outline" onClick={handleRemoveAvatar}>
                         <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                        Eliminar
+                        {tCommon('actions.delete')}
                       </Button>
                     )}
                   </div>
@@ -313,43 +316,43 @@ export default function SettingsAccount() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="fullName">Nombre completo</Label>
+                  <Label htmlFor="fullName">{t('form.fullName')}</Label>
                   <Input
                     id="fullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Tu nombre completo"
+                    placeholder={t('account.form.fullNamePlaceholder')}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{tCommon('labels.email')}</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
+                    placeholder={t('account.form.emailPlaceholder')}
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="preferredLocale">Idioma preferido</Label>
+                <Label htmlFor="preferredLocale">{t('account.form.preferredLanguage')}</Label>
                 <select
                   id="preferredLocale"
                   value={preferredLocale}
                   onChange={(e) => setPreferredLocale(e.target.value)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="es">Español</option>
-                  <option value="en">English</option>
-                  <option value="pt">Português</option>
+                  <option value="es">{tCommon('language.es')}</option>
+                  <option value="en">{tCommon('language.en')}</option>
+                  <option value="pt">{t('account.form.languagePt')}</option>
                 </select>
               </div>
 
               <Button onClick={saveProfile} disabled={updateProfileMutation.isPending}>
                 <Loader2 className={`mr-2 h-4 w-4 ${updateProfileMutation.isPending ? 'animate-spin' : ''}`} />
-                Guardar cambios
+                {tCommon('actions.saveChanges')}
               </Button>
             </CardContent>
           </Card>
@@ -358,12 +361,12 @@ export default function SettingsAccount() {
         <TabsContent value="security" className="flex flex-1 flex-col gap-6 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Cambiar Contraseña</CardTitle>
-              <CardDescription>Tu contraseña debe tener al menos 12 caracteres</CardDescription>
+              <CardTitle>{t('account.changePassword')}</CardTitle>
+              <CardDescription>{t('account.password.description')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="currentPassword">Contraseña actual</Label>
+                <Label htmlFor="currentPassword">{t('account.password.current')}</Label>
                 <div className="relative">
                   <Input
                     id="currentPassword"
@@ -383,14 +386,14 @@ export default function SettingsAccount() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="newPassword">Nueva contraseña</Label>
+                <Label htmlFor="newPassword">{t('account.password.new')}</Label>
 <div className="relative">
                       <Input
                         id="newPassword"
                         type={showNewPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Mínimo 12 caracteres"
+                        placeholder={t('account.password.minChars')}
                       />
                       <button
                         type="button"
@@ -407,19 +410,19 @@ export default function SettingsAccount() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                  {newPassword.length < 12 ? 'Mínimo 12 caracteres' : 'Contraseña válida'}
+                  {newPassword.length < 12 ? t('account.password.minChars') : t('account.password.valid')}
                 </p>
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="confirmPassword">Confirmar nueva contraseña</Label>
+                <Label htmlFor="confirmPassword">{t('account.password.confirm')}</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repetí la contraseña"
+                    placeholder={t('account.password.confirmPlaceholder')}
                   />
                   <button
                     type="button"
@@ -433,7 +436,7 @@ export default function SettingsAccount() {
 
               <Button onClick={handleChangePassword} disabled={changePasswordMutation.isPending}>
                 <Loader2 className={`mr-2 h-4 w-4 ${changePasswordMutation.isPending ? 'animate-spin' : ''}`} />
-                Cambiar contraseña
+                {t('account.changePassword')}
               </Button>
             </CardContent>
           </Card>
@@ -443,28 +446,28 @@ export default function SettingsAccount() {
           {!userProfile?.twoFactorEnabled ? (
             <Card>
               <CardHeader>
-                <CardTitle>Autenticación de dos factores (MFA)</CardTitle>
+                <CardTitle>{t('account.mfa.title')}</CardTitle>
                 <CardDescription>
-                  Agregá una capa extra de seguridad usando una app de autenticación (Google Authenticator, Authy, Microsoft Authenticator)
+                  {t('account.mfa.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {mfaSetupData ? (
                   <div className="flex flex-col gap-4">
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-2">Escaneá este código QR con tu app de autenticación</p>
+                      <p className="text-sm text-muted-foreground mb-2">{t('account.mfa.scanQr')}</p>
                       <div className="inline-block p-4 bg-white rounded-lg">
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaSetupData.qrCodeUri)}`}
-                          alt="QR Code MFA"
+                          alt={t('account.mfa.qrAlt')}
                           className="h-48 w-48"
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">Secreto: <code className="text-xs font-mono">{mfaSetupData.secret}</code></p>
+                      <p className="text-xs text-muted-foreground mt-2">{t('account.mfa.secretLabel')} <code className="text-xs font-mono">{mfaSetupData.secret}</code></p>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="mfaCode">Código de 6 dígitos de tu app</Label>
+                      <Label htmlFor="mfaCode">{t('account.mfa.codeLabel')}</Label>
                       <Input
                         id="mfaCode"
                         value={mfaVerificationCode}
@@ -476,7 +479,7 @@ export default function SettingsAccount() {
                     </div>
 
                     <div className="flex flex-col gap-2 p-4 bg-muted rounded-lg">
-                      <p className="font-medium">Códigos de respaldo (guardalos en un lugar seguro)</p>
+                      <p className="font-medium">{t('account.mfa.backupCodesTitle')}</p>
                       <div className="grid gap-1 sm:grid-cols-2">
                         {mfaSetupData.backupCodes.map((code, index) => (
                           <div key={index} className="flex items-center gap-2 p-2 bg-background rounded">
@@ -489,24 +492,24 @@ export default function SettingsAccount() {
                       </div>
                       <Button variant="outline" onClick={() => copyToClipboard(mfaSetupData.backupCodes.join('\n'))}>
                         <Copy className="mr-2 h-4 w-4" />
-                        Copiar todos
+                        {t('account.mfa.copyAll')}
                       </Button>
                     </div>
 
                     <div className="flex gap-2">
                       <Button onClick={() => verifyMfaMutation.mutate(mfaVerificationCode)} disabled={verifyMfaMutation.isPending || mfaVerificationCode.length !== 6}>
                         <Loader2 className={`mr-2 h-4 w-4 ${verifyMfaMutation.isPending ? 'animate-spin' : ''}`} />
-                        Verificar y habilitar MFA
+                        {t('account.mfa.verifyEnable')}
                       </Button>
                       <Button variant="outline" onClick={() => setMfaSetupData(null)}>
-                        Cancelar
+                        {tCommon('actions.cancel')}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <Button onClick={() => setupMfaMutation.mutate()} disabled={setupMfaMutation.isPending}>
                     <Loader2 className={`mr-2 h-4 w-4 ${setupMfaMutation.isPending ? 'animate-spin' : ''}`} />
-                    Configurar MFA
+                    {t('account.mfa.setup')}
                   </Button>
                 )}
               </CardContent>
@@ -514,22 +517,22 @@ export default function SettingsAccount() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>MFA Habilitado</CardTitle>
-                <CardDescription>Tu cuenta está protegida con autenticación de dos factores</CardDescription>
+                <CardTitle>{t('account.mfa.enabledTitle')}</CardTitle>
+                <CardDescription>{t('account.mfa.enabledDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 p-4 bg-green-50 rounded-lg">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                   <div>
-                    <p className="font-medium">Autenticación de dos factores activa</p>
-                    <p className="text-sm text-muted-foreground">Se requiere código TOTP al iniciar sesión</p>
+                    <p className="font-medium">{t('account.mfa.active')}</p>
+                    <p className="text-sm text-muted-foreground">{t('account.mfa.totpRequired')}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <p className="font-medium">Códigos de respaldo</p>
+                  <p className="font-medium">{t('account.mfa.backupCodes')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Usá estos códigos si perdés acceso a tu app de autenticación. Cada código se puede usar una sola vez.
+                    {t('account.mfa.backupCodesHint')}
                   </p>
                   {backupCodes.length > 0 ? (
                     <div className="grid gap-1 sm:grid-cols-2">
@@ -545,13 +548,13 @@ export default function SettingsAccount() {
                   ) : (
                     <Button variant="outline" onClick={() => getBackupCodesMutation.mutate()} disabled={getBackupCodesMutation.isPending}>
                       <Loader2 className={`mr-2 h-4 w-4 ${getBackupCodesMutation.isPending ? 'animate-spin' : ''}`} />
-                      Ver códigos de respaldo
+                      {t('account.mfa.viewBackupCodes')}
                     </Button>
                   )}
                   {backupCodes.length > 0 && (
                     <Button variant="outline" onClick={() => regenerateBackupCodesMutation.mutate()} disabled={regenerateBackupCodesMutation.isPending}>
                       <Loader2 className={`mr-2 h-4 w-4 ${regenerateBackupCodesMutation.isPending ? 'animate-spin' : ''}`} />
-                      Regenerar códigos (invalida los anteriores)
+                      {t('account.mfa.regenerateBackupCodes')}
                     </Button>
                   )}
                 </div>
@@ -559,23 +562,23 @@ export default function SettingsAccount() {
                 <Separator />
 
                 <div className="flex flex-col gap-2">
-                  <p className="font-medium">Deshabilitar MFA</p>
+                  <p className="font-medium">{t('account.mfa.disableTitle')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Requiere tu contraseña actual para confirmar
+                    {t('account.mfa.disableHint')}
                   </p>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="mfaDisablePassword">Contraseña actual</Label>
+                    <Label htmlFor="mfaDisablePassword">{t('account.password.current')}</Label>
                     <Input
                       id="mfaDisablePassword"
                       type="password"
                       value={mfaDisablePassword}
                       onChange={(e) => setMfaDisablePassword(e.target.value)}
-                      placeholder="Tu contraseña actual"
+                      placeholder={t('account.mfa.currentPasswordPlaceholder')}
                     />
                   </div>
                   <Button variant="destructive" onClick={() => disableMfaMutation.mutate(mfaDisablePassword)} disabled={disableMfaMutation.isPending || !mfaDisablePassword}>
                     <Loader2 className={`mr-2 h-4 w-4 ${disableMfaMutation.isPending ? 'animate-spin' : ''}`} />
-                    Deshabilitar MFA
+                    {t('account.mfa.disableTitle')}
                   </Button>
                 </div>
               </CardContent>
@@ -587,8 +590,8 @@ export default function SettingsAccount() {
           {userProfile?.linkedEmployee ? (
             <Card>
               <CardHeader>
-                <CardTitle>Empleado Vinculado</CardTitle>
-                <CardDescription>Tu cuenta de usuario está vinculada a este empleado</CardDescription>
+                <CardTitle>{t('account.employee.title')}</CardTitle>
+                <CardDescription>{t('account.employee.description')}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
@@ -602,21 +605,21 @@ export default function SettingsAccount() {
                       {userProfile.linkedEmployee.firstName} {userProfile.linkedEmployee.lastName}
                     </h3>
                     <p className="text-sm text-muted-foreground">{userProfile.linkedEmployee.email}</p>
-                    <p className="text-sm text-muted-foreground">{userProfile.linkedEmployee.phoneNumber || 'Sin teléfono'}</p>
-                    <Badge variant="secondary" className="mt-2">{userProfile.linkedEmployee.roleLabel || 'Sin rol asignado'}</Badge>
+                    <p className="text-sm text-muted-foreground">{userProfile.linkedEmployee.phoneNumber || t('account.employee.noPhone')}</p>
+                    <Badge variant="secondary" className="mt-2">{userProfile.linkedEmployee.roleLabel || t('account.employee.noRole')}</Badge>
                   </div>
                 </div>
 
                 <Separator />
 
                 <div className="flex flex-col gap-2">
-                  <p className="font-medium">Desvincular empleado</p>
+                  <p className="font-medium">{t('account.employee.unlink')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Esto desvinculará tu cuenta de usuario de este empleado. Podrás volver a vincularla desde la gestión de empleados.
+                    {t('account.employee.unlinkDescription')}
                   </p>
-                  <Button variant="destructive" onClick={() => toast.info('Función de desvinculación por implementar')}>
+                  <Button variant="destructive" onClick={() => toast.info(t('account.employee.unlinkNotImplemented'))}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Desvincular empleado
+                    {t('account.employee.unlink')}
                   </Button>
                 </div>
               </CardContent>
@@ -625,9 +628,9 @@ export default function SettingsAccount() {
             <Card className="flex flex-1 flex-col items-center justify-center">
               <CardContent className="flex flex-col items-center gap-4 text-center">
                 <User className="h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">Sin empleado vinculado</h3>
+                <h3 className="text-lg font-semibold">{t('account.employee.emptyTitle')}</h3>
                 <p className="text-sm text-muted-foreground max-w-xs">
-                  Tu cuenta de usuario no está vinculada a ningún empleado. Un administrador puede vincularte desde la gestión de empleados.
+                  {t('account.employee.emptyDescription')}
                 </p>
               </CardContent>
             </Card>

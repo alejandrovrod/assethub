@@ -4,6 +4,7 @@ import { Loader2, UploadCloud, X, FileIcon } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { LightboxModal } from './image-lightbox'
+import { useTranslation } from 'react-i18next'
 
 export const FileUploadWidget = (props: WidgetProps) => {
   const { id, value, required, disabled, readonly, onChange, schema } = props
@@ -11,6 +12,7 @@ export const FileUploadWidget = (props: WidgetProps) => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { t } = useTranslation('common')
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -41,10 +43,10 @@ export const FileUploadWidget = (props: WidgetProps) => {
         onChange(uploadedUrls[0]); // Only take the first one if not multiple
       }
       
-      toast.success(files.length > 1 ? 'Los archivos se guardaron correctamente.' : 'El archivo se guardó correctamente.');
+      toast.success(files.length > 1 ? t('upload.savedFiles') : t('upload.savedFile'));
     } catch (err: any) {
       console.error('Error uploading file', err);
-      toast.error('Hubo un problema al subir los archivos.');
+      toast.error(t('upload.error'));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -100,10 +102,10 @@ export const FileUploadWidget = (props: WidgetProps) => {
           )}
           <div className="flex items-center gap-1">
             <span className="text-sm font-medium text-foreground">
-              {isUploading ? 'Subiendo...' : (isMultiple && valuesArray.length > 0 ? 'Subir otro archivo' : 'Subir archivo')}
+              {isUploading ? t('upload.uploading') : (isMultiple && valuesArray.length > 0 ? t('upload.uploadAnother') : t('upload.uploadFile'))}
             </span>
             <span className="text-xs text-muted-foreground">
-              {required && valuesArray.length === 0 ? '(Requerido)' : '(Opcional)'}
+              {required && valuesArray.length === 0 ? t('upload.required') : t('upload.optional')}
             </span>
           </div>
         </div>
@@ -123,7 +125,7 @@ export const FileUploadWidget = (props: WidgetProps) => {
                     window.open(url, '_blank');
                   }
                 }}
-                title={url.split('/').pop() || 'Archivo adjunto'}
+                title={url.split('/').pop() || t('upload.attachmentFallback')}
               >
                 {isImage(url) ? (
                   <img src={url} alt="Preview" className="h-full w-full object-cover" />
@@ -140,7 +142,7 @@ export const FileUploadWidget = (props: WidgetProps) => {
                     e.stopPropagation();
                     handleClear(url);
                   }}
-                  title="Eliminar archivo"
+                  title={t('upload.removeFile')}
                 >
                   <X className="h-3 w-3" />
                 </button>

@@ -1,25 +1,43 @@
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, AlertCircle } from 'lucide-react'
-import { maintenanceOrderService, STATE_LABELS, KIND_LABELS } from '@/services/maintenance-order.service'
+import { maintenanceOrderService } from '@/services/maintenance-order.service'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
+const ORDER_STATE_KEYS = {
+  draft: 'ordersWidget.status.draft',
+  approved: 'ordersWidget.status.approved',
+  scheduled: 'ordersWidget.status.scheduled',
+  in_progress: 'ordersWidget.status.inProgress',
+  done: 'ordersWidget.status.done',
+  verified: 'ordersWidget.status.verified',
+  cancelled: 'ordersWidget.status.cancelled',
+  rescheduled: 'ordersWidget.status.rescheduled',
+} as const
 
 interface AssetMaintenanceOrdersWidgetProps {
   assetId: string
 }
 
 export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrdersWidgetProps) {
+  const { t } = useTranslation('maintenance')
   const { data, isLoading } = useQuery({
     queryKey: ['maintenance-orders', 'asset', assetId],
     queryFn: () => maintenanceOrderService.getAll({ assetId, pageSize: 4 }),
   })
 
   const orders = data?.items || []
+
+  const kindLabel = (kind: string) => {
+    if (kind === 'corrective') return t('ordersWidget.kind.corrective')
+    if (kind === 'preventive') return t('ordersWidget.kind.preventive')
+    return kind
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -30,7 +48,7 @@ export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrders
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
           <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
-          <p>No hay órdenes para este activo.</p>
+          <p>{t('empty.assetOrders')}</p>
         </div>
       ) : (
         <>
@@ -47,22 +65,22 @@ export function AssetMaintenanceOrdersWidget({ assetId }: AssetMaintenanceOrders
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <Badge variant="secondary" className="text-[10px] h-4">
-                      {KIND_LABELS[order.kind] || order.kind}
+                      {kindLabel(order.kind)}
                     </Badge>
                     {order.scheduledStart && (
-                      <span>Prog. {format(parseApiDate(order.scheduledStart), 'dd MMM', { locale: es })}</span>
+                      <span>{t('fields.scheduledShort')} {format(parseApiDate(order.scheduledStart), 'dd MMM', { locale: es })}</span>
                     )}
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs shrink-0 capitalize">
-                  {STATE_LABELS[order.state] || order.state}
+                  {ORDER_STATE_KEYS[order.state] ? t(ORDER_STATE_KEYS[order.state]) : order.state}
                 </Badge>
               </Link>
             ))}
           </div>
           <Button variant="ghost" size="sm" asChild className="w-full mt-2">
             <Link to={`/maintenance/orders?assetId=${assetId}`}>
-              Ver todas las órdenes
+              {t('ordersWidget.viewAll')}
             </Link>
           </Button>
         </>

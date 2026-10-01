@@ -31,7 +31,7 @@ public class DeleteEntityTypeCommandHandler : IRequestHandler<DeleteEntityTypeCo
         var usages = await _usageChecker.GetUsageCountAsync(entity.Id);
         if (usages > 0)
         {
-            throw new BusinessEntityTypeInUseException($"No se puede eliminar el tipo de entidad. Está siendo usado por {usages} templates.");
+            throw new BusinessEntityTypeInUseException(usages);
         }
 
         entity.IsActive = false;

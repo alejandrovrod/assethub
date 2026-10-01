@@ -18,12 +18,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   assetId: string
 }
 
 export function AssetMaterialsTable({ assetId }: Props) {
+  const { t } = useTranslation(['assets', 'common'])
   const { can } = usePermissions()
   const canUpdate = can('assets:update')
   const queryClient = useQueryClient()
@@ -41,11 +43,11 @@ export function AssetMaterialsTable({ assetId }: Props) {
     mutationFn: (materialId: string) => assetService.deleteMaterial(assetId, materialId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-materials', assetId] })
-      toast.success('Material eliminado exitosamente')
+      toast.success(t('toast.materialDeleted'))
       setDeleteId(null)
     },
     onError: () => {
-      toast.error('Error al eliminar el material')
+      toast.error(t('toast.materialDeleteError'))
       setDeleteId(null)
     }
   })
@@ -71,11 +73,11 @@ export function AssetMaterialsTable({ assetId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">BOM / Materiales del Activo</h3>
+        <h3 className="text-lg font-medium">{t('materials.tableTitle')}</h3>
         {canUpdate && (
           <Button onClick={handleAdd} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Agregar Repuesto
+            {t('materials.addSparePart')}
           </Button>
         )}
       </div>
@@ -84,12 +86,12 @@ export function AssetMaterialsTable({ assetId }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Repuesto</TableHead>
-              <TableHead className="text-right">Cantidad</TableHead>
-              <TableHead>Unidad</TableHead>
-              <TableHead className="text-center">Criticidad</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+              <TableHead>{t('fields.code')}</TableHead>
+              <TableHead>{t('materials.sparePart')}</TableHead>
+              <TableHead className="text-right">{t('material.quantity')}</TableHead>
+              <TableHead>{t('materials.unit')}</TableHead>
+              <TableHead className="text-center">{t('materials.criticality')}</TableHead>
+              <TableHead className="text-right">{t('table.headers.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,7 +100,7 @@ export function AssetMaterialsTable({ assetId }: Props) {
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <Box className="h-8 w-8 mb-2 opacity-50" />
-                    <p>No hay materiales asignados a este activo.</p>
+                    <p>{t('materials.emptyAssetMaterials')}</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -115,7 +117,7 @@ export function AssetMaterialsTable({ assetId }: Props) {
                   <TableCell className="text-center">
                     {m.isCritical ? (
                       <Badge variant="destructive" className="bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/25">
-                        Crítico
+                        {t('materials.critical')}
                       </Badge>
                     ) : (
                       <span className="text-muted-foreground">-</span>
@@ -152,21 +154,21 @@ export function AssetMaterialsTable({ assetId }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Remover Material
+              {t('dialog.removeMaterialTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que deseas remover este repuesto del BOM de este activo? Esta acción no afectará al catálogo global.
+              {t('dialog.removeMaterialBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Remover
+              {t('materials.remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

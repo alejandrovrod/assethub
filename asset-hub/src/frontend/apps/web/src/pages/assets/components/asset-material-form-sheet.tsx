@@ -16,12 +16,14 @@ import { assetService, AssetMaterialDto } from '@/services/asset.service'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/i18n'
 
 const schema = z.object({
-  catalogItemId: z.string().min(1, 'El material es requerido'),
+  catalogItemId: z.string().min(1, { error: () => i18n.t('assets:validation.materialRequired') }),
   catalogItemLabel: z.string().optional(),
-  quantity: z.coerce.number().positive('La cantidad debe ser mayor a cero'),
-  unitOfMeasure: z.string().min(1, 'La unidad de medida es requerida'),
+  quantity: z.coerce.number().positive({ error: () => i18n.t('assets:validation.quantityPositive') }),
+  unitOfMeasure: z.string().min(1, { error: () => i18n.t('assets:validation.unitRequired') }),
   isCritical: z.boolean().default(false),
   notes: z.string().optional()
 })
@@ -36,6 +38,7 @@ interface Props {
 }
 
 export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialToEdit }: Props) {
+  const { t } = useTranslation(['assets', 'common'])
   const { can } = usePermissions()
   const canUpdate = can('assets:update')
   const queryClient = useQueryClient()
@@ -92,7 +95,7 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-materials', assetId] })
-      toast.success('Material agregado exitosamente')
+      toast.success(t('toast.materialAdded'))
       onOpenChange(false)
     },
     onError: handleServerError
@@ -107,7 +110,7 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-materials', assetId] })
-      toast.success('Material actualizado exitosamente')
+      toast.success(t('toast.materialUpdated'))
       onOpenChange(false)
     },
     onError: handleServerError
@@ -127,9 +130,9 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md w-full">
         <SheetHeader>
-          <SheetTitle>{isEditing ? 'Editar Material' : 'Agregar Material al Activo'}</SheetTitle>
+          <SheetTitle>{isEditing ? t('material.editTitle') : t('material.addTitle')}</SheetTitle>
           <SheetDescription>
-            {isEditing ? 'Modifica las propiedades del material en el BOM.' : 'Selecciona un ítem del catálogo para agregarlo a la lista de materiales (BOM) del activo.'}
+            {isEditing ? t('material.editDescription') : t('material.addDescription')}
           </SheetDescription>
         </SheetHeader>
 
@@ -141,7 +144,7 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
               name="catalogItemId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Repuesto / Material del Catálogo</FormLabel>
+                  <FormLabel>{t('material.catalogLabel')}</FormLabel>
                   <FormControl>
                     <AsyncCombobox<{ id: string; name: string }>
                       minSearchChars={1}
@@ -152,9 +155,9 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
                       }}
                       labelKey="name"
                       valueKey="id"
-                      placeholder="Buscar material..."
-                      searchPlaceholder="Escriba para buscar..."
-                      emptyText="No se encontraron materiales."
+                      placeholder={t('material.searchPlaceholder')}
+                      searchPlaceholder={t('material.searchPrompt')}
+                      emptyText={t('material.noMaterials')}
                       onSelect={(item) => {
                         field.onChange(item.id)
                         form.setValue('catalogItemLabel', item.name)
@@ -169,14 +172,14 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
                           disabled={isEditing}
                           className="w-full justify-between font-normal text-sm"
                         >
-                          {selectedLabel || 'Buscar material...'}
+                          {selectedLabel || t('material.searchPlaceholder')}
                           <span className="ml-2 opacity-50">▼</span>
                         </Button>
                       )}
                     />
                   </FormControl>
                   <FormDescription>
-                    Busca y selecciona un repuesto del catálogo central.
+                    {t('material.catalogHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -189,7 +192,7 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cantidad</FormLabel>
+                    <FormLabel>{t('material.quantity')}</FormLabel>
                     <FormControl>
                       <Input type="number" step="any" min="0" {...field} />
                     </FormControl>
@@ -203,7 +206,7 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
                 name="unitOfMeasure"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Unidad de Medida</FormLabel>
+                    <FormLabel>{t('material.unitOfMeasure')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -225,9 +228,9 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Repuesto Crítico</FormLabel>
+                    <FormLabel>{t('material.criticalPart')}</FormLabel>
                     <FormDescription>
-                      Marca esta casilla si este material es indispensable para el funcionamiento del activo.
+                      {t('material.criticalHint')}
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -239,9 +242,9 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notas Adicionales</FormLabel>
+                  <FormLabel>{t('material.additionalNotes')}</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Observaciones sobre la instalación de este repuesto..." />
+                    <Textarea {...field} placeholder={t('material.notesPlaceholder')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -250,11 +253,11 @@ export function AssetMaterialFormSheet({ assetId, open, onOpenChange, materialTo
 
             <div className="pt-4 flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={isPending || !canUpdate}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar
+                {t('common:actions.save')}
               </Button>
             </div>
           </form>

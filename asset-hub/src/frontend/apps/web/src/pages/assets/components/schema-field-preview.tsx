@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { useTranslation } from 'react-i18next'
 
 export interface SchemaFieldDefinition {
   keyName: string
@@ -18,12 +19,13 @@ interface SchemaFieldPreviewProps {
 }
 
 export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
+  const { t } = useTranslation('assets')
   const options = useMemo(() => {
     if (field.type !== 'enum') return []
     return (field.enumOptions || '').split(',').map((s) => s.trim()).filter(Boolean)
   }, [field.type, field.enumOptions])
 
-  const label = field.title || field.keyName || 'Campo sin nombre'
+  const label = field.title || field.keyName || t('preview.unnamedField')
 
   const renderControl = () => {
     switch (field.type) {
@@ -32,19 +34,19 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
           <div className="flex items-center gap-2">
             <Switch id={`preview-${field.keyName}`} />
             <Label htmlFor={`preview-${field.keyName}`} className="text-sm text-muted-foreground">
-              Sí / No
+              {t('preview.yesNo')}
             </Label>
           </div>
         )
       case 'date':
-        return <Input type="date" placeholder="dd/mm/aaaa" disabled />
+        return <Input type="date" placeholder={t('preview.datePlaceholder')} disabled />
       case 'number':
         return <Input type="number" placeholder="0" disabled />
       case 'enum':
         return (
           <Select disabled>
             <SelectTrigger>
-              <SelectValue placeholder={options.length ? 'Seleccionar...' : 'Sin opciones'} />
+              <SelectValue placeholder={options.length ? t('preview.selectPlaceholder') : t('preview.noOptions')} />
             </SelectTrigger>
             <SelectContent>
               {options.map((opt) => (
@@ -59,10 +61,10 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
         return (
           <Select disabled>
             <SelectTrigger>
-              <SelectValue placeholder={`Seleccionar de ${field.catalogCode || 'Catálogo'}...`} />
+              <SelectValue placeholder={t('preview.selectFromCatalog', { catalog: field.catalogCode || t('preview.catalogFallback') })} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="preview">Vista previa</SelectItem>
+              <SelectItem value="preview">{t('preview.previewLabel')}</SelectItem>
             </SelectContent>
           </Select>
         )
@@ -70,7 +72,7 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
         return (
           <Select disabled>
             <SelectTrigger>
-              <SelectValue placeholder="Buscar empleado..." />
+              <SelectValue placeholder={t('preview.searchEmployee')} />
             </SelectTrigger>
           </Select>
         )
@@ -78,7 +80,7 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
         return (
           <Select disabled>
             <SelectTrigger>
-              <SelectValue placeholder="Buscar equipo..." />
+              <SelectValue placeholder={t('preview.searchTeam')} />
             </SelectTrigger>
           </Select>
         )
@@ -88,7 +90,7 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
         return <Input type="file" multiple disabled />
       case 'string':
       default:
-        return <Input placeholder="Texto libre" disabled />
+        return <Input placeholder={t('preview.freeText')} disabled />
     }
   }
 
@@ -97,7 +99,7 @@ export function SchemaFieldPreview({ field }: SchemaFieldPreviewProps) {
       <div className="flex items-center justify-between mb-2">
         <Label className="text-sm font-medium">{label}</Label>
         {field.required && (
-          <span className="text-xs text-destructive font-medium">Obligatorio</span>
+          <span className="text-xs text-destructive font-medium">{t('preview.required')}</span>
         )}
       </div>
       {renderControl()}

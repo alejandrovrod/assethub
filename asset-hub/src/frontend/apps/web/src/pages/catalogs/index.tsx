@@ -19,9 +19,11 @@ import { CatalogForm, type CatalogFormValues } from './components/catalog-form'
 import { CatalogItemForm, type CatalogItemFormValues } from './components/catalog-item-form'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export default function CatalogsPage() {
   const { can } = usePermissions()
+  const { t } = useTranslation(['catalogs', 'common'])
   const canCreateCatalog = can('catalogs:create')
   const canUpdateCatalog = can('catalogs:update')
   const canCreateItem = can('catalog-items:create')
@@ -72,9 +74,9 @@ export default function CatalogsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalogs'] })
       setIsCatalogDialogOpen(false)
-      toast.success('Catálogo creado exitosamente')
+      toast.success(t('toast.catalogCreated'))
     },
-    onError: () => toast.error('Error al crear el catálogo'),
+    onError: () => toast.error(t('toast.createCatalogError')),
   })
 
   const updateCatalogMutation = useMutation({
@@ -82,9 +84,9 @@ export default function CatalogsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalogs'] })
       setIsCatalogDialogOpen(false)
-      toast.success('Catálogo actualizado exitosamente')
+      toast.success(t('toast.catalogUpdated'))
     },
-    onError: () => toast.error('Error al actualizar el catálogo'),
+    onError: () => toast.error(t('toast.updateCatalogError')),
   })
 
   const createItemMutation = useMutation({
@@ -92,9 +94,9 @@ export default function CatalogsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalogItems', selectedCatalog?.code] })
       setIsItemDialogOpen(false)
-      toast.success('Elemento creado exitosamente')
+      toast.success(t('toast.itemCreated'))
     },
-    onError: () => toast.error('Error al crear el elemento'),
+    onError: () => toast.error(t('toast.createItemError')),
   })
 
   const updateItemMutation = useMutation({
@@ -103,16 +105,16 @@ export default function CatalogsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalogItems', selectedCatalog?.code] })
       setIsItemDialogOpen(false)
-      toast.success('Elemento actualizado exitosamente')
+      toast.success(t('toast.itemUpdated'))
     },
-    onError: () => toast.error('Error al actualizar el elemento'),
+    onError: () => toast.error(t('toast.updateItemError')),
   })
 
   const deleteItemMutation = useMutation({
     mutationFn: (itemCode: string) => catalogService.deleteCatalogItem(selectedCatalog!.code, itemCode),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalogItems', selectedCatalog?.code] })
-      toast.success('Elemento eliminado')
+      toast.success(t('toast.itemDeleted'))
     },
   })
 
@@ -189,9 +191,9 @@ export default function CatalogsPage() {
           <div className="space-y-1">
             <CardTitle className="text-xl flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              Catálogos
+              {t('title')}
             </CardTitle>
-            <CardDescription>Gestioná los catálogos base del sistema.</CardDescription>
+            <CardDescription>{t('description')}</CardDescription>
           </div>
           {canCreateCatalog && (
             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={openNewCatalogDialog}>
@@ -206,7 +208,7 @@ export default function CatalogsPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : catalogs?.length === 0 ? (
-              <div className="text-center p-4 text-muted-foreground">No hay catálogos.</div>
+              <div className="text-center p-4 text-muted-foreground">{t('empty.catalogs')}</div>
             ) : (
               <div className="space-y-1">
                 {catalogs?.map((catalog) => (
@@ -246,12 +248,12 @@ export default function CatalogsPage() {
             <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
               <div>
                 <CardTitle>{selectedCatalog.label}</CardTitle>
-                <CardDescription>Código: {selectedCatalog.code}</CardDescription>
+                <CardDescription>{t('common:labels.code')}: {selectedCatalog.code}</CardDescription>
               </div>
               {canCreateItem && (
                 <Button onClick={openNewItemDialog}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Elemento
+                  {t('newItem')}
                 </Button>
               )}
             </CardHeader>
@@ -263,15 +265,15 @@ export default function CatalogsPage() {
                   </div>
                 ) : catalogItems?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-48 text-center">
-                    <p className="text-muted-foreground mb-4">Este catálogo no tiene elementos.</p>
+                    <p className="text-muted-foreground mb-4">{t('empty.items')}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[100px]">Código</TableHead>
-                        <TableHead>Etiqueta</TableHead>
-                        <TableHead className="w-[100px] text-right">Orden</TableHead>
+                        <TableHead className="w-[100px]">{t('common:labels.code')}</TableHead>
+                        <TableHead>{t('labels.label')}</TableHead>
+                        <TableHead className="w-[100px] text-right">{t('labels.order')}</TableHead>
                         <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -316,17 +318,17 @@ export default function CatalogsPage() {
                 <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
-                      Total: {itemTotalCount} elementos
+                      {t('pagination.totalItems', { count: itemTotalCount })}
                     </span>
                     <Select value={String(itemPageSize)} onValueChange={(v) => setItemPageSize(Number(v))}>
                       <SelectTrigger className="w-[100px] h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="10">10 / pág</SelectItem>
-                        <SelectItem value="20">20 / pág</SelectItem>
-                        <SelectItem value="50">50 / pág</SelectItem>
-                        <SelectItem value="100">100 / pág</SelectItem>
+                        <SelectItem value="10">{t('pagination.perPage', { count: 10 })}</SelectItem>
+                        <SelectItem value="20">{t('pagination.perPage', { count: 20 })}</SelectItem>
+                        <SelectItem value="50">{t('pagination.perPage', { count: 50 })}</SelectItem>
+                        <SelectItem value="100">{t('pagination.perPage', { count: 100 })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -337,10 +339,10 @@ export default function CatalogsPage() {
                       onClick={() => setItemPage(p => Math.max(1, p - 1))}
                       disabled={currentItemPage === 1}
                     >
-                      Anterior
+                      {t('common:pagination.previous')}
                     </Button>
                     <div className="flex items-center text-sm px-2">
-                      Página {currentItemPage} de {itemTotalPages}
+                      {t('common:pagination.page', { page: currentItemPage })} {t('common:pagination.of', { total: itemTotalPages })}
                     </div>
                     <Button
                       variant="outline"
@@ -348,7 +350,7 @@ export default function CatalogsPage() {
                       onClick={() => setItemPage(p => Math.min(itemTotalPages, p + 1))}
                       disabled={currentItemPage >= itemTotalPages}
                     >
-                      Siguiente
+                      {t('common:pagination.next')}
                     </Button>
                   </div>
                 </div>
@@ -358,7 +360,7 @@ export default function CatalogsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <BookOpen className="h-12 w-12 mb-4 opacity-20" />
-            <p>Seleccioná un catálogo para ver sus elementos</p>
+            <p>{t('empty.selectCatalog')}</p>
           </div>
         )}
       </Card>
@@ -367,7 +369,7 @@ export default function CatalogsPage() {
       <Dialog open={isCatalogDialogOpen} onOpenChange={setIsCatalogDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingCatalog ? 'Editar Catálogo' : 'Nuevo Catálogo'}</DialogTitle>
+            <DialogTitle>{editingCatalog ? t('dialog.editCatalog') : t('dialog.newCatalog')}</DialogTitle>
           </DialogHeader>
           <CatalogForm 
             initialData={editingCatalog} 
@@ -381,7 +383,7 @@ export default function CatalogsPage() {
       <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingItem ? 'Editar Elemento' : 'Nuevo Elemento'}</DialogTitle>
+            <DialogTitle>{editingItem ? t('dialog.editItem') : t('newItem')}</DialogTitle>
           </DialogHeader>
           <CatalogItemForm 
             initialData={editingItem} 

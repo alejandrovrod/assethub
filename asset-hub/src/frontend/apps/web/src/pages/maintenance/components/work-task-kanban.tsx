@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -19,16 +20,21 @@ interface Props {
 
 interface Column {
   id: WorkTaskState
-  title: string
+  titleKey:
+    | 'kanban.columns.todo'
+    | 'kanban.columns.rework'
+    | 'kanban.columns.inProgress'
+    | 'kanban.columns.done'
+    | 'kanban.columns.cancelled'
   color: string
 }
 
 const COLUMNS: Column[] = [
-  { id: 'todo', title: 'Pendiente', color: 'bg-slate-500' },
-  { id: 'rework', title: 'Corrección', color: 'bg-orange-500' },
-  { id: 'in_progress', title: 'En progreso', color: 'bg-blue-500' },
-  { id: 'done', title: 'Terminada', color: 'bg-green-500' },
-  { id: 'cancelled', title: 'Cancelada', color: 'bg-red-500' },
+  { id: 'todo', titleKey: 'kanban.columns.todo', color: 'bg-slate-500' },
+  { id: 'rework', titleKey: 'kanban.columns.rework', color: 'bg-orange-500' },
+  { id: 'in_progress', titleKey: 'kanban.columns.inProgress', color: 'bg-blue-500' },
+  { id: 'done', titleKey: 'kanban.columns.done', color: 'bg-green-500' },
+  { id: 'cancelled', titleKey: 'kanban.columns.cancelled', color: 'bg-red-500' },
 ]
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -38,6 +44,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 function PriorityBadge({ label }: { label?: string }) {
+  const { t } = useTranslation('maintenance')
   const normalized = label?.toLowerCase() ?? ''
   const className =
     PRIORITY_COLORS[normalized] ??
@@ -48,7 +55,7 @@ function PriorityBadge({ label }: { label?: string }) {
         : normalized.includes('baja')
           ? PRIORITY_COLORS.low
           : 'bg-muted text-muted-foreground')
-  return <Badge variant="outline" className={`text-xs ${className}`}>{label ?? 'Sin prioridad'}</Badge>
+  return <Badge variant="outline" className={`text-xs ${className}`}>{label ?? t('kanban.noPriority')}</Badge>
 }
 
 function isOverdue(dueAt?: string): boolean {
@@ -57,6 +64,7 @@ function isOverdue(dueAt?: string): boolean {
 }
 
 export function WorkTaskKanban({ tasks, onStateChange }: Props) {
+  const { t } = useTranslation('maintenance')
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -99,7 +107,7 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
         if (task?.maintenanceOrderId) {
           queryClient.invalidateQueries({ queryKey: ['maintenance-order', task.maintenanceOrderId] })
         }
-        toast.success('Tarea completada')
+        toast.success(t('toast.taskCompleted'))
       }
     }
     setDraggingId(null)
@@ -121,7 +129,7 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
           <CardHeader className="pb-3 shrink-0">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
               <span className={`h-2 w-2 rounded-full ${column.color}`} />
-              {column.title}
+              {t(column.titleKey)}
               <Badge variant="secondary" className="ml-auto text-xs">
                 {grouped[column.id].length}
               </Badge>
@@ -171,7 +179,7 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
                         {!task.assignedEmployeeName && !task.assignedTeamName && (
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-3.5 w-3.5" />
-                            <span>Sin asignación</span>
+                            <span>{t('kanban.unassigned')}</span>
                           </div>
                         )}
                       </div>

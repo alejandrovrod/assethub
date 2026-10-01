@@ -1,0 +1,113 @@
+{
+  "settings": {
+    "title": "Inventory Settings",
+    "subtitle": "Define how the inventory module operates for this tenant.",
+    "modeSection": {
+      "title": "Operating mode",
+      "description": "Controls how inventory integrates with maintenance orders."
+    },
+    "modes": {
+      "external": {
+        "label": "External",
+        "description": "Maintenance orders use external providers. Stock is not deducted from the system."
+      },
+      "internal": {
+        "label": "Internal",
+        "description": "Spare parts are consumed from your own inventory. Stock is deducted when parts are logged on orders."
+      },
+      "hybrid": {
+        "label": "Hybrid",
+        "description": "Each spare part can be configured individually as internal or external per order."
+      }
+    },
+    "advanced": {
+      "title": "Advanced options",
+      "allowNegativeLabel": "Allow negative stock",
+      "allowNegativeHint": "When disabled, transactions that would result in negative stock will be rejected."
+    },
+    "discardChanges": "Discard changes",
+    "save": "Save settings",
+    "toast": {
+      "saved": "Inventory settings saved",
+      "saveError": "Error saving settings"
+    }
+  },
+  "stock": {
+    "title": "Stock Balances",
+    "subtitle": "Available inventory by warehouse and catalog item.",
+    "registerReceipt": "Register Receipt",
+    "summary": {
+      "itemsInStock": "Items in stock",
+      "totalValue": "Total value (average cost)",
+      "outOfStock": "Out-of-stock items"
+    },
+    "allWarehouses": "All warehouses",
+    "table": {
+      "title": "Current inventory",
+      "headers": {
+        "item": "Item",
+        "warehouse": "Warehouse",
+        "averageCost": "Average Cost",
+        "totalValue": "Total Value"
+      },
+      "empty": "No stock records match the selected filters."
+    },
+    "form": {
+      "sheetTitle": "Register Receipt / Adjustment",
+      "sheetDescription": "Record a goods receipt or a manual inventory adjustment.",
+      "warehouseLabel": "Warehouse",
+      "warehousePlaceholder": "Select a warehouse",
+      "itemLabel": "Catalog Item",
+      "itemPlaceholder": "Select an item",
+      "typeLabel": "Movement type",
+      "typeReceipt": "Receipt",
+      "typeAdjustment": "Manual Adjustment",
+      "unitCostLabel": "Unit Cost",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Purchase order #123, physical count...",
+      "submit": "Register",
+      "validation": {
+        "warehouseRequired": "Select a warehouse",
+        "itemRequired": "Enter the item ID",
+        "quantityPositive": "Quantity must be positive",
+        "unitCostNotNegative": "Cost cannot be negative",
+        "reasonRequired": "Enter a reason"
+      }
+    },
+    "toast": {
+      "adjusted": "Adjustment recorded successfully",
+      "adjustError": "Error recording the adjustment"
+    }
+  },
+  "warehouses": {
+    "title": "Warehouses",
+    "subtitle": "Manage physical inventory locations.",
+    "newWarehouse": "New Warehouse",
+    "registered": {
+      "title": "Registered warehouses",
+      "count": "{{count}} warehouses configured",
+      "count_one": "{{count}} warehouse configured",
+      "count_other": "{{count}} warehouses configured"
+    },
+    "empty": {
+      "title": "No warehouses configured.",
+      "createFirst": "Create the first one"
+    },
+    "form": {
+      "sheetDescription": "Fill in the details to register a new warehouse.",
+      "codePlaceholder": "WH-01",
+      "namePlaceholder": "Main Warehouse",
+      "optionalHint": "(optional)",
+      "descriptionPlaceholder": "Location, notes...",
+      "submit": "Create Warehouse",
+      "validation": {
+        "nameRequired": "Name is required",
+        "codeRequired": "Code is required"
+      }
+    },
+    "toast": {
+      "created": "Warehouse created successfully",
+      "createError": "Error creating warehouse"
+    }
+  }
+}

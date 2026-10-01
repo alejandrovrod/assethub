@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -19,7 +21,6 @@ import { Loader2, Package, Clock, FileText, Link as LinkIcon, Wrench } from 'luc
 import {
   maintenanceOrderService,
   type MaintenanceOrderSummary,
-  KIND_LABELS,
 } from '@/services/maintenance-order.service'
 import { assetService } from '@/services/asset.service'
 import { preventivePlanService } from '@/services/preventive-plan.service'
@@ -28,17 +29,17 @@ import { catalogService } from '@/services/catalog.service'
 import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
 import { PropagatedPropertiesDisplay } from '../../components/propagated-properties-display'
 
-const formSchema = z.object({
-  kind: z.string().min(1, 'El tipo es requerido'),
-  title: z.string().min(1, 'El título es requerido').max(200),
+const formSchema = (t: TFunction<'maintenance'>) => z.object({
+  kind: z.string().min(1, t('orders.form.validation.kindRequired')),
+  title: z.string().min(1, t('orders.form.validation.titleRequired')).max(200),
   description: z.string().max(2000).optional(),
-  assetId: z.string().min(1, 'El activo es requerido'),
+  assetId: z.string().min(1, t('orders.form.validation.assetRequired')),
   preventivePlanId: z.string().optional(),
   incidentId: z.string().optional(),
   generateChecklistTasks: z.boolean().default(false),
 })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof formSchema>>
 
 interface Props {
   open: boolean
@@ -52,6 +53,7 @@ interface Props {
 import { useQuery } from '@tanstack/react-query'
 
 export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess, initialAssetId, initialAssetLabel }: Props) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const queryClient = useQueryClient()
   
   const { data: taskTypes } = useQuery({
@@ -64,8 +66,14 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
 
   const [propertiesJson, setPropertiesJson] = useState((order as any)?.propertiesJson || '{}')
 
+  const kindLabel = (kind: string) => {
+    if (kind === 'corrective') return t('ordersWidget.kind.corrective')
+    if (kind === 'preventive') return t('ordersWidget.kind.preventive')
+    return kind
+  }
+
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(formSchema(t)) as any,
     defaultValues: {
       kind: 'corrective',
       title: '',
@@ -125,12 +133,12 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
       }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
-      toast.success('Orden creada')
+      toast.success(t('orders.toast.created'))
       form.reset()
       setAssetLabel('')
       onSuccess?.(data)
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al crear la orden')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('orders.toast.createError'))),
   })
 
   const updateMutation = useMutation({
@@ -143,10 +151,10 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order!.id] })
-      toast.success('Orden actualizada')
+      toast.success(t('orders.toast.updated'))
       onSuccess?.()
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al actualizar la orden')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('orders.toast.updateError'))),
   })
 
   const onSubmit = (values: FormValues) => {
@@ -163,12 +171,12 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
         <SheetHeader className="p-6 pb-4 border-b shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <Wrench className="w-5 h-5 text-primary" />
-            {isEditing ? 'Editar orden' : 'Nueva orden de mantenimiento'}
+            {isEditing ? t('orders.form.editTitle') : t('orders.form.createTitle')}
           </SheetTitle>
           <SheetDescription>
             {isEditing
-              ? 'Modificá los datos de la orden.'
-              : 'Creá una nueva orden de mantenimiento correctiva o preventiva.'}
+              ? t('orders.form.editDescription')
+              : t('orders.form.createDescription')}
           </SheetDescription>
         </SheetHeader>
 
@@ -181,7 +189,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
               <div className="space-y-4 p-4 border rounded-xl bg-card shadow-sm">
                 <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
                   <FileText className="w-4 h-4" />
-                  Información Principal
+                  {t('orders.form.mainInfo')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {!isEditing && (
@@ -190,11 +198,11 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                       name="kind"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tipo</FormLabel>
+                          <FormLabel>{t('common:labels.type')}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || (taskTypes?.[0]?.code ?? '')}>
                             <FormControl>
                               <SelectTrigger className="bg-background">
-                                <SelectValue placeholder="Seleccionar tipo" />
+                                <SelectValue placeholder={t('detail.selectType')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -213,9 +221,9 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
 
                   {isEditing && (
                     <div className="flex items-center gap-2 mt-8">
-                      <span className="text-sm font-medium">Tipo:</span>
+                      <span className="text-sm font-medium">{t('orders.form.typeLabel')}</span>
                       <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                        {taskTypes?.find(t => t.code === order!.kind)?.label || KIND_LABELS[order!.kind] || order!.kind}
+                        {taskTypes?.find(t => t.code === order!.kind)?.label || kindLabel(order!.kind)}
                       </Badge>
                     </div>
                   )}
@@ -225,9 +233,9 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                     name="title"
                     render={({ field }) => (
                       <FormItem className="md:col-span-1">
-                        <FormLabel>Título</FormLabel>
+                        <FormLabel>{t('common:labels.title')}</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Ej. Revisión de motor" className="bg-background" />
+                          <Input {...field} placeholder={t('orders.form.titlePlaceholder')} className="bg-background" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -242,11 +250,11 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripción</FormLabel>
+                      <FormLabel>{t('common:labels.description')}</FormLabel>
                       <FormControl>
                         <Textarea 
                           {...field} 
-                          placeholder="Agregá detalles adicionales, observaciones o instrucciones específicas para esta orden..." 
+                          placeholder={t('orders.form.descriptionPlaceholder')} 
                           rows={4} 
                           className="bg-background resize-none"
                         />
@@ -260,7 +268,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
               <div className="space-y-4 p-4 border rounded-xl bg-muted/30">
                 <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
                   <LinkIcon className="w-4 h-4" />
-                  Vínculos
+                  {t('orders.form.links')}
                 </h4>
 
                 <FormField
@@ -268,7 +276,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                   name="assetId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Activo asociado</FormLabel>
+                      <FormLabel>{t('orders.form.associatedAsset')}</FormLabel>
                       <FormControl>
                         {initialAssetId ? (
                            <div className="flex items-center gap-3 p-3 bg-background border rounded-lg">
@@ -288,9 +296,9 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                             }}
                             labelKey="name"
                             valueKey="id"
-                            placeholder="Buscar activo..."
-                            searchPlaceholder="Escriba para buscar..."
-                            emptyText="No se encontraron activos."
+                            placeholder={t('form.filters.searchAsset')}
+                            searchPlaceholder={t('form.searchTypePlaceholder')}
+                            emptyText={t('form.noAssetsFound')}
                             onSelect={(item) => {
                               field.onChange(item.id)
                               setAssetLabel(`${item.code} - ${item.name}`)
@@ -303,7 +311,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                                 onClick={onClick}
                                 className="w-full justify-between font-normal bg-background"
                               >
-                                {assetLabel || 'Buscar activo...'}
+                                {assetLabel || t('form.filters.searchAsset')}
                                 <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             )}
@@ -322,7 +330,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                     render={({ field }) => (
                       <FormItem className="pt-2">
                         <FormLabel className="flex items-center gap-2">
-                          Plan preventivo (opcional)
+                          {t('orders.form.preventivePlanOptional')}
                         </FormLabel>
                         <AsyncCombobox<{ id: string; name: string }>
                           fetcher={async (query) => {
@@ -334,9 +342,9 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                           }}
                           labelKey="name"
                           valueKey="id"
-                          placeholder="Vincular a un plan..."
-                          searchPlaceholder="Escriba para buscar..."
-                          emptyText="No se encontraron planes."
+                          placeholder={t('orders.form.linkPlanPlaceholder')}
+                          searchPlaceholder={t('form.searchTypePlaceholder')}
+                          emptyText={t('orders.form.noPlansFound')}
                           onSelect={(item) => field.onChange(item.id)}
                           renderTrigger={(onClick) => (
                             <Button
@@ -346,7 +354,7 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                               onClick={onClick}
                               className="w-full justify-between font-normal bg-background"
                             >
-                              {field.value ? 'Plan seleccionado' : 'Buscar plan...'}
+                              {field.value ? t('orders.form.planSelected') : t('orders.form.searchPlanPlaceholder')}
                               <Clock className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           )}
@@ -364,9 +372,9 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-background">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-sm font-medium">Tareas de plantilla</FormLabel>
+                          <FormLabel className="text-sm font-medium">{t('orders.form.templateTasks')}</FormLabel>
                           <SheetDescription className="text-xs">
-                            Generar tareas base usando el checklist de la plantilla del activo
+                            {t('orders.form.generateChecklistDescription')}
                           </SheetDescription>
                         </div>
                         <FormControl>
@@ -396,11 +404,11 @@ export function MaintenanceOrderFormSheet({ open, onOpenChange, order, onSuccess
 
             <div className="p-6 border-t bg-background mt-auto flex justify-end gap-2 shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {isEditing ? 'Guardar' : 'Crear'}
+                {isEditing ? t('common:actions.save') : t('common:actions.create')}
               </Button>
             </div>
           </form>

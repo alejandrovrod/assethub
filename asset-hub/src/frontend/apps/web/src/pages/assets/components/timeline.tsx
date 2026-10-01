@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
 import { assetService } from "../../../services/asset.service"
 import { Loader2, ArrowLeft, User, FileText } from "lucide-react"
 import { parseApiDate } from "@/lib/utils"
+import { useFormat } from "@/lib/format"
+import { useTranslation } from "react-i18next"
 
 export function AssetTimeline({ assetId }: { assetId: string }) {
+  const { t } = useTranslation('assets')
+  const { formatDateTime } = useFormat()
   const { data: events, isLoading, error } = useQuery({
     queryKey: ['asset-events', assetId],
     queryFn: () => assetService.getAssetEvents(assetId)
@@ -22,7 +24,7 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
   if (error) {
     return (
       <div className="text-center p-4 text-red-500">
-        Error al cargar la bitácora
+        {t('timeline.loadError')}
       </div>
     )
   }
@@ -30,7 +32,7 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
   if (!events || events.length === 0) {
     return (
       <div className="text-center p-8 text-muted-foreground">
-        No hay eventos registrados en la bitácora para este activo.
+        {t('timeline.empty')}
       </div>
     )
   }
@@ -47,8 +49,8 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
           </div>
           <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-sm text-foreground capitalize">Cambio de estado</span>
-              <time className="text-xs text-muted-foreground">{format(parseApiDate(evt.at), 'PPp', { locale: es })}</time>
+              <span className="font-bold text-sm text-foreground capitalize">{t('timeline.stateChange')}</span>
+              <time className="text-xs text-muted-foreground">{formatDateTime(parseApiDate(evt.at))}</time>
             </div>
 
             <div className="text-sm text-muted-foreground mb-2">
@@ -73,14 +75,14 @@ export function AssetTimeline({ assetId }: { assetId: string }) {
 
             <div className="flex items-center text-xs text-muted-foreground gap-1 mt-2">
               <User className="h-3 w-3" />
-              <span>{evt.userId === '00000000-0000-0000-0000-000000000000' ? 'Sistema / Autenticado' : evt.userId}</span>
+              <span>{evt.userId === '00000000-0000-0000-0000-000000000000' ? t('timeline.systemUser') : evt.userId}</span>
             </div>
 
             {evt.notes && (
               <div className="mt-3 bg-muted/50 rounded-md p-3 text-xs border">
                 {evt.notes.startsWith('{') ? (
                   <>
-                    <p className="font-semibold mb-1 border-b pb-1">Datos ingresados:</p>
+                    <p className="font-semibold mb-1 border-b pb-1">{t('timeline.enteredData')}</p>
                     <div className="grid grid-cols-1 gap-2 mt-2">
                       {Object.entries(JSON.parse(evt.notes)).map(([key, value]) => (
                         <div key={key} className="flex justify-between gap-4">

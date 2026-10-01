@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { toast } from 'sonner'
 import Form from '@rjsf/core'
+import { rjsfTemplates } from '@/components/rjsf/templates'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
@@ -27,11 +28,15 @@ import { parseApiDate } from '@/lib/utils'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
+import { useFormat } from '@/lib/format'
 
 export default function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['maintenance', 'common'])
+  const { formatDate } = useFormat()
   const { can } = usePermissions()
   const canUpdate = can('incidents:update')
   const canChangeState = can('incidents:change-state')
@@ -130,7 +135,7 @@ export default function IncidentDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incident', id] })
       queryClient.invalidateQueries({ queryKey: ['incident-timeline', id] })
-      toast.success('Estado actualizado')
+      toast.success(t('toast.stateUpdated'))
       setTransitionDialogOpen(false)
       setPendingTargetState(null)
       setTransitionData({})
@@ -143,7 +148,7 @@ export default function IncidentDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incident', id] })
       queryClient.invalidateQueries({ queryKey: ['incident-timeline', id] })
-      toast.success('Incidencia actualizada exitosamente')
+      toast.success(t('toast.incidentUpdated'))
       setIsEditingDynamic(false)
     },
     onError: (err) => handleServerError(err)
@@ -204,10 +209,10 @@ export default function IncidentDetailPage() {
   const getTransitionBlockReason = (targetState: string): string | null => {
     if (targetState !== 'closed') return null
     if (incident?.maintenanceOrder && incident.maintenanceOrder.state !== 'done' && incident.maintenanceOrder.state !== 'cancelled') {
-      return 'No se puede cerrar: Hay una orden de mantenimiento correctiva activa.'
+      return t('detail.blockReasons.activeOrder')
     }
     if (incident?.workTasks?.some(t => t.state !== 'done' && t.state !== 'cancelled')) {
-      return 'No se puede cerrar: Hay tareas abiertas asociadas a esta incidencia.'
+      return t('detail.blockReasons.openTasks')
     }
     return null
   }
@@ -228,7 +233,7 @@ export default function IncidentDetailPage() {
     return <div className="flex h-[200px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
   }
 
-  if (!incident) return <div>Incidencia no encontrada.</div>
+  if (!incident) return <div>{t('detail.notFound')}</div>
 
   return (
     <div className="flex flex-col gap-6">
@@ -243,10 +248,10 @@ export default function IncidentDetailPage() {
               {incident.title}
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className="text-sm">Estado: {incident.state}</Badge>
-              <span className="text-muted-foreground text-sm">Activo: {incident.assetName}</span>
+              <Badge variant="outline" className="text-sm">{t('common:labels.status')}: {incident.state}</Badge>
+              <span className="text-muted-foreground text-sm">{t('fields.asset')}: {incident.assetName}</span>
               <span className="text-muted-foreground text-sm">
-                | Reportado: {format(parseApiDate(incident.reportedAt || new Date()), 'PPp', { locale: es })}
+                | {t('detail.reported')}: {format(parseApiDate(incident.reportedAt || new Date()), 'PPp', { locale: es })}
               </span>
             </div>
           </div>
@@ -255,10 +260,10 @@ export default function IncidentDetailPage() {
         {canChangeState && (
           <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
-              Cambiar estado a:
+              {t('detail.changeStateTo')}
             </span>
             {availableTransitions.length === 0 ? (
-              <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
+              <span className="text-sm text-muted-foreground italic px-2">{t('detail.noneAvailable')}</span>
             ) : (
               availableTransitions.map((targetState: string) => {
                 const blockReason = getTransitionBlockReason(targetState)
@@ -270,7 +275,7 @@ export default function IncidentDetailPage() {
                     className="h-8"
                     onClick={() => handleStateClick(targetState)}
                     disabled={stateMutation.isPending || !!blockReason}
-                    title={blockReason || `Cambiar a ${targetState}`}
+                    title={blockReason || t('detail.changeTo', { state: targetState })}
                   >
                     {targetState}
                   </Button>
@@ -286,17 +291,17 @@ export default function IncidentDetailPage() {
         <div className="md:col-span-2 flex flex-col gap-6">
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="mb-4">
-              <TabsTrigger value="details">Detalles</TabsTrigger>
-              <TabsTrigger value="timeline">Bitácora</TabsTrigger>
+              <TabsTrigger value="details">{t('common:labels.details')}</TabsTrigger>
+              <TabsTrigger value="timeline">{t('detail.tabs.timeline')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="flex flex-col gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Descripción General</CardTitle>
+                  <CardTitle>{t('detail.sections.generalDescription')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-wrap">{incident.description || 'Sin descripción.'}</p>
+                  <p className="whitespace-pre-wrap">{incident.description || t('detail.noDescription')}</p>
                 </CardContent>
               </Card>
 
@@ -304,25 +309,25 @@ export default function IncidentDetailPage() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
-                      <CardTitle>Información de la Incidencia</CardTitle>
+                      <CardTitle>{t('detail.sections.incidentInfo')}</CardTitle>
                       <CardDescription>
-                        Atributos específicos ({template?.name}).
+                        {t('detail.sections.specificAttributes', { name: template?.name ?? '' })}
                       </CardDescription>
                     </div>
                     {canUpdate && (
                       <Button variant="outline" size="sm" onClick={() => setIsEditingDynamic(true)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Editar
+                        <Pencil className="mr-2 h-4 w-4" /> {t('common:actions.edit')}
                       </Button>
                     )}
                   </CardHeader>
                   <CardContent>
                     {isResolving ? (
-                      <div className="text-sm text-muted-foreground italic">Resolviendo catálogos...</div>
+                      <div className="text-sm text-muted-foreground italic">{t('detail.resolvingCatalogs')}</div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {Object.keys((schema as any)?.properties || {}).length === 0 && (
                           <p className="text-muted-foreground text-sm italic col-span-full">
-                            No hay atributos configurados.
+                            {t('detail.noAttributes')}
                           </p>
                         )}
                         {Object.keys((schema as any)?.properties || {}).map(key => {
@@ -349,9 +354,9 @@ export default function IncidentDetailPage() {
             <TabsContent value="timeline">
               <Card>
                 <CardHeader>
-                  <CardTitle>Bitácora de Eventos</CardTitle>
+                  <CardTitle>{t('detail.sections.eventLog')}</CardTitle>
                   <CardDescription>
-                    Historial de cambios de estado y acciones de esta incidencia.
+                    {t('detail.sections.eventLogDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -361,7 +366,7 @@ export default function IncidentDetailPage() {
                     </div>
                   ) : !timelineEvents || timelineEvents.length === 0 ? (
                     <div className="text-sm text-muted-foreground p-8 text-center border border-dashed rounded-md">
-                      No hay eventos registrados en la bitácora.
+                      {t('empty.timeline')}
                     </div>
                   ) : (
                     <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
@@ -384,7 +389,7 @@ export default function IncidentDetailPage() {
                                 <time className="text-xs text-muted-foreground">{format(parseApiDate(event.at), 'PPp', { locale: es })}</time>
                               </div>
                               <div className="text-sm text-muted-foreground mb-2">
-                                {event.notes || 'Sin detalles adicionales'}
+                                {event.notes || t('detail.noAdditionalDetails')}
                               </div>
                               {event.fromState && event.toState && (
                                 <div className="flex items-center gap-2 mb-2">
@@ -396,12 +401,12 @@ export default function IncidentDetailPage() {
                               
                               <div className="flex items-center text-xs text-muted-foreground gap-1 mt-2">
                                 <User className="h-3 w-3" />
-                                <span>{event.userId === '00000000-0000-0000-0000-000000000000' ? 'Sistema / Autenticado' : event.userId}</span>
+                                <span>{event.userId === '00000000-0000-0000-0000-000000000000' ? t('detail.systemUser') : event.userId}</span>
                               </div>
 
                               {parsedProps && Object.keys(parsedProps).length > 0 && (
                                 <div className="mt-3 bg-muted/50 rounded-md p-3 text-xs border">
-                                  <p className="font-semibold mb-1 border-b pb-1">Datos ingresados:</p>
+                                  <p className="font-semibold mb-1 border-b pb-1">{t('detail.enteredData')}</p>
                                   <div className="grid grid-cols-1 gap-2 mt-2">
                                     {Object.keys(parsedProps).map(key => {
                                       const { title, value } = formatDynamicField(key, parsedProps[key])
@@ -431,21 +436,21 @@ export default function IncidentDetailPage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Metadatos</CardTitle>
+              <CardTitle className="text-lg">{t('detail.sections.metadata')}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-4">
               <div>
-                <span className="text-muted-foreground block mb-1">ID Interno</span>
+                <span className="text-muted-foreground block mb-1">{t('detail.internalId')}</span>
                 <code className="bg-muted px-2 py-1 rounded text-xs break-all">{incident.id}</code>
               </div>
               <div>
-                <span className="text-muted-foreground block mb-1">Fecha de Creación</span>
-                <span>{incident.reportedAt ? parseApiDate(incident.reportedAt).toLocaleDateString() : '-'}</span>
+                <span className="text-muted-foreground block mb-1">{t('fields.createdAt')}</span>
+                <span>{incident.reportedAt ? formatDate(parseApiDate(incident.reportedAt)) : '-'}</span>
               </div>
               {incident.resolvedAt && (
                 <div>
-                  <span className="text-muted-foreground block mb-1">Fecha de Resolución</span>
-                  <span>{parseApiDate(incident.resolvedAt).toLocaleDateString()}</span>
+                  <span className="text-muted-foreground block mb-1">{t('detail.resolvedAt')}</span>
+                  <span>{formatDate(parseApiDate(incident.resolvedAt))}</span>
                 </div>
               )}
             </CardContent>
@@ -454,7 +459,7 @@ export default function IncidentDetailPage() {
           {incident.maintenanceOrder && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Orden Generada</CardTitle>
+                <CardTitle className="text-lg">{t('detail.sections.generatedOrder')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Link
@@ -467,7 +472,7 @@ export default function IncidentDetailPage() {
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       {incident.maintenanceOrder.scheduledStart && (
-                        <span>Prog. {format(parseApiDate(incident.maintenanceOrder.scheduledStart), 'dd MMM', { locale: es })}</span>
+                        <span>{t('fields.scheduledShort')} {format(parseApiDate(incident.maintenanceOrder.scheduledStart), 'dd MMM', { locale: es })}</span>
                       )}
                       {incident.maintenanceOrder.assignedEmployeeName && (
                         <span>· {incident.maintenanceOrder.assignedEmployeeName}</span>
@@ -491,9 +496,9 @@ export default function IncidentDetailPage() {
         <SheetContent className="w-full sm:max-w-full flex flex-col p-0 h-full" aria-describedby={undefined}>
           <div className="p-6 pb-2 border-b">
             <SheetHeader>
-              <SheetTitle>Editar Información Dinámica</SheetTitle>
+              <SheetTitle>{t('dialog.editDynamicInfo')}</SheetTitle>
               <SheetDescription>
-                Modifica los atributos dinámicos de {incident.title}
+                {t('dialog.editDynamicInfoDescription', { title: incident.title })}
               </SheetDescription>
             </SheetHeader>
           </div>
@@ -508,6 +513,7 @@ export default function IncidentDetailPage() {
                   schema={schema || {}} 
                   uiSchema={uiSchema || {}}
                   validator={validator}
+                  templates={rjsfTemplates}
                   formData={formData}
                   onChange={e => setFormData(e.formData)}
                   onSubmit={handleDynamicSubmit}
@@ -519,12 +525,12 @@ export default function IncidentDetailPage() {
                 >
                   <div className="flex justify-end mt-6 gap-2 border-t pt-4">
                     <Button variant="outline" type="button" onClick={() => setIsEditingDynamic(false)}>
-                      Cancelar
+                      {t('common:actions.cancel')}
                     </Button>
                     <Button type="submit" disabled={updatePropertiesMutation.isPending}>
                       {updatePropertiesMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <Save className="mr-2 h-4 w-4" />
-                      Guardar Cambios
+                      {t('common:actions.saveChanges')}
                     </Button>
                   </div>
                 </Form>
@@ -538,11 +544,11 @@ export default function IncidentDetailPage() {
       <Dialog open={transitionDialogOpen} onOpenChange={setTransitionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cambiar a '{pendingTargetState}'</DialogTitle>
+            <DialogTitle>{t('dialog.changeToTitle', { state: pendingTargetState ?? '' })}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground mb-4">
-              Este estado requiere información adicional antes de continuar.
+              {t('dialog.transitionNeedsInfo')}
             </p>
             {transitionSchema && (
               <div className="rjsf-tailwind rjsf-single-column">
@@ -550,6 +556,7 @@ export default function IncidentDetailPage() {
                   schema={transitionSchema}
                   uiSchema={uiSchema}
                   validator={validator}
+                  templates={rjsfTemplates}
                   formData={transitionData}
                   onChange={(e) => setTransitionData(e.formData)}
                   widgets={{ 
@@ -564,10 +571,10 @@ export default function IncidentDetailPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTransitionDialogOpen(false)}>
-              Cancelar
+              {t('common:actions.cancel')}
             </Button>
             <Button onClick={handleTransitionSubmit} disabled={stateMutation.isPending}>
-              {stateMutation.isPending ? 'Guardando...' : 'Confirmar'}
+              {stateMutation.isPending ? t('form.saving') : t('common:actions.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

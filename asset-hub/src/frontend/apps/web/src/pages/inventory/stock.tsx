@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -7,6 +7,8 @@ import {
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 
 import { inventoryService } from '@/services/inventory.service'
 import { catalogService } from '@/services/catalog.service'
@@ -37,25 +39,28 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
 import { usePermissions } from '@/hooks/use-permissions'
 
 const PARTS_CATALOG_CODE = 'parts'
 
-const adjustmentSchema = z.object({
-  warehouseId: z.string().min(1, 'Seleccioná un almacén'),
-  catalogItemId: z.string().min(1, 'Ingresá el ID del artículo'),
-  quantity: z.coerce.number().min(0.0001, 'La cantidad debe ser positiva'),
-  unitCost: z.coerce.number().min(0, 'El costo no puede ser negativo'),
-  type: z.enum(['Receipt', 'Adjustment']),
-  reason: z.string().min(3, 'Ingresá un motivo'),
-})
+function getAdjustmentSchema(t: TFunction<'inventory'>) {
+  return z.object({
+    warehouseId: z.string().min(1, t('stock.form.validation.warehouseRequired')),
+    catalogItemId: z.string().min(1, t('stock.form.validation.itemRequired')),
+    quantity: z.coerce.number().min(0.0001, t('stock.form.validation.quantityPositive')),
+    unitCost: z.coerce.number().min(0, t('stock.form.validation.unitCostNotNegative')),
+    type: z.enum(['Receipt', 'Adjustment']),
+    reason: z.string().min(3, t('stock.form.validation.reasonRequired')),
+  })
+}
 
-type AdjForm = z.infer<typeof adjustmentSchema>
+type AdjForm = z.infer<ReturnType<typeof getAdjustmentSchema>>
 
 export default function StockPage() {
+  const { t } = useTranslation(['inventory', 'common'])
+  const { formatCurrency, formatDate } = useFormat()
   const { canAny } = usePermissions()
   const canRegisterMovements = canAny(['stock:adjust', 'receipts:create'])
   const qc = useQueryClient()
@@ -77,6 +82,7 @@ export default function StockPage() {
     queryFn: () => inventoryService.getStock(selectedWarehouse),
   })
 
+  const adjustmentSchema = useMemo(() => getAdjustmentSchema(t), [t])
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AdjForm>({
     resolver: zodResolver(adjustmentSchema) as any,
     defaultValues: { type: 'Receipt' },
@@ -90,12 +96,12 @@ export default function StockPage() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stock'] })
-      toast.success('Ajuste registrado correctamente')
+      toast.success(t('stock.toast.adjusted'))
       setAdjOpen(false)
       reset()
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.detail || err.response?.data?.title || 'Error al registrar el ajuste'
+      const msg = err.response?.data?.detail || err.response?.data?.title || t('stock.toast.adjustError')
       toast.error(msg)
     },
   })
@@ -110,9 +116,9 @@ export default function StockPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Saldos de Stock</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('stock.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Inventario disponible por almacén y artículo de catálogo.
+            {t('stock.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -122,7 +128,7 @@ export default function StockPage() {
           {canRegisterMovements && (
             <Button onClick={() => setAdjOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Registrar Entrada
+              {t('stock.registerReceipt')}
             </Button>
           )}
         </div>
@@ -132,7 +138,7 @@ export default function StockPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-1">
-            <CardDescription>Artículos en stock</CardDescription>
+            <CardDescription>{t('stock.summary.itemsInStock')}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{stock.length}</p>
@@ -140,17 +146,17 @@ export default function StockPage() {
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardDescription>Valor total (costo promedio)</CardDescription>
+            <CardDescription>{t('stock.summary.totalValue')}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {totalValue.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+              {formatCurrency(totalValue, 'MXN')}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardDescription>Artículos sin stock</CardDescription>
+            <CardDescription>{t('stock.summary.outOfStock')}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className={`text-3xl font-bold ${lowStockItems.length > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
@@ -168,10 +174,10 @@ export default function StockPage() {
           onValueChange={v => setSelectedWarehouse(v === 'all' ? undefined : v)}
         >
           <SelectTrigger className="w-56">
-            <SelectValue placeholder="Todos los almacenes" />
+            <SelectValue placeholder={t('stock.allWarehouses')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los almacenes</SelectItem>
+            <SelectItem value="all">{t('stock.allWarehouses')}</SelectItem>
             {warehouses.map(w => (
               <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
             ))}
@@ -184,7 +190,7 @@ export default function StockPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <PackageSearch className="h-4 w-4 text-primary" />
-            Inventario actual
+            {t('stock.table.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -195,18 +201,18 @@ export default function StockPage() {
           ) : stock.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
               <PackageSearch className="h-10 w-10 opacity-30" />
-              <p className="text-sm">No hay registros de stock para los filtros seleccionados.</p>
+              <p className="text-sm">{t('stock.table.empty')}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Artículo</TableHead>
-                  <TableHead>Almacén</TableHead>
-                  <TableHead className="text-right">Cantidad</TableHead>
-                  <TableHead className="text-right">Costo Promedio</TableHead>
-                  <TableHead className="text-right">Valor Total</TableHead>
-                  <TableHead>Actualizado</TableHead>
+                  <TableHead>{t('stock.table.headers.item')}</TableHead>
+                  <TableHead>{t('stock.table.headers.warehouse')}</TableHead>
+                  <TableHead className="text-right">{t('common:labels.quantity')}</TableHead>
+                  <TableHead className="text-right">{t('stock.table.headers.averageCost')}</TableHead>
+                  <TableHead className="text-right">{t('stock.table.headers.totalValue')}</TableHead>
+                  <TableHead>{t('common:labels.updatedAt')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -238,13 +244,13 @@ export default function StockPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {s.averageUnitCost.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+                        {formatCurrency(s.averageUnitCost, 'MXN')}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm font-semibold">
-                        {totalVal.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+                        {formatCurrency(totalVal, 'MXN')}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
-                        {format(parseApiDate(s.updatedAt), 'dd MMM HH:mm', { locale: es })}
+                        {formatDate(parseApiDate(s.updatedAt), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </TableCell>
                     </TableRow>
                   )
@@ -259,18 +265,18 @@ export default function StockPage() {
       <Sheet open={adjOpen} onOpenChange={setAdjOpen}>
         <SheetContent className="sm:max-w-md" aria-describedby="adj-sheet-desc">
           <SheetHeader>
-            <SheetTitle>Registrar Entrada / Ajuste</SheetTitle>
+            <SheetTitle>{t('stock.form.sheetTitle')}</SheetTitle>
             <SheetDescription id="adj-sheet-desc">
-              Registra una entrada de mercancía o ajuste manual de inventario.
+              {t('stock.form.sheetDescription')}
             </SheetDescription>
           </SheetHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 mt-6">
             <div className="flex flex-col gap-1.5">
-              <Label>Almacén</Label>
+              <Label>{t('stock.form.warehouseLabel')}</Label>
               <Select onValueChange={v => setValue('warehouseId', v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccioná un almacén" />
+                  <SelectValue placeholder={t('stock.form.warehousePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.map(w => (
@@ -282,10 +288,10 @@ export default function StockPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Artículo de Catálogo</Label>
+              <Label>{t('stock.form.itemLabel')}</Label>
               <Select onValueChange={v => setValue('catalogItemId', v, { shouldValidate: true })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccioná un artículo" />
+                  <SelectValue placeholder={t('stock.form.itemPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {catalogItems.map(item => (
@@ -297,7 +303,7 @@ export default function StockPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Tipo de movimiento</Label>
+              <Label>{t('stock.form.typeLabel')}</Label>
               <Select
                 value={watch('type')}
                 onValueChange={v => setValue('type', v as 'Receipt' | 'Adjustment')}
@@ -306,38 +312,38 @@ export default function StockPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Receipt">Entrada (Recepción)</SelectItem>
-                  <SelectItem value="Adjustment">Ajuste Manual</SelectItem>
+                  <SelectItem value="Receipt">{t('stock.form.typeReceipt')}</SelectItem>
+                  <SelectItem value="Adjustment">{t('stock.form.typeAdjustment')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="adj-qty">Cantidad</Label>
+                <Label htmlFor="adj-qty">{t('common:labels.quantity')}</Label>
                 <Input id="adj-qty" type="number" step="0.01" min="0" {...register('quantity', { valueAsNumber: true })} />
                 {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="adj-cost">Costo Unitario</Label>
+                <Label htmlFor="adj-cost">{t('stock.form.unitCostLabel')}</Label>
                 <Input id="adj-cost" type="number" step="0.0001" min="0" {...register('unitCost', { valueAsNumber: true })} />
                 {errors.unitCost && <p className="text-xs text-destructive">{errors.unitCost.message}</p>}
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="adj-reason">Motivo</Label>
-              <Input id="adj-reason" placeholder="Compra orden #123, ajuste físico..." {...register('reason')} />
+              <Label htmlFor="adj-reason">{t('stock.form.reasonLabel')}</Label>
+              <Input id="adj-reason" placeholder={t('stock.form.reasonPlaceholder')} {...register('reason')} />
               {errors.reason && <p className="text-xs text-destructive">{errors.reason.message}</p>}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => { setAdjOpen(false); reset() }}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={adjMutation.isPending}>
                 {adjMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Registrar
+                {t('stock.form.submit')}
               </Button>
             </div>
           </form>

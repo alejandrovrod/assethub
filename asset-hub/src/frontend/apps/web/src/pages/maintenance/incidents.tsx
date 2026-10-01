@@ -21,8 +21,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { assetService } from '@/services/asset.service'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export default function MaintenanceIncidents() {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canCreate = can('incidents:create')
   const navigate = useNavigate()
@@ -69,10 +71,10 @@ export default function MaintenanceIncidents() {
     <div className="flex flex-col gap-6 h-full overflow-hidden">
       <div className="shrink-0">
         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-          <Filter className="h-4 w-4" /> Búsqueda
+          <Filter className="h-4 w-4" /> {t('incidents.filters.searchTitle')}
         </h3>
         <Input
-          placeholder="Título o activo..."
+          placeholder={t('incidents.filters.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full"
@@ -81,7 +83,7 @@ export default function MaintenanceIncidents() {
 
       <ScrollArea className="flex-1 min-h-0 pr-4">
         {isLoadingFilters ? (
-          <div className="text-sm text-muted-foreground">Cargando filtros...</div>
+          <div className="text-sm text-muted-foreground">{t('incidents.filters.loading')}</div>
         ) : searchFilters?.map((filter) => (
           <div key={filter.attributeKey} className="mb-6">
             <h4 className="text-sm font-medium mb-2 capitalize">{filter.attributeLabel || filter.attributeKey}</h4>
@@ -98,16 +100,16 @@ export default function MaintenanceIncidents() {
                       ? filter.options.find(
                         (opt) => opt.catalogItemId === catalogFilters[filter.attributeKey]
                       )?.label
-                      : "Todos"}
+                      : t('common:status.all')}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[calc(100vw-3rem)] sm:w-full p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar opción..." />
+                  <CommandInput placeholder={t('incidents.filters.optionSearch')} />
                   <CommandList>
-                    <CommandEmpty>No se encontró la opción.</CommandEmpty>
+                    <CommandEmpty>{t('incidents.filters.optionNotFound')}</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         onSelect={() => {
@@ -122,7 +124,7 @@ export default function MaintenanceIncidents() {
                             !catalogFilters[filter.attributeKey] ? "opacity-100" : "opacity-0"
                           )}
                         />
-                        Todos
+                        {t('common:status.all')}
                       </CommandItem>
                       {filter.options.map((opt) => (
                         <CommandItem
@@ -158,9 +160,9 @@ export default function MaintenanceIncidents() {
       <Card className="flex flex-1 flex-col">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
-            <CardTitle>Incidencias</CardTitle>
+            <CardTitle>{t('list.incidents')}</CardTitle>
             <CardDescription>
-              Gestioná las incidencias reportadas en los activos.
+              {t('incidents.description')}
             </CardDescription>
           </div>
           {canCreate && (
@@ -177,12 +179,12 @@ export default function MaintenanceIncidents() {
                 <SheetTrigger asChild>
                   <Button variant="outline" className="w-full flex items-center justify-center gap-2">
                     <Menu className="h-4 w-4" />
-                    Filtros y Búsqueda
+                    {t('incidents.filters.mobileTrigger')}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-4 flex flex-col">
                   <SheetHeader className="mb-4 text-left">
-                    <SheetTitle>Filtros</SheetTitle>
+                    <SheetTitle>{t('incidents.filters.title')}</SheetTitle>
                   </SheetHeader>
                   <div className="flex-1 overflow-hidden">
                     {renderFilters()}
@@ -204,17 +206,17 @@ export default function MaintenanceIncidents() {
                   </div>
                 ) : incidents?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-48 text-center">
-                    <p className="text-muted-foreground mb-4">No hay incidencias reportadas.</p>
+                    <p className="text-muted-foreground mb-4">{t('empty.incidents')}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Título</TableHead>
-                        <TableHead>Activo</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Reportado el</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead>{t('common:labels.title')}</TableHead>
+                        <TableHead>{t('fields.asset')}</TableHead>
+                        <TableHead>{t('common:labels.status')}</TableHead>
+                        <TableHead>{t('incidents.columns.reportedAt')}</TableHead>
+                        <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -248,17 +250,17 @@ export default function MaintenanceIncidents() {
                 <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
-                      Total: {pagedResult?.totalCount || 0} incidencias
+                      {t('incidents.totalCount', { count: pagedResult?.totalCount || 0 })}
                     </span>
                     <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                       <SelectTrigger className="w-[100px] h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="10">10 / pág</SelectItem>
-                        <SelectItem value="20">20 / pág</SelectItem>
-                        <SelectItem value="50">50 / pág</SelectItem>
-                        <SelectItem value="100">100 / pág</SelectItem>
+                        <SelectItem value="10">{t('pagination.perPage', { count: 10 })}</SelectItem>
+                        <SelectItem value="20">{t('pagination.perPage', { count: 20 })}</SelectItem>
+                        <SelectItem value="50">{t('pagination.perPage', { count: 50 })}</SelectItem>
+                        <SelectItem value="100">{t('pagination.perPage', { count: 100 })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -269,10 +271,10 @@ export default function MaintenanceIncidents() {
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
-                      Anterior
+                      {t('common:pagination.previous')}
                     </Button>
                     <div className="flex items-center text-sm px-2">
-                      Página {page} de {pagedResult?.totalPages || 1}
+                      {t('common:pagination.page', { page })} {t('common:pagination.of', { total: pagedResult?.totalPages || 1 })}
                     </div>
                     <Button 
                       variant="outline" 
@@ -280,7 +282,7 @@ export default function MaintenanceIncidents() {
                       onClick={() => setPage(p => p + 1)}
                       disabled={page >= (pagedResult?.totalPages || 1)}
                     >
-                      Siguiente
+                      {t('common:pagination.next')}
                     </Button>
                   </div>
                 </div>

@@ -1,0 +1,280 @@
+{
+  "audit": {
+    "title": "Audit trail",
+    "action": "Action",
+    "actor": "User",
+    "timestamp": "Date and time",
+    "details": "Details",
+    "underConstruction": "This screen is under construction.",
+    "actions": {
+      "user.registered_via_invitation": "Registered via invitation"
+    }
+  },
+  "org": {
+    "title": "Organization",
+    "name": "Organization name",
+    "plan": "Plan"
+  },
+  "account": {
+    "title": "My account",
+    "profile": "Profile",
+    "security": "Security",
+    "changePassword": "Change password",
+    "pageTitle": "Account & Profile",
+    "pageSubtitle": "Manage your personal information, security and preferences",
+    "noAccess": {
+      "title": "No access",
+      "body": "You don't have permission to access this page."
+    },
+    "tabs": {
+      "mfa": "MFA",
+      "linkedEmployee": "Linked employee"
+    },
+    "profileCard": {
+      "title": "Personal Information",
+      "description": "Update your name, email and preferences"
+    },
+    "avatar": {
+      "hint": "PNG, JPG up to 5MB"
+    },
+    "form": {
+      "fullNamePlaceholder": "Your full name",
+      "emailPlaceholder": "you@example.com",
+      "preferredLanguage": "Preferred language",
+      "languagePt": "Português"
+    },
+    "password": {
+      "description": "Your password must be at least 12 characters long",
+      "current": "Current password",
+      "new": "New password",
+      "minChars": "Minimum 12 characters",
+      "valid": "Valid password",
+      "confirm": "Confirm new password",
+      "confirmPlaceholder": "Repeat the password"
+    },
+    "mfa": {
+      "title": "Two-factor authentication (MFA)",
+      "description": "Add an extra layer of security using an authenticator app (Google Authenticator, Authy, Microsoft Authenticator)",
+      "scanQr": "Scan this QR code with your authenticator app",
+      "qrAlt": "MFA QR code",
+      "secretLabel": "Secret:",
+      "codeLabel": "6-digit code from your app",
+      "backupCodesTitle": "Backup codes (store them somewhere safe)",
+      "copyAll": "Copy all",
+      "verifyEnable": "Verify and enable MFA",
+      "setup": "Set up MFA",
+      "enabledTitle": "MFA Enabled",
+      "enabledDescription": "Your account is protected with two-factor authentication",
+      "active": "Two-factor authentication active",
+      "totpRequired": "A TOTP code is required when signing in",
+      "backupCodes": "Backup codes",
+      "backupCodesHint": "Use these codes if you lose access to your authenticator app. Each code can be used only once.",
+      "viewBackupCodes": "View backup codes",
+      "regenerateBackupCodes": "Regenerate codes (invalidates the previous ones)",
+      "disableTitle": "Disable MFA",
+      "disableHint": "Your current password is required to confirm",
+      "currentPasswordPlaceholder": "Your current password"
+    },
+    "employee": {
+      "title": "Linked Employee",
+      "description": "Your user account is linked to this employee",
+      "noPhone": "No phone number",
+      "noRole": "No role assigned",
+      "unlink": "Unlink employee",
+      "unlinkDescription": "This will unlink your user account from this employee. You can link it again from employee management.",
+      "unlinkNotImplemented": "Unlink feature not implemented yet",
+      "emptyTitle": "No linked employee",
+      "emptyDescription": "Your user account is not linked to any employee. An administrator can link you from employee management."
+    },
+    "toasts": {
+      "profileUpdated": "Profile updated successfully",
+      "passwordChanged": "Password changed successfully",
+      "avatarUpdated": "Avatar updated successfully",
+      "scanQr": "Scan the QR code with your authenticator app",
+      "mfaEnabled": "MFA enabled successfully",
+      "mfaDisabled": "MFA disabled successfully",
+      "backupCodesRegenerated": "Backup codes regenerated",
+      "avatarMustBeImage": "The file must be an image",
+      "avatarTooLarge": "The image must not exceed 5MB",
+      "avatarRemoved": "Avatar removed",
+      "copied": "Copied to clipboard"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "invite": "Invite user",
+    "role": "Role",
+    "email": "Email",
+    "pageSubtitle": "Manage tenant users, roles and invitations",
+    "newUser": "New User",
+    "actions": {
+      "invite": "Invite"
+    },
+    "noAccess": {
+      "title": "No access",
+      "body": "You don't have permission to view the users (users:read)."
+    },
+    "tabs": {
+      "invitations": "Invitations"
+    },
+    "searchPlaceholder": "Search by name or email...",
+    "table": {
+      "headers": {
+        "expires": "Expires",
+        "created": "Created"
+      },
+      "noRole": "No role"
+    },
+    "confirmDeactivate": "Deactivate \"{{name}}\"? They will not be able to sign in.",
+    "confirmCancelInvitation": "Cancel the invitation to \"{{email}}\"?",
+    "invitations": {
+      "pendingTitle": "Pending",
+      "pendingDescription": "The invitee sets their password when accepting; the link expires in 72 hours",
+      "empty": "No pending invitations",
+      "expired": "Expired",
+      "accepted": "Accepted",
+      "cancelled": "Cancelled",
+      "resendTitle": "Resend (renews the link)",
+      "historyTitle": "History"
+    },
+    "dialog": {
+      "editTitle": "Edit — {{name}}",
+      "newTitle": "New user",
+      "editDescription": "Update the user's name, status and roles.",
+      "createDescription": "Create the user with an initial password and roles.",
+      "createUser": "Create user",
+      "passwordLabel": "Initial password",
+      "activeUser": "Active user",
+      "inactiveHint": "Inactive users cannot sign in",
+      "namePlaceholder": "Jane Doe",
+      "emailPlaceholder": "jane@company.com",
+      "passwordPlaceholder": "Minimum 6 characters"
+    },
+    "inviteDialog": {
+      "description": "An invitation link is generated (valid for 72 hours) so the invitee can set their password. Copy it and share it.",
+      "emailLabel": "Invitee's email",
+      "emailPlaceholder": "colleague@company.com",
+      "roleLabel": "Role on acceptance",
+      "rolePlaceholder": "Choose a role...",
+      "createAndCopy": "Create and copy link"
+    },
+    "toast": {
+      "updated": "User updated",
+      "created": "User created",
+      "deactivated": "User deactivated",
+      "reactivated": "User reactivated",
+      "invitationCreatedLinkCopied": "Invitation created. Link copied to clipboard",
+      "invitationCreated": "Invitation created",
+      "invitationResentLinkCopied": "Invitation resent. New link copied to clipboard",
+      "invitationResent": "Invitation resent",
+      "invitationCancelled": "Invitation cancelled"
+    }
+  },
+  "roles": {
+    "title": "Roles",
+    "permissions": "Permissions",
+    "pageTitle": "Roles & Permissions",
+    "pageSubtitle": "Permission matrix per tenant role, customizable by module",
+    "newRole": "New Role",
+    "cardDescription": "System base roles can be edited but not deleted",
+    "noAccess": {
+      "title": "No access",
+      "body": "You don't have permission to view the roles (roles:read)."
+    },
+    "badge": {
+      "system": "System",
+      "custom": "Custom"
+    },
+    "table": {
+      "headers": {
+        "users": "Users"
+      }
+    },
+    "confirmDelete": "Delete the role \"{{name}}\"?",
+    "dialog": {
+      "editTitle": "Edit role — {{name}}",
+      "newTitle": "New role",
+      "description": "Define the name and check the permissions this role grants. They are validated against the tenant plan.",
+      "namePlaceholder": "E.g. Plant Supervisor",
+      "descriptionPlaceholder": "What this role does",
+      "searchPermission": "Search permission...",
+      "selectedCount": "{{selected}} selected",
+      "partialSelection": "Partial selection",
+      "createRole": "Create role"
+    },
+    "toast": {
+      "updated": "Role updated",
+      "created": "Role created",
+      "deleted": "Role deleted"
+    }
+  },
+  "tenant": {
+    "title": "Tenant Settings",
+    "loading": "Loading settings...",
+    "tabs": {
+      "branding": "Branding",
+      "notifications": "Notification Rules"
+    },
+    "branding": {
+      "title": "Brand Customization",
+      "description": "Configure the logo and support email that will appear in your email templates.",
+      "logoLabel": "Company Logo",
+      "logoAlt": "Logo",
+      "uploading": "Uploading...",
+      "formats": "Supported formats: PNG, JPG, GIF. Maximum 5MB.",
+      "supportEmailLabel": "Support Email Address",
+      "supportEmailPlaceholder": "support@yourcompany.com",
+      "saving": "Saving..."
+    },
+    "notifications": {
+      "title": "Notification Rules",
+      "description": "Assign specific communication templates to system events.",
+      "selectTemplate": "Select template...",
+      "defaultSystemOption": "-- System default --",
+      "noNotificationOption": "-- No notification --",
+      "sections": {
+        "incidents": "Incident Events",
+        "workTasks": "Work Task Events",
+        "maintenance": "Maintenance Events",
+        "assets": "Asset Events"
+      },
+      "events": {
+        "incidentReported": {
+          "label": "Incident Reported",
+          "description": "Fires when a user reports a new incident."
+        },
+        "incidentStatusChanged": {
+          "label": "Incident Status Updated",
+          "description": "Fires when an incident changes status (e.g. to Resolved)."
+        },
+        "taskCreated": {
+          "label": "New Task Assigned",
+          "description": "Fires when a new work task is created and assigned."
+        },
+        "maintenanceOrderCreated": {
+          "label": "New Order Generated",
+          "description": "Fires when a new maintenance order is generated."
+        },
+        "assetStateChanged": {
+          "label": "Status Change (with notification)",
+          "description": "Fires when an asset changes status and has a notification action configured."
+        }
+      }
+    },
+    "toast": {
+      "loadError": "Tenant settings could not be loaded.",
+      "brandSaved": "Brand settings have been updated.",
+      "saveError": "Settings could not be saved.",
+      "logoUploaded": "The logo has been uploaded successfully.",
+      "logoUploadError": "The logo could not be uploaded.",
+      "mappingUpdated": "Notification rule updated.",
+      "mappingUpdateError": "The rule could not be updated."
+    }
+  },
+  "form": {
+    "fullName": "Full name"
+  },
+  "notifications": {
+    "title": "Notifications"
+  }
+}

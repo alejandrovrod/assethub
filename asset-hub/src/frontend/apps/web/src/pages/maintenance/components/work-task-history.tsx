@@ -6,21 +6,30 @@ import { workTaskService, type WorkTaskHistoryEntry } from '@/services/work-task
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { parseApiDate } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   taskId: string
 }
 
-const STATE_LABELS: Record<string, string> = {
-  todo: 'Pendiente',
-  in_progress: 'En progreso',
-  done: 'Terminada',
-  cancelled: 'Cancelada',
+type StateLabelKey =
+  | 'form.filters.states.todo'
+  | 'form.filters.states.inProgress'
+  | 'form.filters.states.done'
+  | 'form.filters.states.cancelled'
+
+const STATE_LABEL_KEYS: Record<string, StateLabelKey> = {
+  todo: 'form.filters.states.todo',
+  in_progress: 'form.filters.states.inProgress',
+  done: 'form.filters.states.done',
+  cancelled: 'form.filters.states.cancelled',
 }
 
 function StateBadge({ state }: { state?: string }) {
-  if (!state) return <span className="text-muted-foreground italic">Inicial</span>
-  const label = STATE_LABELS[state] ?? state
+  const { t } = useTranslation('maintenance')
+  if (!state) return <span className="text-muted-foreground italic">{t('tasks.initialState')}</span>
+  const labelKey = STATE_LABEL_KEYS[state]
+  const label = labelKey ? t(labelKey) : state
   const variant =
     state === 'done'
       ? 'default'
@@ -33,6 +42,7 @@ function StateBadge({ state }: { state?: string }) {
 }
 
 export function WorkTaskHistory({ taskId }: Props) {
+  const { t } = useTranslation('maintenance')
   const { data: history, isLoading } = useQuery({
     queryKey: ['work-task-history', taskId],
     queryFn: () => workTaskService.getHistory(taskId),
@@ -50,7 +60,7 @@ export function WorkTaskHistory({ taskId }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
         <History className="h-8 w-8 mb-2 opacity-50" />
-        <p className="text-sm">No hay cambios de estado registrados.</p>
+        <p className="text-sm">{t('empty.statusChanges')}</p>
       </div>
     )
   }

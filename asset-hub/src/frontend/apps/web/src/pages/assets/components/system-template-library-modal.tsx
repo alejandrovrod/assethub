@@ -14,8 +14,10 @@ import {
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export function SystemTemplateLibraryModal() {
+  const { t } = useTranslation('assets')
   const { can } = usePermissions()
   const canClone = can('asset-templates:clone')
   const [open, setOpen] = useState(false)
@@ -35,11 +37,11 @@ export function SystemTemplateLibraryModal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-templates'] })
       queryClient.invalidateQueries({ queryKey: ['entity-types'] }) // because it might clone categories too
-      toast.success('Plantilla del sistema importada exitosamente')
+      toast.success(t('toast.systemTemplateImported'))
       setOpen(false)
     },
     onError: () => {
-      toast.error('Error al importar la plantilla del sistema')
+      toast.error(t('toast.systemTemplateImportError'))
     }
   })
 
@@ -49,15 +51,15 @@ export function SystemTemplateLibraryModal() {
         <DialogTrigger asChild>
           <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5">
             <Library className="h-4 w-4" />
-            Importar de Biblioteca
+            {t('library.importButton')}
           </Button>
         </DialogTrigger>
       )}
       <DialogContent className="max-w-[95vw] sm:max-w-[95vw] h-[95vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Biblioteca de Plantillas Globales</DialogTitle>
+          <DialogTitle>{t('library.title')}</DialogTitle>
           <DialogDescription>
-            Importá plantillas predefinidas listas para usar con sus esquemas, listas de control y categorías asociadas.
+            {t('library.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -69,8 +71,8 @@ export function SystemTemplateLibraryModal() {
           ) : systemTemplates.length === 0 ? (
             <div className="text-center p-8 border rounded-lg bg-muted/20">
               <Library className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-              <h3 className="text-sm font-medium">No hay plantillas globales</h3>
-              <p className="text-xs text-muted-foreground mt-1">Actualmente no existen plantillas predefinidas en el sistema.</p>
+              <h3 className="text-sm font-medium">{t('library.emptyTitle')}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{t('library.emptyBody')}</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -78,10 +80,10 @@ export function SystemTemplateLibraryModal() {
                 <div key={template.id} className="flex flex-col border rounded-lg p-4 bg-card hover:bg-muted/10 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold">{template.name}</h4>
-                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">Global</Badge>
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">{t('library.globalBadge')}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
-                    {template.description || "Sin descripción"}
+                    {template.description || t('library.noDescription')}
                   </p>
                   <Button 
                     className="w-full gap-2" 
@@ -93,7 +95,7 @@ export function SystemTemplateLibraryModal() {
                     ) : (
                       <PlusCircle className="h-4 w-4" />
                     )}
-                    Usar esta plantilla
+                    {t('library.useTemplate')}
                   </Button>
                 </div>
               ))}

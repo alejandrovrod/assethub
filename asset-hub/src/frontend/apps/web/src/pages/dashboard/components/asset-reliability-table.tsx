@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { Table2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { analyticsService } from '@/services/analytics.service'
 import { assetService } from '@/services/asset.service'
@@ -24,6 +25,7 @@ function formatHours(value?: number | null): string {
 }
 
 export function AssetReliabilityTable() {
+  const { t } = useTranslation(['dashboard', 'common'])
   const { data: assetsPage, isLoading } = useQuery({
     queryKey: ['analytics', 'assets-for-reliability'],
     queryFn: () => assetService.getAssets(undefined, undefined, undefined, undefined, 1, 20),
@@ -52,9 +54,9 @@ export function AssetReliabilityTable() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Table2 className="h-4 w-4" />
-          Confiabilidad por activo
+          {t('table.title')}
         </CardTitle>
-        <CardDescription>MTBF y MTTR de los activos recientes</CardDescription>
+        <CardDescription>{t('table.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -67,19 +69,19 @@ export function AssetReliabilityTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Activo</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Correctivas</TableHead>
+                <TableHead>{t('table.headers.asset')}</TableHead>
+                <TableHead>{t('common:labels.status')}</TableHead>
+                <TableHead className="text-right">{t('table.headers.correctiveOrders')}</TableHead>
                 <TableHead className="text-right">MTBF</TableHead>
-                <TableHead className="text-right">MTTR Restauración</TableHead>
-                <TableHead className="text-right">MTTR Reparación</TableHead>
+                <TableHead className="text-right">{t('table.headers.mttrRestore')}</TableHead>
+                <TableHead className="text-right">{t('table.headers.mttrRepair')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {(reliabilityRows ?? []).length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    Sin activos para mostrar.
+                    {t('table.empty')}
                   </TableCell>
                 </TableRow>
               )}

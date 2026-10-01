@@ -101,7 +101,7 @@ public class InventoryPostingService : IInventoryPostingService
 
         if (newQuantity < 0 && !allowNegative)
         {
-            throw new DomainException("insufficient_stock", $"Insufficient stock. Current: {oldQuantity}, Requested: {Math.Abs(quantity)}");
+            throw new DomainException("insufficient_stock", $"Insufficient stock. Current: {oldQuantity}, Requested: {Math.Abs(quantity)}", "Domain.InsufficientStock", oldQuantity, Math.Abs(quantity));
         }
 
         // Only recalculate average cost on positive stock entries (Receipts/Positive Adjustments)

@@ -42,7 +42,7 @@ public class CreateEntityTypeCommandHandler : IRequestHandler<CreateEntityTypeCo
 
             if (validCatalogs.Count != request.DefaultCatalogIds.Count)
             {
-                throw new InvalidCatalogException("Uno o más DefaultCatalogIds son inválidos o no pertenecen a este tenant.");
+                throw new InvalidCatalogException();
             }
         }
 

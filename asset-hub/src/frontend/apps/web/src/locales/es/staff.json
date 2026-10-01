@@ -1,0 +1,92 @@
+{
+  "employees": {
+    "title": "Empleados",
+    "description": "Gestión del personal de mantenimiento y operaciones.",
+    "searchPlaceholder": "Buscar por nombre o email...",
+    "tabs": {
+      "active": "Activos",
+      "inactive": "Inactivos"
+    },
+    "deactivate": "Desactivar",
+    "dialog": {
+      "deactivateTitle": "¿Desactivar empleado?",
+      "deactivateBody": "Se desactivará a {{firstName}} {{lastName}}. No podrá ser asignado a nuevas tareas."
+    },
+    "empty": "No hay empleados registrados.",
+    "form": {
+      "editTitle": "Editar Empleado",
+      "newTitle": "Nuevo Empleado",
+      "editDescription": "Modifica los datos del empleado.",
+      "newDescription": "Registra un nuevo miembro del equipo de trabajo.",
+      "accessCreated": "Acceso al sistema creado",
+      "tempPasswordHint": "Compartí esta contraseña temporal con {{firstName}} {{lastName}}. Deberá cambiarla al iniciar sesión.",
+      "done": "Listo",
+      "personalInfo": "Information personal",
+      "firstNamePlaceholder": "Juan",
+      "lastName": "Apellido",
+      "lastNamePlaceholder": "Pérez",
+      "emailPlaceholder": "juan.perez@empresa.com",
+      "contact": "Contacto",
+      "roleAndPermissions": "Rol y permisos",
+      "jobTitle": "Puesto de Trabajo",
+      "selectJobPlaceholder": "Seleccionar puesto del empleado...",
+      "noPositions": "No hay puestos disponibles. Crea el catálogo \"employee-role\" en el módulo de Catálogos.",
+      "createAccessLabel": "¿Dar acceso al sistema?",
+      "createAccessHint": "Se creará un usuario con este email, contraseña temporal y el rol de sistema que elijas.",
+      "systemRole": "Rol de Sistema",
+      "selectSystemRolePlaceholder": "Seleccionar rol de sistema...",
+      "noSystemRoles": "No hay roles de sistema configurados. Crea roles en Configuración > Roles.",
+      "linkedAccessHint": "Este empleado tiene acceso al sistema vinculado; los cambios de nombre, apellido y email se sincronizarán con su usuario.",
+      "saving": "Guardando...",
+      "createEmployee": "Crear empleado"
+    }
+  },
+  "teams": {
+    "title": "Equipos",
+    "description": "Organiza empleados en equipos de trabajo para asignación colectiva.",
+    "searchPlaceholder": "Buscar por nombre...",
+    "table": {
+      "headers": {
+        "members": "Miembros",
+        "lead": "Líder"
+      }
+    },
+    "dialog": {
+      "deleteTitle": "¿Eliminar equipo?",
+      "deleteBody": "Se eliminará el equipo \"{{name}}\". Los empleados no se verán afectados."
+    },
+    "empty": "No hay equipos registrados.",
+    "form": {
+      "editTitle": "Editar Equipo",
+      "newTitle": "Nuevo Equipo",
+      "sheetDescription": "Modifica los datos del equipo y sus integrantes.",
+      "infoSection": "Información del equipo",
+      "namePlaceholder": "Ej: Mantenimiento Preventivo",
+      "descriptionPlaceholder": "Breve descripción (opcional)",
+      "membersSection": "Integrantes",
+      "leader": "Líder",
+      "makeLeader": "Hacer líder",
+      "noEmployees": "No hay empleados disponibles",
+      "createTeam": "Crear Equipo"
+    }
+  },
+  "empty": {
+    "createFirst": "Crear el primero"
+  },
+  "toast": {
+    "employeeDeactivated": "Empleado desactivado",
+    "deactivateEmployeeError": "Error al desactivar empleado",
+    "employeeCreated": "Empleado creado exitosamente",
+    "createEmployeeError": "Error al crear empleado",
+    "employeeUpdated": "Empleado actualizado",
+    "updateEmployeeError": "Error al actualizar empleado",
+    "passwordCopied": "Contraseña copiada al portapapeles",
+    "passwordCopyError": "No se pudo copiar la contraseña",
+    "teamDeleted": "Equipo eliminado",
+    "deleteTeamError": "Error al eliminar equipo",
+    "teamCreated": "Equipo creado",
+    "createTeamError": "Error al crear equipo",
+    "teamUpdated": "Equipo actualizado",
+    "updateTeamError": "Error al actualizar equipo"
+  }
+}

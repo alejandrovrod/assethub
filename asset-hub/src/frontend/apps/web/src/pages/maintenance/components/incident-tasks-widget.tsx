@@ -11,20 +11,28 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 import { WorkTaskFormSheet } from './work-task-form-sheet'
 
 interface IncidentTasksWidgetProps {
   incidentId: string
 }
 
-const STATE_LABELS: Record<string, string> = {
-  todo: 'Por hacer',
-  in_progress: 'En progreso',
-  done: 'Completada',
-  cancelled: 'Cancelada',
+type StateLabelKey =
+  | 'tasks.states.todo'
+  | 'tasks.states.inProgress'
+  | 'tasks.states.done'
+  | 'tasks.states.cancelled'
+
+const STATE_LABEL_KEYS: Record<string, StateLabelKey> = {
+  todo: 'tasks.states.todo',
+  in_progress: 'tasks.states.inProgress',
+  done: 'tasks.states.done',
+  cancelled: 'tasks.states.cancelled',
 }
 
 export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
+  const { t } = useTranslation('maintenance')
   const { can } = usePermissions()
   const canCreate = can('tasks:create')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -40,11 +48,11 @@ export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg">Tareas derivadas</CardTitle>
+        <CardTitle className="text-lg">{t('detail.sections.derivedTasks')}</CardTitle>
         {canCreate && (
           <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
-            Crear tarea
+            {t('form.createTask')}
           </Button>
         )}
       </CardHeader>
@@ -56,7 +64,7 @@ export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
         ) : openTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
             <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
-            <p>No hay tareas derivadas de esta incidencia.</p>
+            <p>{t('empty.incidentTasks')}</p>
           </div>
         ) : (
           <ScrollArea className="max-h-[240px]">
@@ -73,13 +81,13 @@ export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       {task.dueAt && (
-                        <span>Vence {format(parseApiDate(task.dueAt), 'dd MMM', { locale: es })}</span>
+                        <span>{t('detail.dueLabel')} {format(parseApiDate(task.dueAt), 'dd MMM', { locale: es })}</span>
                       )}
                       {task.assignedEmployeeName && <span>· {task.assignedEmployeeName}</span>}
                     </div>
                   </div>
                   <Badge variant="outline" className="text-xs shrink-0">
-                    {STATE_LABELS[task.state] || task.state}
+                    {STATE_LABEL_KEYS[task.state] ? t(STATE_LABEL_KEYS[task.state]) : task.state}
                   </Badge>
                 </Link>
               ))}

@@ -15,10 +15,12 @@ import {
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import { useAuthStore } from '@/store/auth.store'
 import { getMediaUrl } from '@/lib/api-client'
+import { useTranslation } from 'react-i18next'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
   const { userProfile, tenantName } = useAuthStore()
+  const { t } = useTranslation('common')
 
   const user = userProfile
     ? {
@@ -27,7 +29,7 @@ export function ProfileDropdown() {
         avatar: getMediaUrl(userProfile.avatarUrl),
       }
     : {
-        name: 'Usuario',
+        name: t('labels.user'),
         email: '',
         avatar: '',
       }
@@ -47,33 +49,33 @@ export function ProfileDropdown() {
           <DropdownMenuLabel className='font-normal'>
             <div className='flex flex-col gap-1.5'>
               <p className='text-sm leading-none font-medium'>{user.name}</p>
-              <p className='text-xs leading-none text-muted-foreground'>{user.email || tenantName || 'Sin tenant'}</p>
+              <p className='text-xs leading-none text-muted-foreground'>{user.email || tenantName || t('profile.noTenant')}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
               <Link to='/settings/account'>
-                Cuenta
+                {t('profile.account')}
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to='/settings'>
-                Facturación
+                {t('nav.billing')}
                 <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to='/settings/notifications'>
-                Notificaciones
+                {t('nav.notifications')}
                 <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
-            Cerrar sesión
+            {t('nav.logout')}
             <DropdownMenuShortcut className='text-current'>
               ⇧⌘Q
             </DropdownMenuShortcut>

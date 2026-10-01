@@ -21,6 +21,7 @@ import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { apiClient as api } from '@/lib/api-client'
 import { assetService } from '@/services/asset.service'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 interface MaintenanceOrderPartsEditorProps {
   orderId: string
@@ -50,6 +51,7 @@ const DEFAULT_FORM: PartForm = {
 }
 
 export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: MaintenanceOrderPartsEditorProps) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canManageParts = can('maintenance-parts:manage')
   const queryClient = useQueryClient()
@@ -89,9 +91,9 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', orderId] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-parts', orderId] })
-      toast.success('Parte eliminada')
+      toast.success(t('orders.parts.toast.deleted'))
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al eliminar parte')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('orders.parts.toast.deleteError'))),
   })
 
   const addMutation = useMutation({
@@ -99,23 +101,23 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', orderId] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-parts', orderId] })
-      toast.success('Parte agregada')
+      toast.success(t('orders.parts.toast.added'))
       setNewPart(DEFAULT_FORM)
       setShowForm(false)
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.detail || err.response?.data?.title || 'Error al agregar parte'
+      const msg = err.response?.data?.detail || err.response?.data?.title || t('orders.parts.toast.addError')
       toast.error(msg)
     },
   })
 
   const handleAddPart = () => {
     if (!newPart.catalogItemId || newPart.quantity <= 0) {
-      toast.error('Completá el artículo y la cantidad')
+      toast.error(t('orders.parts.validation.itemAndQuantity'))
       return
     }
     if (newPart.sourceType === 'Internal' && !newPart.warehouseId) {
-      toast.error('Seleccioná el almacén de origen')
+      toast.error(t('orders.parts.validation.warehouseRequired'))
       return
     }
 
@@ -140,7 +142,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <span className="text-muted-foreground">Partes / Repuestos</span>
+          <span className="text-muted-foreground">{t('orders.parts.title')}</span>
         </h4>
         {!isLocked && (
           <Button
@@ -149,7 +151,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
             className="h-7 text-xs"
             onClick={() => setShowForm(!showForm)}
           >
-            <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+            <Plus className="h-3.5 w-3.5 mr-1" /> {t('common:actions.add')}
           </Button>
         )}
       </div>
@@ -161,7 +163,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
           {bomMaterials.length > 0 && (
             <div className="space-y-2 mb-4">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                Sugeridos del Activo (BOM)
+                {t('orders.parts.bomSuggested')}
               </Label>
               <div className="flex flex-wrap gap-2">
                 {bomMaterials.map(m => (
@@ -190,7 +192,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
 
           {/* Catalog search */}
           <div className="space-y-2">
-            <Label>Item del catálogo</Label>
+            <Label>{t('orders.parts.catalogItem')}</Label>
             <AsyncCombobox<{ id: string; name: string }>
               minSearchChars={1}
               fetcher={async (query) => {
@@ -200,9 +202,9 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
               }}
               labelKey="name"
               valueKey="id"
-              placeholder="Buscar repuesto..."
-              searchPlaceholder="Escriba para buscar..."
-              emptyText="No se encontraron repuestos."
+              placeholder={t('orders.parts.searchPlaceholder')}
+              searchPlaceholder={t('form.searchTypePlaceholder')}
+              emptyText={t('orders.parts.noItemsFound')}
               onSelect={(item) => {
                 setNewPart(prev => ({ ...prev, catalogItemId: item.id, catalogItemLabel: item.name }))
               }}
@@ -214,7 +216,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
                   onClick={onClick}
                   className="w-full justify-between font-normal text-sm"
                 >
-                  {newPart.catalogItemLabel || 'Buscar repuesto...'}
+                  {newPart.catalogItemLabel || t('orders.parts.searchPlaceholder')}
                   <span className="ml-2 opacity-50">▼</span>
                 </Button>
               )}
@@ -224,7 +226,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
           {/* Quantity & Cost */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Cantidad</Label>
+              <Label>{t('common:labels.quantity')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -233,7 +235,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
               />
             </div>
             <div className="space-y-2">
-              <Label>Costo unitario</Label>
+              <Label>{t('orders.parts.unitCost')}</Label>
               <Input
                 type="number"
                 min={0}
@@ -248,7 +250,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
           {showSourceSelector && (
             <div className="space-y-3 border-t pt-3 mt-1">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                Origen del repuesto
+                {t('orders.parts.sourceLabel')}
               </Label>
 
               <div className="flex gap-2">
@@ -266,20 +268,20 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
                     `}
                   >
                     {sourceIcon(s)}
-                    {s === 'None' ? 'Sin stock' : s === 'Internal' ? 'Inventario' : 'Proveedor externo'}
+                    {s === 'None' ? t('orders.parts.sourceNone') : s === 'Internal' ? t('orders.parts.sourceInternal') : t('orders.parts.sourceExternal')}
                   </button>
                 ))}
               </div>
 
               {newPart.sourceType === 'Internal' && (
                 <div className="space-y-2">
-                  <Label>Almacén</Label>
+                  <Label>{t('orders.parts.warehouse')}</Label>
                   <Select
                     value={newPart.warehouseId}
                     onValueChange={v => setNewPart(prev => ({ ...prev, warehouseId: v }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccioná el almacén" />
+                      <SelectValue placeholder={t('orders.parts.selectWarehouse')} />
                     </SelectTrigger>
                     <SelectContent>
                       {warehouses.filter(w => w.isActive).map(w => (
@@ -289,7 +291,7 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
                   </Select>
                   {warehouses.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      No hay almacenes configurados. <a href="/inventory/warehouses" className="underline text-primary">Crear uno</a>.
+                      {t('orders.parts.noWarehouses')} <a href="/inventory/warehouses" className="underline text-primary">{t('orders.parts.createOne')}</a>.
                     </p>
                   )}
                 </div>
@@ -298,17 +300,17 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
               {newPart.sourceType === 'External' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Proveedor</Label>
+                    <Label>{t('common:labels.supplier')}</Label>
                     <Input
-                      placeholder="Nombre del proveedor"
+                      placeholder={t('orders.parts.supplierNamePlaceholder')}
                       value={newPart.externalSupplierName ?? ''}
                       onChange={e => setNewPart(prev => ({ ...prev, externalSupplierName: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Referencia</Label>
+                    <Label>{t('common:labels.reference')}</Label>
                     <Input
-                      placeholder="# orden, factura..."
+                      placeholder={t('orders.parts.referencePlaceholder')}
                       value={newPart.externalReference ?? ''}
                       onChange={e => setNewPart(prev => ({ ...prev, externalReference: e.target.value }))}
                     />
@@ -320,11 +322,11 @@ export function MaintenanceOrderPartsEditor({ orderId, state, assetId }: Mainten
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>
-              Cancelar
+              {t('common:actions.cancel')}
             </Button>
             <Button size="sm" onClick={handleAddPart} disabled={addMutation.isPending}>
               {addMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
-              Agregar
+              {t('common:actions.add')}
             </Button>
           </div>
         </div>

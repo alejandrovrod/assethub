@@ -14,10 +14,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Catalog } from "@/services/catalog.service"
+import { useTranslation } from "react-i18next"
+import i18n from "@/i18n"
 
 const formSchema = z.object({
-  code: z.string().min(2, { message: "El código debe tener al menos 2 caracteres." }),
-  label: z.string().min(2, { message: "La etiqueta debe tener al menos 2 caracteres." }),
+  code: z.string().min(2, { error: () => ({ message: i18n.t('catalogs:form.catalog.codeMinLength') }) }),
+  label: z.string().min(2, { error: () => ({ message: i18n.t('catalogs:form.catalog.labelMinLength') }) }),
   targetModules: z.array(z.string()).optional(),
 })
 
@@ -31,6 +33,7 @@ interface CatalogFormProps {
 }
 
 export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: CatalogFormProps) {
+  const { t } = useTranslation(['catalogs', 'common'])
   const form = useForm<CatalogFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,11 +51,11 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
           name="code"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Código</FormLabel>
+              <FormLabel>{t('common:labels.code')}</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: ASSET_TYPE" {...field} disabled={!!initialData} />
+                <Input placeholder={t('form.catalog.codePlaceholder')} {...field} disabled={!!initialData} />
               </FormControl>
-              <FormDescription>Identificador único del catálogo (solo mayúsculas y guiones bajos recomendado).</FormDescription>
+              <FormDescription>{t('form.catalog.codeDescription')}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -62,9 +65,9 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
           name="label"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Etiqueta</FormLabel>
+              <FormLabel>{t('labels.label')}</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Tipo de Activo" {...field} />
+                <Input placeholder={t('form.catalog.labelPlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -76,9 +79,9 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
           render={() => (
             <FormItem>
               <div className="mb-4">
-                <FormLabel className="text-base">Módulos</FormLabel>
+                <FormLabel className="text-base">{t('form.catalog.modules')}</FormLabel>
                 <FormDescription>
-                  Seleccione en qué módulos de la aplicación debe estar disponible este catálogo.
+                  {t('form.catalog.modulesDescription')}
                 </FormDescription>
               </div>
               <FormField
@@ -86,12 +89,12 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
                 name="targetModules"
                 render={({ field }) => {
                   const modules = [
-                    { id: "Assets", label: "Activos" },
-                    { id: "Incidents", label: "Incidencias" },
-                    { id: "Tasks", label: "Tareas" },
-                    { id: "Maintenance", label: "Mantenimiento" },
-                    { id: "Orders", label: "Órdenes" },
-                    { id: "Staff", label: "Personal" },
+                    { id: "Assets", label: t('form.catalog.moduleAssets') },
+                    { id: "Incidents", label: t('form.catalog.moduleIncidents') },
+                    { id: "Tasks", label: t('form.catalog.moduleTasks') },
+                    { id: "Maintenance", label: t('form.catalog.moduleMaintenance') },
+                    { id: "Orders", label: t('form.catalog.moduleOrders') },
+                    { id: "Staff", label: t('form.catalog.moduleStaff') },
                   ];
 
                   return (
@@ -130,10 +133,10 @@ export function CatalogForm({ initialData, onSubmit, onCancel, isLoading }: Cata
         />
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancelar
+            {t('common:actions.cancel')}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Guardando..." : "Guardar"}
+            {isLoading ? t('form.saving') : t('common:actions.save')}
           </Button>
         </div>
       </form>

@@ -132,7 +132,7 @@ public class DeleteFinanceBookCommandHandler : IRequestHandler<DeleteFinanceBook
             .AnyAsync(e => e.FinanceBookId == book.Id, cancellationToken);
 
         if (hasPostedEntries)
-            throw new DomainException("has_posted_entries", "No se puede eliminar: existen cuotas devengadas");
+            throw new DomainException("has_posted_entries", "No se puede eliminar: existen cuotas devengadas", "Domain.HasPostedEntriesDelete");
 
         book.IsDeleted = true;
         book.DeletedAt = DateTime.UtcNow;

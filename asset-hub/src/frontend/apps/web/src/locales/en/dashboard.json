@@ -1,0 +1,48 @@
+{
+  "metrics": {
+    "title": "Reliability",
+    "scopeAsset": "Asset metrics",
+    "scopeTenant": "Tenant metrics",
+    "correctiveOrders": "{{count}} corrective orders",
+    "noData": "Not enough data.",
+    "mtbfHint": "Mean time between failures",
+    "mttrRestoreLabel": "MTTR Restoration",
+    "mttrRestoreHint": "From failure to completed",
+    "mttrRepairLabel": "MTTR Repair",
+    "mttrRepairHint": "From work start to completed"
+  },
+  "charts": {
+    "title": "Total Cost of Ownership (TCO)",
+    "scopeAsset": "Asset costs",
+    "scopeTenant": "Tenant costs",
+    "entryCount": "{{count}} entries",
+    "annualized": "Annualized",
+    "ageDays": "{{count}} days old",
+    "empty": "No costs recorded.",
+    "costTypes": {
+      "labor": "Labor",
+      "parts": "Spare parts",
+      "downtime": "Downtime",
+      "externalServices": "External services",
+      "penalty": "Penalties",
+      "other": "Other"
+    },
+    "statusLabels": {
+      "sufficientData": "Annualized",
+      "projected": "Projected",
+      "insufficientData": "Insufficient data",
+      "notApplicable": "N/A"
+    }
+  },
+  "table": {
+    "title": "Reliability by asset",
+    "description": "MTBF and MTTR of recent assets",
+    "headers": {
+      "asset": "Asset",
+      "correctiveOrders": "Corrective orders",
+      "mttrRestore": "MTTR Restoration",
+      "mttrRepair": "MTTR Repair"
+    },
+    "empty": "No assets to show."
+  }
+}

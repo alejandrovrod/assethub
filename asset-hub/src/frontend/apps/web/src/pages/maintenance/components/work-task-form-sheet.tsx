@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -25,17 +27,17 @@ import { parseApiDate } from '@/lib/utils'
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
 const PRIORITY_CATALOG_CODE = 'priority'
 
-const formSchema = z.object({
-  title: z.string().min(1, 'El título es requerido').max(200),
+const formSchema = (t: TFunction<'maintenance'>) => z.object({
+  title: z.string().min(1, t('form.validation.taskTitleRequired')).max(200),
   description: z.string().max(2000).optional(),
   dueAt: z.date().optional(),
-  taskTypeCatalogItemId: z.string().min(1, 'El tipo de tarea es requerido'),
-  priorityCatalogItemId: z.string().min(1, 'La prioridad es requerida'),
+  taskTypeCatalogItemId: z.string().min(1, t('form.validation.taskTypeRequired')),
+  priorityCatalogItemId: z.string().min(1, t('form.validation.priorityRequired')),
   assignedEmployeeId: z.string().optional(),
   assignedTeamId: z.string().optional(),
 })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof formSchema>>
 
 interface Prefill {
   assetId?: string
@@ -62,6 +64,7 @@ function toIsoDate(date: Date | undefined): string | undefined {
 }
 
 export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess }: Props) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const queryClient = useQueryClient()
   const isEditing = !!task
   const [propertiesJson, setPropertiesJson] = useState((task as any)?.propertiesJson || prefill?.propertiesJson || '{}')
@@ -91,7 +94,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
   })
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema(t)),
     defaultValues: {
       title: '',
       description: '',
@@ -106,22 +109,22 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
   const relatedEntity = useMemo(() => {
     if (!prefill) return null
     if (prefill.assetId) {
-      return { icon: Box, label: 'Activo', value: prefilledAsset?.name ?? prefill.assetId }
+      return { icon: Box, label: t('fields.asset'), value: prefilledAsset?.name ?? prefill.assetId }
     }
     if (prefill.incidentId) {
-      return { icon: AlertTriangle, label: 'Incidencia', value: prefill.incidentId }
+      return { icon: AlertTriangle, label: t('detail.related.incident'), value: prefill.incidentId }
     }
     if (prefill.maintenanceOrderId) {
-      return { icon: FileText, label: 'Orden de mantenimiento', value: prefill.maintenanceOrderId }
+      return { icon: FileText, label: t('detail.related.maintenanceOrder'), value: prefill.maintenanceOrderId }
     }
     if (prefill.preventivePlanId) {
-      return { icon: CalendarDays, label: 'Plan preventivo', value: prefilledPlan?.name ?? prefill.preventivePlanId }
+      return { icon: CalendarDays, label: t('detail.related.preventivePlan'), value: prefilledPlan?.name ?? prefill.preventivePlanId }
     }
     if (prefill.taskRecurrenceId) {
-      return { icon: ClipboardList, label: 'Recurrencia', value: prefill.taskRecurrenceId }
+      return { icon: ClipboardList, label: t('detail.related.recurrence'), value: prefill.taskRecurrenceId }
     }
     return null
-  }, [prefill, prefilledAsset, prefilledPlan])
+  }, [prefill, prefilledAsset, prefilledPlan, t])
 
   useEffect(() => {
     if (!open) return
@@ -161,12 +164,12 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
     mutationFn: workTaskService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
-      toast.success('Tarea creada exitosamente')
+      toast.success(t('toast.taskCreated'))
       onOpenChange(false)
       onSuccess?.()
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.title || error?.message || 'Error al crear la tarea'
+      const message = error?.response?.data?.title || error?.message || t('toast.taskCreateError')
       toast.error(message)
     },
   })
@@ -175,12 +178,12 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
     mutationFn: (payload: CreateWorkTaskRequest) => workTaskService.update(task!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
-      toast.success('Tarea actualizada exitosamente')
+      toast.success(t('toast.taskUpdated'))
       onOpenChange(false)
       onSuccess?.()
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.title || error?.message || 'Error al actualizar la tarea'
+      const message = error?.response?.data?.title || error?.message || t('toast.taskUpdateError')
       toast.error(message)
     },
   })
@@ -215,7 +218,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
     fieldName: keyof FormValues,
     label: string,
     items?: CatalogItem[],
-    placeholder = 'Seleccionar...'
+    placeholder = t('form.selectPlaceholder')
   ) => (
     <FormField
       control={form.control}
@@ -253,12 +256,12 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
             </div>
             <div>
               <SheetTitle className="text-xl">
-                {isEditing ? 'Editar Tarea' : 'Nueva Tarea de Trabajo'}
+                {isEditing ? t('form.editTitle') : t('form.createTitle')}
               </SheetTitle>
               <SheetDescription>
                 {isEditing
-                  ? 'Modificá los datos de la tarea.'
-                  : 'Creá una tarea de trabajo y asignala al responsable.'}
+                  ? t('form.editDescription')
+                  : t('form.createDescription')}
               </SheetDescription>
             </div>
           </div>
@@ -271,7 +274,7 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
                 {relatedEntity && (
                   <div className="rounded-md border bg-muted/30 p-4 space-y-1">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Entidad relacionada
+                      {t('form.relatedEntity')}
                     </span>
                     <div className="flex items-center gap-2">
                       <relatedEntity.icon className="h-4 w-4 text-primary" />
@@ -288,9 +291,9 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Título</FormLabel>
+                      <FormLabel>{t('fields.title')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Resumen de la tarea" {...field} />
+                        <Input placeholder={t('form.taskTitlePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,9 +305,9 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripción</FormLabel>
+                      <FormLabel>{t('fields.description')}</FormLabel>
                       <FormControl>
-                        <Textarea rows={3} placeholder="Detalles opcionales..." {...field} />
+                        <Textarea rows={3} placeholder={t('form.descriptionPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -316,12 +319,12 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
                   name="dueAt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fecha de vencimiento</FormLabel>
+                      <FormLabel>{t('form.dueDateLabel')}</FormLabel>
                       <FormControl>
                         <DatePicker
                           selected={field.value}
                           onSelect={field.onChange}
-                          placeholder="Seleccionar fecha"
+                          placeholder={t('form.selectDatePlaceholder')}
                         />
                       </FormControl>
                       <FormMessage />
@@ -330,8 +333,8 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
                 />
 
                 <div className="grid grid-cols-2 gap-4">
-                  {renderCatalogSelect('taskTypeCatalogItemId', 'Tipo de tarea', taskTypes)}
-                  {renderCatalogSelect('priorityCatalogItemId', 'Prioridad', priorities)}
+                  {renderCatalogSelect('taskTypeCatalogItemId', t('form.taskType'), taskTypes)}
+                  {renderCatalogSelect('priorityCatalogItemId', t('fields.priority'), priorities)}
                 </div>
 
 
@@ -352,18 +355,18 @@ export function WorkTaskFormSheet({ open, onOpenChange, prefill, task, onSuccess
 
             <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3 shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={isPending} className="min-w-[150px]">
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Guardando...
+                    {t('form.saving')}
                   </>
                 ) : isEditing ? (
-                  'Guardar cambios'
+                  t('common:actions.saveChanges')
                 ) : (
-                  'Crear tarea'
+                  t('form.createTask')
                 )}
               </Button>
             </div>

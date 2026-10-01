@@ -38,12 +38,15 @@ import type {
 } from '@/services/roles.service'
 import { handleServerError } from '@/lib/handle-server-error'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsRoles() {
   const queryClient = useQueryClient()
   const { can } = usePermissions()
   const canManage = can('roles:manage')
   const canRead = can('roles:read')
+  const { t } = useTranslation('settings')
+  const { t: tCommon } = useTranslation('common')
 
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
@@ -102,7 +105,7 @@ export default function SettingsRoles() {
       }
     },
     onSuccess: () => {
-      toast.success(editingRoleId ? 'Rol actualizado' : 'Rol creado')
+      toast.success(editingRoleId ? t('roles.toast.updated') : t('roles.toast.created'))
       setEditorOpen(false)
       queryClient.invalidateQueries({ queryKey: ['roles'] })
     },
@@ -112,7 +115,7 @@ export default function SettingsRoles() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => rolesService.deleteRole(id),
     onSuccess: () => {
-      toast.success('Rol eliminado')
+      toast.success(t('roles.toast.deleted'))
       queryClient.invalidateQueries({ queryKey: ['roles'] })
     },
     onError: (error) => handleServerError({ error }),
@@ -162,9 +165,9 @@ export default function SettingsRoles() {
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
           <div className="flex flex-col items-center gap-1 text-center">
             <Shield className="h-8 w-8 text-muted-foreground" />
-            <h3 className="text-lg font-bold tracking-tight">Sin acceso</h3>
+            <h3 className="text-lg font-bold tracking-tight">{t('roles.noAccess.title')}</h3>
             <p className="text-sm text-muted-foreground">
-              No tenés permiso para ver los roles (roles:read).
+              {t('roles.noAccess.body')}
             </p>
           </div>
         </div>
@@ -176,24 +179,24 @@ export default function SettingsRoles() {
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Roles y Permisos</h1>
+          <h1 className="text-2xl font-semibold">{t('roles.pageTitle')}</h1>
           <p className="text-sm text-muted-foreground">
-            Matriz de permisos por rol del tenant, personalizable por módulo
+            {t('roles.pageSubtitle')}
           </p>
         </div>
         {canManage && (
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Nuevo Rol
+            {t('roles.newRole')}
           </Button>
         )}
       </div>
 
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="border-b">
-          <CardTitle>Roles</CardTitle>
+          <CardTitle>{t('roles.title')}</CardTitle>
           <CardDescription>
-            Los roles base del sistema se pueden editar pero no eliminar
+            {t('roles.cardDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -205,12 +208,12 @@ export default function SettingsRoles() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead className="text-center">Permisos</TableHead>
-                  <TableHead className="text-center">Usuarios</TableHead>
-                  {canManage && <TableHead className="w-24">Acciones</TableHead>}
+                  <TableHead>{tCommon('labels.role')}</TableHead>
+                  <TableHead>{tCommon('labels.description')}</TableHead>
+                  <TableHead>{tCommon('labels.type')}</TableHead>
+                  <TableHead className="text-center">{t('roles.permissions')}</TableHead>
+                  <TableHead className="text-center">{t('roles.table.headers.users')}</TableHead>
+                  {canManage && <TableHead className="w-24">{tCommon('labels.actions')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -229,7 +232,7 @@ export default function SettingsRoles() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={role.isSystemDefault ? 'secondary' : 'outline'}>
-                        {role.isSystemDefault ? 'Sistema' : 'Custom'}
+                        {role.isSystemDefault ? t('roles.badge.system') : t('roles.badge.custom')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
@@ -244,7 +247,7 @@ export default function SettingsRoles() {
                             size="sm"
                             onClick={() => openEdit(role)}
                           >
-                            Editar
+                            {tCommon('actions.edit')}
                           </Button>
                           {!role.isSystemDefault && (
                             <Button
@@ -252,7 +255,7 @@ export default function SettingsRoles() {
                               size="sm"
                               disabled={deleteMutation.isPending}
                               onClick={() => {
-                                if (confirm(`¿Eliminar el rol "${role.name}"?`)) {
+                                if (confirm(t('roles.confirmDelete', { name: role.name }))) {
                                   deleteMutation.mutate(role.id)
                                 }
                               }}
@@ -276,45 +279,44 @@ export default function SettingsRoles() {
         <DialogContent className="max-h-[90vh] sm:max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingRoleId ? `Editar rol — ${name}` : 'Nuevo rol'}
+              {editingRoleId ? t('roles.dialog.editTitle', { name }) : t('roles.dialog.newTitle')}
             </DialogTitle>
             <DialogDescription>
-              Definí el nombre y marcá los permisos que el rol otorga. Se
-              validan contra el plan del tenant.
+              {t('roles.dialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="role-name">Nombre</Label>
+                <Label htmlFor="role-name">{tCommon('labels.name')}</Label>
                 <Input
                   id="role-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej. Supervisor de Planta"
+                  placeholder={t('roles.dialog.namePlaceholder')}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="role-desc">Descripción</Label>
+                <Label htmlFor="role-desc">{tCommon('labels.description')}</Label>
                 <Input
                   id="role-desc"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Qué hace este rol"
+                  placeholder={t('roles.dialog.descriptionPlaceholder')}
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between gap-2">
               <Input
-                placeholder="Buscar permiso..."
+                placeholder={t('roles.dialog.searchPermission')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="max-w-xs"
               />
               <span className="text-sm text-muted-foreground">
-                {selectedPerms.size} seleccionados
+                {t('roles.dialog.selectedCount', { selected: selectedPerms.size })}
               </span>
             </div>
 
@@ -366,7 +368,7 @@ export default function SettingsRoles() {
                     </div>
                     {someSelected && !allSelected && (
                       <div className="border-t bg-muted/20 px-3 py-1 text-xs text-muted-foreground">
-                        Selección parcial
+                        {t('roles.dialog.partialSelection')}
                       </div>
                     )}
                   </div>
@@ -381,7 +383,7 @@ export default function SettingsRoles() {
               onClick={() => setEditorOpen(false)}
               disabled={saveMutation.isPending}
             >
-              Cancelar
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               onClick={() => saveMutation.mutate()}
@@ -392,7 +394,7 @@ export default function SettingsRoles() {
               {saveMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {editingRoleId ? 'Guardar cambios' : 'Crear rol'}
+              {editingRoleId ? tCommon('actions.saveChanges') : t('roles.dialog.createRole')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -15,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { useTranslation } from 'react-i18next'
 
 export interface AsyncComboboxProps<T> {
   fetcher: (query: string) => Promise<T[]>
@@ -34,12 +35,13 @@ export function AsyncCombobox<T>({
   labelKey,
   valueKey,
   onSelect,
-  placeholder = 'Seleccionar...',
-  searchPlaceholder = 'Buscar...',
-  emptyText = 'No se encontraron resultados.',
+  placeholder,
+  searchPlaceholder,
+  emptyText,
   renderTrigger,
   minSearchChars = 2,
 }: AsyncComboboxProps<T>) {
+  const { t } = useTranslation('common')
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<T[]>([])
@@ -88,7 +90,7 @@ export function AsyncCombobox<T>({
             aria-expanded={open}
             className="w-full justify-between"
           >
-            {placeholder}
+            {placeholder ?? t('combobox.placeholder')}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         )}
@@ -98,7 +100,7 @@ export function AsyncCombobox<T>({
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <Input
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t('combobox.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-9 border-0 bg-transparent shadow-none focus-visible:ring-0"
@@ -107,21 +109,21 @@ export function AsyncCombobox<T>({
           <CommandList>
             {isLoading && (
               <div className="p-4 flex items-center justify-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Cargando...
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> {t('status.loading')}
               </div>
             )}
             {!isLoading && !query && (
               <div className="p-4 text-sm text-center text-muted-foreground">
-                Escriba al menos {minSearchChars} caracteres para buscar...
+                {t('combobox.minCharsToSearch', { min: minSearchChars })}
               </div>
             )}
             {!isLoading && query.trim().length < minSearchChars && query.length > 0 && (
               <div className="p-4 text-sm text-center text-muted-foreground">
-                Escriba al menos {minSearchChars} caracteres...
+                {t('combobox.minChars', { min: minSearchChars })}
               </div>
             )}
             {!isLoading && query.trim().length >= minSearchChars && items.length === 0 && (
-              <CommandEmpty>{emptyText}</CommandEmpty>
+              <CommandEmpty>{emptyText ?? t('combobox.emptyText')}</CommandEmpty>
             )}
             {!isLoading && items.length > 0 && (
               <CommandGroup>

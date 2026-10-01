@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface CustomHtmlEditorProps {
   value: string
@@ -16,6 +17,7 @@ interface CustomHtmlEditorProps {
 }
 
 export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtmlEditorProps) {
+  const { t } = useTranslation(['communication', 'common'])
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [viewMode, setViewMode] = useState<'split' | 'code' | 'preview'>('split')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -52,7 +54,7 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isFullscreen])
 
-  const iframeSrcDoc = value || '<html><body><p style="color:#888; font-family:sans-serif; text-align:center; padding-top:2rem;">Vista Previa en Vivo</p></body></html>'
+  const iframeSrcDoc = value || `<html><body><p style="color:#888; font-family:sans-serif; text-align:center; padding-top:2rem;">${t('common:editor.livePreview')}</p></body></html>`
 
   return (
     <div className={cn(
@@ -63,23 +65,23 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-900 border-b border-slate-800">
         <div className="flex items-center gap-1">
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<b>', '</b>')} title="Negrita">
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<b>', '</b>')} title={t('common:editor.bold')}>
             <Bold className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<i>', '</i>')} title="Cursiva">
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<i>', '</i>')} title={t('common:editor.italic')}>
             <Italic className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<u>', '</u>')} title="Subrayado">
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<u>', '</u>')} title={t('common:editor.underline')}>
             <Underline className="h-4 w-4" />
           </Button>
           <div className="w-px h-5 bg-slate-700 mx-1" />
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<a href="#">', '</a>')} title="Enlace">
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<a href="#">', '</a>')} title={t('common:editor.link')}>
             <Link className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<img src="https://via.placeholder.com/150" alt="imagen" />')} title="Imagen">
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<img src="https://via.placeholder.com/150" alt="imagen" />')} title={t('editor.image')}>
             <Image className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<br />')} title="Salto de línea">
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" onClick={() => insertText('<br />')} title={t('editor.lineBreak')}>
             <Code className="h-4 w-4" />
           </Button>
           
@@ -89,7 +91,7 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="ghost" size="sm" className="h-8 text-slate-300 hover:text-slate-100 hover:bg-slate-800 font-medium">
-                <span className="text-amber-500 mr-1">{`{ }`}</span> Variables
+                <span className="text-amber-500 mr-1">{`{ }`}</span> {t('common:editor.variables')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 max-h-64 overflow-y-auto z-[100]">
@@ -100,7 +102,7 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
                   </DropdownMenuItem>
                 ))
               ) : (
-                <DropdownMenuItem disabled>No hay variables disponibles</DropdownMenuItem>
+                <DropdownMenuItem disabled>{t('editor.noVariables')}</DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -114,21 +116,21 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
               className={cn("px-2.5 py-1 text-xs font-medium rounded transition-colors", viewMode === 'split' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200')}
               onClick={() => setViewMode('split')}
             >
-              Split
+              {t('common:editor.viewSplit')}
             </button>
             <button 
               type="button"
               className={cn("px-2.5 py-1 text-xs font-medium rounded transition-colors", viewMode === 'code' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200')}
               onClick={() => setViewMode('code')}
             >
-              Código
+              {t('common:editor.viewCode')}
             </button>
             <button 
               type="button"
               className={cn("px-2.5 py-1 text-xs font-medium rounded transition-colors", viewMode === 'preview' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200')}
               onClick={() => setViewMode('preview')}
             >
-              Preview
+              {t('common:editor.viewPreview')}
             </button>
           </div>
 
@@ -138,7 +140,7 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
             size="icon" 
             className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800" 
             onClick={() => setIsFullscreen(!isFullscreen)}
-            title="Pantalla Completa (Esc para salir)"
+            title={t('common:editor.fullscreen')}
           >
             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           </Button>
@@ -153,7 +155,7 @@ export function CustomHtmlEditor({ value, variables = [], onChange }: CustomHtml
               className="flex-1 w-full bg-slate-950 text-slate-300 font-mono text-sm p-4 resize-none outline-none focus:ring-1 focus:ring-slate-700 custom-scrollbar"
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="<html>\n  <body>\n    Escribí el HTML acá...\n  </body>\n</html>"
+              placeholder={t('editor.htmlPlaceholder')}
               spellCheck={false}
             />
           </div>

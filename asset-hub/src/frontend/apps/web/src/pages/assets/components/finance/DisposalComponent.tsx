@@ -3,18 +3,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { financeService, CreateDisposalRequest, DisposalType, getDisposalTypeLabel, getDisposalTypeColor } from '@/services/finance.service'
+import { financeService, CreateDisposalRequest, DisposalType, getDisposalTypeColor } from '@/services/finance.service'
 import { usePermissions } from '@/hooks/use-permissions'
 import { Loader2, Trash2, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
-import { formatCurrency, parseApiDate } from '@/lib/utils'
+import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { useTranslation } from 'react-i18next'
+
+const disposalTypeLabelKeys: Record<
+  DisposalType,
+  'finance.disposalType.scrapped' | 'finance.disposalType.sold' | 'finance.disposalType.lost' | 'finance.disposalType.donated' | 'finance.disposalType.transferred'
+> = {
+  Scrapped: 'finance.disposalType.scrapped',
+  Sold: 'finance.disposalType.sold',
+  Lost: 'finance.disposalType.lost',
+  Donated: 'finance.disposalType.donated',
+  Transferred: 'finance.disposalType.transferred',
+}
 
 interface DisposalComponentProps {
   assetId: string
@@ -23,6 +36,8 @@ interface DisposalComponentProps {
 }
 
 export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalComponentProps) {
+  const { t } = useTranslation(['assets', 'common'])
+  const { formatDate, formatDateTime, formatCurrency } = useFormat()
   const { can } = usePermissions()
   const queryClient = useQueryClient()
   const canWrite = can('assets.disposal.write')
@@ -44,7 +59,7 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
       queryClient.invalidateQueries({ queryKey: ['depreciation-schedules', assetId] })
       queryClient.invalidateQueries({ queryKey: ['finance-summary', assetId] })
       queryClient.invalidateQueries({ queryKey: ['asset', assetId] })
-      toast.success('Baja registrada exitosamente. El activo pasa a estado terminal.')
+      toast.success(t('finance.toast.disposalRegistered'))
       onDisposed?.()
     },
     onError: handleServerError,
@@ -86,7 +101,7 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin" />
-            Baja / Desincorporación
+            {t('finance.disposal.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -105,21 +120,21 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-amber-700 dark:text-amber-400" />
-            Activo Dado de Baja
+            {t('finance.disposal.assetDisposedTitle')}
           </CardTitle>
           <CardDescription>
-            Tipo: <Badge className={getDisposalTypeColor(disposal.disposalType)}>{getDisposalTypeLabel(disposal.disposalType)}</Badge>
-            · Fecha: {parseApiDate(disposal.disposalDate).toLocaleDateString()}
+            {t('finance.disposal.typePrefix')} <Badge className={getDisposalTypeColor(disposal.disposalType)}>{t(disposalTypeLabelKeys[disposal.disposalType])}</Badge>
+            · {t('common:labels.date')}: {formatDate(parseApiDate(disposal.disposalDate))}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="p-3 bg-card rounded-lg border">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Valor Neto al Baja</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('finance.disposal.netBookValue')}</p>
               <p className="text-lg font-bold">{formatCurrency(disposal.netBookValueAtDisposal)}</p>
             </div>
             <div className="p-3 bg-card rounded-lg border">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Monto Recuperado</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('finance.disposal.proceedsAmount')}</p>
               <p className="text-lg font-bold">{formatCurrency(disposal.proceedsAmount)}</p>
             </div>
           </div>
@@ -127,25 +142,25 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
             <div className="flex items-center gap-2">
               {isGain ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : <XCircle className="h-5 w-5 text-destructive" />}
               <div>
-                <p className="font-medium">{isGain ? 'Ganancia en la baja' : 'Pérdida en la baja'}</p>
+                <p className="font-medium">{isGain ? t('finance.disposal.gain') : t('finance.disposal.loss')}</p>
                 <p className="text-xl font-bold">{isGain ? '+' : ''}{formatCurrency(disposal.gainLossAmount)}</p>
               </div>
             </div>
           </div>
           {disposal.documentReference && (
             <div className="p-3 bg-muted/50 rounded-lg text-sm">
-              <p className="font-medium">Referencia documental:</p>
+              <p className="font-medium">{t('finance.disposal.documentReferenceLabel')}</p>
               <p className="text-muted-foreground">{disposal.documentReference}</p>
             </div>
           )}
           <div className="p-3 bg-muted/50 rounded-lg text-sm">
-            <p className="font-medium">Motivo:</p>
+            <p className="font-medium">{t('finance.disposal.reasonLabel')}</p>
             <p className="text-muted-foreground">{disposal.reason}</p>
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
-            <span>Aprobado por: {disposal.approvedBy}</span>
+            <span>{t('finance.disposal.approvedBy', { name: disposal.approvedBy })}</span>
             <span>·</span>
-            <span>{parseApiDate(disposal.approvedAt).toLocaleString()}</span>
+            <span>{formatDateTime(parseApiDate(disposal.approvedAt))}</span>
           </div>
         </CardContent>
       </Card>
@@ -159,16 +174,15 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
         <div>
           <CardTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-destructive" />
-            Baja / Desincorporación
+            {t('finance.disposal.title')}
           </CardTitle>
           <CardDescription>
-            Registra la salida definitiva del activo (chatarrización, venta, pérdida, donación). 
-            El activo pasará a estado terminal y se cancelarán todas las cuotas futuras.
+            {t('finance.disposal.description')}
           </CardDescription>
         </div>
         {!isDisposed && canWrite && (
           <Button variant="destructive" onClick={handleOpen}>
-            <Trash2 className="mr-2 h-4 w-4" /> Dar de Baja
+            <Trash2 className="mr-2 h-4 w-4" /> {t('finance.actions.dispose')}
           </Button>
         )}
       </CardHeader>
@@ -177,21 +191,21 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
         {isDisposed ? (
           <div className="text-center py-12 border-2 border-destructive/20 rounded-lg">
             <Trash2 className="h-12 w-12 text-destructive/50 mx-auto mb-4" />
-            <h3 className="font-medium text-destructive">Activo en estado terminal</h3>
+            <h3 className="font-medium text-destructive">{t('finance.disposal.terminalStateTitle')}</h3>
             <p className="text-sm text-muted-foreground/70 mt-1">
-              Este activo está en estado <strong>{assetState}</strong>. No se puede registrar una baja adicional.
+              {t('finance.disposal.terminalStatePrefix')} <strong>{assetState}</strong>{t('finance.disposal.terminalStateSuffix')}
             </p>
           </div>
         ) : (
           <div className="text-center py-12">
             <Trash2 className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <h3 className="font-medium text-muted-foreground">Sin baja registrada</h3>
+            <h3 className="font-medium text-muted-foreground">{t('finance.disposal.emptyTitle')}</h3>
             <p className="text-sm text-muted-foreground/70 mt-1">
-              El activo sigue activo. Usa el botón "Dar de Baja" cuando corresponda.
+              {t('finance.disposal.emptyHint')}
             </p>
             {!isDisposed && canWrite && (
               <Button variant="destructive" className="mt-4" onClick={handleOpen}>
-                <Trash2 className="mr-2 h-4 w-4" /> Registrar Baja
+                <Trash2 className="mr-2 h-4 w-4" /> {t('finance.actions.registerDisposal')}
               </Button>
             )}
           </div>
@@ -200,31 +214,31 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Registrar Baja Definitiva</DialogTitle>
+            <DialogTitle>{t('finance.dialog.registerDisposalTitle')}</DialogTitle>
             <DialogDescription>
-              Esta acción es irreversible. El activo pasará a estado terminal y se cancelarán todas las cuotas de depreciación futuras.
+              {t('finance.dialog.registerDisposalDescription')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
               <div>
-                <Label htmlFor="disposalType">Tipo de Baja *</Label>
+                <Label htmlFor="disposalType">{t('finance.form.disposalTypeLabel')}</Label>
                 <Select value={formData.disposalType} onValueChange={v => setFormData(prev => ({ ...prev, disposalType: v as DisposalType }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar tipo" />
+                    <SelectValue placeholder={t('finance.form.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Scrapped">Chatarrización</SelectItem>
-                    <SelectItem value="Sold">Venta</SelectItem>
-                    <SelectItem value="Lost">Pérdida / Robo</SelectItem>
-                    <SelectItem value="Donated">Donación</SelectItem>
-                    <SelectItem value="Transferred">Transferencia</SelectItem>
+                    <SelectItem value="Scrapped">{t('finance.disposalType.scrapped')}</SelectItem>
+                    <SelectItem value="Sold">{t('finance.disposalType.sold')}</SelectItem>
+                    <SelectItem value="Lost">{t('finance.dialog.disposalOptionLost')}</SelectItem>
+                    <SelectItem value="Donated">{t('finance.disposalType.donated')}</SelectItem>
+                    <SelectItem value="Transferred">{t('finance.disposalType.transferred')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="disposalDate">Fecha de Baja *</Label>
+                <Label htmlFor="disposalDate">{t('finance.form.disposalDateLabel')}</Label>
                 <Input
                   id="disposalDate"
                   type="date"
@@ -235,7 +249,7 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
               </div>
 
               <div>
-                <Label htmlFor="proceedsAmount">Monto Recuperado *</Label>
+                <Label htmlFor="proceedsAmount">{t('finance.form.proceedsAmountLabel')}</Label>
                 <Input
                   id="proceedsAmount"
                   type="number"
@@ -247,17 +261,17 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
                   required
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Monto recibido por venta, seguro, etc. 0 para chatarrización/pérdida total.
+                  {t('finance.form.proceedsAmountHint')}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="reason">Motivo / Justificación *</Label>
+                <Label htmlFor="reason">{t('finance.form.disposalReasonLabel')}</Label>
                 <Textarea
                   id="reason"
                   value={formData.reason}
                   onChange={e => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                  placeholder="Describe el motivo de la baja (certificado de destrucción, factura de venta, denuncia policial, etc.)"
+                  placeholder={t('finance.form.disposalReasonPlaceholder')}
                   rows={3}
                   required
                   minLength={10}
@@ -265,23 +279,23 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
               </div>
 
               <div>
-                <Label htmlFor="documentReference">Referencia Documental</Label>
+                <Label htmlFor="documentReference">{t('finance.form.documentReferenceLabel')}</Label>
                 <Input
                   id="documentReference"
                   value={formData.documentReference}
                   onChange={e => setFormData(prev => ({ ...prev, documentReference: e.target.value }))}
-                  placeholder="N° factura, acta de destrucción, póliza de seguro, etc."
+                  placeholder={t('finance.form.documentReferencePlaceholder')}
                 />
               </div>
 
               <div className="bg-destructive/5 p-3 rounded text-sm text-destructive">
                 <AlertCircle className="h-4 w-4 inline mr-1" />
-                Esta acción es irreversible. El activo pasará a estado terminal.
+                {t('finance.dialog.irreversibleWarning')}
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowDialog(false)} disabled={createMutation.isPending}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -289,28 +303,28 @@ export function DisposalComponent({ assetId, assetState, onDisposed }: DisposalC
                     {createMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Procesando...
+                        {t('finance.actions.processing')}
                       </>
                     ) : (
                       <>
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Confirmar Baja Definitiva
+                        {t('finance.actions.confirmDisposal')}
                       </>
                     )}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>¿Confirmar baja definitiva?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('finance.dialog.confirmDisposalTitle')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta acción no se puede deshacer. El activo pasará a estado <strong>{formData.disposalType === 'Scrapped' ? 'Scrapped' : 'Disposed'}</strong> 
-                      y se cancelarán todas las cuotas de depreciación futuras pendientes.
+                      {t('finance.dialog.confirmDisposalBodyPrefix')} <strong>{formData.disposalType === 'Scrapped' ? 'Scrapped' : 'Disposed'}</strong>
+                      {t('finance.dialog.confirmDisposalBodySuffix')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={handleSubmit} disabled={createMutation.isPending}>
-                      {createMutation.isPending ? 'Procesando...' : 'Sí, dar de baja definitivamente'}
+                      {createMutation.isPending ? t('finance.actions.processing') : t('finance.actions.disposeYes')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

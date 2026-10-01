@@ -5,13 +5,17 @@ import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@
 import { Button } from '@/components/ui/button'
 import { financeService, AssetDepreciationEntryDto } from '@/services/finance.service'
 import { Loader2, FileText, Hash } from 'lucide-react'
-import { formatCurrency, parseApiDate } from '@/lib/utils'
+import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
+import { useTranslation } from 'react-i18next'
 
 interface DepreciationEntriesTableProps {
   assetId: string
 }
 
 export function DepreciationEntriesTable({ assetId }: DepreciationEntriesTableProps) {
+  const { t } = useTranslation(['assets', 'common'])
+  const { formatDate, formatDateTime, formatCurrency } = useFormat()
   const [page, setPage] = useState(1)
   const pageSize = 20
 
@@ -27,10 +31,10 @@ export function DepreciationEntriesTable({ assetId }: DepreciationEntriesTablePr
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Asientos Devengados (Historial)
+          {t('finance.entries.title')}
         </CardTitle>
         <CardDescription>
-          Registro inmutable de cuotas contabilizadas. Cada asiento tiene una clave de idempotencia única.
+          {t('finance.entries.description')}
         </CardDescription>
       </CardHeader>
 
@@ -42,9 +46,9 @@ export function DepreciationEntriesTable({ assetId }: DepreciationEntriesTablePr
         ) : data?.items.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <h3 className="font-medium text-muted-foreground">Sin asientos devengados</h3>
+            <h3 className="font-medium text-muted-foreground">{t('finance.empty.noEntries')}</h3>
             <p className="text-sm text-muted-foreground/70 mt-1">
-              Las cuotas aparecerán aquí al devengarlas desde el cronograma.
+              {t('finance.empty.noEntriesHint')}
             </p>
           </div>
         ) : (
@@ -53,20 +57,20 @@ export function DepreciationEntriesTable({ assetId }: DepreciationEntriesTablePr
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-20">Período</TableHead>
-                    <TableHead className="w-40">Fecha Contable</TableHead>
-                    <TableHead className="text-right">Monto Depreciado</TableHead>
-                    <TableHead className="text-right">Dep. Acumulada</TableHead>
-                    <TableHead className="text-right">Valor Neto</TableHead>
-                    <TableHead className="w-48">Clave Idempotencia</TableHead>
-                    <TableHead className="w-40">Registrado</TableHead>
+                    <TableHead className="w-20">{t('finance.table.headers.period')}</TableHead>
+                    <TableHead className="w-40">{t('finance.table.headers.accountingDate')}</TableHead>
+                    <TableHead className="text-right">{t('finance.table.headers.depreciatedAmount')}</TableHead>
+                    <TableHead className="text-right">{t('finance.table.headers.accumulatedDep')}</TableHead>
+                    <TableHead className="text-right">{t('finance.table.headers.netBookValue')}</TableHead>
+                    <TableHead className="w-48">{t('finance.table.headers.idempotencyKey')}</TableHead>
+                    <TableHead className="w-40">{t('finance.table.headers.postedAt')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.items.map((entry: AssetDepreciationEntryDto) => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-mono text-sm">{entry.periodNumber}</TableCell>
-                      <TableCell className="text-sm">{parseApiDate(entry.accountingDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-sm">{formatDate(parseApiDate(entry.accountingDate))}</TableCell>
                       <TableCell className="text-right font-mono text-sm text-primary">{formatCurrency(entry.depreciationAmount)}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{formatCurrency(entry.accumulatedDepreciation)}</TableCell>
                       <TableCell className="text-right font-mono text-sm font-medium">{formatCurrency(entry.netBookValue)}</TableCell>
@@ -74,7 +78,7 @@ export function DepreciationEntriesTable({ assetId }: DepreciationEntriesTablePr
                         <Hash className="h-3 w-3 inline mr-1" /> {entry.idempotencyKey}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {parseApiDate(entry.postedAt).toLocaleString()}
+                        {formatDateTime(parseApiDate(entry.postedAt))}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -85,14 +89,14 @@ export function DepreciationEntriesTable({ assetId }: DepreciationEntriesTablePr
             {data && data.totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <p className="text-sm text-muted-foreground">
-                  Página {page} de {data.totalPages} · {data.totalCount} registros
+                  {t('common:pagination.page', { page })} {t('common:pagination.of', { total: data.totalPages })} · {t('finance.pagination.records', { count: data.totalCount })}
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                    Anterior
+                    {t('common:pagination.previous')}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(data.totalPages, p + 1))} disabled={page === data.totalPages}>
-                    Siguiente
+                    {t('common:pagination.next')}
                   </Button>
                 </div>
               </div>

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Plus, Loader2, Warehouse as WarehouseIcon, PencilLine, CheckCircle2, XCircle } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 
 import { inventoryService, type CreateWarehouseRequest } from '@/services/inventory.service'
 import { Button } from '@/components/ui/button'
@@ -28,20 +30,23 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
 import { usePermissions } from '@/hooks/use-permissions'
 
-const schema = z.object({
-  name: z.string().min(2, 'El nombre es requerido'),
-  code: z.string().min(1, 'El código es requerido').max(20),
-  description: z.string().optional(),
-})
+function getWarehouseSchema(t: TFunction<'inventory'>) {
+  return z.object({
+    name: z.string().min(2, t('warehouses.form.validation.nameRequired')),
+    code: z.string().min(1, t('warehouses.form.validation.codeRequired')).max(20),
+    description: z.string().optional(),
+  })
+}
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<ReturnType<typeof getWarehouseSchema>>
 
 export default function WarehousesPage() {
+  const { t } = useTranslation(['inventory', 'common'])
+  const { formatDate } = useFormat()
   const { can } = usePermissions()
   const canCreate = can('warehouses:create')
   const qc = useQueryClient()
@@ -52,20 +57,21 @@ export default function WarehousesPage() {
     queryFn: inventoryService.getWarehouses,
   })
 
+  const warehouseSchema = useMemo(() => getWarehouseSchema(t), [t])
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(warehouseSchema),
   })
 
   const createMutation = useMutation({
     mutationFn: (body: CreateWarehouseRequest) => inventoryService.createWarehouse(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['warehouses'] })
-      toast.success('Almacén creado correctamente')
+      toast.success(t('warehouses.toast.created'))
       setOpen(false)
       reset()
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.title || 'Error al crear el almacén')
+      toast.error(err.response?.data?.title || t('warehouses.toast.createError'))
     },
   })
 
@@ -76,15 +82,15 @@ export default function WarehousesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Almacenes</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('warehouses.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Gestión de ubicaciones físicas de inventario.
+            {t('warehouses.subtitle')}
           </p>
         </div>
         {canCreate && (
           <Button onClick={() => setOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Nuevo Almacén
+            {t('warehouses.newWarehouse')}
           </Button>
         )}
       </div>
@@ -94,10 +100,10 @@ export default function WarehousesPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <WarehouseIcon className="h-4 w-4 text-primary" />
-            Almacenes registrados
+            {t('warehouses.registered.title')}
           </CardTitle>
           <CardDescription>
-            {warehouses.length} almacén{warehouses.length !== 1 ? 'es' : ''} configurado{warehouses.length !== 1 ? 's' : ''}
+            {t('warehouses.registered.count', { count: warehouses.length })}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -108,11 +114,11 @@ export default function WarehousesPage() {
           ) : warehouses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
               <WarehouseIcon className="h-10 w-10 opacity-30" />
-              <p className="text-sm">No hay almacenes configurados.</p>
+              <p className="text-sm">{t('warehouses.empty.title')}</p>
               {canCreate && (
                 <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Crear el primero
+                  {t('warehouses.empty.createFirst')}
                 </Button>
               )}
             </div>
@@ -120,11 +126,11 @@ export default function WarehousesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado</TableHead>
+                  <TableHead>{t('common:labels.code')}</TableHead>
+                  <TableHead>{t('common:labels.name')}</TableHead>
+                  <TableHead>{t('common:labels.description')}</TableHead>
+                  <TableHead>{t('common:labels.status')}</TableHead>
+                  <TableHead>{t('common:labels.createdAt')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -146,17 +152,17 @@ export default function WarehousesPage() {
                       {w.isActive ? (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-400 gap-1">
                           <CheckCircle2 className="h-3 w-3" />
-                          Activo
+                          {t('common:status.active')}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-muted text-muted-foreground gap-1">
                           <XCircle className="h-3 w-3" />
-                          Inactivo
+                          {t('common:status.inactive')}
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {w.createdAt ? format(parseApiDate(w.createdAt), 'dd MMM yyyy', { locale: es }) : '—'}
+                      {w.createdAt ? formatDate(parseApiDate(w.createdAt), { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -170,37 +176,37 @@ export default function WarehousesPage() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="sm:max-w-md" aria-describedby="warehouse-sheet-desc">
           <SheetHeader>
-            <SheetTitle>Nuevo Almacén</SheetTitle>
+            <SheetTitle>{t('warehouses.newWarehouse')}</SheetTitle>
             <SheetDescription id="warehouse-sheet-desc">
-              Completá los datos para registrar un nuevo almacén.
+              {t('warehouses.form.sheetDescription')}
             </SheetDescription>
           </SheetHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 mt-6">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="wh-code">Código</Label>
-              <Input id="wh-code" placeholder="ALM-01" {...register('code')} />
+              <Label htmlFor="wh-code">{t('common:labels.code')}</Label>
+              <Input id="wh-code" placeholder={t('warehouses.form.codePlaceholder')} {...register('code')} />
               {errors.code && <p className="text-xs text-destructive">{errors.code.message}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="wh-name">Nombre</Label>
-              <Input id="wh-name" placeholder="Almacén Principal" {...register('name')} />
+              <Label htmlFor="wh-name">{t('common:labels.name')}</Label>
+              <Input id="wh-name" placeholder={t('warehouses.form.namePlaceholder')} {...register('name')} />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="wh-desc">Descripción <span className="text-muted-foreground">(opcional)</span></Label>
-              <Textarea id="wh-desc" rows={3} placeholder="Ubicación, notas..." {...register('description')} />
+              <Label htmlFor="wh-desc">{t('common:labels.description')} <span className="text-muted-foreground">{t('warehouses.form.optionalHint')}</span></Label>
+              <Textarea id="wh-desc" rows={3} placeholder={t('warehouses.form.descriptionPlaceholder')} {...register('description')} />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => { setOpen(false); reset() }}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crear Almacén
+                {t('warehouses.form.submit')}
               </Button>
             </div>
           </form>

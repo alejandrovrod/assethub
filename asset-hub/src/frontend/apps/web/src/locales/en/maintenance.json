@@ -1,0 +1,564 @@
+{
+  "list": {
+    "title": "Maintenance",
+    "incidents": "Incidents",
+    "tasks": "Tasks",
+    "orders": "Work orders",
+    "preventivePlans": "Preventive plans",
+    "workflowTemplates": "Workflow templates",
+    "empty": "Nothing to show",
+    "newIncident": "Report incident",
+    "newTask": "New task",
+    "newOrder": "New work order",
+    "newPlan": "New plan"
+  },
+  "fields": {
+    "title": "Title",
+    "description": "Description",
+    "priority": "Priority",
+    "status": "Status",
+    "asset": "Asset",
+    "assignee": "Assignee",
+    "dueDate": "Due date",
+    "createdAt": "Created at",
+    "estimatedHours": "Estimated hours",
+    "cost": "Cost",
+    "scheduledShort": "Sched."
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "status": {
+    "open": "Open",
+    "inProgress": "In progress",
+    "onHold": "On hold",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "kanban": {
+    "todo": "To do",
+    "inProgress": "In progress",
+    "done": "Done",
+    "columns": {
+      "todo": "Pending",
+      "rework": "Correction",
+      "inProgress": "In progress",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    },
+    "noPriority": "No priority",
+    "unassigned": "Unassigned"
+  },
+  "incidents": {
+    "description": "Manage the incidents reported on assets.",
+    "totalCount": "Total: {{count}} incidents",
+    "columns": {
+      "reportedAt": "Reported on"
+    },
+    "filters": {
+      "title": "Filters",
+      "searchTitle": "Search",
+      "searchPlaceholder": "Title or asset...",
+      "loading": "Loading filters...",
+      "optionSearch": "Search option...",
+      "optionNotFound": "Option not found.",
+      "mobileTrigger": "Filters and search"
+    }
+  },
+  "tasks": {
+    "title": "Maintenance Tasks",
+    "description": "Track maintenance tasks, assignments and due dates.",
+    "searchPlaceholder": "Search by title...",
+    "filterByState": "Filter by status",
+    "initialState": "Initial",
+    "untitledOrder": "Untitled order",
+    "taskCount": "{{count}} tasks",
+    "totalCount": "Total: {{count}} tasks",
+    "views": {
+      "list": "List",
+      "kanban": "Kanban"
+    },
+    "columns": {
+      "due": "Due",
+      "assigned": "Assigned"
+    },
+    "states": {
+      "todo": "To do",
+      "rework": "Rework",
+      "inProgress": "In progress",
+      "done": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "orderStates": {
+      "draft": "Draft",
+      "approved": "Approved",
+      "scheduled": "Scheduled",
+      "inProgress": "In progress",
+      "done": "Done",
+      "verified": "Verified",
+      "cancelled": "Cancelled"
+    }
+  },
+  "detail": {
+    "notFound": "Incident not found.",
+    "reported": "Reported",
+    "changeStateTo": "Change status to:",
+    "changeTo": "Change to {{state}}",
+    "noneAvailable": "None available",
+    "noDescription": "No description.",
+    "descriptionPlaceholder": "No description",
+    "resolvingCatalogs": "Resolving catalogs...",
+    "noAttributes": "No attributes configured.",
+    "noAdditionalDetails": "No additional details",
+    "systemUser": "System / Authenticated",
+    "enteredData": "Entered data:",
+    "internalId": "Internal ID",
+    "resolvedAt": "Resolution date",
+    "taskTitlePlaceholder": "Task title",
+    "dueLabel": "Due",
+    "due": "Due date",
+    "independentTask": "Independent Task",
+    "selectPriority": "Select priority",
+    "selectType": "Select type",
+    "changeState": "Change status",
+    "stateChangeBlocked": "The task status cannot be changed because the main work order is not In progress.",
+    "noTransitions": "No transitions available",
+    "tabs": {
+      "timeline": "Log",
+      "details": "Details"
+    },
+    "sections": {
+      "generalDescription": "General Description",
+      "incidentInfo": "Incident Information",
+      "specificAttributes": "Specific attributes ({{name}}).",
+      "eventLog": "Event Log",
+      "eventLogDescription": "History of status changes and actions for this incident.",
+      "metadata": "Metadata",
+      "generatedOrder": "Generated Order",
+      "derivedTasks": "Derived tasks"
+    },
+    "blockReasons": {
+      "activeOrder": "Cannot close: There is an active corrective work order.",
+      "openTasks": "Cannot close: There are open tasks associated with this incident."
+    },
+    "related": {
+      "maintenanceOrder": "Maintenance order",
+      "incident": "Incident",
+      "preventivePlan": "Preventive plan",
+      "recurrence": "Recurrence",
+      "origin": "Origin"
+    }
+  },
+  "comments": {
+    "defaultAuthor": "User",
+    "placeholder": "Add a comment...",
+    "writePlaceholder": "Write a comment...",
+    "submit": "Comment"
+  },
+  "form": {
+    "reportIncident": "Report Incident",
+    "reportIncidentDescription": "Create a new incident assigned to an asset.",
+    "saving": "Saving...",
+    "titlePlaceholder": "Summary of the problem",
+    "incidentDetailsPlaceholder": "Incident details...",
+    "selectAsset": "Select an asset",
+    "searchTypePlaceholder": "Type to search...",
+    "noAssetsFound": "No assets found.",
+    "templateType": "Template (Type)",
+    "selectTemplate": "Select a template",
+    "additionalProperties": "Additional Properties",
+    "loadingCatalogs": "Loading catalogs...",
+    "taskType": "Task type",
+    "editTitle": "Edit Task",
+    "createTitle": "New Work Task",
+    "editDescription": "Update the task details.",
+    "createDescription": "Create a work task and assign it to the owner.",
+    "relatedEntity": "Related entity",
+    "taskTitlePlaceholder": "Task summary",
+    "descriptionPlaceholder": "Optional details...",
+    "dueDateLabel": "Due date",
+    "selectDatePlaceholder": "Select date",
+    "selectPlaceholder": "Select...",
+    "createTask": "Create task",
+    "validation": {
+      "titleRequired": "Title is required",
+      "assetRequired": "Asset is required",
+      "templateRequired": "Template is required",
+      "taskTitleRequired": "The title is required",
+      "taskTypeRequired": "The task type is required",
+      "priorityRequired": "Priority is required"
+    },
+    "filters": {
+      "search": "Search",
+      "assignedEmployee": "Assigned employee",
+      "searchEmployee": "Search employee...",
+      "noEmployees": "No employees found.",
+      "assignedTeam": "Assigned team",
+      "searchTeam": "Search team...",
+      "noTeams": "No teams found.",
+      "searchAsset": "Search asset...",
+      "incident": "Incident",
+      "searchIncident": "Search incident...",
+      "noIncidents": "No incidents found.",
+      "dueFrom": "Due from",
+      "dueTo": "Due to",
+      "startDatePlaceholder": "Start date",
+      "endDatePlaceholder": "End date",
+      "states": {
+        "allStates": "All statuses",
+        "todo": "Pending",
+        "inProgress": "In progress",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      }
+    }
+  },
+  "toast": {
+    "stateUpdated": "Status updated",
+    "stateChangeError": "Error changing the status",
+    "incidentUpdated": "Incident updated successfully",
+    "incidentReported": "Incident reported successfully",
+    "incidentReportError": "Error reporting the incident",
+    "taskDeleted": "Task deleted",
+    "taskDeleteError": "Error deleting the task",
+    "taskUpdated": "Task updated",
+    "taskUpdateError": "Error updating the task",
+    "taskCreated": "Task created successfully",
+    "taskCreateError": "Error creating the task",
+    "taskCompleted": "Task completed",
+    "assignmentUpdated": "Assignment updated",
+    "assignError": "Error assigning the task",
+    "commentAdded": "Comment added",
+    "commentError": "Error adding the comment"
+  },
+  "dialog": {
+    "deleteTaskTitle": "Delete task?",
+    "deleteTaskBody": "This will delete the task \"{{title}}\". This action cannot be undone.",
+    "changeToTitle": "Change to '{{state}}'",
+    "transitionNeedsInfo": "This status requires additional information before continuing.",
+    "editDynamicInfo": "Edit Dynamic Information",
+    "editDynamicInfoDescription": "Modify the dynamic attributes of {{title}}"
+  },
+  "empty": {
+    "incidents": "No incidents reported.",
+    "tasks": "No maintenance tasks.",
+    "createFirstTask": "Create the first one",
+    "activeIncidents": "No active incidents.",
+    "assetOrders": "No work orders for this asset.",
+    "comments": "No comments yet.",
+    "noComments": "No comments.",
+    "history": "No change history.",
+    "timeline": "No events recorded in the log.",
+    "assetOpenTasks": "There are no open tasks for this asset.",
+    "incidentTasks": "There are no tasks derived from this incident.",
+    "statusChanges": "No status changes recorded."
+  },
+  "widget": {
+    "predictiveHealth": "Predictive Health (XGBoost)",
+    "failureEstimate": "Estimated time to failure:",
+    "moreThanOneYear": "More than 1 year (Optimal)",
+    "approxDays": "Approx. {{count}} days",
+    "stable": "Stable",
+    "riskFactors": "Risk factors:",
+    "reportedLabel": "Reported",
+    "viewAll": "View all"
+  },
+  "ordersWidget": {
+    "viewAll": "View all work orders",
+    "kind": {
+      "corrective": "Corrective",
+      "preventive": "Preventive"
+    },
+    "status": {
+      "draft": "Draft",
+      "approved": "Approved",
+      "scheduled": "Scheduled",
+      "inProgress": "In progress",
+      "done": "Completed",
+      "verified": "Verified",
+      "cancelled": "Cancelled",
+      "rescheduled": "Rescheduled"
+    }
+  },
+  "propagated": {
+    "title": "Propagated Information",
+    "editTitle": "Edit Propagated Information",
+    "editDescription": "Update the additional data for this record."
+  },
+  "pagination": {
+    "perPage": "{{count}} / page"
+  },
+  "orders": {
+    "title": "Maintenance Work Orders",
+    "description": "Track maintenance work orders, costs and verification.",
+    "totalCount": "Total: {{count}} work orders",
+    "empty": "No maintenance work orders.",
+    "associatedTasks": "Associated tasks",
+    "noAssociatedTasks": "No associated tasks",
+    "deleteTitle": "Delete order",
+    "deleteBody": "Are you sure you want to delete this order? This action cannot be undone.",
+    "partsCount_one": "{{count}} part",
+    "partsCount_other": "{{count}} parts",
+    "states": {
+      "all": "All"
+    },
+    "columns": {
+      "scheduled": "Scheduled",
+      "createdAt": "Created"
+    },
+    "toast": {
+      "deleted": "Order deleted",
+      "deleteError": "Error deleting the order",
+      "created": "Order created",
+      "createError": "Error creating the order",
+      "updated": "Order updated",
+      "updateError": "Error updating the order",
+      "planUnlinked": "Preventive plan unlinked",
+      "planUnlinkError": "Error unlinking the plan"
+    },
+    "detail": {
+      "schedule": "Schedule",
+      "start": "Start",
+      "end": "End",
+      "related": "Related",
+      "unlinkPlan": "Unlink preventive plan",
+      "scheduleAction": "Schedule",
+      "verify": "Verify",
+      "missingTasks": "Missing tasks ({{completed}}/{{total}})",
+      "readyToComplete": "Ready to complete",
+      "saveInfo": "Save Information"
+    },
+    "form": {
+      "editTitle": "Edit order",
+      "createTitle": "New maintenance order",
+      "editDescription": "Update the order details.",
+      "createDescription": "Create a new corrective or preventive maintenance order.",
+      "mainInfo": "Main Information",
+      "typeLabel": "Type:",
+      "titlePlaceholder": "E.g. Engine revision",
+      "descriptionPlaceholder": "Add additional details, notes or specific instructions for this order...",
+      "links": "Links",
+      "associatedAsset": "Associated asset",
+      "preventivePlanOptional": "Preventive plan (optional)",
+      "linkPlanPlaceholder": "Link to a plan...",
+      "noPlansFound": "No plans found.",
+      "planSelected": "Plan selected",
+      "searchPlanPlaceholder": "Search plan...",
+      "templateTasks": "Template tasks",
+      "generateChecklistDescription": "Generate base tasks using the asset's template checklist",
+      "validation": {
+        "kindRequired": "The type is required",
+        "titleRequired": "The title is required",
+        "assetRequired": "The asset is required"
+      }
+    },
+    "parts": {
+      "title": "Parts / Spares",
+      "bomSuggested": "Asset suggestions (BOM)",
+      "catalogItem": "Catalog item",
+      "searchPlaceholder": "Search spare part...",
+      "noItemsFound": "No spare parts found.",
+      "unitCost": "Unit cost",
+      "sourceLabel": "Spare part source",
+      "sourceNone": "No stock",
+      "sourceInternal": "Inventory",
+      "sourceExternal": "External supplier",
+      "warehouse": "Warehouse",
+      "selectWarehouse": "Select the warehouse",
+      "noWarehouses": "No warehouses configured.",
+      "createOne": "Create one",
+      "supplierNamePlaceholder": "Supplier name",
+      "referencePlaceholder": "# order, invoice...",
+      "validation": {
+        "itemAndQuantity": "Fill in the item and the quantity",
+        "warehouseRequired": "Select the source warehouse"
+      },
+      "toast": {
+        "added": "Part added",
+        "addError": "Error adding the part",
+        "deleted": "Part deleted",
+        "deleteError": "Error deleting the part"
+      }
+    }
+  },
+  "preventivePlans": {
+    "title": "Maintenance Plans",
+    "description": "Schedule recurring preventive maintenance tasks and work orders.",
+    "searchPlaceholder": "Search by name...",
+    "totalCount": "Total: {{count}} plans",
+    "empty": "No maintenance plans.",
+    "createFirstPlan": "Create the first one",
+    "resume": "Resume",
+    "runNow": "Run now",
+    "deleteTitle": "Delete plan?",
+    "deleteBody": "This will delete the plan \"{{name}}\". Previously generated items will not be affected.",
+    "tabs": {
+      "active": "Active",
+      "paused": "Paused",
+      "calendar": "Calendar",
+      "generated": "Generated"
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "entityType": {
+      "workTask": "Task",
+      "maintenanceOrder": "Order",
+      "both": "Both"
+    },
+    "columns": {
+      "target": "Target",
+      "frequency": "Frequency",
+      "nextRun": "Next run"
+    },
+    "cron": {
+      "daily": "Daily",
+      "weeklyMonday": "Weekly (Monday)",
+      "monthlyFirstDay": "Monthly (day 1)",
+      "weekly": "Weekly",
+      "monthlyDay": "Monthly (day {{day}})",
+      "everyMinutes": "Every {{minutes}} min",
+      "dailyMidnight": "Daily (midnight)",
+      "everyHour": "Every hour",
+      "every5Minutes": "Every 5 minutes",
+      "custom": "Custom"
+    },
+    "detail": {
+      "assetTarget": "Asset: {{name}}",
+      "templateTarget": "Template: {{name}}",
+      "generatedType": "Generated type",
+      "dueOffsetDays": "Days until due",
+      "autoAssign": "Automatic assignment",
+      "lastRun": "Last run",
+      "endsAt": "Ends on"
+    },
+    "widget": {
+      "nextRun": "Next: {{date}}",
+      "noSchedule": "No schedule",
+      "empty": "No plans associated with this asset.",
+      "viewAll": "View all"
+    },
+    "calendar": {
+      "next12": "Next 12 runs",
+      "next": "Next",
+      "empty": "No scheduled runs."
+    },
+    "log": {
+      "records": "{{count}} records",
+      "columns": {
+        "detail": "Details"
+      },
+      "status": {
+        "success": "Success",
+        "skipped": "Skipped",
+        "failed": "Failed"
+      },
+      "empty": "No execution records yet."
+    },
+    "generated": {
+      "tasksTab": "Tasks ({{count}})",
+      "ordersTab": "Work orders ({{count}})",
+      "noTasks": "No generated tasks.",
+      "noOrders": "No generated work orders.",
+      "assetLabel": "Asset: {{name}}",
+      "dueLabel": "Due: {{date}}",
+      "scheduledLabel": "Sched: {{date}}"
+    },
+    "form": {
+      "editTitle": "Edit Plan",
+      "createTitle": "New Maintenance Plan",
+      "description": "Configure the recurrence, target and deliverables of the preventive plan.",
+      "namePlaceholder": "Monthly review...",
+      "descriptionPlaceholder": "Optional description",
+      "targetAsset": "A specific asset",
+      "targetTemplate": "All assets of a template",
+      "assetTemplate": "Asset template",
+      "selectTemplatePlaceholder": "Select template...",
+      "cronExpression": "Cron expression",
+      "cronFormat": "Format: minute hour day month day-of-week",
+      "deliverableType": "Deliverable type",
+      "deliverableTask": "Work task",
+      "workflowTemplate": "Workflow Template",
+      "selectWorkflowPlaceholder": "Select a workflow for the orders...",
+      "workflowDescription": "Defines the fields and lifecycle of the generated orders",
+      "dueOffsetDescription": "Relative to the scheduled run date",
+      "autoAssign": "Assign automatically",
+      "employeeIdOptional": "Employee ID (optional)",
+      "teamIdOptional": "Team ID (optional)",
+      "stateConditions": "Asset state conditions",
+      "stateConditionsDescription": "Tasks will only be generated for assets that meet these conditions.",
+      "excludedStates": "Excluded states",
+      "endsAtOptional": "Ends on (optional)",
+      "noEndDate": "No end date",
+      "fixErrors": "Fix the following errors before saving:",
+      "createPlan": "Create plan",
+      "validation": {
+        "nameRequired": "Name is required",
+        "cronRequired": "Cron expression is required",
+        "dueOffsetMin": "Must be >= 0",
+        "assetRequired": "Select an asset",
+        "templateRequired": "Select a template",
+        "workflowRequired": "Select a workflow for the maintenance orders"
+      }
+    },
+    "toast": {
+      "stateUpdated": "Plan status updated",
+      "deleted": "Plan deleted",
+      "evaluated": "Evaluated: {{tasks}} tasks, {{orders}} work orders, {{skipped}} skipped",
+      "evaluateError": "Error evaluating the plan",
+      "created": "Plan created successfully",
+      "createError": "Error creating the plan",
+      "updated": "Plan updated successfully",
+      "updateError": "Error updating the plan"
+    }
+  },
+  "workflowTemplates": {
+    "title": "Workflow Templates (Workflows)",
+    "description": "Manage the templates (schemas and lifecycle) for incidents and maintenance plans.",
+    "empty": "No templates registered.",
+    "totalCount": "Total: {{count}} templates",
+    "confirmDelete": "Are you sure you want to delete this template?",
+    "toast": {
+      "deleted": "Template deleted",
+      "deleteError": "Error deleting the template",
+      "created": "Template created successfully",
+      "createError": "Error creating the template",
+      "updated": "Template updated successfully",
+      "updateError": "Error updating the template"
+    },
+    "form": {
+      "editTitle": "Edit Workflow Template",
+      "createTitle": "New Workflow Template",
+      "description": "Set up the basic data, attributes and lifecycle of the workflow template step by step.",
+      "loading": "Loading template...",
+      "reviewFields": "Review the fields marked in red before saving.",
+      "tabAttributes": "Attributes",
+      "tabLifecycle": "Lifecycle",
+      "tabPreview": "Preview",
+      "codePlaceholder": "Example: FALLA_MECANICA",
+      "namePlaceholder": "Example: General Mechanical Failure",
+      "workflowType": "Workflow Type",
+      "typePreventive": "Preventive Maintenance Plan",
+      "descriptionPlaceholder": "Brief description of the template...",
+      "whatIsTitle": "What is a workflow template?",
+      "whatIsBody": "It defines the states and attributes of an incident or maintenance plan. Instances created with this template will follow the lifecycle you configure in the following tabs.",
+      "attributesAlert": "Attributes are the additional data requested when creating an incident or plan with this template.",
+      "lifecycleAlert": "The lifecycle defines the states an instance of this workflow goes through and the transitions allowed between them.",
+      "previewAlert": "This is an approximate view of how the template will look to the end user.",
+      "attributesSectionTitle": "Workflow attributes",
+      "lifecycleSectionTitle": "Lifecycle",
+      "noStates": "No states configured.",
+      "saveTemplate": "Save Template",
+      "validation": {
+        "codeRequired": "Code is required",
+        "nameRequired": "Name is required",
+        "typeRequired": "Type is required",
+        "invalidJson": "Must be valid JSON"
+      }
+    }
+  }
+}

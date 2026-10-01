@@ -58,7 +58,7 @@ public class CreateValueAdjustmentCommandHandler : IRequestHandler<CreateValueAd
         var newNetBookValue = currentNetBookValue + req.AdjustmentAmount;
 
         if (newNetBookValue < book.ResidualValue)
-            throw new DomainException("below_residual_value", $"El ajuste reduciría el valor neto ({newNetBookValue}) por debajo del residual ({book.ResidualValue})");
+            throw new DomainException("below_residual_value", $"El ajuste reduciría el valor neto ({newNetBookValue}) por debajo del residual ({book.ResidualValue})", "Domain.BelowResidualValue", newNetBookValue, book.ResidualValue);
 
         if (req.AdjustmentAmount > 0 && req.AdjustmentType == ValueAdjustmentType.Impairment)
             throw new DomainException("invalid_impairment", "El deterioro (Impairment) debe ser un monto negativo");

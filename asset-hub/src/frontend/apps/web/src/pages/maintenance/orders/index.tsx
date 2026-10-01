@@ -7,8 +7,6 @@ import {
   type MaintenanceOrderSummary,
   type MaintenanceOrderState,
   type MaintenanceOrderKind,
-  STATE_LABELS,
-  KIND_LABELS,
 } from '@/services/maintenance-order.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -36,29 +34,40 @@ import {
 import { MaintenanceOrderDetail } from './components/maintenance-order-detail'
 import { MaintenanceOrderFormSheet } from './components/maintenance-order-form-sheet'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
+import { useFormat } from '@/lib/format'
 
-const STATE_OPTIONS: { value: MaintenanceOrderState | 'all'; label: string }[] = [
-  { value: 'all', label: 'Todas' },
-  { value: 'draft', label: 'Borrador' },
-  { value: 'approved', label: 'Aprobada' },
-  { value: 'scheduled', label: 'Programada' },
-  { value: 'in_progress', label: 'En progreso' },
-  { value: 'done', label: 'Completada' },
-  { value: 'rescheduled', label: 'Reprogramada' },
-  { value: 'verified', label: 'Verificada' },
-  { value: 'cancelled', label: 'Cancelada' },
-]
+const STATE_OPTIONS = [
+  { value: 'all', labelKey: 'orders.states.all' },
+  { value: 'draft', labelKey: 'ordersWidget.status.draft' },
+  { value: 'approved', labelKey: 'ordersWidget.status.approved' },
+  { value: 'scheduled', labelKey: 'ordersWidget.status.scheduled' },
+  { value: 'in_progress', labelKey: 'ordersWidget.status.inProgress' },
+  { value: 'done', labelKey: 'ordersWidget.status.done' },
+  { value: 'rescheduled', labelKey: 'ordersWidget.status.rescheduled' },
+  { value: 'verified', labelKey: 'ordersWidget.status.verified' },
+  { value: 'cancelled', labelKey: 'ordersWidget.status.cancelled' },
+] as const
 
-const KIND_OPTIONS: { value: MaintenanceOrderKind | 'all'; label: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'corrective', label: 'Correctiva' },
-  { value: 'preventive', label: 'Preventiva' },
-]
+const KIND_OPTIONS = [
+  { value: 'all', labelKey: 'common:status.all' },
+  { value: 'corrective', labelKey: 'ordersWidget.kind.corrective' },
+  { value: 'preventive', labelKey: 'ordersWidget.kind.preventive' },
+] as const
+
+const ORDER_STATE_KEYS = {
+  draft: 'ordersWidget.status.draft',
+  approved: 'ordersWidget.status.approved',
+  scheduled: 'ordersWidget.status.scheduled',
+  in_progress: 'ordersWidget.status.inProgress',
+  done: 'ordersWidget.status.done',
+  rescheduled: 'ordersWidget.status.rescheduled',
+  verified: 'ordersWidget.status.verified',
+  cancelled: 'ordersWidget.status.cancelled',
+} as const
 
 const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   draft: 'outline',
@@ -72,11 +81,20 @@ const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'd
 }
 
 export default function MaintenanceOrders() {
+  const { t } = useTranslation(['maintenance', 'common'])
+  const { formatDate } = useFormat()
   const { can } = usePermissions()
   const canCreate = can('maintenance:create')
   const canUpdate = can('maintenance:update')
   const canDelete = can('maintenance:delete')
   const queryClient = useQueryClient()
+
+  const kindLabel = (kind: string) => {
+    if (kind === 'corrective') return t('ordersWidget.kind.corrective')
+    if (kind === 'preventive') return t('ordersWidget.kind.preventive')
+    return kind
+  }
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<MaintenanceOrderSummary | undefined>()
   const [selectedOrder, setSelectedOrder] = useState<MaintenanceOrderSummary | undefined>()
@@ -122,14 +140,14 @@ export default function MaintenanceOrders() {
     mutationFn: (id: string) => maintenanceOrderService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
-      toast.success('Orden eliminada')
+      toast.success(t('orders.toast.deleted'))
       if (selectedOrder?.id) {
         setSelectedOrder(undefined)
         searchParams.delete('selected')
         setSearchParams(searchParams)
       }
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al eliminar la orden')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('orders.toast.deleteError'))),
   })
 
   const handleCreate = () => {
@@ -161,9 +179,9 @@ export default function MaintenanceOrders() {
         <Card className={`flex flex-1 flex-col ${selectedOrder ? 'max-w-[55%]' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
             <div>
-              <CardTitle>Órdenes de Mantenimiento</CardTitle>
+              <CardTitle>{t('orders.title')}</CardTitle>
               <CardDescription>
-                Seguimiento de órdenes de mantenimiento, costos y verificación.
+                {t('orders.description')}
               </CardDescription>
             </div>
             {canCreate && (
@@ -175,7 +193,7 @@ export default function MaintenanceOrders() {
 
           <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-b">
             <Input
-              placeholder="Buscar por título..."
+              placeholder={t('tasks.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-xs"
@@ -185,12 +203,12 @@ export default function MaintenanceOrders() {
               onValueChange={(value) => setKindFilter(value as MaintenanceOrderKind | 'all')}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Tipo" />
+                <SelectValue placeholder={t('common:labels.type')} />
               </SelectTrigger>
               <SelectContent>
                 {KIND_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -200,12 +218,12 @@ export default function MaintenanceOrders() {
               onValueChange={(value) => setStateFilter(value as MaintenanceOrderState | 'all')}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Estado" />
+                <SelectValue placeholder={t('common:labels.status')} />
               </SelectTrigger>
               <SelectContent>
                 {STATE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -216,15 +234,15 @@ export default function MaintenanceOrders() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Título</TableHead>
+                  <TableHead>{t('common:labels.title')}</TableHead>
 
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Activo</TableHead>
-                  <TableHead>Programado</TableHead>
-                  <TableHead>Costo</TableHead>
-                  <TableHead>Creada</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t('common:labels.type')}</TableHead>
+                  <TableHead>{t('common:labels.status')}</TableHead>
+                  <TableHead>{t('fields.asset')}</TableHead>
+                  <TableHead>{t('orders.columns.scheduled')}</TableHead>
+                  <TableHead>{t('fields.cost')}</TableHead>
+                  <TableHead>{t('orders.columns.createdAt')}</TableHead>
+                  <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -237,7 +255,7 @@ export default function MaintenanceOrders() {
                 ) : items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No hay órdenes de mantenimiento.
+                      {t('orders.empty')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -249,15 +267,15 @@ export default function MaintenanceOrders() {
                     >
                       <TableCell className="font-medium">{order.title}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{KIND_LABELS[order.kind] || order.kind}</Badge>
+                        <Badge variant="outline">{kindLabel(order.kind)}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATE_VARIANTS[order.state]}>{STATE_LABELS[order.state]}</Badge>
+                        <Badge variant={STATE_VARIANTS[order.state]}>{t(ORDER_STATE_KEYS[order.state])}</Badge>
                       </TableCell>
                       <TableCell>{order.assetName || '—'}</TableCell>
                       <TableCell>
                         {order.scheduledStart ? (
-                          <span className="text-xs">{format(parseApiDate(order.scheduledStart), 'dd MMM yyyy', { locale: es })}</span>
+                          <span className="text-xs">{formatDate(parseApiDate(order.scheduledStart))}</span>
                         ) : (
                           '—'
                         )}
@@ -268,13 +286,13 @@ export default function MaintenanceOrders() {
                         )}
                         {order.partsCount > 0 && (
                           <span className="text-xs text-muted-foreground ml-1">
-                            ({order.partsCount} parte{order.partsCount > 1 ? 's' : ''})
+                            ({t('orders.partsCount', { count: order.partsCount })})
                           </span>
                         )}
                       </TableCell>
                       <TableCell>
                         {order.createdAt ? (
-                          <span className="text-xs text-muted-foreground">{format(parseApiDate(order.createdAt), 'dd MMM yyyy', { locale: es })}</span>
+                          <span className="text-xs text-muted-foreground">{formatDate(parseApiDate(order.createdAt))}</span>
                         ) : (
                           '—'
                         )}
@@ -306,18 +324,18 @@ export default function MaintenanceOrders() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Eliminar orden</AlertDialogTitle>
+                                <AlertDialogTitle>{t('orders.deleteTitle')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  ¿Estás seguro de eliminar esta orden? Esta acción no se puede deshacer.
+                                  {t('orders.deleteBody')}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   onClick={() => deleteMutation.mutate(order.id)}
                                 >
-                                  Eliminar
+                                  {t('common:actions.delete')}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -337,17 +355,17 @@ export default function MaintenanceOrders() {
             <div className="flex items-center justify-between border-t border-border pt-4 px-4 pb-4">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
-                  Total: {data?.totalCount || 0} órdenes
+                  {t('orders.totalCount', { count: data?.totalCount || 0 })}
                 </span>
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                   <SelectTrigger className="w-[100px] h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10 / pág</SelectItem>
-                    <SelectItem value="20">20 / pág</SelectItem>
-                    <SelectItem value="50">50 / pág</SelectItem>
-                    <SelectItem value="100">100 / pág</SelectItem>
+                    <SelectItem value="10">{t('pagination.perPage', { count: 10 })}</SelectItem>
+                    <SelectItem value="20">{t('pagination.perPage', { count: 20 })}</SelectItem>
+                    <SelectItem value="50">{t('pagination.perPage', { count: 50 })}</SelectItem>
+                    <SelectItem value="100">{t('pagination.perPage', { count: 100 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -358,10 +376,10 @@ export default function MaintenanceOrders() {
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Anterior
+                  {t('common:pagination.previous')}
                 </Button>
                 <div className="flex items-center text-sm px-2">
-                  Página {page} de {Math.max(1, Math.ceil((data?.totalCount || 0) / pageSize))}
+                  {t('common:pagination.page', { page })} {t('common:pagination.of', { total: Math.max(1, Math.ceil((data?.totalCount || 0) / pageSize)) })}
                 </div>
                 <Button
                   variant="outline"
@@ -369,7 +387,7 @@ export default function MaintenanceOrders() {
                   onClick={() => setPage(p => p + 1)}
                   disabled={page >= Math.ceil((data?.totalCount || 0) / pageSize)}
                 >
-                  Siguiente
+                  {t('common:pagination.next')}
                 </Button>
               </div>
             </div>

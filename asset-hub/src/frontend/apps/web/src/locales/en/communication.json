@@ -1,0 +1,106 @@
+{
+  "list": {
+    "subtitle": "Multilingual email and document templates for system notifications",
+    "newTemplate": "New Template",
+    "cardTitle": "Templates",
+    "cardDescription": "Define the content of the emails the system sends per event (created order, assigned task, asset status change).",
+    "searchPlaceholder": "Search by code or name...",
+    "scope": "Scope",
+    "scopeAll": "All scopes",
+    "scopeOptions": {
+      "incident": "Incidents",
+      "maintenanceOrder": "Orders",
+      "workTask": "Tasks",
+      "asset": "Assets"
+    },
+    "typeAll": "All types",
+    "typeOptions": {
+      "email": "Email",
+      "document": "Document"
+    },
+    "headers": {
+      "languages": "Languages",
+      "activeVersion": "Active version"
+    },
+    "versionTotal": "v{{version}} ({{total}} total)",
+    "total": "Total: {{total}}",
+    "actions": {
+      "preview": "Preview",
+      "versions": "Versions",
+      "newVersion": "New version"
+    }
+  },
+  "empty": {
+    "templates": "No templates configured",
+    "templatesHint": "Without a template, the system uses the hardcoded default text"
+  },
+  "dialog": {
+    "deleteConfirm": "Delete the template \"{{name}}\" and all its versions?"
+  },
+  "toast": {
+    "deleted": "Template deleted successfully",
+    "created": "Template created successfully",
+    "versionCreated": "New version created successfully",
+    "versionUpdated": "Version updated successfully",
+    "versionActivated": "Version activated successfully",
+    "testSending": "Sending test email...",
+    "testSent": "Test email sent to {{to}}"
+  },
+  "form": {
+    "createTitle": "New Communication Template",
+    "editTitle": "Edit — {{name}}",
+    "createTemplate": "Create template",
+    "saveAsNewVersion": "Save as new version",
+    "sendTest": "Send Test Email",
+    "createNewVersion": "Create New Version",
+    "validationAlert": "Review the marked fields: there are validation errors.",
+    "namePlaceholder": "Maintenance order created",
+    "scope": "Scope",
+    "scopeOptions": {
+      "incident": "Incident",
+      "maintenanceOrder": "Maintenance Order",
+      "workTask": "Work Task",
+      "asset": "Asset"
+    },
+    "typeOptions": {
+      "email": "Email",
+      "document": "Document"
+    },
+    "subjectLabel": "Subject ({{locale}})",
+    "subjectPlaceholder": "New order {{order.title}}",
+    "contentPlaceholder": "Type the text here...",
+    "testEmailTitle": "Send test email",
+    "testEmailDescription": "The current template ({{locale}}) will be sent with sample data to the address you specify. No real events are generated in the system.",
+    "testEmailPlaceholder": "target@company.com",
+    "validation": {
+      "localeRequired": "Language required (e.g. es, en)",
+      "codeRequired": "The code is required",
+      "codeFormat": "Uppercase letters, numbers and hyphens only",
+      "nameRequired": "The name is required",
+      "minLocale": "Add at least one language"
+    }
+  },
+  "preview": {
+    "title": "Preview — {{name}}",
+    "description": "Rendered view with empty variables (real values are filled in when sending). Unknown variables are shown as empty text.",
+    "printPdf": "Print / PDF",
+    "subject": "Subject",
+    "body": "Body",
+    "scopeVariables": "Scope variables",
+    "documentFallback": "Document"
+  },
+  "versions": {
+    "title": "Version history",
+    "description": "{{name}} ({{code}}) — activate the version the system should use",
+    "version": "Version {{number}}",
+    "active": "Active",
+    "createdOn": "Created on {{date}}",
+    "activate": "Activate"
+  },
+  "editor": {
+    "image": "Image",
+    "lineBreak": "Line break",
+    "noVariables": "No variables available",
+    "htmlPlaceholder": "<html>\\n  <body>\\n    Type the HTML here...\\n  </body>\\n</html>"
+  }
+}

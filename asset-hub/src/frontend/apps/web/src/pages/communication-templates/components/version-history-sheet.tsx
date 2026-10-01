@@ -14,7 +14,9 @@ import {
 import { communicationTemplateService } from '@/services/communication-template.service'
 import { handleServerError } from '@/lib/handle-server-error'
 import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 interface VersionHistorySheetProps {
   templateId: string | null
@@ -27,6 +29,8 @@ export function VersionHistorySheet({
 }: VersionHistorySheetProps) {
   const { can } = usePermissions()
   const canManage = can('communication-templates:manage')
+  const { t } = useTranslation('communication')
+  const { formatDate } = useFormat()
   const queryClient = useQueryClient()
   const isOpen = templateId !== null
 
@@ -40,7 +44,7 @@ export function VersionHistorySheet({
     mutationFn: (versionId: string) =>
       communicationTemplateService.activateVersion(templateId!, versionId),
     onSuccess: () => {
-      toast.success('Versión activada exitosamente')
+      toast.success(t('toast.versionActivated'))
       queryClient.invalidateQueries({ queryKey: ['communication-templates'] })
       queryClient.invalidateQueries({ queryKey: ['communication-template'] })
     },
@@ -51,10 +55,10 @@ export function VersionHistorySheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>Historial de versiones</SheetTitle>
+          <SheetTitle>{t('versions.title')}</SheetTitle>
           <SheetDescription>
             {detail
-              ? `${detail.name} (${detail.code}) — activá la versión que el sistema debe usar`
+              ? t('versions.description', { name: detail.name, code: detail.code })
               : ''}
           </SheetDescription>
         </SheetHeader>
@@ -76,28 +80,31 @@ export function VersionHistorySheet({
                 >
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Versión {v.versionNumber}</span>
+                      <span className="font-medium">
+                        {t('versions.version', { number: v.versionNumber })}
+                      </span>
                       {isActive && (
                         <Badge className="gap-1">
                           <CheckCircle2 className="h-3 w-3" />
-                          Activa
+                          {t('versions.active')}
                         </Badge>
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      Creada el{' '}
-                      {v.createdAt
-                        ? parseApiDate(v.createdAt).toLocaleDateString('es')
-                        : '—'}
+                      {t('versions.createdOn', {
+                        date: v.createdAt
+                          ? formatDate(parseApiDate(v.createdAt))
+                          : '—',
+                      })}
                     </span>
                     <div className="flex gap-1">
-                      {v.translations.map((t) => (
+                      {v.translations.map((tr) => (
                         <Badge
-                          key={t.id}
+                          key={tr.id}
                           variant="outline"
                           className="uppercase text-xs"
                         >
-                          {t.locale}
+                          {tr.locale}
                         </Badge>
                       ))}
                     </div>
@@ -109,7 +116,7 @@ export function VersionHistorySheet({
                       disabled={activateMutation.isPending}
                       onClick={() => activateMutation.mutate(v.id)}
                     >
-                      Activar
+                      {t('versions.activate')}
                     </Button>
                   )}
                 </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Check } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
+import { useTranslation } from "react-i18next";
 
 interface Plan {
   code: string;
@@ -13,33 +14,10 @@ interface Plan {
   enabledModules: string;
 }
 
-const t = {
-  en: {
-    title: "Simple, transparent pricing",
-    subtitle: "Start for free, upgrade when you need more power. No hidden fees.",
-    popular: "Most Popular",
-    mo: "/mo",
-    assets: "Assets",
-    users: "Users",
-    module: "module",
-    choose: "Choose"
-  },
-  es: {
-    title: "Precios simples y transparentes",
-    subtitle: "Empezá gratis, mejorá tu plan cuando necesites más poder. Sin letras chicas.",
-    popular: "Más Popular",
-    mo: "/mes",
-    assets: "Activos",
-    users: "Usuarios",
-    module: "módulo",
-    choose: "Elegir"
-  }
-};
-
-export default function Pricing({ lang = "es" }: { lang?: "en" | "es" }) {
+export default function Pricing({ lang: _lang = "es" }: { lang?: "en" | "es" }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const content = t[lang];
+  const { t } = useTranslation('landing');
 
   useEffect(() => {
     apiClient.get<Plan[]>("/public/plans")
@@ -52,9 +30,9 @@ export default function Pricing({ lang = "es" }: { lang?: "en" | "es" }) {
     <section id="pricing" className="py-24 bg-muted/30">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{content.title}</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t('pricingBlock.title')}</h2>
           <p className="text-lg text-muted-foreground">
-            {content.subtitle}
+            {t('pricingBlock.subtitle')}
           </p>
         </div>
 
@@ -71,7 +49,7 @@ export default function Pricing({ lang = "es" }: { lang?: "en" | "es" }) {
                   {plan.code === 'pro' && (
                     <div className="absolute -top-4 left-0 right-0 flex justify-center">
                       <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                        {content.popular}
+                        {t('pricingBlock.popular')}
                       </span>
                     </div>
                   )}
@@ -80,23 +58,23 @@ export default function Pricing({ lang = "es" }: { lang?: "en" | "es" }) {
                     <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
                     <div className="mt-4 flex items-baseline text-5xl font-extrabold">
                       ${plan.priceMonthly}
-                      <span className="ml-1 text-xl font-medium text-muted-foreground">{content.mo}</span>
+                      <span className="ml-1 text-xl font-medium text-muted-foreground">{t('pricingBlock.mo')}</span>
                     </div>
                   </div>
                   
                   <ul className="flex-1 space-y-4 mb-8">
                     <li className="flex items-center gap-3 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      {plan.maxAssets} {content.assets}
+                      {plan.maxAssets} {t('pricingBlock.assets')}
                     </li>
                     <li className="flex items-center gap-3 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      {plan.maxUsers} {content.users}
+                      {plan.maxUsers} {t('pricingBlock.users')}
                     </li>
                     {modules.map((mod: string) => (
                       <li key={mod} className="flex items-center gap-3 text-sm capitalize">
                         <Check className="h-4 w-4 text-primary" />
-                        {mod} {content.module}
+                        {mod} {t('pricingBlock.module')}
                       </li>
                     ))}
                   </ul>
@@ -109,7 +87,7 @@ export default function Pricing({ lang = "es" }: { lang?: "en" | "es" }) {
                         : 'bg-muted text-foreground hover:bg-muted/80'
                     }`}
                   >
-                    {content.choose} {plan.name}
+                    {t('pricingBlock.choose')} {plan.name}
                   </Link>
                 </div>
               );

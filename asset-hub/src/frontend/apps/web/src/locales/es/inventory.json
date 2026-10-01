@@ -1,0 +1,113 @@
+{
+  "settings": {
+    "title": "Configuración de Inventario",
+    "subtitle": "Definí cómo opera el módulo de inventario para este tenant.",
+    "modeSection": {
+      "title": "Modo de operación",
+      "description": "Controla cómo se integra el inventario con las órdenes de mantenimiento."
+    },
+    "modes": {
+      "external": {
+        "label": "Externo",
+        "description": "Las órdenes de mantenimiento usan proveedores externos. No se descuenta stock del sistema."
+      },
+      "internal": {
+        "label": "Interno",
+        "description": "Los repuestos se consumen del inventario propio. El stock se descuenta al registrar partes en las órdenes."
+      },
+      "hybrid": {
+        "label": "Híbrido",
+        "description": "Cada repuesto puede configurarse individualmente como interno o externo por orden."
+      }
+    },
+    "advanced": {
+      "title": "Opciones avanzadas",
+      "allowNegativeLabel": "Permitir stock negativo",
+      "allowNegativeHint": "Si está deshabilitado, las transacciones que generarían stock negativo serán rechazadas."
+    },
+    "discardChanges": "Descartar cambios",
+    "save": "Guardar configuración",
+    "toast": {
+      "saved": "Configuración de inventario guardada",
+      "saveError": "Error al guardar la configuración"
+    }
+  },
+  "stock": {
+    "title": "Saldos de Stock",
+    "subtitle": "Inventario disponible por almacén y artículo de catálogo.",
+    "registerReceipt": "Registrar Entrada",
+    "summary": {
+      "itemsInStock": "Artículos en stock",
+      "totalValue": "Valor total (costo promedio)",
+      "outOfStock": "Artículos sin stock"
+    },
+    "allWarehouses": "Todos los almacenes",
+    "table": {
+      "title": "Inventario actual",
+      "headers": {
+        "item": "Artículo",
+        "warehouse": "Almacén",
+        "averageCost": "Costo Promedio",
+        "totalValue": "Valor Total"
+      },
+      "empty": "No hay registros de stock para los filtros seleccionados."
+    },
+    "form": {
+      "sheetTitle": "Registrar Entrada / Ajuste",
+      "sheetDescription": "Registra una entrada de mercancía o ajuste manual de inventario.",
+      "warehouseLabel": "Almacén",
+      "warehousePlaceholder": "Seleccioná un almacén",
+      "itemLabel": "Artículo de Catálogo",
+      "itemPlaceholder": "Seleccioná un artículo",
+      "typeLabel": "Tipo de movimiento",
+      "typeReceipt": "Entrada (Recepción)",
+      "typeAdjustment": "Ajuste Manual",
+      "unitCostLabel": "Costo Unitario",
+      "reasonLabel": "Motivo",
+      "reasonPlaceholder": "Compra orden #123, ajuste físico...",
+      "submit": "Registrar",
+      "validation": {
+        "warehouseRequired": "Seleccioná un almacén",
+        "itemRequired": "Ingresá el ID del artículo",
+        "quantityPositive": "La cantidad debe ser positiva",
+        "unitCostNotNegative": "El costo no puede ser negativo",
+        "reasonRequired": "Ingresá un motivo"
+      }
+    },
+    "toast": {
+      "adjusted": "Ajuste registrado correctamente",
+      "adjustError": "Error al registrar el ajuste"
+    }
+  },
+  "warehouses": {
+    "title": "Almacenes",
+    "subtitle": "Gestión de ubicaciones físicas de inventario.",
+    "newWarehouse": "Nuevo Almacén",
+    "registered": {
+      "title": "Almacenes registrados",
+      "count": "{{count}} almacenes configurados",
+      "count_one": "{{count}} almacén configurado",
+      "count_other": "{{count}} almacenes configurados"
+    },
+    "empty": {
+      "title": "No hay almacenes configurados.",
+      "createFirst": "Crear el primero"
+    },
+    "form": {
+      "sheetDescription": "Completá los datos para registrar un nuevo almacén.",
+      "codePlaceholder": "ALM-01",
+      "namePlaceholder": "Almacén Principal",
+      "optionalHint": "(opcional)",
+      "descriptionPlaceholder": "Ubicación, notas...",
+      "submit": "Crear Almacén",
+      "validation": {
+        "nameRequired": "El nombre es requerido",
+        "codeRequired": "El código es requerido"
+      }
+    },
+    "toast": {
+      "created": "Almacén creado correctamente",
+      "createError": "Error al crear el almacén"
+    }
+  }
+}

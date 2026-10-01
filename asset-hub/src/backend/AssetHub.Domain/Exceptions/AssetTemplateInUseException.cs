@@ -1,20 +1,17 @@
-using System;
-
 namespace AssetHub.Domain.Exceptions;
 
-public class AssetTemplateInUseException : Exception
+/// <summary>
+/// The asset template is referenced by existing assets, so it cannot be deleted.
+/// Mapped to HTTP 409 with an RFC 7807 body by ExceptionHandlingMiddleware.
+/// </summary>
+public class AssetTemplateInUseException : DomainException
 {
-    public AssetTemplateInUseException()
-    {
-    }
-
-    public AssetTemplateInUseException(string message)
-        : base(message)
-    {
-    }
-
-    public AssetTemplateInUseException(string message, Exception inner)
-        : base(message, inner)
+    public AssetTemplateInUseException(int usages)
+        : base(
+            "asset_template_in_use",
+            $"The template is being used by {usages} assets.",
+            "Domain.AssetTemplateInUse",
+            usages)
     {
     }
 }

@@ -1,0 +1,58 @@
+{
+  "title": "Catalogs",
+  "description": "Manage the system's base catalogs.",
+  "newItem": "New Item",
+  "labels": {
+    "label": "Label",
+    "order": "Order"
+  },
+  "empty": {
+    "catalogs": "No catalogs.",
+    "items": "This catalog has no items.",
+    "selectCatalog": "Select a catalog to view its items"
+  },
+  "pagination": {
+    "totalItems": "Total: {{count}} items",
+    "perPage": "{{count}} / page"
+  },
+  "dialog": {
+    "editCatalog": "Edit Catalog",
+    "newCatalog": "New Catalog",
+    "editItem": "Edit Item"
+  },
+  "toast": {
+    "catalogCreated": "Catalog created successfully",
+    "createCatalogError": "Error creating the catalog",
+    "catalogUpdated": "Catalog updated successfully",
+    "updateCatalogError": "Error updating the catalog",
+    "itemCreated": "Item created successfully",
+    "createItemError": "Error creating the item",
+    "itemUpdated": "Item updated successfully",
+    "updateItemError": "Error updating the item",
+    "itemDeleted": "Item deleted"
+  },
+  "form": {
+    "saving": "Saving...",
+    "catalog": {
+      "codeMinLength": "The code must be at least 2 characters.",
+      "labelMinLength": "The label must be at least 2 characters.",
+      "codePlaceholder": "e.g. ASSET_TYPE",
+      "codeDescription": "Unique identifier for the catalog (uppercase letters and underscores recommended).",
+      "labelPlaceholder": "e.g. Asset Type",
+      "modules": "Modules",
+      "modulesDescription": "Select the application modules where this catalog should be available.",
+      "moduleAssets": "Assets",
+      "moduleIncidents": "Incidents",
+      "moduleTasks": "Tasks",
+      "moduleMaintenance": "Maintenance",
+      "moduleOrders": "Orders",
+      "moduleStaff": "Staff"
+    },
+    "item": {
+      "codeRequired": "The code is required.",
+      "labelRequired": "The label is required.",
+      "codePlaceholder": "e.g. LAPTOP",
+      "labelPlaceholder": "e.g. Laptop"
+    }
+  }
+}

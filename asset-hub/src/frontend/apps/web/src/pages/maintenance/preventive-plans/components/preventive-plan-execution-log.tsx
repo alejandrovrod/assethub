@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
 import { Loader2 } from 'lucide-react'
 import { preventivePlanService } from '@/services/preventive-plan.service'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -13,13 +13,20 @@ interface Props {
   planId: string
 }
 
-const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  success: { label: 'Éxito', variant: 'default' },
-  skipped: { label: 'Omitido', variant: 'secondary' },
-  failed: { label: 'Error', variant: 'destructive' },
+type LogStatusLabelKey =
+  | 'preventivePlans.log.status.success'
+  | 'preventivePlans.log.status.skipped'
+  | 'preventivePlans.log.status.failed'
+
+const STATUS_VARIANTS: Record<string, { labelKey: LogStatusLabelKey; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  success: { labelKey: 'preventivePlans.log.status.success', variant: 'default' },
+  skipped: { labelKey: 'preventivePlans.log.status.skipped', variant: 'secondary' },
+  failed: { labelKey: 'preventivePlans.log.status.failed', variant: 'destructive' },
 }
 
 export function PreventivePlanExecutionLog({ planId }: Props) {
+  const { t } = useTranslation(['maintenance', 'common'])
+  const { formatDate } = useFormat()
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   const { data, isLoading } = useQuery({
@@ -43,17 +50,17 @@ export function PreventivePlanExecutionLog({ planId }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {data?.totalCount ?? 0} registros
+          {t('preventivePlans.log.records', { count: data?.totalCount ?? 0 })}
         </p>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="success">Éxito</SelectItem>
-            <SelectItem value="skipped">Omitido</SelectItem>
-            <SelectItem value="failed">Error</SelectItem>
+            <SelectItem value="all">{t('common:status.all')}</SelectItem>
+            <SelectItem value="success">{t('preventivePlans.log.status.success')}</SelectItem>
+            <SelectItem value="skipped">{t('preventivePlans.log.status.skipped')}</SelectItem>
+            <SelectItem value="failed">{t('preventivePlans.log.status.failed')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -62,23 +69,25 @@ export function PreventivePlanExecutionLog({ planId }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Activo</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Detalle</TableHead>
+              <TableHead>{t('common:labels.date')}</TableHead>
+              <TableHead>{t('fields.asset')}</TableHead>
+              <TableHead>{t('common:labels.status')}</TableHead>
+              <TableHead>{t('preventivePlans.log.columns.detail')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.items.map((log) => {
-              const statusInfo = STATUS_LABELS[log.status] ?? { label: log.status, variant: 'outline' as const }
+              const statusInfo = STATUS_VARIANTS[log.status]
               return (
                 <TableRow key={log.id}>
                   <TableCell className="text-sm whitespace-nowrap">
-                    {format(parseApiDate(log.executedAt), 'dd MMM yyyy HH:mm', { locale: es })}
+                    {formatDate(parseApiDate(log.executedAt), { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}
                   </TableCell>
                   <TableCell className="text-sm">{log.assetName ?? log.assetId.slice(0, 8)}</TableCell>
                   <TableCell>
-                    <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                    <Badge variant={statusInfo?.variant ?? 'outline'}>
+                      {statusInfo ? t(statusInfo.labelKey) : log.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
                     {log.status === 'success' && log.generatedEntityType
@@ -92,7 +101,7 @@ export function PreventivePlanExecutionLog({ planId }: Props) {
         </Table>
       ) : (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No hay registros de ejecución todavía.
+          {t('preventivePlans.log.empty')}
         </p>
       )}
     </div>

@@ -4,16 +4,26 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { financeService, AssetValueAdjustmentDto, CreateValueAdjustmentRequest, ValueAdjustmentType, getValueAdjustmentTypeLabel, getAdjustmentTypeColor } from '@/services/finance.service'
+import { financeService, AssetValueAdjustmentDto, CreateValueAdjustmentRequest, ValueAdjustmentType, getAdjustmentTypeColor } from '@/services/finance.service'
 import { usePermissions } from '@/hooks/use-permissions'
 import { Loader2, Plus, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
-import { formatCurrency, parseApiDate } from '@/lib/utils'
+import { parseApiDate } from '@/lib/utils'
+import { useFormat } from '@/lib/format'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useTranslation } from 'react-i18next'
+
+const adjustmentTypeLabelKeys: Record<
+  ValueAdjustmentType,
+  'finance.adjustmentType.revaluation' | 'finance.adjustmentType.impairment'
+> = {
+  Revaluation: 'finance.adjustmentType.revaluation',
+  Impairment: 'finance.adjustmentType.impairment',
+}
 
 interface ValueAdjustmentsTableProps {
   assetId: string
@@ -21,6 +31,8 @@ interface ValueAdjustmentsTableProps {
 }
 
 export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsTableProps) {
+  const { t } = useTranslation(['assets', 'common'])
+  const { formatDate, formatDateTime, formatCurrency } = useFormat()
   const { can } = usePermissions()
   const queryClient = useQueryClient()
   const canWrite = can('assets.finance.write') || can('assets.value-adjustment:write')
@@ -49,7 +61,7 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
       queryClient.invalidateQueries({ queryKey: ['value-adjustments', assetId] })
       queryClient.invalidateQueries({ queryKey: ['depreciation-schedules', assetId] })
       queryClient.invalidateQueries({ queryKey: ['finance-summary', assetId] })
-      toast.success('Ajuste de valor registrado y cronograma futuro recalculado')
+      toast.success(t('finance.toast.adjustmentRegistered'))
       setShowDialog(null)
       setFormData({ adjustmentType: 'Revaluation', adjustmentAmount: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0] })
     },
@@ -78,19 +90,19 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
           <div>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-600" />
-              Ajustes de Valor (Revaluaciones / Deterioros)
+              {t('finance.adjustments.title')}
             </CardTitle>
             <CardDescription>
-              Modifican el valor neto en libros y recalculan prospectivamente las cuotas futuras no devengadas.
+              {t('finance.adjustments.description')}
             </CardDescription>
           </div>
           {!isDisposed && canWrite && (
             <div className="flex gap-2">
               <Button onClick={() => handleOpen('Revaluation')}>
-                <Plus className="mr-2 h-4 w-4" /> Nueva Revaluación
+                <Plus className="mr-2 h-4 w-4" /> {t('finance.actions.newRevaluation')}
               </Button>
               <Button variant="outline" onClick={() => handleOpen('Impairment')}>
-                <TrendingDown className="mr-2 h-4 w-4" /> Deterioro
+                <TrendingDown className="mr-2 h-4 w-4" /> {t('finance.actions.impairment')}
               </Button>
             </div>
           )}
@@ -104,17 +116,17 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
           ) : data?.items.length === 0 ? (
             <div className="text-center py-12">
               <TrendingUp className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="font-medium text-muted-foreground">Sin ajustes registrados</h3>
+              <h3 className="font-medium text-muted-foreground">{t('finance.empty.noAdjustments')}</h3>
               <p className="text-sm text-muted-foreground/70 mt-1">
-                Registra revaluaciones positivas o deterioros contables cuando corresponda.
+                {t('finance.empty.noAdjustmentsHint')}
               </p>
               {!isDisposed && canWrite && (
                 <div className="flex gap-2 justify-center mt-4">
                   <Button onClick={() => handleOpen('Revaluation')}>
-                    <Plus className="mr-2 h-4 w-4" /> Revaluación
+                    <Plus className="mr-2 h-4 w-4" /> {t('finance.actions.revaluation')}
                   </Button>
                   <Button variant="outline" onClick={() => handleOpen('Impairment')}>
-                    <TrendingDown className="mr-2 h-4 w-4" /> Deterioro
+                    <TrendingDown className="mr-2 h-4 w-4" /> {t('finance.actions.impairment')}
                   </Button>
                 </div>
               )}
@@ -125,13 +137,13 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Fecha Efectiva</TableHead>
-                      <TableHead className="text-right">Valor Anterior</TableHead>
-                      <TableHead className="text-right">Ajuste</TableHead>
-                      <TableHead className="text-right">Nuevo Valor</TableHead>
-                      <TableHead>Justificación</TableHead>
-                      <TableHead className="w-40">Aprobado</TableHead>
+                      <TableHead>{t('common:labels.type')}</TableHead>
+                      <TableHead>{t('finance.table.headers.effectiveDate')}</TableHead>
+                      <TableHead className="text-right">{t('finance.table.headers.previousValue')}</TableHead>
+                      <TableHead className="text-right">{t('finance.table.headers.adjustment')}</TableHead>
+                      <TableHead className="text-right">{t('finance.table.headers.newValue')}</TableHead>
+                      <TableHead>{t('finance.table.headers.justification')}</TableHead>
+                      <TableHead className="w-40">{t('common:status.approved')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -139,10 +151,10 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
                       <TableRow key={adj.id}>
                         <TableCell>
                           <Badge className={getAdjustmentTypeColor(adj.adjustmentType)}>
-                            {getValueAdjustmentTypeLabel(adj.adjustmentType)}
+                            {t(adjustmentTypeLabelKeys[adj.adjustmentType])}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{parseApiDate(adj.effectiveDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-sm">{formatDate(parseApiDate(adj.effectiveDate))}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{formatCurrency(adj.previousNetBookValue)}</TableCell>
                         <TableCell className="text-right font-mono text-sm">
                           {adj.adjustmentAmount >= 0 ? '+' : ''}{formatCurrency(adj.adjustmentAmount)}
@@ -152,7 +164,7 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
                           {adj.reason}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {parseApiDate(adj.approvedAt).toLocaleString()}
+                          {formatDateTime(parseApiDate(adj.approvedAt))}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -163,14 +175,14 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
               {data && data.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-muted-foreground">
-                    Página {page} de {data.totalPages} · {data.totalCount} registros
+                    {t('common:pagination.page', { page })} {t('common:pagination.of', { total: data.totalPages })} · {t('finance.pagination.records', { count: data.totalCount })}
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                      Anterior
+                      {t('common:pagination.previous')}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(data.totalPages, p + 1))} disabled={page === data.totalPages}>
-                      Siguiente
+                      {t('common:pagination.next')}
                     </Button>
                   </div>
                 </div>
@@ -183,11 +195,11 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
       <Dialog open={!!showDialog} onOpenChange={open => !open && setShowDialog(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{showDialog === 'Revaluation' ? 'Nueva Revaluación' : 'Nuevo Deterioro (Impairment)'}</DialogTitle>
+            <DialogTitle>{showDialog === 'Revaluation' ? t('finance.dialog.newRevaluationTitle') : t('finance.dialog.newImpairmentTitle')}</DialogTitle>
             <DialogDescription>
               {showDialog === 'Revaluation'
-                ? 'Aumenta el valor neto en libros. Las cuotas futuras se recalculan sobre la nueva base.'
-                : 'Reduce el valor neto en libros por deterioro. No puede bajar del valor residual.'}
+                ? t('finance.dialog.revaluationDescription')
+                : t('finance.dialog.impairmentDescription')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -196,7 +208,7 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
 
               <div>
                 <Label htmlFor="adjustmentAmount">
-                  Monto del Ajuste {showDialog === 'Impairment' ? '(negativo)' : '(positivo)'} *
+                  {t('finance.form.adjustmentAmountLabel')} {showDialog === 'Impairment' ? t('finance.form.adjustmentSignNegative') : t('finance.form.adjustmentSignPositive')} *
                 </Label>
                 <Input
                   id="adjustmentAmount"
@@ -209,13 +221,13 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {showDialog === 'Impairment'
-                    ? 'Ingresa un valor negativo (ej: -5000). El sistema validará que no baje del valor residual.'
-                    : 'Ingresa un valor positivo (ej: 5000).'}
+                    ? t('finance.form.adjustmentAmountNegativeHint')
+                    : t('finance.form.adjustmentAmountPositiveHint')}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="effectiveDate">Fecha Efectiva *</Label>
+                <Label htmlFor="effectiveDate">{t('finance.form.effectiveDateLabel')}</Label>
                 <Input
                   id="effectiveDate"
                   type="date"
@@ -226,12 +238,12 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
               </div>
 
               <div>
-                <Label htmlFor="reason">Justificación *</Label>
+                <Label htmlFor="reason">{t('finance.form.justificationLabel')}</Label>
                 <Textarea
                   id="reason"
                   value={formData.reason}
                   onChange={e => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                  placeholder="Motivo técnico, legal o de mercado que justifica el ajuste..."
+                  placeholder={t('finance.form.adjustmentReasonPlaceholder')}
                   rows={3}
                   required
                   minLength={10}
@@ -240,21 +252,21 @@ export function ValueAdjustmentsTable({ assetId, assetState }: ValueAdjustmentsT
 
               <div className="bg-muted/50 p-3 rounded text-sm text-muted-foreground">
                 <AlertCircle className="h-4 w-4 inline mr-1" />
-                Las cuotas ya devengadas (Posted) no se modifican. Solo se recalculan las futuras.
+                {t('finance.dialog.adjustmentsInfo')}
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowDialog(null)} disabled={createMutation.isPending}>
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Registrando...
+                    {t('finance.actions.registering')}
                   </>
                 ) : (
-                  `Registrar ${showDialog === 'Revaluation' ? 'Revaluación' : 'Deterioro'}`
+                  showDialog === 'Revaluation' ? t('finance.actions.registerRevaluation') : t('finance.actions.registerImpairment')
                 )}
               </Button>
             </DialogFooter>

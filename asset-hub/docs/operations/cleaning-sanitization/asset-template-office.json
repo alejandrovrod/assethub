@@ -1,0 +1,52 @@
+{
+  "code": "TPL_OFFICE_ROOM",
+  "name": "Oficina / Sala de Juntas",
+  "description": "Plantilla para oficinas privadas, áreas de trabajo abiertas, salas de juntas y espacios administrativos.",
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"office_code\":{\"title\":\"Número / Código de Oficina\",\"type\":\"string\"},\"office_type\":{\"title\":\"Tipo de Espacio\",\"type\":\"string\",\"enum\":[\"Oficina Privada\",\"Open Space / Cubículos\",\"Sala de Juntas\",\"Archivo / Bodega\"]},\"workstations_count\":{\"title\":\"Puestos de Trabajo\",\"type\":\"number\"},\"has_carpet\":{\"title\":\"¿Cuenta con alfombra?\",\"type\":\"boolean\"},\"occupant_name\":{\"title\":\"Usuario Principal / Responsable\",\"type\":\"string\"},\"assigned_cleaner\":{\"title\":\"Personal de Limpieza\",\"type\":\"string\",\"format\":\"employee\"},\"last_sanitization_date\":{\"title\":\"Fecha de Última Limpieza\",\"type\":\"string\",\"format\":\"date\"},\"dusting_completed\":{\"title\":\"¿Desempolvado completado?\",\"type\":\"boolean\"},\"trash_emptied\":{\"title\":\"¿Papeleras vaciadas?\",\"type\":\"boolean\"},\"notes\":{\"title\":\"Comentarios / Observaciones\",\"type\":\"string\"}},\"required\":[\"office_code\",\"office_type\"]}",
+  "maintenanceChecklist": "1. Vaciado de papeleras individuales y colocación de bolsa limpia.\n2. Limpieza de polvo en escritorios, mesas de juntas y repisas (sin mover documentación privada).\n3. Desinfección de teléfonos, teclados y controles remotos de sala.\n4. Limpieza de marcas dactilares en cristales y canceles.\n5. Aspirado de alfombra o trapeado seco/húmedo de pisos duros.\n6. Acomodo de sillas y apagado de luces/aire acondicionado al finalizar.",
+  "lifecycleStates": {
+    "initialState": "Limpio_Disponible",
+    "transitions": {
+      "Limpio_Disponible": [
+        "Requiere_Limpieza",
+        "En_Uso_Reunion"
+      ],
+      "En_Uso_Reunion": [
+        "Requiere_Limpieza",
+        "Limpio_Disponible"
+      ],
+      "Requiere_Limpieza": [
+        "En_Limpieza"
+      ],
+      "En_Limpieza": [
+        "Limpio_Disponible"
+      ]
+    },
+    "states": {
+      "Limpio_Disponible": {
+        "color": "#10b981",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "En_Uso_Reunion": {
+        "color": "#3b82f6",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "Requiere_Limpieza": {
+        "color": "#ef4444",
+        "isTerminal": false,
+        "requiresFields": [
+          "office_code"
+        ]
+      },
+      "En_Limpieza": {
+        "color": "#f59e0b",
+        "isTerminal": false,
+        "requiresFields": [
+          "assigned_cleaner"
+        ]
+      }
+    }
+  }
+}

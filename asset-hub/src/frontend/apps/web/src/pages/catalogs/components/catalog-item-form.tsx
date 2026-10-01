@@ -12,10 +12,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { useTranslation } from "react-i18next"
+import i18n from "@/i18n"
 
 const formSchema = z.object({
-  code: z.string().min(1, { message: "El código es obligatorio." }),
-  defaultLabel: z.string().min(1, { message: "La etiqueta es obligatoria." }),
+  code: z.string().min(1, { error: () => ({ message: i18n.t('catalogs:form.item.codeRequired') }) }),
+  defaultLabel: z.string().min(1, { error: () => ({ message: i18n.t('catalogs:form.item.labelRequired') }) }),
   order: z.any(),
 })
 
@@ -29,6 +31,7 @@ interface CatalogItemFormProps {
 }
 
 export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: CatalogItemFormProps) {
+    const { t } = useTranslation(['catalogs', 'common'])
     const form = useForm<CatalogItemFormValues>({
       resolver: zodResolver(formSchema),
       defaultValues: {
@@ -54,9 +57,9 @@ export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: 
           name="code"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Código</FormLabel>
+              <FormLabel>{t('common:labels.code')}</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: LAPTOP" {...field} />
+                <Input placeholder={t('form.item.codePlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -67,9 +70,9 @@ export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: 
           name="defaultLabel"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Etiqueta</FormLabel>
+              <FormLabel>{t('labels.label')}</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Computadora Portátil" {...field} />
+                <Input placeholder={t('form.item.labelPlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -80,7 +83,7 @@ export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: 
           name="order"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Orden</FormLabel>
+              <FormLabel>{t('labels.order')}</FormLabel>
               <FormControl>
                 <Input type="number" {...field} />
               </FormControl>
@@ -90,10 +93,10 @@ export function CatalogItemForm({ initialData, onSubmit, onCancel, isLoading }: 
         />
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancelar
+            {t('common:actions.cancel')}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Guardando..." : "Guardar"}
+            {isLoading ? t('form.saving') : t('common:actions.save')}
           </Button>
         </div>
       </form>

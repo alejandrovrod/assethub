@@ -9,6 +9,7 @@ import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface AssetIncidentsWidgetProps {
   assetId: string
@@ -16,6 +17,7 @@ interface AssetIncidentsWidgetProps {
 }
 
 export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetIncidentsWidgetProps) {
+  const { t } = useTranslation('maintenance')
   const { data: incidents, isLoading: isLoadingIncidents } = useQuery({
     queryKey: ['incidents', 'asset', assetId],
     queryFn: () => incidentService.search(undefined, undefined, assetId, 1, 4).then(res => res.items),
@@ -54,7 +56,7 @@ export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetInc
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
               <Cpu className="h-3.5 w-3.5 text-primary" />
-              <span>Salud Predictiva (XGBoost)</span>
+              <span>{t('widget.predictiveHealth')}</span>
             </div>
             <Badge variant="outline" className={`text-xs capitalize font-semibold ${riskBadgeStyles[forecast.riskLevel] || ''}`}>
               {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
@@ -62,19 +64,19 @@ export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetInc
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Estimación a falla:</span>
+            <span>{t('widget.failureEstimate')}</span>
             <span className="font-medium text-foreground">
               {forecast.predictedFailureDays != null 
                 ? (forecast.predictedFailureDays >= 365 
-                    ? 'Más de 1 año (Óptimo)' 
-                    : `Aprox. ${forecast.predictedFailureDays} días`)
-                : 'Estable'}
+                    ? t('widget.moreThanOneYear') 
+                    : t('widget.approxDays', { count: forecast.predictedFailureDays }))
+                : t('widget.stable')}
             </span>
           </div>
 
           {topFactors.length > 0 && (
             <div className="mt-1 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
-              <span className="font-medium text-foreground">Factores de riesgo: </span>
+              <span className="font-medium text-foreground">{t('widget.riskFactors')} </span>
               {topFactors.map(f => f.description).join(' • ')}
             </div>
           )}
@@ -87,7 +89,7 @@ export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetInc
       ) : activeIncidents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-sm">
           <AlertCircle className="h-6 w-6 mb-2 opacity-50" />
-          <p>No hay incidencias activas.</p>
+          <p>{t('empty.activeIncidents')}</p>
         </div>
       ) : (
         <ScrollArea className="max-h-[240px]">
@@ -104,7 +106,7 @@ export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetInc
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <FileText className="h-3 w-3" />
-                    <span>Reportado {incident.reportedAt ? format(parseApiDate(incident.reportedAt), 'dd MMM', { locale: es }) : '—'}</span>
+                    <span>{t('widget.reportedLabel')} {incident.reportedAt ? format(parseApiDate(incident.reportedAt), 'dd MMM', { locale: es }) : '—'}</span>
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs shrink-0 capitalize">
@@ -116,7 +118,7 @@ export function AssetIncidentsWidget({ assetId, showForecast = false }: AssetInc
         </ScrollArea>
       )}
       <Button variant="ghost" size="sm" asChild className="w-full mt-2">
-        <Link to={`/maintenance/incidents?assetId=${assetId}`}>Ver todas</Link>
+        <Link to={`/maintenance/incidents?assetId=${assetId}`}>{t('widget.viewAll')}</Link>
       </Button>
     </div>
   )

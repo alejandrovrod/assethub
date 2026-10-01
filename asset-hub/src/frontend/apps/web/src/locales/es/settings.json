@@ -1,0 +1,280 @@
+{
+  "audit": {
+    "title": "Auditoría",
+    "action": "Acción",
+    "actor": "Usuario",
+    "timestamp": "Fecha y hora",
+    "details": "Detalles",
+    "underConstruction": "Esta pantalla está en construcción.",
+    "actions": {
+      "user.registered_via_invitation": "Se registró mediante invitación"
+    }
+  },
+  "org": {
+    "title": "Organización",
+    "name": "Nombre de la organización",
+    "plan": "Plan"
+  },
+  "account": {
+    "title": "Mi cuenta",
+    "profile": "Perfil",
+    "security": "Seguridad",
+    "changePassword": "Cambiar contraseña",
+    "pageTitle": "Cuenta y Perfil",
+    "pageSubtitle": "Gestioná tu información personal, seguridad y preferencias",
+    "noAccess": {
+      "title": "Sin acceso",
+      "body": "No tenés permiso para acceder a esta página."
+    },
+    "tabs": {
+      "mfa": "MFA",
+      "linkedEmployee": "Empleado vinculado"
+    },
+    "profileCard": {
+      "title": "Información Personal",
+      "description": "Actualizá tu nombre, email y preferencias"
+    },
+    "avatar": {
+      "hint": "PNG, JPG hasta 5MB"
+    },
+    "form": {
+      "fullNamePlaceholder": "Tu nombre completo",
+      "emailPlaceholder": "tu@email.com",
+      "preferredLanguage": "Idioma preferido",
+      "languagePt": "Português"
+    },
+    "password": {
+      "description": "Tu contraseña debe tener al menos 12 caracteres",
+      "current": "Contraseña actual",
+      "new": "Nueva contraseña",
+      "minChars": "Mínimo 12 caracteres",
+      "valid": "Contraseña válida",
+      "confirm": "Confirmar nueva contraseña",
+      "confirmPlaceholder": "Repetí la contraseña"
+    },
+    "mfa": {
+      "title": "Autenticación de dos factores (MFA)",
+      "description": "Agregá una capa extra de seguridad usando una app de autenticación (Google Authenticator, Authy, Microsoft Authenticator)",
+      "scanQr": "Escaneá este código QR con tu app de autenticación",
+      "qrAlt": "QR Code MFA",
+      "secretLabel": "Secreto:",
+      "codeLabel": "Código de 6 dígitos de tu app",
+      "backupCodesTitle": "Códigos de respaldo (guardalos en un lugar seguro)",
+      "copyAll": "Copiar todos",
+      "verifyEnable": "Verificar y habilitar MFA",
+      "setup": "Configurar MFA",
+      "enabledTitle": "MFA Habilitado",
+      "enabledDescription": "Tu cuenta está protegida con autenticación de dos factores",
+      "active": "Autenticación de dos factores activa",
+      "totpRequired": "Se requiere código TOTP al iniciar sesión",
+      "backupCodes": "Códigos de respaldo",
+      "backupCodesHint": "Usá estos códigos si perdés acceso a tu app de autenticación. Cada código se puede usar una sola vez.",
+      "viewBackupCodes": "Ver códigos de respaldo",
+      "regenerateBackupCodes": "Regenerar códigos (invalida los anteriores)",
+      "disableTitle": "Deshabilitar MFA",
+      "disableHint": "Requiere tu contraseña actual para confirmar",
+      "currentPasswordPlaceholder": "Tu contraseña actual"
+    },
+    "employee": {
+      "title": "Empleado Vinculado",
+      "description": "Tu cuenta de usuario está vinculada a este empleado",
+      "noPhone": "Sin teléfono",
+      "noRole": "Sin rol asignado",
+      "unlink": "Desvincular empleado",
+      "unlinkDescription": "Esto desvinculará tu cuenta de usuario de este empleado. Podrás volver a vincularla desde la gestión de empleados.",
+      "unlinkNotImplemented": "Función de desvinculación por implementar",
+      "emptyTitle": "Sin empleado vinculado",
+      "emptyDescription": "Tu cuenta de usuario no está vinculada a ningún empleado. Un administrador puede vincularte desde la gestión de empleados."
+    },
+    "toasts": {
+      "profileUpdated": "Perfil actualizado correctamente",
+      "passwordChanged": "Contraseña cambiada correctamente",
+      "avatarUpdated": "Avatar actualizado correctamente",
+      "scanQr": "Escanea el código QR con tu app de autenticación",
+      "mfaEnabled": "MFA habilitado correctamente",
+      "mfaDisabled": "MFA deshabilitado correctamente",
+      "backupCodesRegenerated": "Códigos de respaldo regenerados",
+      "avatarMustBeImage": "El archivo debe ser una imagen",
+      "avatarTooLarge": "La imagen no debe superar 5MB",
+      "avatarRemoved": "Avatar eliminado",
+      "copied": "Copiado al portapapeles"
+    }
+  },
+  "users": {
+    "title": "Usuarios",
+    "invite": "Invitar usuario",
+    "role": "Rol",
+    "email": "Correo electrónico",
+    "pageSubtitle": "Gestión de usuarios del tenant, roles e invitaciones",
+    "newUser": "Nuevo Usuario",
+    "actions": {
+      "invite": "Invitar"
+    },
+    "noAccess": {
+      "title": "Sin acceso",
+      "body": "No tenés permiso para ver los usuarios (users:read)."
+    },
+    "tabs": {
+      "invitations": "Invitaciones"
+    },
+    "searchPlaceholder": "Buscar por nombre o email...",
+    "table": {
+      "headers": {
+        "expires": "Expira",
+        "created": "Creada"
+      },
+      "noRole": "Sin rol"
+    },
+    "confirmDeactivate": "¿Desactivar a \"{{name}}\"? No podrá iniciar sesión.",
+    "confirmCancelInvitation": "¿Cancelar la invitación a \"{{email}}\"?",
+    "invitations": {
+      "pendingTitle": "Pendientes",
+      "pendingDescription": "El invitado define su contraseña al aceptar; el link expira en 72hs",
+      "empty": "No hay invitaciones pendientes",
+      "expired": "Expirada",
+      "accepted": "Aceptada",
+      "cancelled": "Cancelada",
+      "resendTitle": "Reenviar (renueva el link)",
+      "historyTitle": "Historial"
+    },
+    "dialog": {
+      "editTitle": "Editar — {{name}}",
+      "newTitle": "Nuevo usuario",
+      "editDescription": "Actualizá el nombre, estado y roles del usuario.",
+      "createDescription": "Creá el usuario con contraseña inicial y roles.",
+      "createUser": "Crear usuario",
+      "passwordLabel": "Contraseña inicial",
+      "activeUser": "Usuario activo",
+      "inactiveHint": "Los usuarios inactivos no pueden iniciar sesión",
+      "namePlaceholder": "Ana García",
+      "emailPlaceholder": "ana@empresa.com",
+      "passwordPlaceholder": "Mínimo 6 caracteres"
+    },
+    "inviteDialog": {
+      "description": "Se genera un link de invitación (72hs de validez) para que el invitado defina su contraseña. Copialo y compartilo.",
+      "emailLabel": "Email del invitado",
+      "emailPlaceholder": "companero@empresa.com",
+      "roleLabel": "Rol al aceptar",
+      "rolePlaceholder": "Elegir rol...",
+      "createAndCopy": "Crear y copiar link"
+    },
+    "toast": {
+      "updated": "Usuario actualizado",
+      "created": "Usuario creado",
+      "deactivated": "Usuario desactivado",
+      "reactivated": "Usuario reactivado",
+      "invitationCreatedLinkCopied": "Invitación creada. Link copiado al portapapeles",
+      "invitationCreated": "Invitación creada",
+      "invitationResentLinkCopied": "Invitación reenviada. Link nuevo copiado al portapapeles",
+      "invitationResent": "Invitación reenviada",
+      "invitationCancelled": "Invitación cancelada"
+    }
+  },
+  "roles": {
+    "title": "Roles",
+    "permissions": "Permisos",
+    "pageTitle": "Roles y Permisos",
+    "pageSubtitle": "Matriz de permisos por rol del tenant, personalizable por módulo",
+    "newRole": "Nuevo Rol",
+    "cardDescription": "Los roles base del sistema se pueden editar pero no eliminar",
+    "noAccess": {
+      "title": "Sin acceso",
+      "body": "No tenés permiso para ver los roles (roles:read)."
+    },
+    "badge": {
+      "system": "Sistema",
+      "custom": "Custom"
+    },
+    "table": {
+      "headers": {
+        "users": "Usuarios"
+      }
+    },
+    "confirmDelete": "¿Eliminar el rol \"{{name}}\"?",
+    "dialog": {
+      "editTitle": "Editar rol — {{name}}",
+      "newTitle": "Nuevo rol",
+      "description": "Definí el nombre y marcá los permisos que el rol otorga. Se validan contra el plan del tenant.",
+      "namePlaceholder": "Ej. Supervisor de Planta",
+      "descriptionPlaceholder": "Qué hace este rol",
+      "searchPermission": "Buscar permiso...",
+      "selectedCount": "{{selected}} seleccionados",
+      "partialSelection": "Selección parcial",
+      "createRole": "Crear rol"
+    },
+    "toast": {
+      "updated": "Rol actualizado",
+      "created": "Rol creado",
+      "deleted": "Rol eliminado"
+    }
+  },
+  "tenant": {
+    "title": "Configuración del Tenant",
+    "loading": "Cargando configuración...",
+    "tabs": {
+      "branding": "Marca (Branding)",
+      "notifications": "Reglas de Notificación"
+    },
+    "branding": {
+      "title": "Personalización de Marca",
+      "description": "Configura el logotipo y el correo de soporte que se mostrarán en tus plantillas de correo.",
+      "logoLabel": "Logo de la Empresa",
+      "logoAlt": "Logo",
+      "uploading": "Subiendo...",
+      "formats": "Formatos soportados: PNG, JPG, GIF. Máximo 5MB.",
+      "supportEmailLabel": "Correo Electrónico de Soporte",
+      "supportEmailPlaceholder": "soporte@tuempresa.com",
+      "saving": "Guardando..."
+    },
+    "notifications": {
+      "title": "Reglas de Notificación",
+      "description": "Asigna plantillas de comunicación específicas a los eventos del sistema.",
+      "selectTemplate": "Seleccionar plantilla...",
+      "defaultSystemOption": "-- Sistema por defecto --",
+      "noNotificationOption": "-- Sin notificación --",
+      "sections": {
+        "incidents": "Eventos de Incidencias",
+        "workTasks": "Eventos de Tareas de Trabajo",
+        "maintenance": "Eventos de Mantenimiento",
+        "assets": "Eventos de Activos"
+      },
+      "events": {
+        "incidentReported": {
+          "label": "Incidencia Reportada",
+          "description": "Se dispara cuando un usuario reporta una nueva incidencia."
+        },
+        "incidentStatusChanged": {
+          "label": "Estado de Incidencia Actualizado",
+          "description": "Se dispara cuando una incidencia cambia de estado (ej: a Resuelto)."
+        },
+        "taskCreated": {
+          "label": "Nueva Tarea Asignada",
+          "description": "Se dispara cuando se crea y asigna una nueva tarea de trabajo."
+        },
+        "maintenanceOrderCreated": {
+          "label": "Nueva Orden Generada",
+          "description": "Se dispara cuando se genera una nueva orden de mantenimiento."
+        },
+        "assetStateChanged": {
+          "label": "Cambio de Estado (con notificación)",
+          "description": "Se dispara cuando un activo cambia de estado y tiene configurada una acción de notificación."
+        }
+      }
+    },
+    "toast": {
+      "loadError": "No se pudieron cargar las configuraciones del tenant.",
+      "brandSaved": "La configuración de marca ha sido actualizada.",
+      "saveError": "No se pudo guardar la configuración.",
+      "logoUploaded": "El logo se ha subido correctamente.",
+      "logoUploadError": "No se pudo subir el logo.",
+      "mappingUpdated": "Regla de notificación actualizada.",
+      "mappingUpdateError": "No se pudo actualizar la regla."
+    }
+  },
+  "form": {
+    "fullName": "Nombre completo"
+  },
+  "notifications": {
+    "title": "Notificaciones"
+  }
+}

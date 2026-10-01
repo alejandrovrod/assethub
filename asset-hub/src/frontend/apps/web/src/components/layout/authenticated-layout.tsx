@@ -12,6 +12,7 @@ import { useProfile } from '@/hooks/use-profile'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { CommandMenu } from '@/components/command-menu'
 
 type AuthenticatedLayoutProps = {
@@ -52,6 +53,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               <div className="ml-auto flex items-center space-x-4">
                 <Search />
                 <ThemeSwitch />
+                <LanguageSwitcher />
                 <ProfileDropdown />
               </div>
             </Header>

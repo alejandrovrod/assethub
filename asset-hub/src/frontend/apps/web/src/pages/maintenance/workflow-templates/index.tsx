@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Plus, Loader2, Edit, Trash2 } from 'lucide-react'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ import { WorkflowTemplateFormSheet } from './components/workflow-template-form-s
 import { usePermissions } from '@/hooks/use-permissions'
 
 export default function WorkflowTemplates() {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canCreate = can('workflow-templates:create')
   const canUpdate = can('workflow-templates:update')
@@ -49,9 +51,9 @@ export default function WorkflowTemplates() {
     mutationFn: WorkflowTemplateService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflow-templates'] })
-      toast.success('Plantilla eliminada')
+      toast.success(t('workflowTemplates.toast.deleted'))
     },
-    onError: () => toast.error('Error al eliminar la plantilla')
+    onError: () => toast.error(t('workflowTemplates.toast.deleteError'))
   })
 
   const handleCreate = () => {
@@ -71,9 +73,9 @@ export default function WorkflowTemplates() {
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
-            <CardTitle>Plantillas de Flujos (Workflows)</CardTitle>
+            <CardTitle>{t('workflowTemplates.title')}</CardTitle>
             <CardDescription>
-              Gestioná las plantillas (esquemas y ciclo de vida) para incidencias y planes de mantenimiento.
+              {t('workflowTemplates.description')}
             </CardDescription>
           </div>
           {canCreate && (
@@ -90,18 +92,18 @@ export default function WorkflowTemplates() {
               </div>
             ) : templates?.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center">
-                <p className="text-muted-foreground mb-4">No hay plantillas registradas.</p>
+                <p className="text-muted-foreground mb-4">{t('workflowTemplates.empty')}</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[120px]">Código</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead className="w-[150px]">Tipo</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead className="w-[100px]">Estado</TableHead>
-                    <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                    <TableHead className="w-[120px]">{t('common:labels.code')}</TableHead>
+                    <TableHead>{t('common:labels.name')}</TableHead>
+                    <TableHead className="w-[150px]">{t('common:labels.type')}</TableHead>
+                    <TableHead>{t('common:labels.description')}</TableHead>
+                    <TableHead className="w-[100px]">{t('common:labels.status')}</TableHead>
+                    <TableHead className="w-[100px] text-right">{t('common:labels.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -111,7 +113,7 @@ export default function WorkflowTemplates() {
                       <TableCell>{template.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {template.type === 'preventive' ? 'Mantenimiento' : 'Incidencia'}
+                          {template.type === 'preventive' ? t('common:nav.maintenance') : t('detail.related.incident')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -119,7 +121,7 @@ export default function WorkflowTemplates() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={template.isActive ? 'default' : 'secondary'}>
-                          {template.isActive ? 'Activo' : 'Inactivo'}
+                          {template.isActive ? t('common:status.active') : t('common:status.inactive')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
@@ -137,7 +139,7 @@ export default function WorkflowTemplates() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              if (window.confirm('¿Estás seguro de eliminar esta plantilla?')) {
+                              if (window.confirm(t('workflowTemplates.confirmDelete'))) {
                                 deleteMutation.mutate(template.id)
                               }
                             }}
@@ -157,17 +159,17 @@ export default function WorkflowTemplates() {
             <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
-                  Total: {totalCount} plantillas
+                  {t('workflowTemplates.totalCount', { count: totalCount })}
                 </span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1) }}>
                   <SelectTrigger className="w-[100px] h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10 / pág</SelectItem>
-                    <SelectItem value="20">20 / pág</SelectItem>
-                    <SelectItem value="50">50 / pág</SelectItem>
-                    <SelectItem value="100">100 / pág</SelectItem>
+                    <SelectItem value="10">{t('pagination.perPage', { count: 10 })}</SelectItem>
+                    <SelectItem value="20">{t('pagination.perPage', { count: 20 })}</SelectItem>
+                    <SelectItem value="50">{t('pagination.perPage', { count: 50 })}</SelectItem>
+                    <SelectItem value="100">{t('pagination.perPage', { count: 100 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -178,10 +180,10 @@ export default function WorkflowTemplates() {
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
-                  Anterior
+                  {t('common:pagination.previous')}
                 </Button>
                 <div className="flex items-center text-sm px-2">
-                  Página {currentPage} de {totalPages}
+                  {t('common:pagination.page', { page: currentPage })} {t('common:pagination.of', { total: totalPages })}
                 </div>
                 <Button
                   variant="outline"
@@ -189,7 +191,7 @@ export default function WorkflowTemplates() {
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
                 >
-                  Siguiente
+                  {t('common:pagination.next')}
                 </Button>
               </div>
             </div>

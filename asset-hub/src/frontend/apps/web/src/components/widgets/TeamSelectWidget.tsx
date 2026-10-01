@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button'
 import { Users } from 'lucide-react'
 import { apiClient as api } from '@/lib/api-client'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export function TeamSelectWidget(props: WidgetProps) {
   const { id, value, onChange, disabled, readonly } = props
   const [teamName, setTeamName] = useState<string>('')
+  const { t } = useTranslation('common')
 
   // Fetch the team name if a value is pre-selected and we don't have the name yet
   useEffect(() => {
@@ -17,7 +19,7 @@ export function TeamSelectWidget(props: WidgetProps) {
           setTeamName(res.data.name)
         }
       }).catch(() => {
-        setTeamName('Equipo no encontrado')
+        setTeamName(t('select.teamNotFound'))
       })
     }
   }, [value, teamName])
@@ -33,9 +35,9 @@ export function TeamSelectWidget(props: WidgetProps) {
         }}
         labelKey="name"
         valueKey="id"
-        placeholder="Buscar equipo..."
-        searchPlaceholder="Escriba para buscar..."
-        emptyText="No se encontraron equipos."
+        placeholder={t('select.teamPlaceholder')}
+        searchPlaceholder={t('labels.placeholder')}
+        emptyText={t('status.noResults')}
         onSelect={(item) => {
           onChange(item.id)
           setTeamName(item.name)
@@ -50,7 +52,7 @@ export function TeamSelectWidget(props: WidgetProps) {
             className="w-full justify-between font-normal"
             disabled={disabled || readonly}
           >
-            {value ? teamName || 'Cargando...' : 'Buscar equipo...'}
+            {value ? teamName || t('status.loading') : t('select.teamPlaceholder')}
             <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         )}

@@ -1,0 +1,263 @@
+{
+  "nav": {
+    "platform": "Platform",
+    "features": "Features",
+    "multitenant": "Multi-tenant",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "login": "Log in",
+    "start": "Start Free"
+  },
+  "hero": {
+    "badge": "Next-Gen Operations Platform",
+    "title1": "Make every asset",
+    "title2": "traceable & operational.",
+    "subtitle": "Centralize asset templates, incidents, maintenance workflows, and field work orders in one unified, high-performance platform.",
+    "cta": "Start Free Trial",
+    "demo": "Explore Live Demo"
+  },
+  "social": "Over 500,000+ critical assets managed worldwide across top industries",
+  "featuresTabs": {
+    "tag": "CORE CAPABILITIES",
+    "title": "Everything you need to deliver flawless maintenance",
+    "subtitle": "Four integrated pillars designed to replace spreadsheets, siloed tools, and manual field tracking.",
+    "tabs": [
+      {
+        "id": "templates",
+        "title": "Asset Templates",
+        "desc": "Define custom attributes, lifecycles, dynamic forms, and checklists for any type of asset. Create them once and reuse them across your entire organization.",
+        "badge": "Configurable",
+        "image": "/templates-mockup.png",
+        "points": [
+          "Reusable schemas for equipment, facilities, vehicles & infrastructure",
+          "No-code dynamic forms with custom validation rules",
+          "Configurable finite state machines per asset class"
+        ]
+      },
+      {
+        "id": "tracking",
+        "title": "Live Asset Tracking",
+        "desc": "Comprehensive operational profiling: dynamic attributes, geospatial mapping, historical audit timeline, and component hierarchy in real time.",
+        "badge": "Geospatial & 360°",
+        "image": "/asset-details-mockup.png",
+        "points": [
+          "Interactive polygon & point mapping with status and risk filters",
+          "Immutable chronological record of state changes and events",
+          "Multi-level tree hierarchy linking main assets with subcomponents"
+        ]
+      },
+      {
+        "id": "maintenance",
+        "title": "Integrated Maintenance",
+        "desc": "End-to-end management: from incident templates to active alerts, work orders, spare part tracking, and field execution tasks.",
+        "badge": "Preventive & Corrective",
+        "image": "/asset-location-mockup.png",
+        "points": [
+          "Incident lifecycle with custom severity, SLA targets, and alarms",
+          "Complete Work Order dispatching with technician assignments",
+          "Mobile-friendly step-by-step inspection checklists"
+        ]
+      },
+      {
+        "id": "resources",
+        "title": "Resource Management",
+        "desc": "Control dynamic catalogs, manage staff and field crews, and administer users with role-based permissions (RBAC).",
+        "badge": "Security & Operations",
+        "image": "/asset-hierarchy-mockup.png",
+        "points": [
+          "Dynamic centralized catalogs for equipment brands and maintenance types",
+          "Technician and supervisor staff directory with specialties",
+          "Granular permission matrix across roles and organizations"
+        ]
+      }
+    ],
+    "explore": "Explore module"
+  },
+  "grid": {
+    "tag": "ADVANCED ARCHITECTURE",
+    "title": "Engineered for complex enterprise infrastructure",
+    "subtitle": "From industrial plants and highway concessions to healthcare networks, AssetHub scales with zero friction.",
+    "cards": [
+      {
+        "title": "Geospatial Polygon Mapping",
+        "desc": "Draw perimeter zones across highways or industrial yards. Filter assets in real-time by operational risk index."
+      },
+      {
+        "title": "Immutable Event Audit Trail",
+        "desc": "Every lifecycle state transition is logged with user signature, timestamp, and audit notes for flawless compliance."
+      },
+      {
+        "title": "Component Tree Hierarchy",
+        "desc": "Infinite parent-child relations: link major assets with subcomponents, luminaires, valves, and spare parts."
+      }
+    ]
+  },
+  "multitenant": {
+    "tag": "Enterprise Multi-Tenancy",
+    "title": "Strict isolation for every client & facility",
+    "subtitle": "Offer your clients a personalized, white-labeled experience. They log into their own portal, see only their assets, and review their specific SLAs.",
+    "point1_title": "Custom Subdomains & Virtual Routing",
+    "point1_desc": "Dedicated client subdomains instantly isolate sessions, schemas, and operational scopes.",
+    "point2_title": "Cross-Tenant RBAC & Global Dispatch",
+    "point2_desc": "Global dispatchers orchestrate across facilities while client managers access read-only audit portals.",
+    "clients": [
+      {
+        "name": "hospital-network.assethub.app",
+        "status": "Active • SLA 99.8%",
+        "type": "Healthcare"
+      },
+      {
+        "name": "highway-tolls.assethub.app",
+        "status": "Active • SLA 99.4%",
+        "type": "Infrastructure"
+      },
+      {
+        "name": "industrial-plants.assethub.app",
+        "status": "Active • SLA 99.9%",
+        "type": "Energy & Utilities"
+      }
+    ],
+    "routing": "Isolated Tenant Routing",
+    "subdomains": "active corporate subdomains"
+  },
+  "testimonials": {
+    "tag": "TESTIMONIALS",
+    "title": "Trusted by operations and maintenance leaders",
+    "subtitle": "See how mission-critical teams keep their physical assets running without downtime.",
+    "items": [
+      {
+        "quote": "AssetHub completely transformed how we coordinate field crews and track 4,000 highway assets. Incident response times dropped 42% in our very first quarter.",
+        "author": "Ing. Martín Peralta",
+        "role": "Maintenance Director • Northern Highways",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&crop=face"
+      },
+      {
+        "quote": "The multi-tenant architecture allowed us to provide each hospital client with their own subdomain and live SLA audits. We went from messy spreadsheets to surgical precision.",
+        "author": "Dra. Valeria Gómez",
+        "role": "Head of Medical Operations • BioCare Facilities",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      },
+      {
+        "quote": "Being able to design asset templates with dynamic schemas and finite state machines without coding is an absolute game-changer. Unmatched operational depth.",
+        "author": "Carlos Méndez",
+        "role": "Reliability Lead • EnerGrid",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face"
+      }
+    ]
+  },
+  "faq": {
+    "tag": "FREQUENTLY ASKED QUESTIONS",
+    "title": "Everything you need to know about AssetHub",
+    "items": [
+      {
+        "q": "What sets AssetHub apart from traditional CMMS software?",
+        "a": "Unlike rigid legacy software, AssetHub lets you model any physical asset with dynamic schemas, customizable state machines, and multi-level hierarchies. It also provides native multi-tenancy for service providers managing multiple client portals."
+      },
+      {
+        "q": "How does tenant isolation work in the multi-tenant architecture?",
+        "a": "Each client logs in via their dedicated subdomain (e.g., client.yourdomain.app). Sessions, asset registries, audit logs, and permissions are strictly isolated per tenant, with optional cross-tenant dispatching roles."
+      },
+      {
+        "q": "Can field technicians use the platform on mobile without app store downloads?",
+        "a": "Yes, our web client is completely mobile-responsive and optimized for touch devices. Field workers can access work orders, checklists, and incident forms right from mobile browsers."
+      },
+      {
+        "q": "Can we export and integrate asset and incident data?",
+        "a": "Absolutely. AssetHub provides secure REST APIs and structured export capabilities to sync with your existing ERPs, analytical warehouses, or financial reporting tools."
+      }
+    ]
+  },
+  "pricing": {
+    "tag": "FLEXIBLE PLANS",
+    "title": "Simple, scalable pricing",
+    "subtitle": "Pay for the volume of assets you manage. No hidden fees or surprise user seat markups.",
+    "monthly": "Monthly billing",
+    "annual": "Annual billing (Save 20%)",
+    "p1_title": "Starter",
+    "p1_desc": "For internal operations and single facilities.",
+    "p1_price": "$149",
+    "p1_period": "/month",
+    "p1_features": [
+      "Up to 500 registered assets",
+      "Preventive & Corrective Work Orders",
+      "Dynamic asset templates & custom forms",
+      "Full audit trail & state machine history",
+      "Mobile web access for technicians",
+      "Standard email & community support"
+    ],
+    "p1_btn": "Start Starter Plan",
+    "p2_tag": "MOST POPULAR",
+    "p2_title": "Professional",
+    "p2_desc": "For Service Providers & Multi-site operations.",
+    "p2_price": "$489",
+    "p2_period": "/month",
+    "p2_features": [
+      "Unlimited assets & custom templates",
+      "Full Multi-Tenant portal with subdomains",
+      "Advanced SLA reporting & automated alerts",
+      "Geospatial map overlays & polygon zoning",
+      "Field inspection checklists with signatures",
+      "Custom roles, permissions & API access",
+      "Dedicated account manager & SLA guarantee"
+    ],
+    "p2_btn": "Start Free Trial"
+  },
+  "banner": {
+    "release": "New release with Geospatial Mapping and configurable Finite State Machines.",
+    "learnMore": "Learn more"
+  },
+  "logos": [
+    {
+      "name": "TechCorp Global",
+      "tag": "Tech"
+    },
+    {
+      "name": "VialConcesiones",
+      "tag": "Infrastructure"
+    },
+    {
+      "name": "Hospital Metropolitano",
+      "tag": "Healthcare"
+    },
+    {
+      "name": "Energía del Norte",
+      "tag": "Energy"
+    },
+    {
+      "name": "Logística Express",
+      "tag": "Transport"
+    },
+    {
+      "name": "Industrial Solutions",
+      "tag": "Manufacturing"
+    }
+  ],
+  "cta": {
+    "title": "Ready to professionalize your operations?",
+    "subtitle": "Join industry leaders who manage critical infrastructure with total transparency and zero friction.",
+    "contact": "Contact Sales"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "heroBlock": {
+    "badge": "AssetHub 2.0 is now live",
+    "title1": "Intelligent Asset Management for",
+    "title2": "Modern Enterprises",
+    "subtitle": "Centralize your equipment, track maintenance schedules, and reduce downtime with our powerful multi-tenant platform.",
+    "cta": "Start for free",
+    "pricing": "View Pricing",
+    "assets": "Assets",
+    "telemetry": "Live Telemetry Data"
+  },
+  "pricingBlock": {
+    "title": "Simple, transparent pricing",
+    "subtitle": "Start for free, upgrade when you need more power. No hidden fees.",
+    "popular": "Most Popular",
+    "mo": "/mo",
+    "assets": "Assets",
+    "users": "Users",
+    "module": "module",
+    "choose": "Choose"
+  }
+}

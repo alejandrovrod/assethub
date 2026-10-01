@@ -28,6 +28,24 @@ export function usePropagatedProperties(assetId?: string) {
         })
       }
 
+      if (schema && schema.dependencies) {
+        Object.keys(schema.dependencies).forEach((depKey) => {
+          const dep = schema.dependencies[depKey]
+          if (dep?.oneOf) {
+            dep.oneOf.forEach((branch: any) => {
+              if (branch?.properties) {
+                Object.keys(branch.properties).forEach((key) => {
+                  const propDef = branch.properties[key]
+                  if (propDef?.propagateToWork && properties[key] !== undefined) {
+                    propagated[key] = properties[key]
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+
       if (Object.keys(propagated).length > 0) {
         return JSON.stringify(propagated)
       }

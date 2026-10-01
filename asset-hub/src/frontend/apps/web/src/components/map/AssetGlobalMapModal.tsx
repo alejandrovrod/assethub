@@ -13,6 +13,7 @@ import { Asset } from '@/services/asset.service'
 import { Badge } from '@/components/ui/badge'
 import { MapLegend } from './MapLegend'
 import { createColoredMarkerIcon } from './map-utils'
+import { useTranslation } from 'react-i18next'
 
 // No longer need default customIcon since we use createColoredMarkerIcon
 
@@ -82,6 +83,7 @@ function MapResizer({ mapAssets }: { mapAssets: any[] }) {
 export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalMapModalProps) {
   const [hiddenStates, setHiddenStates] = useState<string[]>([])
   const [hiddenRisks, setHiddenRisks] = useState<string[]>([])
+  const { t } = useTranslation('common')
 
   // Activos con coordenadas o geoJson válido (lista completa original)
   const allMapAssets = assets?.filter(a => (a.latitude != null && a.longitude != null) || a.geoJson) || []
@@ -111,7 +113,7 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-none sm:max-w-none w-screen h-screen m-0 p-0 rounded-none flex flex-col overflow-hidden border-0">
         <DialogHeader className="p-6 pb-2 shrink-0">
-          <DialogTitle>Mapa de Activos ({mapAssets.length} ubicados de {assets?.length || 0})</DialogTitle>
+          <DialogTitle>{t('map.title', { located: mapAssets.length, total: assets?.length || 0 })}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 w-full relative bg-muted/20 z-0">
           {open && ( // Solo renderizar el mapa cuando el modal está abierto para evitar bugs de dimensiones
@@ -152,9 +154,9 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
 
                     {asset.healthRiskLevel && (
                       <div className="mt-2 flex flex-col gap-1 border-t pt-2">
-                        <div className="text-xs font-semibold">Salud Predictiva</div>
+                        <div className="text-xs font-semibold">{t('map.predictiveHealth')}</div>
                         <div className="text-xs text-muted-foreground flex justify-between items-center">
-                          <span>Nivel de Riesgo:</span>
+                          <span>{t('map.riskLevel')}</span>
                           <span className={`px-1.5 py-0.5 rounded border font-semibold ${
                             {
                               Low: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
@@ -168,7 +170,7 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
                         </div>
                         {asset.healthRiskProbability != null && (
                           <div className="text-xs text-muted-foreground flex justify-between">
-                            <span>Probabilidad de Falla:</span>
+                            <span>{t('map.failureProbability')}</span>
                             <span className="font-medium text-foreground">
                               {(asset.healthRiskProbability * 100).toFixed(1)}%
                             </span>
@@ -176,9 +178,9 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
                         )}
                         {asset.healthPredictedFailureDays != null && (
                           <div className="text-xs text-muted-foreground flex justify-between">
-                            <span>Falla Estimada:</span>
+                            <span>{t('map.estimatedFailure')}</span>
                             <span className="font-medium text-foreground">
-                              {asset.healthPredictedFailureDays} días
+                              {t('map.days', { count: asset.healthPredictedFailureDays })}
                             </span>
                           </div>
                         )}
@@ -191,7 +193,7 @@ export function AssetGlobalMapModal({ open, onOpenChange, assets }: AssetGlobalM
                       rel="noreferrer"
                       className="text-xs text-blue-600 hover:underline mt-2 inline-block text-right w-full"
                     >
-                      Abrir detalle →
+                      {t('map.openDetail')}
                     </a>
                   </div>
                 )

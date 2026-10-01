@@ -16,10 +16,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export default function StaffTeams() {
   const { can } = usePermissions()
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['staff', 'common'])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTeamId, setEditingTeamId] = useState<string | undefined>()
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,9 +35,9 @@ export default function StaffTeams() {
     mutationFn: (id: string) => teamService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
-      toast.success('Equipo eliminado')
+      toast.success(t('toast.teamDeleted'))
     },
-    onError: () => toast.error('Error al eliminar equipo'),
+    onError: () => toast.error(t('toast.deleteTeamError')),
   })
 
   const handleCreate = () => {
@@ -55,9 +57,9 @@ export default function StaffTeams() {
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
-            <CardTitle>Equipos</CardTitle>
+            <CardTitle>{t('teams.title')}</CardTitle>
             <CardDescription>
-              Organiza empleados en equipos de trabajo para asignación colectiva.
+              {t('teams.description')}
             </CardDescription>
           </div>
           {can('teams:create') && (
@@ -69,7 +71,7 @@ export default function StaffTeams() {
 
         <div className="px-4 py-3 flex items-center gap-3 border-b">
           <Input
-            placeholder="Buscar por nombre..."
+            placeholder={t('teams.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-xs"
@@ -86,11 +88,11 @@ export default function StaffTeams() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Miembros</TableHead>
-                    <TableHead>Líder</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>{t('common:labels.name')}</TableHead>
+                    <TableHead>{t('common:labels.description')}</TableHead>
+                    <TableHead>{t('teams.table.headers.members')}</TableHead>
+                    <TableHead>{t('teams.table.headers.lead')}</TableHead>
+                    <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -124,7 +126,7 @@ export default function StaffTeams() {
                                     <Pencil className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
+                                <TooltipContent>{t('common:actions.edit')}</TooltipContent>
                               </Tooltip>
                             )}
 
@@ -138,19 +140,19 @@ export default function StaffTeams() {
                                     </Button>
                                   </AlertDialogTrigger>
                                 </TooltipTrigger>
-                                <TooltipContent>Eliminar</TooltipContent>
+                                <TooltipContent>{t('common:actions.delete')}</TooltipContent>
                               </Tooltip>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Eliminar equipo?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('teams.dialog.deleteTitle')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Se eliminará el equipo &quot;{team.name}&quot;. Los empleados no se verán afectados.
+                                    {t('teams.dialog.deleteBody', { name: team.name })}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                   <AlertDialogAction onClick={() => deleteMutation.mutate(team.id)}>
-                                    Eliminar
+                                    {t('common:actions.delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -165,10 +167,10 @@ export default function StaffTeams() {
               </Table>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <p>No hay equipos registrados.</p>
+                <p>{t('teams.empty')}</p>
                 {can('teams:create') && (
                   <Button variant="link" onClick={handleCreate}>
-                    Crear el primero
+                    {t('empty.createFirst')}
                   </Button>
                 )}
               </div>
@@ -198,6 +200,7 @@ function TeamFormSheet({
   teamId?: string
 }) {
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['staff', 'common'])
   const isEditing = !!teamId
 
   const [name, setName] = useState('')
@@ -236,10 +239,10 @@ function TeamFormSheet({
     mutationFn: (payload: CreateTeamDto) => teamService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
-      toast.success('Equipo creado')
+      toast.success(t('toast.teamCreated'))
       onOpenChange(false)
     },
-    onError: () => toast.error('Error al crear equipo'),
+    onError: () => toast.error(t('toast.createTeamError')),
   })
 
   const updateMutation = useMutation({
@@ -247,10 +250,10 @@ function TeamFormSheet({
       teamService.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
-      toast.success('Equipo actualizado')
+      toast.success(t('toast.teamUpdated'))
       onOpenChange(false)
     },
-    onError: () => toast.error('Error al actualizar equipo'),
+    onError: () => toast.error(t('toast.updateTeamError')),
   })
 
   const toggleMember = (employeeId: string) => {
@@ -290,10 +293,10 @@ function TeamFormSheet({
             </div>
             <div>
               <SheetTitle className="text-xl font-semibold">
-                {isEditing ? 'Editar Equipo' : 'Nuevo Equipo'}
+                {isEditing ? t('teams.form.editTitle') : t('teams.form.newTitle')}
               </SheetTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Modifica los datos del equipo y sus integrantes.
+                {t('teams.form.sheetDescription')}
               </p>
             </div>
           </SheetHeader>
@@ -305,25 +308,25 @@ function TeamFormSheet({
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-muted-foreground">
                 <Info className="h-4 w-4" />
-                <h4 className="text-sm font-medium">Información del equipo</h4>
+                <h4 className="text-sm font-medium">{t('teams.form.infoSection')}</h4>
               </div>
               
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm">Nombre <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm">{t('common:labels.name')} <span className="text-destructive">*</span></Label>
                   <Input 
                     value={name} 
                     onChange={(e) => setName(e.target.value)} 
-                    placeholder="Ej: Mantenimiento Preventivo" 
+                    placeholder={t('teams.form.namePlaceholder')} 
                     className="rounded-md focus-visible:ring-primary/20"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm">Descripción</Label>
+                  <Label className="text-sm">{t('common:labels.description')}</Label>
                   <Input 
                     value={description} 
                     onChange={(e) => setDescription(e.target.value)} 
-                    placeholder="Breve descripción (opcional)" 
+                    placeholder={t('teams.form.descriptionPlaceholder')} 
                     className="rounded-md focus-visible:ring-primary/20"
                   />
                 </div>
@@ -336,7 +339,7 @@ function TeamFormSheet({
               <div className="space-y-4">
                 <div className="flex items-center space-x-2 text-muted-foreground">
                   <UsersRound className="h-4 w-4" />
-                  <h4 className="text-sm font-medium">Integrantes</h4>
+                  <h4 className="text-sm font-medium">{t('teams.form.membersSection')}</h4>
                 </div>
                 
                 <div className="border rounded-md shadow-sm overflow-hidden bg-card">
@@ -377,7 +380,7 @@ function TeamFormSheet({
                                 onClick={() => toggleLead(emp.id)}
                               >
                                 <Crown className={`h-3.5 w-3.5 mr-1.5 ${memberEntry?.isLead ? 'text-amber-300' : ''}`} />
-                                {memberEntry?.isLead ? 'Líder' : 'Hacer líder'}
+                                {memberEntry?.isLead ? t('teams.form.leader') : t('teams.form.makeLeader')}
                               </Button>
                             )}
                           </div>
@@ -386,7 +389,7 @@ function TeamFormSheet({
                       {employeeList.length === 0 && (
                         <div className="p-8 flex flex-col items-center justify-center text-center">
                           <Users className="h-8 w-8 text-muted-foreground/30 mb-3" />
-                          <p className="text-sm font-medium text-muted-foreground">No hay empleados disponibles</p>
+                          <p className="text-sm font-medium text-muted-foreground">{t('teams.form.noEmployees')}</p>
                         </div>
                       )}
                     </div>
@@ -399,7 +402,7 @@ function TeamFormSheet({
 
         <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('common:actions.cancel')}
           </Button>
           <Button 
             onClick={handleSubmit} 
@@ -407,7 +410,7 @@ function TeamFormSheet({
             className="w-full sm:w-auto min-w-[140px]"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {isEditing ? 'Guardar Cambios' : 'Crear Equipo'}
+            {isEditing ? t('common:actions.saveChanges') : t('teams.form.createTeam')}
           </Button>
         </div>
       </SheetContent>

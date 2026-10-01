@@ -12,6 +12,7 @@ import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import { MapLegend } from './MapLegend'
 import { createColoredMarkerIcon } from './map-utils'
+import { useTranslation } from 'react-i18next'
 
 const defaultIcon = L.icon({
   iconRetinaUrl,
@@ -208,6 +209,7 @@ function GeomanEditor({ geoJson, latitude, longitude, readOnly, onChange, assetS
 
 export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = false, assetName: _assetName, riskLevel, assetState, assetStateColor }: AssetMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const { t } = useTranslation('common')
 
   const center = (latitude != null && longitude != null) 
     ? new L.LatLng(latitude, longitude) 
@@ -248,7 +250,7 @@ export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = fa
       {riskLevel && (
         <div className="absolute top-2 left-12 z-[400] pointer-events-none">
           <div className={`px-2.5 py-1 rounded-md border text-xs font-semibold backdrop-blur-md shadow-sm ${riskBadgeStyles[riskLevel] || ''}`}>
-            Riesgo Predictivo: {riskLevel}
+            {t('map.predictiveRisk', { level: riskLevel })}
           </div>
         </div>
       )}
@@ -261,7 +263,7 @@ export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = fa
         className={`absolute z-[400] bg-background p-1.5 rounded-md border shadow-sm hover:bg-muted transition-colors ${
           isFullscreen ? 'top-4 right-4' : 'bottom-4 right-4'
         }`}
-        title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+        title={isFullscreen ? t('map.exitFullscreen') : t('map.fullscreen')}
       >
         {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
       </button>
@@ -269,7 +271,7 @@ export function AssetMap({ latitude, longitude, geoJson, onChange, readOnly = fa
       {!readOnly && !isFullscreen && (
         <div className="absolute top-2 right-2 z-[400] pointer-events-none flex items-start justify-center">
           <div className="bg-background/90 backdrop-blur-sm border shadow-sm px-3 py-1.5 rounded-md text-xs font-medium">
-            Usa las herramientas de la izquierda para dibujar
+            {t('map.drawHint')}
           </div>
         </div>
       )}

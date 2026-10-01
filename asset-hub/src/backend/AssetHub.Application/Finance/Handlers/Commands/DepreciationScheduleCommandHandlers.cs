@@ -49,7 +49,7 @@ public class GenerateDepreciationScheduleCommandHandler : IRequestHandler<Genera
 
         var hasPosted = existingSchedules.Any(s => s.IsPosted);
         if (hasPosted && !request.Request.ForceRegenerate)
-            throw new DomainException("has_posted_entries", "Existen cuotas devengadas. Use ForceRegenerate=true para regenerar (eliminará cuotas futuras no devengadas)");
+            throw new DomainException("has_posted_entries", "Existen cuotas devengadas. Use ForceRegenerate=true para regenerar (eliminará cuotas futuras no devengadas)", "Domain.HasPostedEntriesRegenerate");
 
         if (book.DepreciationMethod == DepreciationMethod.Manual)
         {
@@ -173,7 +173,7 @@ public class GenerateDepreciationScheduleCommandHandler : IRequestHandler<Genera
             currentNetBookValue = book.AcquisitionCost - accumulated;
 
             if (currentNetBookValue < book.ResidualValue)
-                throw new DomainException("below_residual", $"Período {item.PeriodNumber}: valor neto ({currentNetBookValue}) bajo residual ({book.ResidualValue})");
+                throw new DomainException("below_residual", $"Período {item.PeriodNumber}: valor neto ({currentNetBookValue}) bajo residual ({book.ResidualValue})", "Domain.BelowResidual", item.PeriodNumber, currentNetBookValue, book.ResidualValue);
 
             schedules.Add(new AssetDepreciationSchedule
             {
@@ -196,7 +196,7 @@ public class GenerateDepreciationScheduleCommandHandler : IRequestHandler<Genera
         var totalDepreciation = schedules.Sum(s => s.ProjectedDepreciationAmount);
         var expectedDepreciation = book.AcquisitionCost - book.ResidualValue;
         if (Math.Abs(totalDepreciation - expectedDepreciation) > 0.01m)
-            throw new DomainException("manual_total_mismatch", $"Suma cuotas manuales ({totalDepreciation}) != base depreciable ({expectedDepreciation})");
+            throw new DomainException("manual_total_mismatch", $"Suma cuotas manuales ({totalDepreciation}) != base depreciable ({expectedDepreciation})", "Domain.ManualTotalMismatch", totalDepreciation, expectedDepreciation);
 
         _dbContext.AssetDepreciationSchedules.AddRange(schedules);
         await _dbContext.SaveChangesAsync(cancellationToken);

@@ -17,6 +17,17 @@
   @apply grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4;
 }
 
+/* Grids for sections/tabs rendered by CustomObjectFieldTemplate.
+   The tabbed root container is a `div` (not a `fieldset`), so the fieldset rules above
+   don't apply to it and the grid classes are declared explicitly here. */
+.rjsf-section-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.rjsf-tailwind.rjsf-single-column .rjsf-section-grid {
+  @apply grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4;
+}
+
 /* Abstract Tech Grid Background */
 .bg-tech-grid {
   background-color: #0b1120;

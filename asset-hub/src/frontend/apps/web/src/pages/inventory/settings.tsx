@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Loader2, Settings2, Zap, Globe, GitMerge } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { inventoryService, type InventoryOperatingMode } from '@/services/inventory.service'
 import { Button } from '@/components/ui/button'
@@ -13,35 +14,42 @@ import { usePermissions } from '@/hooks/use-permissions'
 
 const MODES: {
   value: InventoryOperatingMode
-  label: string
-  description: string
+  labelKey:
+    | 'settings.modes.external.label'
+    | 'settings.modes.internal.label'
+    | 'settings.modes.hybrid.label'
+  descriptionKey:
+    | 'settings.modes.external.description'
+    | 'settings.modes.internal.description'
+    | 'settings.modes.hybrid.description'
   icon: React.ElementType
   badgeClass: string
 }[] = [
   {
     value: 'external',
-    label: 'Externo',
-    description: 'Las órdenes de mantenimiento usan proveedores externos. No se descuenta stock del sistema.',
+    labelKey: 'settings.modes.external.label',
+    descriptionKey: 'settings.modes.external.description',
     icon: Globe,
     badgeClass: 'bg-sky-500/10 text-sky-700 border-sky-500/30 dark:text-sky-400',
   },
   {
     value: 'internal',
-    label: 'Interno',
-    description: 'Los repuestos se consumen del inventario propio. El stock se descuenta al registrar partes en las órdenes.',
+    labelKey: 'settings.modes.internal.label',
+    descriptionKey: 'settings.modes.internal.description',
     icon: Zap,
     badgeClass: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
   },
   {
     value: 'hybrid',
-    label: 'Híbrido',
-    description: 'Cada repuesto puede configurarse individualmente como interno o externo por orden.',
+    labelKey: 'settings.modes.hybrid.label',
+    descriptionKey: 'settings.modes.hybrid.description',
     icon: GitMerge,
     badgeClass: 'bg-violet-500/10 text-violet-700 border-violet-500/30 dark:text-violet-400',
   },
 ]
 
 export default function InventorySettingsPage() {
+  const { t } = useTranslation(['inventory', 'common'])
   const { can } = usePermissions()
   const canConfigure = can('inventory:configure')
   const qc = useQueryClient()
@@ -69,10 +77,10 @@ export default function InventorySettingsPage() {
       // Reset local overrides
       setMode(null)
       setAllowNegative(null)
-      toast.success('Configuración de inventario guardada')
+      toast.success(t('settings.toast.saved'))
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.title || 'Error al guardar la configuración')
+      toast.error(err.response?.data?.title || t('settings.toast.saveError'))
     },
   })
 
@@ -82,9 +90,9 @@ export default function InventorySettingsPage() {
     <div className="flex flex-1 flex-col gap-6 p-6 pt-4 max-w-2xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración de Inventario</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Definí cómo opera el módulo de inventario para este tenant.
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -99,10 +107,10 @@ export default function InventorySettingsPage() {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Settings2 className="h-4 w-4 text-primary" />
-                Modo de operación
+                {t('settings.modeSection.title')}
               </CardTitle>
               <CardDescription>
-                Controla cómo se integra el inventario con las órdenes de mantenimiento.
+                {t('settings.modeSection.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
@@ -128,14 +136,14 @@ export default function InventorySettingsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-sm">{m.label}</span>
+                        <span className="font-medium text-sm">{t(m.labelKey)}</span>
                         {isSelected && (
                           <Badge variant="outline" className={`text-[10px] ${m.badgeClass}`}>
-                            Activo
+                            {t('common:status.active')}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{m.description}</p>
+                      <p className="text-xs text-muted-foreground">{t(m.descriptionKey)}</p>
                     </div>
                   </button>
                 )
@@ -146,16 +154,16 @@ export default function InventorySettingsPage() {
           {/* Advanced options */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Opciones avanzadas</CardTitle>
+              <CardTitle className="text-base">{t('settings.advanced.title')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <Label htmlFor="allow-negative" className="font-medium">
-                    Permitir stock negativo
+                    {t('settings.advanced.allowNegativeLabel')}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Si está deshabilitado, las transacciones que generarían stock negativo serán rechazadas.
+                    {t('settings.advanced.allowNegativeHint')}
                   </p>
                 </div>
                 <Switch
@@ -176,7 +184,7 @@ export default function InventorySettingsPage() {
                   variant="ghost"
                   onClick={() => { setMode(null); setAllowNegative(null) }}
                 >
-                  Descartar cambios
+                  {t('settings.discardChanges')}
                 </Button>
               )}
               <Button
@@ -184,7 +192,7 @@ export default function InventorySettingsPage() {
                 disabled={updateMutation.isPending || !hasChanges}
               >
                 {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar configuración
+                {t('settings.save')}
               </Button>
             </div>
           )}

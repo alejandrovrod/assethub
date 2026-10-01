@@ -10,6 +10,11 @@ import {
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
+/**
+ * Titles are i18n keys resolved in the render layer (nav-group.tsx,
+ * command-menu.tsx) via the `common` namespace: `sidebar.groups.*` and
+ * `sidebar.items.*`. Keep this file free of user-facing text.
+ */
 export const sidebarData: SidebarData = {
   user: {
     name: 'Admin User',
@@ -25,90 +30,90 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'sidebar.groups.general',
       items: [
         {
-          title: 'Panel de Control',
+          title: 'sidebar.items.dashboard',
           url: '/dashboard',
           icon: LayoutDashboard,
         },
       ],
     },
     {
-      title: 'Gestión',
+      title: 'sidebar.groups.management',
       items: [
         {
-          title: 'Activos',
+          title: 'sidebar.items.assets',
           icon: Laptop,
           items: [
             {
-              title: 'Listado',
+              title: 'sidebar.items.assetList',
               url: '/assets',
             },
             {
-              title: 'Plantillas',
+              title: 'sidebar.items.assetTemplates',
               url: '/assets/templates',
             },
           ],
         },
         {
-          title: 'Mantenimiento',
+          title: 'sidebar.items.maintenance',
           icon: Wrench,
           items: [
             {
-              title: 'Incidencias',
+              title: 'sidebar.items.incidents',
               url: '/maintenance/incidents',
             },
             {
-              title: 'Plantillas de Incidencias',
+              title: 'sidebar.items.workflowTemplates',
               url: '/maintenance/workflow-templates',
             },
             {
-              title: 'Tareas',
+              title: 'sidebar.items.tasks',
               url: '/maintenance/tasks',
             },
             {
-              title: 'Órdenes',
+              title: 'sidebar.items.orders',
               url: '/maintenance/orders',
             },
             {
-              title: 'Planes de Mantenimiento',
+              title: 'sidebar.items.preventivePlans',
               url: '/maintenance/preventive-plans',
             },
             {
-              title: 'Plantillas de Comunicación',
+              title: 'sidebar.items.communicationTemplates',
               url: '/maintenance/communication-templates',
             },
           ],
         },
         {
-          title: 'Personal',
+          title: 'sidebar.items.staff',
           icon: Users,
           items: [
             {
-              title: 'Empleados',
+              title: 'sidebar.items.employees',
               url: '/staff/employees',
             },
             {
-              title: 'Equipos',
+              title: 'sidebar.items.teams',
               url: '/staff/teams',
             },
           ],
         },
         {
-          title: 'Inventario',
+          title: 'sidebar.items.inventory',
           icon: Package,
           items: [
             {
-              title: 'Almacenes',
+              title: 'sidebar.items.warehouses',
               url: '/inventory/warehouses',
             },
             {
-              title: 'Stock',
+              title: 'sidebar.items.stock',
               url: '/inventory/stock',
             },
             {
-              title: 'Configuración',
+              title: 'sidebar.items.inventorySettings',
               url: '/inventory/settings',
             },
           ],
@@ -116,41 +121,40 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'Sistema',
+      title: 'sidebar.groups.system',
       items: [
         {
-          title: 'Catálogos',
+          title: 'sidebar.items.catalogs',
           url: '/catalogs',
           icon: BookOpen,
         },
-{
-  title: 'Configuración',
-  icon: Settings,
-  items: [
-    {
-      title: 'Organización',
-      url: '/settings/tenant',
-    },
-    {
-      title: 'Mi Cuenta',
-      url: '/settings/account',
-    },
-    {
-      title: 'Usuarios',
-      url: '/settings/users',
-    },
-    {
-      title: 'Roles',
-      url: '/settings/roles',
-    },
-    {
-      title: 'Auditoría',
-      url: '/settings/audit',
-    },
-  ],
-},
+        {
+          title: 'sidebar.items.settings',
+          icon: Settings,
+          items: [
+            {
+              title: 'sidebar.items.organization',
+              url: '/settings/tenant',
+            },
+            {
+              title: 'sidebar.items.myAccount',
+              url: '/settings/account',
+            },
+            {
+              title: 'sidebar.items.users',
+              url: '/settings/users',
+            },
+            {
+              title: 'sidebar.items.roles',
+              url: '/settings/roles',
+            },
+            {
+              title: 'sidebar.items.audit',
+              url: '/settings/audit',
+            },
+          ],
+        },
       ],
     },
   ],
 }
-

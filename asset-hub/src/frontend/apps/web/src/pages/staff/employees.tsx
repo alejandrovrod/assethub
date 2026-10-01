@@ -20,12 +20,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 const ROLE_CATALOG_CODE = 'employee-role'
 
 export default function StaffEmployees() {
   const { can } = usePermissions()
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['staff', 'common'])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<EmployeeSummary | undefined>()
   const [searchTerm, setSearchTerm] = useState('')
@@ -55,10 +57,10 @@ export default function StaffEmployees() {
     mutationFn: (id: string) => employeeService.deactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] })
-      toast.success('Empleado desactivado')
+      toast.success(t('toast.employeeDeactivated'))
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al desactivar empleado')
+      toast.error(error.message || t('toast.deactivateEmployeeError'))
     },
   })
 
@@ -79,9 +81,9 @@ export default function StaffEmployees() {
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
-            <CardTitle>Empleados</CardTitle>
+            <CardTitle>{t('employees.title')}</CardTitle>
             <CardDescription>
-              Gestión del personal de mantenimiento y operaciones.
+              {t('employees.description')}
             </CardDescription>
           </div>
           {can('employees:create') && (
@@ -93,16 +95,16 @@ export default function StaffEmployees() {
 
         <div className="px-4 py-3 flex items-center gap-3 border-b">
           <Input
-            placeholder="Buscar por nombre o email..."
+            placeholder={t('employees.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-xs"
           />
           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="ml-auto">
             <TabsList>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="active">Activos</TabsTrigger>
-              <TabsTrigger value="inactive">Inactivos</TabsTrigger>
+              <TabsTrigger value="all">{t('common:status.all')}</TabsTrigger>
+              <TabsTrigger value="active">{t('employees.tabs.active')}</TabsTrigger>
+              <TabsTrigger value="inactive">{t('employees.tabs.inactive')}</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -117,12 +119,12 @@ export default function StaffEmployees() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>{t('common:labels.name')}</TableHead>
+                    <TableHead>{t('common:labels.email')}</TableHead>
+                    <TableHead>{t('common:labels.phone')}</TableHead>
+                    <TableHead>{t('common:labels.role')}</TableHead>
+                    <TableHead>{t('common:labels.status')}</TableHead>
+                    <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -142,7 +144,7 @@ export default function StaffEmployees() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={emp.isActive ? 'default' : 'secondary'}>
-                          {emp.isActive ? 'Activo' : 'Inactivo'}
+                          {emp.isActive ? t('common:status.active') : t('common:status.inactive')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -155,7 +157,7 @@ export default function StaffEmployees() {
                                     <Pencil className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
+                                <TooltipContent>{t('common:actions.edit')}</TooltipContent>
                               </Tooltip>
                             )}
 
@@ -169,19 +171,19 @@ export default function StaffEmployees() {
                                       </Button>
                                     </AlertDialogTrigger>
                                   </TooltipTrigger>
-                                  <TooltipContent>Desactivar</TooltipContent>
+                                  <TooltipContent>{t('employees.deactivate')}</TooltipContent>
                                 </Tooltip>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Desactivar empleado?</AlertDialogTitle>
+                                    <AlertDialogTitle>{t('employees.dialog.deactivateTitle')}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Se desactivará a {emp.firstName} {emp.lastName}. No podrá ser asignado a nuevas tareas.
+                                      {t('employees.dialog.deactivateBody', { firstName: emp.firstName, lastName: emp.lastName })}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => deleteMutation.mutate(emp.id)}>
-                                      Desactivar
+                                      {t('employees.deactivate')}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -196,10 +198,10 @@ export default function StaffEmployees() {
               </Table>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <p>No hay empleados registrados.</p>
+                <p>{t('employees.empty')}</p>
                 {can('employees:create') && (
                   <Button variant="link" onClick={handleCreate}>
-                    Crear el primero
+                    {t('empty.createFirst')}
                   </Button>
                 )}
               </div>
@@ -233,6 +235,7 @@ function EmployeeFormSheet({
   systemRoles: RoleSummary[]
 }) {
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['staff', 'common'])
   const isEditing = !!employee
 
   const [firstName, setFirstName] = useState('')
@@ -274,11 +277,11 @@ function EmployeeFormSheet({
       if (result?.temporalPassword) {
         setTemporalPassword(result.temporalPassword)
       } else {
-        toast.success('Empleado creado exitosamente')
+        toast.success(t('toast.employeeCreated'))
         onOpenChange(false)
       }
     },
-    onError: (error: any) => toast.error(error?.response?.data?.detail || 'Error al crear empleado'),
+    onError: (error: any) => toast.error(error?.response?.data?.detail || t('toast.createEmployeeError')),
   })
 
   const updateMutation = useMutation({
@@ -289,11 +292,11 @@ function EmployeeFormSheet({
       if (result?.temporalPassword) {
         setTemporalPassword(result.temporalPassword)
       } else {
-        toast.success('Empleado actualizado')
+        toast.success(t('toast.employeeUpdated'))
         onOpenChange(false)
       }
     },
-    onError: (error: any) => toast.error(error?.response?.data?.detail || 'Error al actualizar empleado'),
+    onError: (error: any) => toast.error(error?.response?.data?.detail || t('toast.updateEmployeeError')),
   })
 
   const handleSubmit = () => {
@@ -350,12 +353,12 @@ function EmployeeFormSheet({
             </div>
             <div>
               <SheetTitle className="text-xl">
-                {isEditing ? 'Editar Empleado' : 'Nuevo Empleado'}
+                {isEditing ? t('employees.form.editTitle') : t('employees.form.newTitle')}
               </SheetTitle>
               <SheetDescription>
                 {isEditing
-                  ? 'Modifica los datos del empleado.'
-                  : 'Registra un nuevo miembro del equipo de trabajo.'}
+                  ? t('employees.form.editDescription')
+                  : t('employees.form.newDescription')}
               </SheetDescription>
             </div>
           </div>
@@ -367,11 +370,10 @@ function EmployeeFormSheet({
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3">
                 <div className="flex items-center gap-2 font-medium">
                   <KeyRound className="h-4 w-4" />
-                  Acceso al sistema creado
+                  {t('employees.form.accessCreated')}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Compartí esta contraseña temporal con {firstName} {lastName}. Deberá
-                  cambiarla al iniciar sesión.
+                  {t('employees.form.tempPasswordHint', { firstName, lastName })}
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 text-sm font-mono bg-muted px-3 py-2 rounded-md break-all">
@@ -384,16 +386,16 @@ function EmployeeFormSheet({
                     onClick={() => {
                       navigator.clipboard
                         .writeText(temporalPassword)
-                        .then(() => toast.success('Contraseña copiada al portapapeles'))
-                        .catch(() => toast.error('No se pudo copiar la contraseña'))
+                        .then(() => toast.success(t('toast.passwordCopied')))
+                        .catch(() => toast.error(t('toast.passwordCopyError')))
                     }}
                   >
-                    Copiar
+                    {t('common:actions.copy')}
                   </Button>
                 </div>
               </div>
               <Button className="w-full" onClick={() => onOpenChange(false)}>
-                Listo
+                {t('employees.form.done')}
               </Button>
             </div>
           </div>
@@ -405,25 +407,25 @@ function EmployeeFormSheet({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <User className="h-4 w-4" />
-                  <span>Information personal</span>
+                  <span>{t('employees.form.personalInfo')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="emp-firstName">Nombre <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="emp-firstName">{t('common:labels.name')} <span className="text-destructive">*</span></Label>
                     <Input
                       id="emp-firstName"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Juan"
+                      placeholder={t('employees.form.firstNamePlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="emp-lastName">Apellido <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="emp-lastName">{t('employees.form.lastName')} <span className="text-destructive">*</span></Label>
                     <Input
                       id="emp-lastName"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Pérez"
+                      placeholder={t('employees.form.lastNamePlaceholder')}
                     />
                   </div>
                 </div>
@@ -435,11 +437,11 @@ function EmployeeFormSheet({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  <span>Contacto</span>
+                  <span>{t('employees.form.contact')}</span>
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="emp-email">Email <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="emp-email">{t('common:labels.email')} <span className="text-destructive">*</span></Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -447,13 +449,13 @@ function EmployeeFormSheet({
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="juan.perez@empresa.com"
+                        placeholder={t('employees.form.emailPlaceholder')}
                         className="pl-10"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="emp-phone">Teléfono</Label>
+                    <Label htmlFor="emp-phone">{t('common:labels.phone')}</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -474,13 +476,13 @@ function EmployeeFormSheet({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>Rol y permisos</span>
+                  <span>{t('employees.form.roleAndPermissions')}</span>
                 </div>
                 <div className="space-y-2">
-                  <Label>Puesto de Trabajo <span className="text-destructive">*</span></Label>
+                  <Label>{t('employees.form.jobTitle')} <span className="text-destructive">*</span></Label>
                   <Select value={roleCatalogItemId} onValueChange={setRoleCatalogItemId}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar puesto del empleado..." />
+                      <SelectValue placeholder={t('employees.form.selectJobPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {roles.map((role) => (
@@ -492,7 +494,7 @@ function EmployeeFormSheet({
                   </Select>
                   {roles.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      No hay puestos disponibles. Crea el catálogo "employee-role" en el módulo de Catálogos.
+                      {t('employees.form.noPositions')}
                     </p>
                   )}
                 </div>
@@ -511,21 +513,20 @@ function EmployeeFormSheet({
                       />
                       <div>
                         <Label htmlFor="emp-create-access" className="cursor-pointer">
-                          ¿Dar acceso al sistema?
+                          {t('employees.form.createAccessLabel')}
                         </Label>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Se creará un usuario con este email, contraseña temporal y el rol
-                          de sistema que elijas.
+                          {t('employees.form.createAccessHint')}
                         </p>
                       </div>
                     </div>
 
                     {createUserAccess && (
                       <div className="space-y-2">
-                        <Label>Rol de Sistema <span className="text-destructive">*</span></Label>
+                        <Label>{t('employees.form.systemRole')} <span className="text-destructive">*</span></Label>
                         <Select value={systemRoleId} onValueChange={setSystemRoleId}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seleccionar rol de sistema..." />
+                            <SelectValue placeholder={t('employees.form.selectSystemRolePlaceholder')} />
                           </SelectTrigger>
                           <SelectContent>
                             {systemRoles.map((role) => (
@@ -537,7 +538,7 @@ function EmployeeFormSheet({
                         </Select>
                         {systemRoles.length === 0 && (
                           <p className="text-xs text-muted-foreground">
-                            No hay roles de sistema configurados. Crea roles en Configuración &gt; Roles.
+                            {t('employees.form.noSystemRoles')}
                           </p>
                         )}
                       </div>
@@ -548,8 +549,7 @@ function EmployeeFormSheet({
                 {isEditing && employee?.userId && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
                     <KeyRound className="h-3.5 w-3.5" />
-                    Este empleado tiene acceso al sistema vinculado; los cambios de nombre,
-                    apellido y email se sincronizarán con su usuario.
+                    {t('employees.form.linkedAccessHint')}
                   </p>
                 )}
               </div>
@@ -558,7 +558,7 @@ function EmployeeFormSheet({
 
           <div className="p-6 border-t bg-background mt-auto flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('common:actions.cancel')}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -568,12 +568,12 @@ function EmployeeFormSheet({
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Guardando...
+                  {t('employees.form.saving')}
                 </>
               ) : isEditing ? (
-                'Guardar cambios'
+                t('common:actions.saveChanges')
               ) : (
-                'Crear empleado'
+                t('employees.form.createEmployee')
               )}
             </Button>
           </div>

@@ -1,0 +1,69 @@
+{
+  "code": "TPL_FACILITY_ZONE",
+  "name": "Área / Zona de Instalación",
+  "description": "Plantilla para gestionar espacios físicos y su ciclo operativo de limpieza, higiene y sanitización.",
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"zone_code\":{\"title\":\"Código de Zona/Ubicación\",\"type\":\"string\"},\"floor_level\":{\"title\":\"Nivel / Piso\",\"type\":\"string\"},\"square_meters\":{\"title\":\"Superficie (m²)\",\"type\":\"number\"},\"risk_level\":{\"title\":\"Nivel de Riesgo Sanitario\",\"type\":\"string\",\"catalogCode\":\"BIO_RISK_LEVEL\",\"propagateToWork\":true},\"frequency\":{\"title\":\"Frecuencia Requerida\",\"type\":\"string\",\"catalogCode\":\"CLEANING_FREQUENCY\",\"propagateToWork\":true},\"supervisor_id\":{\"title\":\"Supervisor Responsable\",\"type\":\"string\",\"format\":\"employee\"},\"sanitizer_type\":{\"title\":\"Químico Base Asignado\",\"type\":\"string\",\"catalogCode\":\"CLEANING_SUPPLIES\"},\"last_inspection_notes\":{\"title\":\"Observaciones Última Limpieza\",\"type\":\"string\"},\"evidence_photo\":{\"title\":\"Foto Testigo / Evidencia\",\"type\":\"string\",\"format\":\"data-url\"}},\"required\":[\"zone_code\",\"risk_level\",\"frequency\"]}",
+  "maintenanceChecklist": "1. Recolectar residuos y cambiar bolsas en papeleras y contenedores.\n2. Barrer y remover polvo acumulado en rincones y zoclos.\n3. Limpiar y sanitizar puntos de alto contacto (manijas, apagadores, grifos, barandales).\n4. Lavar y desinfectar inodoros, urinarios y lavamanos con químico bactericida.\n5. Trapeado húmedo con solución sanitizante de amonio o cloro según riesgo.\n6. Reposición de insumos de higiene (papel higiénico, toallas intercaladas, jabón de manos).\n7. Registro de firma en planilla física o digital y toma de foto testigo.",
+  "lifecycleStates": {
+    "initialState": "Limpio_Disponible",
+    "transitions": {
+      "Limpio_Disponible": [
+        "Requiere_Limpieza"
+      ],
+      "Requiere_Limpieza": [
+        "En_Limpieza"
+      ],
+      "En_Limpieza": [
+        "En_Inspeccion"
+      ],
+      "En_Inspeccion": [
+        "Limpio_Disponible",
+        "Requiere_Limpieza"
+      ]
+    },
+    "states": {
+      "Limpio_Disponible": {
+        "color": "#10b981",
+        "isTerminal": false,
+        "requiresFields": [],
+        "allowedRoles": [],
+        "onEnterAction": "",
+        "associatedModule": "",
+        "childStateDependencies": []
+      },
+      "Requiere_Limpieza": {
+        "color": "#ef4444",
+        "isTerminal": false,
+        "requiresFields": [
+          "zone_code"
+        ],
+        "allowedRoles": [],
+        "onEnterAction": "NOTIFY_CLEANING_CREW",
+        "associatedModule": "",
+        "childStateDependencies": []
+      },
+      "En_Limpieza": {
+        "color": "#f59e0b",
+        "isTerminal": false,
+        "requiresFields": [
+          "supervisor_id"
+        ],
+        "allowedRoles": [],
+        "onEnterAction": "",
+        "associatedModule": "",
+        "childStateDependencies": []
+      },
+      "En_Inspeccion": {
+        "color": "#8b5cf6",
+        "isTerminal": false,
+        "requiresFields": [
+          "last_inspection_notes"
+        ],
+        "allowedRoles": [],
+        "onEnterAction": "",
+        "associatedModule": "",
+        "childStateDependencies": []
+      }
+    }
+  }
+}

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -23,17 +25,17 @@ import { apiClient as api } from '@/lib/api-client'
 import { parseApiDate } from '@/lib/utils'
 
 const CRON_PRESETS = [
-  { label: 'Diario (medianoche)', value: '0 0 * * *' },
-  { label: 'Semanal (lunes)', value: '0 0 * * 1' },
-  { label: 'Mensual (día 1)', value: '0 0 1 * *' },
-  { label: 'Cada hora', value: '0 * * * *' },
-  { label: 'Cada 5 minutos', value: '*/5 * * * *' },
-  { label: 'Personalizado', value: 'custom' },
-]
+  { labelKey: 'preventivePlans.cron.dailyMidnight', value: '0 0 * * *' },
+  { labelKey: 'preventivePlans.cron.weeklyMonday', value: '0 0 * * 1' },
+  { labelKey: 'preventivePlans.cron.monthlyFirstDay', value: '0 0 1 * *' },
+  { labelKey: 'preventivePlans.cron.everyHour', value: '0 * * * *' },
+  { labelKey: 'preventivePlans.cron.every5Minutes', value: '*/5 * * * *' },
+  { labelKey: 'preventivePlans.cron.custom', value: 'custom' },
+] as const
 
-const formSchema = z
+const formSchema = (t: TFunction<'maintenance'>) => z
   .object({
-    name: z.string().min(1, 'Nombre es requerido').max(200),
+    name: z.string().min(1, t('preventivePlans.form.validation.nameRequired')).max(200),
     description: z.string().max(1000).optional(),
     targetType: z.enum(['Asset', 'AssetTemplate']),
     assetId: z.string().optional(),
@@ -41,8 +43,8 @@ const formSchema = z
     workflowTemplateId: z.string().optional(),
     generatedEntityType: z.enum(['WorkTask', 'MaintenanceOrder', 'Both']),
     cronPreset: z.string().min(1),
-    cronExpression: z.string().min(1, 'Expresión cron requerida'),
-    dueDateOffsetDays: z.number().min(0, 'Debe ser >= 0'),
+    cronExpression: z.string().min(1, t('preventivePlans.form.validation.cronRequired')),
+    dueDateOffsetDays: z.number().min(0, t('preventivePlans.form.validation.dueOffsetMin')),
     autoAssign: z.boolean(),
     defaultAssignedEmployeeId: z.string().optional(),
     defaultAssignedTeamId: z.string().optional(),
@@ -52,17 +54,17 @@ const formSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.targetType === 'Asset' && !data.assetId) {
-      ctx.addIssue({ code: 'custom', message: 'Seleccioná un activo', path: ['assetId'] })
+      ctx.addIssue({ code: 'custom', message: t('preventivePlans.form.validation.assetRequired'), path: ['assetId'] })
     }
     if (data.targetType === 'AssetTemplate' && !data.assetTemplateId) {
-      ctx.addIssue({ code: 'custom', message: 'Seleccioná una plantilla', path: ['assetTemplateId'] })
+      ctx.addIssue({ code: 'custom', message: t('preventivePlans.form.validation.templateRequired'), path: ['assetTemplateId'] })
     }
     if ((data.generatedEntityType === 'MaintenanceOrder' || data.generatedEntityType === 'Both') && !data.workflowTemplateId) {
-      ctx.addIssue({ code: 'custom', message: 'Seleccioná un flujo para las órdenes de mantenimiento', path: ['workflowTemplateId'] })
+      ctx.addIssue({ code: 'custom', message: t('preventivePlans.form.validation.workflowRequired'), path: ['workflowTemplateId'] })
     }
   })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof formSchema>>
 
 interface Props {
   open: boolean
@@ -89,6 +91,7 @@ function buildConditionRuleJson(allowed: string[], excluded: string[]) {
 }
 
 export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const queryClient = useQueryClient()
   const isEditing = !!plan
 
@@ -97,7 +100,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
   const [teamLabel, setTeamLabel] = useState<string>('')
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema(t)),
     defaultValues: {
       name: '',
       description: '',
@@ -240,11 +243,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
     mutationFn: preventivePlanService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['preventive-plans'] })
-      toast.success('Plan creado exitosamente')
+      toast.success(t('preventivePlans.toast.created'))
       onOpenChange(false)
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.title || error?.message || 'Error al crear el plan'
+      const message = error?.response?.data?.title || error?.message || t('preventivePlans.toast.createError')
       toast.error(message)
       console.error('Create preventive plan error:', error)
     },
@@ -255,11 +258,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
       preventivePlanService.update(plan!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['preventive-plans'] })
-      toast.success('Plan actualizado exitosamente')
+      toast.success(t('preventivePlans.toast.updated'))
       onOpenChange(false)
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.title || error?.message || 'Error al actualizar el plan'
+      const message = error?.response?.data?.title || error?.message || t('preventivePlans.toast.updateError')
       toast.error(message)
       console.error('Update preventive plan error:', error)
     },
@@ -295,9 +298,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 h-full">
         <SheetHeader className="p-6 pb-2 border-b shrink-0">
-          <SheetTitle>{isEditing ? 'Editar Plan' : 'Nuevo Plan de Mantenimiento'}</SheetTitle>
+          <SheetTitle>{isEditing ? t('preventivePlans.form.editTitle') : t('preventivePlans.form.createTitle')}</SheetTitle>
           <SheetDescription>
-            Configurá la recurrencia, objetivo y entregables del plan preventivo.
+            {t('preventivePlans.form.description')}
           </SheetDescription>
         </SheetHeader>
 
@@ -309,9 +312,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre</FormLabel>
+                    <FormLabel>{t('common:labels.name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Revisión mensual..." {...field} />
+                      <Input placeholder={t('preventivePlans.form.namePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -323,9 +326,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descripción</FormLabel>
+                    <FormLabel>{t('common:labels.description')}</FormLabel>
                     <FormControl>
-                      <Textarea rows={2} placeholder="Descripción opcional" {...field} />
+                      <Textarea rows={2} placeholder={t('preventivePlans.form.descriptionPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -337,7 +340,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="targetType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Objetivo</FormLabel>
+                    <FormLabel>{t('preventivePlans.columns.target')}</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -346,11 +349,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                       >
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="Asset" id="target-asset" />
-                          <label htmlFor="target-asset" className="text-sm">Un activo específico</label>
+                          <label htmlFor="target-asset" className="text-sm">{t('preventivePlans.form.targetAsset')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="AssetTemplate" id="target-template" />
-                          <label htmlFor="target-template" className="text-sm">Todos los activos de una plantilla</label>
+                          <label htmlFor="target-template" className="text-sm">{t('preventivePlans.form.targetTemplate')}</label>
                         </div>
                       </RadioGroup>
                     </FormControl>
@@ -365,7 +368,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                   name="assetId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Activo</FormLabel>
+                      <FormLabel>{t('fields.asset')}</FormLabel>
                       <FormControl>
                         <AsyncCombobox<{ id: string; name: string; code: string }>
                           fetcher={async (query) => {
@@ -374,9 +377,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                           }}
                           labelKey="name"
                           valueKey="id"
-                          placeholder="Buscar activo..."
-                          searchPlaceholder="Escriba para buscar..."
-                          emptyText="No se encontraron activos."
+                          placeholder={t('form.filters.searchAsset')}
+                          searchPlaceholder={t('form.searchTypePlaceholder')}
+                          emptyText={t('form.noAssetsFound')}
                           onSelect={(item) => {
                             field.onChange(item.id)
                             setAssetLabel(`${item.code} - ${item.name}`)
@@ -389,7 +392,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                               onClick={onClick}
                               className="w-full justify-between font-normal bg-background"
                             >
-                              {assetLabel || 'Buscar activo...'}
+                              {assetLabel || t('form.filters.searchAsset')}
                               <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           )}
@@ -405,11 +408,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                   name="assetTemplateId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Plantilla de activo</FormLabel>
+                      <FormLabel>{t('preventivePlans.form.assetTemplate')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar plantilla..." />
+                            <SelectValue placeholder={t('preventivePlans.form.selectTemplatePlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -431,7 +434,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="cronPreset"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Frecuencia</FormLabel>
+                    <FormLabel>{t('preventivePlans.columns.frequency')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -441,7 +444,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                       <SelectContent>
                         {CRON_PRESETS.map((p) => (
                           <SelectItem key={p.value} value={p.value}>
-                            {p.label}
+                            {t(p.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -457,11 +460,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                   name="cronExpression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Expresión cron</FormLabel>
+                      <FormLabel>{t('preventivePlans.form.cronExpression')}</FormLabel>
                       <FormControl>
                         <Input placeholder="0 0 1 * *" {...field} />
                       </FormControl>
-                      <FormDescription>Formato: minuto hora día mes día-semana</FormDescription>
+                      <FormDescription>{t('preventivePlans.form.cronFormat')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -473,7 +476,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="generatedEntityType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo de entregable</FormLabel>
+                    <FormLabel>{t('preventivePlans.form.deliverableType')}</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -482,15 +485,15 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                       >
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="WorkTask" id="type-task" />
-                          <label htmlFor="type-task" className="text-sm">Tarea de trabajo</label>
+                          <label htmlFor="type-task" className="text-sm">{t('preventivePlans.form.deliverableTask')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="MaintenanceOrder" id="type-order" />
-                          <label htmlFor="type-order" className="text-sm">Orden de mantenimiento</label>
+                          <label htmlFor="type-order" className="text-sm">{t('detail.related.maintenanceOrder')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="Both" id="type-both" />
-                          <label htmlFor="type-both" className="text-sm">Ambas</label>
+                          <label htmlFor="type-both" className="text-sm">{t('preventivePlans.entityType.both')}</label>
                         </div>
                       </RadioGroup>
                     </FormControl>
@@ -505,11 +508,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                   name="workflowTemplateId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Plantilla de Flujo</FormLabel>
+                      <FormLabel>{t('preventivePlans.form.workflowTemplate')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar flujo para las órdenes..." />
+                            <SelectValue placeholder={t('preventivePlans.form.selectWorkflowPlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -520,7 +523,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Define los campos y el ciclo de vida de las órdenes generadas</FormDescription>
+                      <FormDescription>{t('preventivePlans.form.workflowDescription')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -532,7 +535,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="dueDateOffsetDays"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Días hasta vencimiento</FormLabel>
+                    <FormLabel>{t('preventivePlans.detail.dueOffsetDays')}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -541,7 +544,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                         onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                       />
                     </FormControl>
-                    <FormDescription>Relativo a la fecha de ejecución programada</FormDescription>
+                    <FormDescription>{t('preventivePlans.form.dueOffsetDescription')}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -555,7 +558,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                     <FormControl>
                       <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
-                    <FormLabel className="!mt-0">Asignar automáticamente</FormLabel>
+                    <FormLabel className="!mt-0">{t('preventivePlans.form.autoAssign')}</FormLabel>
                   </FormItem>
                 )}
               />
@@ -567,7 +570,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                     name="defaultAssignedEmployeeId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ID Empleado (opcional)</FormLabel>
+                        <FormLabel>{t('preventivePlans.form.employeeIdOptional')}</FormLabel>
                         <FormControl>
                           <AsyncCombobox<{ id: string; name: string }>
                             fetcher={async (query) => {
@@ -578,9 +581,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                             }}
                             labelKey="name"
                             valueKey="id"
-                            placeholder="Buscar empleado..."
-                            searchPlaceholder="Escriba para buscar..."
-                            emptyText="No se encontraron empleados."
+                            placeholder={t('form.filters.searchEmployee')}
+                            searchPlaceholder={t('form.searchTypePlaceholder')}
+                            emptyText={t('form.filters.noEmployees')}
                             onSelect={(item) => {
                               field.onChange(item.id)
                               setEmployeeLabel(item.name)
@@ -593,7 +596,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                                 onClick={onClick}
                                 className="w-full justify-between font-normal bg-background"
                               >
-                                {employeeLabel || 'Buscar empleado...'}
+                                {employeeLabel || t('form.filters.searchEmployee')}
                                 <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             )}
@@ -608,7 +611,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                     name="defaultAssignedTeamId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ID Equipo (opcional)</FormLabel>
+                        <FormLabel>{t('preventivePlans.form.teamIdOptional')}</FormLabel>
                         <FormControl>
                           <AsyncCombobox<{ id: string; name: string }>
                             fetcher={async (query) => {
@@ -619,9 +622,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                             }}
                             labelKey="name"
                             valueKey="id"
-                            placeholder="Buscar equipo..."
-                            searchPlaceholder="Escriba para buscar..."
-                            emptyText="No se encontraron equipos."
+                            placeholder={t('form.filters.searchTeam')}
+                            searchPlaceholder={t('form.searchTypePlaceholder')}
+                            emptyText={t('form.filters.noTeams')}
                             onSelect={(item) => {
                               field.onChange(item.id)
                               setTeamLabel(item.name)
@@ -634,7 +637,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                                 onClick={onClick}
                                 className="w-full justify-between font-normal bg-background"
                               >
-                                {teamLabel || 'Buscar equipo...'}
+                                {teamLabel || t('form.filters.searchTeam')}
                                 <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             )}
@@ -649,9 +652,9 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
 
               {lifecycleStates.length > 0 && (
                 <div className="space-y-4">
-                  <FormLabel>Condiciones de estado del activo</FormLabel>
+                  <FormLabel>{t('preventivePlans.form.stateConditions')}</FormLabel>
                   <FormDescription>
-                    Solo se generarán tareas para activos que cumplan estas condiciones.
+                    {t('preventivePlans.form.stateConditionsDescription')}
                   </FormDescription>
 
                   <FormField
@@ -659,7 +662,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                     name="excludedStates"
                     render={() => (
                       <FormItem>
-                        <FormLabel className="text-sm text-muted-foreground">Estados excluidos</FormLabel>
+                        <FormLabel className="text-sm text-muted-foreground">{t('preventivePlans.form.excludedStates')}</FormLabel>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {lifecycleStates.map((state) => (
                             <FormField
@@ -698,11 +701,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
                 name="endsAt"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Finaliza el (opcional)</FormLabel>
+                    <FormLabel>{t('preventivePlans.form.endsAtOptional')}</FormLabel>
                     <DatePicker
                       selected={field.value}
                       onSelect={field.onChange}
-                      placeholder="Sin fecha de fin"
+                      placeholder={t('preventivePlans.form.noEndDate')}
                     />
                     <FormMessage />
                   </FormItem>
@@ -714,7 +717,7 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
             <div className="p-6 border-t bg-background shrink-0 flex flex-col gap-3">
               {Object.keys(form.formState.errors).length > 0 && (
                 <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                  <strong>Corregí los siguientes errores antes de guardar:</strong>
+                  <strong>{t('preventivePlans.form.fixErrors')}</strong>
                   <ul className="list-disc list-inside mt-1">
                     {Object.entries(form.formState.errors).map(([name, error]) => (
                       <li key={name}>{error?.message}</li>
@@ -724,11 +727,11 @@ export function PreventivePlanFormSheet({ open, onOpenChange, plan }: Props) {
               )}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </Button>
                 <Button type="submit" disabled={isPending}>
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isEditing ? 'Guardar cambios' : 'Crear plan'}
+                  {isEditing ? t('common:actions.saveChanges') : t('preventivePlans.form.createPlan')}
                 </Button>
               </div>
             </div>

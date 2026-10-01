@@ -10,12 +10,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { parseApiDate } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   taskId: string
 }
 
 export function WorkTaskComments({ taskId }: Props) {
+  const { t } = useTranslation('maintenance')
   const { can } = usePermissions()
   const canComment = can('tasks:comment')
   const queryClient = useQueryClient()
@@ -31,9 +33,9 @@ export function WorkTaskComments({ taskId }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-task-comments', taskId] })
       setText('')
-      toast.success('Comentario agregado')
+      toast.success(t('toast.commentAdded'))
     },
-    onError: () => toast.error('Error al agregar el comentario'),
+    onError: () => toast.error(t('toast.commentError')),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,7 +57,7 @@ export function WorkTaskComments({ taskId }: Props) {
         ) : sortedComments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
             <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
-            <p className="text-sm">Aún no hay comentarios.</p>
+            <p className="text-sm">{t('empty.comments')}</p>
           </div>
         ) : (
           <div className="space-y-4 pr-3">
@@ -64,7 +66,7 @@ export function WorkTaskComments({ taskId }: Props) {
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    {comment.createdByName ?? 'Usuario'}
+                    {comment.createdByName ?? t('comments.defaultAuthor')}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {format(parseApiDate(comment.createdAt), 'dd MMM yyyy HH:mm', { locale: es })}
@@ -81,7 +83,7 @@ export function WorkTaskComments({ taskId }: Props) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <Textarea
             rows={3}
-            placeholder="Agregar un comentario..."
+            placeholder={t('comments.placeholder')}
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={addMutation.isPending}
@@ -93,7 +95,7 @@ export function WorkTaskComments({ taskId }: Props) {
               ) : (
                 <Send className="mr-2 h-4 w-4" />
               )}
-              Comentar
+              {t('comments.submit')}
             </Button>
           </div>
         </form>

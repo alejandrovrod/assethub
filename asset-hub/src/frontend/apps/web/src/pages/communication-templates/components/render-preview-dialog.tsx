@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { communicationTemplateService } from '@/services/communication-template.service'
+import { useTranslation } from 'react-i18next'
 
 interface RenderPreviewDialogProps {
   templateId: string | null
@@ -31,6 +32,7 @@ export function RenderPreviewDialog({
   onOpenChange,
 }: RenderPreviewDialogProps) {
   const isOpen = templateId !== null
+  const { t } = useTranslation('communication')
   const [locale, setLocale] = useState('es')
 
   const { data: detail } = useQuery({
@@ -42,7 +44,7 @@ export function RenderPreviewDialog({
   const activeVersion = detail?.versions.find(
     (v) => v.id === detail.activeVersionId
   )
-  const locales = activeVersion?.translations.map((t) => t.locale) ?? ['es']
+  const locales = activeVersion?.translations.map((tr) => tr.locale) ?? ['es']
 
   const { data: rendered, isLoading } = useQuery({
     queryKey: ['communication-template-render', templateId, locale],
@@ -60,7 +62,7 @@ export function RenderPreviewDialog({
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${detail?.name ?? 'Documento'}</title>
+  <title>${detail?.name ?? t('preview.documentFallback')}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; color: #111; }
   </style>
@@ -81,12 +83,10 @@ export function RenderPreviewDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            Previsualización — {detail?.name ?? ''}
+            {t('preview.title', { name: detail?.name ?? '' })}
           </DialogTitle>
           <DialogDescription>
-            Vista renderizada con variables vacías (los valores reales se
-            completan al enviar). Las variables desconocidas se muestran como
-            texto vacío.
+            {t('preview.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -106,20 +106,20 @@ export function RenderPreviewDialog({
           {isDocument && rendered && (
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
-              Imprimir / PDF
+              {t('preview.printPdf')}
             </Button>
           )}
         </div>
 
         {rendered?.subject && (
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Asunto</span>
+            <span className="text-xs text-muted-foreground">{t('preview.subject')}</span>
             <Input readOnly value={rendered.subject} />
           </div>
         )}
 
         <div className="flex flex-col gap-2">
-          <span className="text-xs text-muted-foreground">Cuerpo</span>
+          <span className="text-xs text-muted-foreground">{t('preview.body')}</span>
           {isLoading ? (
             <div className="flex h-40 items-center justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -135,7 +135,7 @@ export function RenderPreviewDialog({
         {rendered && rendered.availableVariables.length > 0 && (
           <div className="flex flex-col gap-2">
             <span className="text-xs text-muted-foreground">
-              Variables del ámbito
+              {t('preview.scopeVariables')}
             </span>
             <div className="flex flex-wrap gap-1">
               {rendered.availableVariables.map((v) => (

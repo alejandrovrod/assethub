@@ -1,20 +1,13 @@
-using System;
-
 namespace AssetHub.Domain.Exceptions;
 
-public class InvalidTemplateSchemaException : Exception
+/// <summary>
+/// The supplied asset template schema cannot be compiled.
+/// Mapped to HTTP 400 with an RFC 7807 body by ExceptionHandlingMiddleware.
+/// </summary>
+public class InvalidTemplateSchemaException : DomainException
 {
-    public InvalidTemplateSchemaException()
-    {
-    }
-
-    public InvalidTemplateSchemaException(string message)
-        : base(message)
-    {
-    }
-
-    public InvalidTemplateSchemaException(string message, Exception inner)
-        : base(message, inner)
+    public InvalidTemplateSchemaException(string detail)
+        : base("invalid_template_schema", $"Invalid SchemaJson: {detail}", "Domain.InvalidSchemaJson", detail)
     {
     }
 }

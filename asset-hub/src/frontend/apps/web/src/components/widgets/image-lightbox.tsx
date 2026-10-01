@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { ChevronLeft, ChevronRight, X, FileIcon, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTranslation } from 'react-i18next'
 
 interface ImageLightboxProps {
   urls: string[]
@@ -21,6 +22,7 @@ export function LightboxModal({
   initialIndex?: number;
 }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const { t } = useTranslation('common')
 
   useEffect(() => {
     if (isOpen) {
@@ -41,8 +43,8 @@ export function LightboxModal({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 bg-black border-none flex flex-col justify-center items-center shadow-2xl overflow-hidden [&>button]:hidden" aria-describedby={undefined}>
-        <DialogTitle className="sr-only">Visor de imágenes</DialogTitle>
-        <DialogDescription className="sr-only">Visor de imágenes en pantalla completa</DialogDescription>
+        <DialogTitle className="sr-only">{t('lightbox.title')}</DialogTitle>
+        <DialogDescription className="sr-only">{t('lightbox.description')}</DialogDescription>
         
         <div className="w-full h-full relative flex items-center justify-center">
           <Button 
@@ -83,7 +85,7 @@ export function LightboxModal({
             {images.length > 0 && (
               <img 
                 src={images[currentIndex]} 
-                alt={`Imagen ${currentIndex + 1}`} 
+                alt={t('lightbox.imageAlt', { number: currentIndex + 1 })} 
                 className="max-w-full max-h-full object-contain animate-in fade-in zoom-in-95 duration-200"
                 key={currentIndex}
               />
@@ -92,7 +94,7 @@ export function LightboxModal({
           
           {images.length > 1 && (
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/90 text-sm bg-black/60 px-4 py-1.5 rounded-full font-medium shadow-lg backdrop-blur-sm">
-              {currentIndex + 1} de {images.length}
+              {t('lightbox.counter', { current: currentIndex + 1, total: images.length })}
             </div>
           )}
         </div>
@@ -104,6 +106,7 @@ export function LightboxModal({
 export function ImageLightbox({ urls }: ImageLightboxProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [clickedIndex, setClickedIndex] = useState(0)
+  const { t } = useTranslation('common')
 
   // Separar imágenes de otros tipos de archivos
   const imageList = urls.filter(u => typeof u === 'string' && u.startsWith('http') && isImage(u))
@@ -128,7 +131,9 @@ export function ImageLightbox({ urls }: ImageLightboxProps) {
           className="w-fit"
         >
           <ImageIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-          Ver {imageList.length} {imageList.length === 1 ? 'imagen' : 'imágenes'}
+          {imageList.length === 1
+            ? t('lightbox.viewOne', { count: imageList.length })
+            : t('lightbox.viewMany', { count: imageList.length })}
         </Button>
       )}
 
@@ -139,7 +144,7 @@ export function ImageLightbox({ urls }: ImageLightboxProps) {
             <div key={index} className="flex items-center gap-2 p-2 border rounded-md bg-muted/30 w-fit">
               <FileIcon className="h-4 w-4 text-muted-foreground" />
               <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline">
-                {url.split('/').pop() || 'Archivo adjunto'}
+                {url.split('/').pop() || t('upload.attachmentFallback')}
               </a>
             </div>
           ))}

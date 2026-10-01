@@ -1,0 +1,69 @@
+{
+  "code": "TPL_RESTROOM",
+  "name": "Baño / Sanitario Público o Corporativo",
+  "description": "Plantilla especializada para áreas sanitarias con ciclo de alta rotación, desinfección bactericida y reposición continua de consumibles.",
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"room_number\":{\"title\":\"Identificador / Número de Baño\",\"type\":\"string\"},\"gender_type\":{\"title\":\"Tipo de Sanitario\",\"type\":\"string\",\"enum\":[\"Mixto\",\"Damas\",\"Caballeros\",\"Accesible / PMR\"]},\"toilets_count\":{\"title\":\"Cantidad de Tazas / Inodoros\",\"type\":\"number\"},\"urinals_count\":{\"title\":\"Cantidad de Urinarios\",\"type\":\"number\"},\"sinks_count\":{\"title\":\"Cantidad de Lavabos / Grifería\",\"type\":\"number\"},\"assigned_cleaner\":{\"title\":\"Personal Asignado Turno\",\"type\":\"string\",\"format\":\"employee\"},\"last_service_time\":{\"title\":\"Hora de Última Intervención\",\"type\":\"string\"},\"service_notes\":{\"title\":\"Novedades / Faltantes\",\"type\":\"string\"},\"soap_refilled\":{\"title\":\"¿Se rellenó dispensador de jabón?\",\"type\":\"boolean\"},\"paper_refilled\":{\"title\":\"¿Se repuso papel y toallas?\",\"type\":\"boolean\"},\"evidence_photo\":{\"title\":\"Foto Evidencia de Higiene\",\"type\":\"string\",\"format\":\"data-url\"}},\"required\":[\"room_number\",\"gender_type\"]}",
+  "maintenanceChecklist": "1. Retirar residuos higiénicos y colocar bolsa calibre 600 nueva.\n2. Limpiar y desinfectar tazas, asientos, tapas y urinarios con químico clorado/germicida.\n3. Desinfectar grifería, perillas de fluxómetro y pestillos de puertas.\n4. Limpiar espejos y secar encimeras de lavabos.\n5. Rellenar dispensadores de jabón líquido y sanitizante de manos.\n6. Reponer rollos de papel higiénico institucional y toallas interdobladas.\n7. Trapear piso con neutralizador de olores y sanitizante de amonio.\n8. Colocar letrero de 'Piso Húmedo' durante secado y firmar registro de control horario.",
+  "lifecycleStates": {
+    "initialState": "Limpio_Habilitado",
+    "transitions": {
+      "Limpio_Habilitado": [
+        "Requiere_Atencion",
+        "En_Limpieza"
+      ],
+      "Requiere_Atencion": [
+        "En_Limpieza",
+        "Clausurado_Incidencia"
+      ],
+      "En_Limpieza": [
+        "En_Inspeccion",
+        "Clausurado_Incidencia"
+      ],
+      "En_Inspeccion": [
+        "Limpio_Habilitado",
+        "Requiere_Atencion"
+      ],
+      "Clausurado_Incidencia": [
+        "En_Limpieza",
+        "Limpio_Habilitado"
+      ]
+    },
+    "states": {
+      "Limpio_Habilitado": {
+        "color": "#10b981",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "Requiere_Atencion": {
+        "color": "#ef4444",
+        "isTerminal": false,
+        "requiresFields": [
+          "room_number"
+        ],
+        "onEnterAction": "NOTIFY_CLEANING_CREW"
+      },
+      "En_Limpieza": {
+        "color": "#f59e0b",
+        "isTerminal": false,
+        "requiresFields": [
+          "assigned_cleaner"
+        ]
+      },
+      "En_Inspeccion": {
+        "color": "#8b5cf6",
+        "isTerminal": false,
+        "requiresFields": [
+          "soap_refilled",
+          "paper_refilled"
+        ]
+      },
+      "Clausurado_Incidencia": {
+        "color": "#dc2626",
+        "isTerminal": false,
+        "requiresFields": [
+          "service_notes"
+        ]
+      }
+    }
+  }
+}

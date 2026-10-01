@@ -10,6 +10,8 @@ import { usePermissions } from '@/hooks/use-permissions'
 import { Loader2, Save, X, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
+import { useFormat } from '@/lib/format'
+import { useTranslation } from 'react-i18next'
 
 interface FinanceProfileFormProps {
   assetId: string
@@ -19,6 +21,8 @@ interface FinanceProfileFormProps {
 }
 
 export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }: FinanceProfileFormProps) {
+  const { t } = useTranslation(['assets', 'common'])
+  const { formatNumber } = useFormat()
   const { can } = usePermissions()
   const queryClient = useQueryClient()
   const canWrite = can('assets.finance.write')
@@ -67,7 +71,7 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-profile', assetId] })
       queryClient.invalidateQueries({ queryKey: ['finance-summary', assetId] })
-      toast.success(isEditing ? 'Perfil financiero actualizado' : 'Perfil financiero creado')
+      toast.success(isEditing ? t('finance.toast.financeProfileUpdated') : t('finance.toast.financeProfileCreated'))
       onClose()
       onSuccess?.()
     },
@@ -83,11 +87,11 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
     updateMutation.mutate(formData)
   }
 
-  const methods: { value: DepreciationMethod; label: string }[] = [
-    { value: 'StraightLine', label: 'Línea Recta (Straight Line)' },
-    { value: 'DoubleDeclining', label: 'Doble Saldo Decreciente (Double Declining Balance)' },
-    { value: 'WrittenDownValue', label: 'Valor en Libros / WDV (Written Down Value)' },
-    { value: 'Manual', label: 'Manual (Cuotas personalizadas)' },
+  const methods: { value: DepreciationMethod; labelKey: 'finance.methodOption.straightLine' | 'finance.methodOption.doubleDeclining' | 'finance.methodOption.writtenDownValue' | 'finance.methodOption.manual' }[] = [
+    { value: 'StraightLine', labelKey: 'finance.methodOption.straightLine' },
+    { value: 'DoubleDeclining', labelKey: 'finance.methodOption.doubleDeclining' },
+    { value: 'WrittenDownValue', labelKey: 'finance.methodOption.writtenDownValue' },
+    { value: 'Manual', labelKey: 'finance.methodOption.manual' },
   ]
 
   const requiresRate = formData.depreciationMethod === 'WrittenDownValue'
@@ -95,16 +99,16 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Editar Perfil Financiero' : 'Crear Perfil Financiero'}</CardTitle>
+        <CardTitle>{isEditing ? t('finance.form.editProfileTitle') : t('finance.form.createProfileTitle')}</CardTitle>
         <CardDescription>
-          Configura los parámetros de depreciación para este activo. El método y frecuencia determinan cómo se calculan las cuotas periódicas.
+          {t('finance.form.profileDescription')}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="acquisitionCost">Costo de Adquisición *</Label>
+              <Label htmlFor="acquisitionCost">{t('finance.form.acquisitionCostLabel')}</Label>
               <Input
                 id="acquisitionCost"
                 type="number"
@@ -118,7 +122,7 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
               />
             </div>
             <div>
-              <Label htmlFor="residualValue">Valor Residual / Salvamento *</Label>
+              <Label htmlFor="residualValue">{t('finance.form.residualValueLabel')}</Label>
               <Input
                 id="residualValue"
                 type="number"
@@ -132,7 +136,7 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
               />
             </div>
             <div>
-              <Label htmlFor="usefulLifeMonths">Vida Útil (meses) *</Label>
+              <Label htmlFor="usefulLifeMonths">{t('finance.form.usefulLifeLabel')}</Label>
               <Input
                 id="usefulLifeMonths"
                 type="number"
@@ -145,52 +149,52 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
               />
             </div>
             <div>
-              <Label htmlFor="frequencyMonths">Frecuencia (meses) *</Label>
+              <Label htmlFor="frequencyMonths">{t('finance.form.frequencyLabel')}</Label>
               <Select
                 value={formData.frequencyMonths.toString()}
                 onValueChange={v => handleChange('frequencyMonths', parseInt(v))}
                 disabled={!canWrite}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Mensual" />
+                  <SelectValue placeholder={t('finance.form.monthlyPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Mensual (1)</SelectItem>
-                  <SelectItem value="3">Trimestral (3)</SelectItem>
-                  <SelectItem value="6">Semestral (6)</SelectItem>
-                  <SelectItem value="12">Anual (12)</SelectItem>
+                  <SelectItem value="1">{t('finance.frequency.monthly')}</SelectItem>
+                  <SelectItem value="3">{t('finance.frequency.quarterly')}</SelectItem>
+                  <SelectItem value="6">{t('finance.frequency.semiannual')}</SelectItem>
+                  <SelectItem value="12">{t('finance.frequency.annual')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="depreciationMethod">Método de Depreciación *</Label>
+            <Label htmlFor="depreciationMethod">{t('finance.form.depreciationMethodLabel')}</Label>
             <Select
               value={formData.depreciationMethod}
               onValueChange={v => handleChange('depreciationMethod', v as DepreciationMethod)}
               disabled={!canWrite}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar método" />
+                <SelectValue placeholder={t('finance.form.selectMethod')} />
               </SelectTrigger>
               <SelectContent>
                 {methods.map(m => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  <SelectItem key={m.value} value={m.value}>{t(m.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
-              {formData.depreciationMethod === 'StraightLine' && 'Cuota fija constante durante la vida útil.'}
-              {formData.depreciationMethod === 'DoubleDeclining' && 'Depreciación acelerada (2x tasa línea recta) sobre valor neto actual.'}
-              {formData.depreciationMethod === 'WrittenDownValue' && 'Porcentaje fijo anual sobre el valor neto remanente (requiere Tasa %).'}
-              {formData.depreciationMethod === 'Manual' && 'El usuario define cada cuota manualmente al generar el cronograma.'}
+              {formData.depreciationMethod === 'StraightLine' && t('finance.methodHelp.straightLine')}
+              {formData.depreciationMethod === 'DoubleDeclining' && t('finance.methodHelp.doubleDeclining')}
+              {formData.depreciationMethod === 'WrittenDownValue' && t('finance.methodHelp.writtenDownValue')}
+              {formData.depreciationMethod === 'Manual' && t('finance.methodHelp.manual')}
             </p>
           </div>
 
           {requiresRate && (
             <div>
-              <Label htmlFor="depreciationRatePct">Tasa de Depreciación Anual (%) *</Label>
+              <Label htmlFor="depreciationRatePct">{t('finance.form.rateLabel')}</Label>
               <Input
                 id="depreciationRatePct"
                 type="number"
@@ -199,17 +203,17 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
                 max="100"
                 value={formData.depreciationRatePct || ''}
                 onChange={e => handleChange('depreciationRatePct', e.target.value ? parseFloat(e.target.value) : undefined)}
-                placeholder="Ej: 20"
+                placeholder={t('finance.form.ratePlaceholder')}
                 required
                 disabled={!canWrite}
               />
-              <p className="text-xs text-muted-foreground mt-1">Tasa anual para método Valor en Libros (WDV). Se prorratea según la frecuencia.</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('finance.form.rateHint')}</p>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="startDate">Fecha Inicio Depreciación *</Label>
+              <Label htmlFor="startDate">{t('finance.form.startDateLabel')}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -220,7 +224,7 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
               />
             </div>
             <div>
-              <Label htmlFor="currency">Moneda</Label>
+              <Label htmlFor="currency">{t('finance.form.currencyLabel')}</Label>
               <Input
                 id="currency"
                 value={formData.currency}
@@ -233,36 +237,36 @@ export function FinanceProfileForm({ assetId, initialData, onClose, onSuccess }:
 
           {formData.acquisitionCost > 0 && formData.residualValue > 0 && formData.usefulLifeMonths > 0 && (
             <div className="bg-muted/50 p-4 rounded-lg">
-              <p className="text-sm font-medium">Vista Previa (Línea Recta)</p>
+              <p className="text-sm font-medium">{t('finance.form.previewTitle')}</p>
               <p className="text-lg font-bold text-primary mt-1">
-                Cuota mensual estimada: {((formData.acquisitionCost - formData.residualValue) / formData.usefulLifeMonths).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {t('finance.form.estimatedMonthlyAmount', { value: formatNumber((formData.acquisitionCost - formData.residualValue) / formData.usefulLifeMonths, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Base depreciable: {(formData.acquisitionCost - formData.residualValue).toLocaleString('es-MX', { minimumFractionDigits: 2 })} | 
-                Total períodos: {formData.usefulLifeMonths / formData.frequencyMonths}
+                {t('finance.form.depreciableBase', { value: formatNumber(formData.acquisitionCost - formData.residualValue, { minimumFractionDigits: 2 }) })} | 
+                {t('finance.form.totalPeriods', { value: formData.usefulLifeMonths / formData.frequencyMonths })}
               </p>
             </div>
           )}
 
           <div className="flex items-center gap-2 text-sm text-destructive/80 bg-destructive/5 p-3 rounded">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>El valor residual no puede superar el costo de adquisición. La frecuencia debe dividir exactamente la vida útil (excepto método Manual).</span>
+            <span>{t('finance.form.profileWarning')}</span>
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-2 border-t pt-4">
           <Button type="button" variant="outline" onClick={onClose} disabled={updateMutation.isPending}>
-            <X className="mr-2 h-4 w-4" /> Cancelar
+            <X className="mr-2 h-4 w-4" /> {t('common:actions.cancel')}
           </Button>
           <Button type="submit" disabled={!canWrite || updateMutation.isPending}>
             {updateMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Guardando...
+                {t('form.saving')}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {isEditing ? 'Actualizar' : 'Crear'}
+                {isEditing ? t('common:actions.update') : t('common:actions.create')}
               </>
             )}
           </Button>

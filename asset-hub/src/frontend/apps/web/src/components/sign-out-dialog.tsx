@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/auth.store'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { useTranslation } from 'react-i18next'
 
 interface SignOutDialogProps {
   open: boolean
@@ -12,6 +13,7 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
   const logout = useAuthStore(state => state.logout)
   const queryClient = useQueryClient()
+  const { t } = useTranslation('common')
 
   const handleSignOut = () => {
     queryClient.clear()
@@ -30,10 +32,10 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title='Cerrar sesión'
-      desc='¿Estás seguro que deseas cerrar sesión? Deberás iniciar sesión nuevamente para acceder a tu cuenta.'
-      confirmText='Cerrar sesión'
-      cancelBtnText='Cancelar'
+      title={t('signOut.title')}
+      desc={t('signOut.description')}
+      confirmText={t('signOut.confirm')}
+      cancelBtnText={t('actions.cancel')}
       destructive
       handleConfirm={handleSignOut}
       className='sm:max-w-sm'

@@ -1,0 +1,263 @@
+{
+  "nav": {
+    "platform": "Plataforma",
+    "features": "Capacidades",
+    "multitenant": "Multi-tenant",
+    "pricing": "Planes",
+    "faq": "Preguntas",
+    "login": "Iniciar Sesión",
+    "start": "Comenzar Gratis"
+  },
+  "hero": {
+    "badge": "Plataforma de Operaciones de Activos",
+    "title1": "Convertí cada activo",
+    "title2": "en una operación trazable.",
+    "subtitle": "Centralizá plantillas de activos, incidencias, mantenimiento preventivo y órdenes de trabajo en terreno dentro de un único flujo operativo de alto rendimiento.",
+    "cta": "Comenzar Prueba Gratuita",
+    "demo": "Ver Demostración"
+  },
+  "social": "Más de 500,000+ activos críticos gestionados en infraestructura, salud y energía",
+  "featuresTabs": {
+    "tag": "CAPACIDADES PRINCIPALES",
+    "title": "Todo lo que necesitas para una operación impecable",
+    "subtitle": "Cuatro pilares integrados para reemplazar planillas de cálculo, herramientas aisladas y desorden en campo.",
+    "tabs": [
+      {
+        "id": "templates",
+        "title": "Plantillas de Activos",
+        "desc": "Define atributos personalizados, ciclos de vida y checklists para cualquier tipo de activo. Créalas una vez y reutilízalas en toda tu organización.",
+        "badge": "Configurable y Flexible",
+        "image": "/templates-mockup.png",
+        "points": [
+          "Esquemas reutilizables para equipos, instalaciones, vehículos y vialidad",
+          "Formularios dinámicos sin código con validaciones automáticas",
+          "Máquinas de estados finitos configurables por tipo de activo"
+        ]
+      },
+      {
+        "id": "tracking",
+        "title": "Gestión de Activos 360°",
+        "desc": "Control total de cada activo: atributos dinámicos, geolocalización, bitácora cronológica de estados y estructura jerárquica en tiempo real.",
+        "badge": "Georreferenciado",
+        "image": "/asset-details-mockup.png",
+        "points": [
+          "Mapeo interactivo con herramientas poligonales y filtros por estado de riesgo",
+          "Bitácora inmutable con trazabilidad total de eventos y cambios",
+          "Estructura jerárquica multinivel vinculando activos padre con componentes"
+        ]
+      },
+      {
+        "id": "maintenance",
+        "title": "Mantenimiento Integral",
+        "desc": "Gestión punta a punta: desde plantillas de incidencias hasta su resolución mediante órdenes de trabajo, repuestos y tareas en campo.",
+        "badge": "Preventivo y Correctivo",
+        "image": "/asset-location-mockup.png",
+        "points": [
+          "Ciclo de vida de incidencias con prioridades, SLAs y alertas automáticas",
+          "Despacho completo de Órdenes de Trabajo con asignación de técnicos",
+          "Checklists de inspección paso a paso optimizados para dispositivos móviles"
+        ]
+      },
+      {
+        "id": "resources",
+        "title": "Administración de Recursos",
+        "desc": "Controla catálogos dinámicos, gestiona a tu personal y equipos de trabajo en cuadrillas, y administra usuarios con roles y permisos (RBAC).",
+        "badge": "Seguridad y Control",
+        "image": "/asset-hierarchy-mockup.png",
+        "points": [
+          "Catálogos centralizados para marcas, tipos de falla y categorías de activos",
+          "Directorio de personal técnico, supervisores y cuadrillas especializadas",
+          "Matriz granular de permisos y roles para aislamiento total de acceso"
+        ]
+      }
+    ],
+    "explore": "Explorar módulo"
+  },
+  "grid": {
+    "tag": "ARQUITECTURA ROBUSTA",
+    "title": "Diseñado para operaciones de misión crítica",
+    "subtitle": "Desde plantas industriales hasta concesiones viales y redes hospitalarias, AssetHub escala con tu demanda.",
+    "cards": [
+      {
+        "title": "Geolocalización Poligonal",
+        "desc": "Dibuja zonas perimetrales en carreteras o parques industriales. Filtra activos en tiempo real por índice de riesgo y criticidad."
+      },
+      {
+        "title": "Bitácora Inmutable de Eventos",
+        "desc": "Cada cambio de estado queda registrado con firma de usuario, estampa temporal y observaciones para auditorías sin fisuras."
+      },
+      {
+        "title": "Jerarquía de Componentes",
+        "desc": "Estructura arbórea infinita: vincula activos padre con subsistemas, luminarias, bombas y piezas de recambio."
+      }
+    ]
+  },
+  "multitenant": {
+    "tag": "Arquitectura Multi-tenant",
+    "title": "Aislamiento estricto por cliente y proyecto",
+    "subtitle": "Ofrece a tus clientes una experiencia personalizada y confiable. Ingresan a su propio portal, ven solo sus activos y auditan sus SLAs específicos.",
+    "point1_title": "Subdominios Personalizados y Enrutamiento Aislado",
+    "point1_desc": "El enrutamiento por subdominio aísla instantáneamente sesiones de usuario, base de datos y vistas operativas.",
+    "point2_title": "RBAC Multi-cliente y Despacho Global",
+    "point2_desc": "Los despachadores globales gestionan incidencias de toda la red mientras los clientes tienen portales de solo lectura y auditoría.",
+    "clients": [
+      {
+        "name": "hospitales.tuempresa.app",
+        "status": "Activo • SLA 99.8%",
+        "type": "Salud"
+      },
+      {
+        "name": "vialnorte.tuempresa.app",
+        "status": "Activo • SLA 99.4%",
+        "type": "Infraestructura"
+      },
+      {
+        "name": "plantas-energia.tuempresa.app",
+        "status": "Activo • SLA 99.9%",
+        "type": "Energía"
+      }
+    ],
+    "routing": "Enrutamiento Aislado por Cliente",
+    "subdomains": "subdominios empresariales activos"
+  },
+  "testimonials": {
+    "tag": "CASOS DE ÉXITO",
+    "title": "Respaldado por líderes de mantenimiento",
+    "subtitle": "Conocé cómo los equipos de operaciones garantizan continuidad y disponibilidad en sus activos.",
+    "items": [
+      {
+        "quote": "AssetHub transformó radicalmente la manera en que coordinamos cuadrillas y gestionamos 4,000 activos en ruta. El tiempo de respuesta a incidencias bajó un 42% en el primer trimestre.",
+        "author": "Ing. Martín Peralta",
+        "role": "Director de Mantenimiento • Autopistas del Norte",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&crop=face"
+      },
+      {
+        "quote": "La arquitectura multi-tenant nos permitió darle a cada hospital cliente su propio subdominio con reportes SLA en vivo. Pasamos de planillas desactualizadas a trazabilidad quirúrgica.",
+        "author": "Dra. Valeria Gómez",
+        "role": "Gerente de Operaciones Médicas • BioCare Facilities",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      },
+      {
+        "quote": "Poder diseñar plantillas con atributos personalizados y máquinas de estados sin tocar código es el mayor diferencial. No existe otra plataforma que entienda tan bien la realidad de campo.",
+        "author": "Carlos Méndez",
+        "role": "Líder Técnico de Confiabilidad • EnerGrid",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face"
+      }
+    ]
+  },
+  "faq": {
+    "tag": "PREGUNTAS FRECUENTES",
+    "title": "Respuestas directas sobre AssetHub",
+    "items": [
+      {
+        "q": "¿Qué diferencia a AssetHub de un CMMS o software tradicional?",
+        "a": "A diferencia de herramientas rígidas, AssetHub te permite modelar cualquier tipo de activo con plantillas dinámicas, máquinas de estados y jerarquías personalizadas. Además incluye soporte nativo multi-tenant para proveedores de servicios que administran múltiples clientes."
+      },
+      {
+        "q": "¿Cómo funciona el aislamiento en el esquema multi-tenant?",
+        "a": "Cada cliente puede acceder mediante su propio subdominio (ej: cliente.tuempresa.app). Las sesiones, datos de activos, bitácoras y permisos quedan completamente aislados por tenant, con la opción de despachadores globales autorizados."
+      },
+      {
+        "q": "¿Pueden los técnicos usar la plataforma desde el celular sin instalar nada?",
+        "a": "Sí, la plataforma está construida con una arquitectura web responsiva de alta velocidad. Los técnicos pueden abrir órdenes de trabajo, completar checklists y registrar fotos directamente desde el navegador de su teléfono o tablet."
+      },
+      {
+        "q": "¿Se pueden exportar e integrar los datos de activos e incidencias?",
+        "a": "Totalmente. Contamos con endpoints API seguros y opciones de exportación para conectar AssetHub con tus sistemas ERP, bases de datos analíticas o herramientas contables."
+      }
+    ]
+  },
+  "pricing": {
+    "tag": "PLANES ESCALABLES",
+    "title": "Precios claros y sin sorpresas",
+    "subtitle": "Pagá por el volumen de activos que administrás. Sin costos ocultos por usuario adicional.",
+    "monthly": "Facturación mensual",
+    "annual": "Facturación anual (Ahorrá 20%)",
+    "p1_title": "Starter",
+    "p1_desc": "Ideal para uso interno en plantas o instalaciones individuales.",
+    "p1_price": "$149",
+    "p1_period": "/mes",
+    "p1_features": [
+      "Hasta 500 activos registrados",
+      "Órdenes de trabajo preventivas y correctivas",
+      "Plantillas dinámicas con formularios a medida",
+      "Bitácora cronológica y máquina de estados",
+      "App web móvil para técnicos en terreno",
+      "Soporte estándar vía correo y documentación"
+    ],
+    "p1_btn": "Seleccionar Starter",
+    "p2_tag": "MÁS POPULAR",
+    "p2_title": "Professional",
+    "p2_desc": "Para proveedores de servicios y operaciones multi-sitio.",
+    "p2_price": "$489",
+    "p2_period": "/mes",
+    "p2_features": [
+      "Activos y plantillas ilimitadas",
+      "Portal Multi-Tenant con subdominios propios",
+      "Reportes avanzados de SLA y alertas en tiempo real",
+      "Mapeo geoespacial interactivo y zonas poligonales",
+      "Checklists de inspección con evidencia y firmas",
+      "Roles y permisos personalizados con acceso API",
+      "Gerente de cuenta dedicado y garantía de disponibilidad"
+    ],
+    "p2_btn": "Iniciar Prueba Gratuita"
+  },
+  "banner": {
+    "release": "Nueva versión con Mapeo Geoespacial y Máquinas de Estado configurables.",
+    "learnMore": "Ver novedades"
+  },
+  "logos": [
+    {
+      "name": "TechCorp Global",
+      "tag": "Tech"
+    },
+    {
+      "name": "VialConcesiones",
+      "tag": "Infraestructura"
+    },
+    {
+      "name": "Hospital Metropolitano",
+      "tag": "Salud"
+    },
+    {
+      "name": "Energía del Norte",
+      "tag": "Energía"
+    },
+    {
+      "name": "Logística Express",
+      "tag": "Transporte"
+    },
+    {
+      "name": "Industrial Solutions",
+      "tag": "Manufactura"
+    }
+  ],
+  "cta": {
+    "title": "¿Listo para profesionalizar tus activos?",
+    "subtitle": "Sumate a las organizaciones líderes que operan con trazabilidad total y cero fricción.",
+    "contact": "Contactar a un Asesor"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados."
+  },
+  "heroBlock": {
+    "badge": "AssetHub 2.0 ya está disponible",
+    "title1": "Gestión Inteligente de Activos para",
+    "title2": "Empresas Modernas",
+    "subtitle": "Centralizá tus equipos, controlá mantenimientos y reducí los tiempos muertos con nuestra potente plataforma multi-tenant.",
+    "cta": "Empezar gratis",
+    "pricing": "Ver Precios",
+    "assets": "Activos",
+    "telemetry": "Datos de Telemetría en Vivo"
+  },
+  "pricingBlock": {
+    "title": "Precios simples y transparentes",
+    "subtitle": "Empezá gratis, mejorá tu plan cuando necesites más poder. Sin letras chicas.",
+    "popular": "Más Popular",
+    "mo": "/mes",
+    "assets": "Activos",
+    "users": "Usuarios",
+    "module": "módulo",
+    "choose": "Elegir"
+  }
+}

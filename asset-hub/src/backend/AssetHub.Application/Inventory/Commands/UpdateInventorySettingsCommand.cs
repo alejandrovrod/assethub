@@ -51,7 +51,9 @@ public class UpdateInventorySettingsCommandHandler : IRequestHandler<UpdateInven
         {
             throw new DomainException(
                 "invalid_inventory_mode",
-                $"El modo de operación '{request.OperatingMode}' no es válido. Valores permitidos: external, internal, hybrid.");
+                $"El modo de operación '{request.OperatingMode}' no es válido. Valores permitidos: external, internal, hybrid.",
+                "Domain.InvalidInventoryMode",
+                request.OperatingMode);
         }
 
         var settings = await _dbContext.TenantInventorySettings

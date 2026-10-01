@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import Form from '@rjsf/core'
+import { rjsfTemplates } from '@/components/rjsf/templates'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { Pencil, Check, X, Cpu, Info } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -38,9 +39,26 @@ import { AssetMap } from '@/components/map/AssetMap'
 import { AssetMaterialsTable } from './components/asset-materials-table'
 import { parseApiDate } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
+import { useFormat } from '@/lib/format'
+
+const riskKeys: Record<string, 'risk.low' | 'risk.moderate' | 'risk.high' | 'risk.critical'> = {
+  Low: 'risk.low',
+  Moderate: 'risk.moderate',
+  High: 'risk.high',
+  Critical: 'risk.critical'
+}
 
 export default function AssetDetailPage() {
+  const { t } = useTranslation(['assets', 'common'])
+  const { formatDate } = useFormat()
   const { id } = useParams<{ id: string }>()
+
+  const riskLabel = (level?: string) => {
+    if (!level) return level
+    const key = riskKeys[level]
+    return key ? t(key) : level
+  }
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { can } = usePermissions()
@@ -56,6 +74,7 @@ export default function AssetDetailPage() {
 
   // State Transition Modal
   const [transitionDialogOpen, setTransitionDialogOpen] = useState(false)
+  const transitionFormRef = useRef<any>(null)
   const [pendingTargetState, setPendingTargetState] = useState<string | null>(null)
   const [transitionData, setTransitionData] = useState<Record<string, string>>({})
 
@@ -135,7 +154,7 @@ export default function AssetDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
       queryClient.invalidateQueries({ queryKey: ['assets'] })
-      toast.success('Activo actualizado exitosamente')
+      toast.success(t('toast.updated'))
       setIsEditingDynamic(false)
       setIsEditingGeneral(false)
     },
@@ -149,13 +168,13 @@ export default function AssetDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
       queryClient.invalidateQueries({ queryKey: ['assets'] })
-      toast.success('Estado cambiado exitosamente')
+      toast.success(t('toast.stateChanged'))
       setTransitionDialogOpen(false)
       setPendingTargetState(null)
       setTransitionData({})
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.title || 'Error al cambiar de estado')
+      toast.error(error.response?.data?.title || t('toast.stateChangeError'))
     }
   })
 
@@ -165,9 +184,9 @@ export default function AssetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['asset', id] })
       queryClient.invalidateQueries({ queryKey: ['assets'] })
       setMoveDialogOpen(false)
-      toast.success('Padre actualizado exitosamente')
+      toast.success(t('toast.parentUpdated'))
     },
-    onError: () => toast.error('Error al cambiar el padre')
+    onError: () => toast.error(t('toast.parentChangeError'))
   })
 
   const { schema, uiSchema, isResolving } = useResolvedSchema(asset?.schemaJson || '')
@@ -185,16 +204,54 @@ export default function AssetDetailPage() {
   const availableTransitions = asset ? (lifecycle.transitions?.[asset.state] || []) : []
   const currentStateConfig = asset ? (lifecycle.states?.[asset.state] || {}) : {}
 
+  const hasFieldInSchema = (schemaObj: any, field: string) => {
+    if (schemaObj?.properties?.[field]) return true;
+    if (schemaObj?.dependencies) {
+      for (const key of Object.keys(schemaObj.dependencies)) {
+        const dep = schemaObj.dependencies[key];
+        if (dep?.oneOf) {
+          for (const opt of dep.oneOf) {
+            if (opt?.properties?.[field]) return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
   const transitionSchema = useMemo(() => {
     if (!lifecycle || !pendingTargetState || !schema) return null
     const targetConfig = lifecycle.states?.[pendingTargetState]
     if (targetConfig?.requiresFields && targetConfig.requiresFields.length > 0) {
       const subSchema: any = { type: 'object', properties: {}, required: [] }
+      
       for (const field of targetConfig.requiresFields) {
         if ((schema as any)?.properties?.[field]) {
-          subSchema.properties[field] = (schema as any).properties[field]
-          subSchema.required.push(field)
+          const fieldDef = (schema as any).properties[field];
+          subSchema.properties[field] = fieldDef;
+          // Do not enforce strict requirement on booleans (checkboxes) so users can answer "No" (false/unchecked)
+          if (fieldDef.type !== 'boolean') {
+            subSchema.required.push(field);
+          }
         }
+      }
+      
+      // If the schema has dependencies, we copy them over.
+      // This will automatically handle conditionally visible fields, even if they 
+      // were selected in requiresFields, without forcing them to be always visible.
+      if ((schema as any).dependencies) {
+        subSchema.dependencies = {}
+        Object.keys((schema as any).dependencies).forEach(depKey => {
+          if (subSchema.properties[depKey]) {
+            subSchema.dependencies[depKey] = (schema as any).dependencies[depKey]
+          }
+        })
+      }
+      if ((schema as any)['x-form-tabs']) {
+        subSchema['x-form-tabs'] = (schema as any)['x-form-tabs']
+      }
+      if ((schema as any)['x-form-sections']) {
+        subSchema['x-form-sections'] = (schema as any)['x-form-sections']
       }
       return subSchema
     }
@@ -212,8 +269,8 @@ export default function AssetDetailPage() {
   if (!asset) {
     return (
       <div className="p-8 text-center">
-        <h2 className="text-xl font-bold mb-4">Activo no encontrado</h2>
-        <Button onClick={() => navigate('/assets')}>Volver a Activos</Button>
+        <h2 className="text-xl font-bold mb-4">{t('detail.notFound')}</h2>
+        <Button onClick={() => navigate('/assets')}>{t('detail.backToAssets')}</Button>
       </div>
     )
   }
@@ -274,9 +331,9 @@ export default function AssetDetailPage() {
           : childAssets.length > 0 && matching.length === childAssets.length
 
       if (conditionMet) {
-        const label = conditionType === 'any' ? 'al menos un hijo' : 'todos los hijos'
+        const label = conditionType === 'any' ? t('detail.blockAnyChild') : t('detail.blockAllChildren')
         const offending = matching.map(c => `${c.name} (${c.state})`).join(', ')
-        return `${label} está en ${childStates.join(', ')}: ${offending}. El padre debería estar en ${targetState}.`
+        return t('detail.blockReason', { label, states: childStates.join(', '), offending, target: targetState })
       }
     }
     return null
@@ -312,7 +369,7 @@ export default function AssetDetailPage() {
                 )}
               </div>
               <p className="text-muted-foreground text-sm mt-1">
-                Plantilla: <span className="font-medium text-foreground">{asset.templateName}</span>
+                {t('detail.templatePrefix')} <span className="font-medium text-foreground">{asset.templateName}</span>
               </p>
             </div>
           ) : (
@@ -321,13 +378,13 @@ export default function AssetDetailPage() {
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 className="w-64"
-                placeholder="Nombre"
+                placeholder={t('common:labels.name')}
               />
               <Input
                 value={editCode}
                 onChange={e => setEditCode(e.target.value)}
                 className="w-32"
-                placeholder="Código"
+                placeholder={t('common:labels.code')}
               />
               <Badge variant="secondary" style={currentStateConfig.color ? { backgroundColor: currentStateConfig.color, color: '#fff' } : undefined}>
                 {asset.state}
@@ -364,13 +421,13 @@ export default function AssetDetailPage() {
           {/* Center: Metadata */}
           <div className="flex flex-wrap items-center gap-4 border rounded-lg px-4 h-auto py-2 xl:h-12 bg-card shadow-sm w-full sm:w-auto">
             <div className="flex flex-col justify-center">
-              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">ID Interno</span>
+              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">{t('detail.internalId')}</span>
               <code className="text-xs break-all">{asset.id}</code>
             </div>
             {asset.installedAt && (
               <div className="flex flex-col justify-center border-l pl-4 h-full">
-                <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">Instalado</span>
-                <span className="text-xs">{parseApiDate(asset.installedAt).toLocaleDateString()}</span>
+                <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">{t('detail.installed')}</span>
+                <span className="text-xs">{formatDate(parseApiDate(asset.installedAt))}</span>
               </div>
             )}
           </div>
@@ -380,16 +437,16 @@ export default function AssetDetailPage() {
             <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg px-3 py-2 xl:h-12 shadow-sm w-full sm:w-auto">
               <span className="text-sm font-medium px-2 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock shrink-0"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Activo bloqueado. Gestión delegada al módulo: <span className="uppercase">{currentStateConfig.associatedModule}</span>
+                {t('detail.lockedPrefix')} <span className="uppercase">{currentStateConfig.associatedModule}</span>
               </span>
             </div>
           ) : !currentStateConfig.isTerminal && canChangeState && (
             <div className="flex flex-wrap items-center gap-2 bg-card border rounded-lg px-3 py-2 xl:h-12 shadow-sm w-full sm:w-auto">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-2">
-                Cambiar estado a:
+                {t('detail.changeStateTo')}
               </span>
               {availableTransitions.length === 0 ? (
-                <span className="text-sm text-muted-foreground italic px-2">Ninguno disponible</span>
+                <span className="text-sm text-muted-foreground italic px-2">{t('detail.noneAvailable')}</span>
               ) : (
                 availableTransitions.map((nextState: string) => {
                   const blockReason = getTransitionBlockReason(nextState)
@@ -401,7 +458,7 @@ export default function AssetDetailPage() {
                       className="h-8 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleStateChangeClick(nextState)}
                       disabled={stateMutation.isPending || !!blockReason}
-                      title={blockReason || `Cambiar a ${nextState}`}
+                      title={blockReason || t('detail.changeTo', { state: nextState })}
                     >
                       {nextState}
                     </Button>
@@ -421,12 +478,12 @@ export default function AssetDetailPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div className="w-full sm:w-fit overflow-x-auto pb-2 sm:pb-0">
                 <TabsList className="w-fit flex-nowrap shrink-0">
-                  <TabsTrigger value="details">Detalles</TabsTrigger>
-                  <TabsTrigger value="bom">BOM / Materiales</TabsTrigger>
-                  <TabsTrigger value="map">Ubicación</TabsTrigger>
-                  <TabsTrigger value="timeline">Bitácora</TabsTrigger>
-                  <TabsTrigger value="hierarchy">Jerarquía</TabsTrigger>
-                  <TabsTrigger value="finanzas">Finanzas</TabsTrigger>
+                  <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
+                  <TabsTrigger value="bom">{t('tabs.bom')}</TabsTrigger>
+                  <TabsTrigger value="map">{t('tabs.location')}</TabsTrigger>
+                  <TabsTrigger value="timeline">{t('tabs.activityLog')}</TabsTrigger>
+                  <TabsTrigger value="hierarchy">{t('tabs.hierarchy')}</TabsTrigger>
+                  <TabsTrigger value="finanzas">{t('tabs.finance')}</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -437,14 +494,14 @@ export default function AssetDetailPage() {
               <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle>Información del Activo</CardTitle>
+                <CardTitle>{t('detail.infoTitle')}</CardTitle>
                 <CardDescription>
-                  Atributos dinámicos del activo.
+                  {t('detail.infoDescription')}
                 </CardDescription>
               </div>
               {canUpdate && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditingDynamic(true)}>
-                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                  <Pencil className="mr-2 h-4 w-4" /> {t('common:actions.edit')}
                 </Button>
               )}
             </CardHeader>
@@ -454,14 +511,22 @@ export default function AssetDetailPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.keys((schema as any)?.properties || {}).length === 0 && (
-                    <p className="text-muted-foreground text-sm italic col-span-full">
-                      No hay atributos configurados.
-                    </p>
-                  )}
-                  {Object.keys((schema as any)?.properties || {}).map(key => {
-                    const fieldSchema = (schema as any)?.properties?.[key]
+                <div className="w-full">
+                  {(() => {
+                  const parsedSchema = (schema as any) || {}
+                  const props = parsedSchema.properties || {}
+                  
+                  if (Object.keys(props).length === 0) {
+                    return (
+                      <div className="grid grid-cols-1 gap-6">
+                        <p className="text-muted-foreground text-sm italic col-span-full">
+                          {t('empty.noAttributes')}
+                        </p>
+                      </div>
+                    )
+                  }
+
+                  const renderField = (key: string, fieldSchema: any) => {
                     const title = fieldSchema?.title || key
                     let value = formData[key]
                     
@@ -472,7 +537,7 @@ export default function AssetDetailPage() {
                         value = matchedOption.title
                       }
                     } else if (value && fieldSchema?.type === 'array' && fieldSchema?.items?.oneOf && Array.isArray(value)) {
-                      value = value.map(val => {
+                      value = value.map((val: any) => {
                         const matchedOption = fieldSchema.items.oneOf.find((opt: any) => opt.const === val)
                         return matchedOption?.title || val
                       }).join(', ')
@@ -501,7 +566,61 @@ export default function AssetDetailPage() {
                         )}
                       </div>
                     )
-                  })}
+                  }
+
+                  const tabs = parsedSchema['x-form-tabs'] || ['General']
+                  const sections = parsedSchema['x-form-sections'] || {}
+
+                  return (
+                    <div className="space-y-8 w-full">
+                      {tabs.map((tabLabel: string) => {
+                        const tabSections = sections[tabLabel] || []
+                        
+                        // Fields for this tab
+                        const tabFields = Object.keys(props).filter(k => {
+                          const field = props[k]
+                          const fTab = field.tab || (parsedSchema['x-form-tabs'] ? parsedSchema['x-form-tabs'][0] : 'General')
+                          return fTab === tabLabel
+                        })
+
+                        if (tabFields.length === 0) return null
+
+                        return (
+                          <div key={tabLabel} className="space-y-4">
+                            {tabs.length > 1 && (
+                              <h3 className="text-lg font-semibold border-b pb-2">{tabLabel}</h3>
+                            )}
+
+                            {/* Sectionless fields */}
+                            {(() => {
+                              const sectionless = tabFields.filter(k => !props[k].section)
+                              if (sectionless.length === 0) return null
+                              return (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {sectionless.map(k => renderField(k, props[k]))}
+                                </div>
+                              )
+                            })()}
+
+                            {/* Sectioned fields */}
+                            {tabSections.map((sectionLabel: string) => {
+                              const secFields = tabFields.filter(k => props[k].section === sectionLabel)
+                              if (secFields.length === 0) return null
+                              return (
+                                <div key={sectionLabel} className="space-y-4 pt-2">
+                                  <h5 className="text-sm font-semibold text-muted-foreground">{sectionLabel}</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {secFields.map(k => renderField(k, props[k]))}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
                 </div>
               )}
             </CardContent>
@@ -511,9 +630,9 @@ export default function AssetDetailPage() {
           <TabsContent value="map">
             <Card>
               <CardHeader>
-                <CardTitle>Ubicación del Activo</CardTitle>
+                <CardTitle>{t('detail.locationTitle')}</CardTitle>
                 <CardDescription>
-                  Arrastra el pin para actualizar la ubicación.
+                  {t('detail.locationDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -551,25 +670,25 @@ export default function AssetDetailPage() {
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Network className="h-5 w-5" /> Jerarquía
+                  <Network className="h-5 w-5" /> {t('detail.hierarchy')}
                 </CardTitle>
                 
                 {canMove && (
                   <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedParentId(asset.parentId || 'none')}>Cambiar Padre</Button>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedParentId(asset.parentId || 'none')}>{t('dialog.changeParent')}</Button>
                     </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Cambiar Activo Padre</DialogTitle>
+                      <DialogTitle>{t('dialog.changeParentTitle')}</DialogTitle>
                     </DialogHeader>
                     <div className="py-4">
                       <Select onValueChange={setSelectedParentId} value={selectedParentId}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar nuevo padre..." />
+                          <SelectValue placeholder={t('dialog.selectNewParentPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">-- Ninguno (Raíz) --</SelectItem>
+                          <SelectItem value="none">{t('dialog.rootNoneOption')}</SelectItem>
                           {allAssets?.filter(a => a.id !== id).map(a => (
                             <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
                           ))}
@@ -577,13 +696,13 @@ export default function AssetDetailPage() {
                       </Select>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Cancelar</Button>
+                      <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>{t('common:actions.cancel')}</Button>
                       <Button 
                         onClick={() => moveMutation.mutate(selectedParentId === 'none' ? null : selectedParentId)}
                         disabled={moveMutation.isPending}
                       >
                         {moveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Guardar
+                        {t('common:actions.save')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -592,7 +711,7 @@ export default function AssetDetailPage() {
               </CardHeader>
               <CardContent className="text-sm space-y-4">
                 <div>
-                  <span className="text-muted-foreground block mb-1">Padre</span>
+                  <span className="text-muted-foreground block mb-1">{t('detail.parent')}</span>
                   {parentAsset ? (
                     <div 
                       className="flex items-center gap-2 p-2 rounded border bg-muted/20 cursor-pointer hover:bg-muted/50"
@@ -610,12 +729,12 @@ export default function AssetDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground italic">Ninguno (Activo raíz)</span>
+                    <span className="text-muted-foreground italic">{t('detail.rootAssetNone')}</span>
                   )}
                 </div>
 
                 <div>
-                  <span className="text-muted-foreground block mb-2">Hijos / Componentes ({childAssets.length})</span>
+                  <span className="text-muted-foreground block mb-2">{t('detail.childrenComponents', { count: childAssets.length })}</span>
                   {childAssets.length > 0 ? (
                     <div className="flex flex-col gap-2">
                       {childAssets.map(child => (
@@ -638,7 +757,7 @@ export default function AssetDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground italic">No tiene componentes</span>
+                    <span className="text-muted-foreground italic">{t('detail.noComponents')}</span>
                   )}
                 </div>
               </CardContent>
@@ -659,7 +778,7 @@ export default function AssetDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 font-semibold">
                   <Cpu className="h-4 w-4 text-primary" />
-                  Salud Predictiva
+                  {t('detail.predictiveHealth')}
                 </div>
                 <Badge
                   variant="outline"
@@ -673,18 +792,18 @@ export default function AssetDetailPage() {
                       : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
                   }`}
                 >
-                  {forecast.riskLevel} ({(forecast.riskProbability * 100).toFixed(0)}%)
+                  {riskLabel(forecast.riskLevel)} ({(forecast.riskProbability * 100).toFixed(0)}%)
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between border-t pt-3">
-                <span className="text-muted-foreground text-xs">Tiempo est. de falla:</span>
+                <span className="text-muted-foreground text-xs">{t('detail.estFailureTime')}</span>
                 <span className="font-medium">
                   {forecast.predictedFailureDays != null
                     ? (forecast.predictedFailureDays >= 365
-                        ? 'Más de 1 año'
-                        : `~${forecast.predictedFailureDays} días`)
-                    : 'Estable'}
+                        ? t('detail.overOneYear')
+                        : t('detail.aboutDays', { days: forecast.predictedFailureDays }))
+                    : t('detail.stable')}
                 </span>
               </div>
 
@@ -701,7 +820,7 @@ export default function AssetDetailPage() {
                   <div className="border-t pt-3 flex items-start gap-2 text-xs">
                     <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                     <div className="flex flex-col gap-1">
-                      <span className="text-muted-foreground font-medium">Factores de riesgo:</span>
+                      <span className="text-muted-foreground font-medium">{t('detail.riskFactors')}</span>
                       <ul className="list-disc list-inside text-muted-foreground/80 space-y-0.5">
                         {factors.slice(0, 3).map((f, idx) => (
                           <li key={idx} className="truncate max-w-[200px]" title={f.description}>{f.description}</li>
@@ -717,7 +836,7 @@ export default function AssetDetailPage() {
           <Accordion type="single" collapsible defaultValue="incidents" className="w-full space-y-4">
             <AccordionItem value="incidents" className="border rounded-lg bg-card text-card-foreground shadow-sm">
               <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
-                Incidencias activas
+                {t('detail.activeIncidents')}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 pt-0">
                 <AssetIncidentsWidget assetId={asset.id} />
@@ -726,7 +845,7 @@ export default function AssetDetailPage() {
 
             <AccordionItem value="orders" className="border rounded-lg bg-card text-card-foreground shadow-sm">
               <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
-                Órdenes de mantenimiento
+                {t('detail.maintenanceOrders')}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 pt-0">
                 <AssetMaintenanceOrdersWidget assetId={asset.id} />
@@ -735,7 +854,7 @@ export default function AssetDetailPage() {
 
             <AccordionItem value="plans" className="border rounded-lg bg-card text-card-foreground shadow-sm">
               <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
-                Planes Preventivos
+                {t('detail.preventivePlans')}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 pt-0">
                 <PreventivePlanAssetWidget assetId={asset.id} assetTemplateId={asset.templateId} />
@@ -744,7 +863,7 @@ export default function AssetDetailPage() {
 
             <AccordionItem value="tasks" className="border rounded-lg bg-card text-card-foreground shadow-sm">
               <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium">
-                Tareas Asociadas
+                {t('detail.associatedTasks')}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 pt-0">
                 <AssetTasksWidget assetId={asset.id} />
@@ -759,18 +878,19 @@ export default function AssetDetailPage() {
         <SheetContent className="w-full sm:max-w-full flex flex-col p-0 h-full" aria-describedby={undefined}>
           <div className="p-6 pb-2 border-b">
             <SheetHeader>
-              <SheetTitle>Editar Información Dinámica</SheetTitle>
+              <SheetTitle>{t('detail.editDynamicTitle')}</SheetTitle>
               <SheetDescription>
-                Modifica los atributos dinámicos de {asset.name}
+                {t('detail.editDynamicDescription', { name: asset.name })}
               </SheetDescription>
             </SheetHeader>
           </div>
           <div className="flex-1 overflow-y-auto px-6 pb-6">
-            <div className="rjsf-tailwind rjsf-single-column mt-6">
+            <div className="rjsf-tailwind mt-6">
               <Form
                 schema={schema} 
                 uiSchema={uiSchema}
                 validator={validator}
+                templates={rjsfTemplates}
                 formData={formData}
                 onChange={e => setFormData(e.formData)}
                 onSubmit={onSubmit}
@@ -782,12 +902,12 @@ export default function AssetDetailPage() {
               >
                 <div className="flex justify-end mt-6 gap-2 border-t pt-4">
                   <Button variant="outline" type="button" onClick={() => setIsEditingDynamic(false)}>
-                    Cancelar
+                    {t('common:actions.cancel')}
                   </Button>
                   <Button type="submit" disabled={updateMutation.isPending}>
                     {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Save className="mr-2 h-4 w-4" />
-                    Guardar Cambios
+                    {t('common:actions.saveChanges')}
                   </Button>
                 </div>
               </Form>
@@ -798,15 +918,15 @@ export default function AssetDetailPage() {
       <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cambiar Padre</DialogTitle>
+            <DialogTitle>{t('dialog.changeParent')}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Select value={selectedParentId} onValueChange={setSelectedParentId}>
               <SelectTrigger>
-                <SelectValue placeholder="Seleccione nuevo padre" />
+                <SelectValue placeholder={t('dialog.selectNewParentPlaceholderAlt')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Ninguno (Activo Raíz)</SelectItem>
+                <SelectItem value="none">{t('dialog.rootAssetOption')}</SelectItem>
                 {allAssets?.filter(a => a.id !== asset.id && a.parentId !== asset.id).map(a => (
                   <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                 ))}
@@ -814,43 +934,52 @@ export default function AssetDetailPage() {
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>{t('common:actions.cancel')}</Button>
             <Button 
               onClick={() => moveMutation.mutate(selectedParentId === 'none' ? null : selectedParentId)}
               disabled={moveMutation.isPending || (selectedParentId === (asset.parentId || 'none'))}
             >
-              {moveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Mover'}
+              {moveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('dialog.move')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={transitionDialogOpen} onOpenChange={setTransitionDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Completar información requerida</DialogTitle>
+            <DialogTitle>{t('transition.completeInfoTitle')}</DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
+          <div className="py-4 space-y-4 overflow-y-auto px-1 flex-1">
             <p className="text-sm text-muted-foreground">
-              Para cambiar al estado <strong>{pendingTargetState}</strong>, se requiere la siguiente información:
+              {t('transition.requiredInfoPrefix')} <strong>{pendingTargetState}</strong>{t('transition.requiredInfoSuffix')}
             </p>
-            {pendingTargetState && lifecycle.states?.[pendingTargetState]?.requiresFields?.filter((f: string) => !(schema as any)?.properties?.[f]).length > 0 && (
+            {pendingTargetState && lifecycle.states?.[pendingTargetState]?.requiresFields?.filter((f: string) => !hasFieldInSchema(schema, f)).length > 0 && (
               <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
-                <strong>Error de configuración en la Plantilla:</strong> Esta transición requiere los campos: 
+                <strong>{t('transition.configErrorTitle')}</strong> {t('transition.configErrorPrefix')} 
                 <span className="font-mono bg-destructive/10 px-1 mx-1 rounded">
-                  {lifecycle.states?.[pendingTargetState]?.requiresFields?.filter((f: string) => !(schema as any)?.properties?.[f]).join(', ')}
+                  {lifecycle.states?.[pendingTargetState]?.requiresFields?.filter((f: string) => !hasFieldInSchema(schema, f)).join(', ')}
                 </span>
-                que no existen en el esquema del activo.
+                {t('transition.configErrorSuffix')}
               </div>
             )}
             {transitionSchema && (
               <div className="rjsf-tailwind rjsf-single-column">
                 <Form
+                  ref={transitionFormRef}
                   schema={transitionSchema}
-                  uiSchema={uiSchema}
+                  uiSchema={{
+                    ...uiSchema,
+                    'ui:options': {
+                      ...(uiSchema?.['ui:options'] as any || {}),
+                      disableTabs: true
+                    }
+                  }}
                   validator={validator}
+                  templates={rjsfTemplates}
                   formData={transitionData}
                   onChange={(e) => setTransitionData(e.formData)}
+                  onSubmit={(e) => pendingTargetState && stateMutation.mutate({ toState: pendingTargetState, transitionData: e.formData })}
                   widgets={{ 
                     FileWidget: FileUploadWidget,
                     EmployeeSelectWidget,
@@ -862,12 +991,12 @@ export default function AssetDetailPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTransitionDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setTransitionDialogOpen(false)}>{t('common:actions.cancel')}</Button>
             <Button 
-              onClick={() => pendingTargetState && stateMutation.mutate({ toState: pendingTargetState, transitionData })}
-              disabled={stateMutation.isPending || (transitionSchema && transitionSchema.required && transitionSchema.required.some((f: string) => !transitionData[f]))}
+              onClick={() => transitionFormRef.current?.submit()}
+              disabled={stateMutation.isPending}
             >
-              {stateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirmar Cambio'}
+              {stateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('transition.confirmChange')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -883,15 +1012,15 @@ export default function AssetDetailPage() {
           assetId={id}
           hideAssetSelector
           targetAssetState={pendingTargetState ?? undefined}
-          title="Módulo: Incidencias"
-          description={`Creando registro en módulo externo para avanzar al estado ${pendingTargetState ?? ''}.`}
+          title={t('detail.moduleIncidents')}
+          description={t('detail.creatingRecord', { state: pendingTargetState ?? '' })}
           onSuccess={() => {
             setModuleDelegationOpen(false)
             setPendingTargetState(null)
             queryClient.invalidateQueries({ queryKey: ['asset', id] })
             queryClient.invalidateQueries({ queryKey: ['incidents', 'asset', id] })
             queryClient.invalidateQueries({ queryKey: ['assets'] })
-            toast.success('Incidencia creada y activo bloqueado exitosamente')
+            toast.success(t('toast.incidentCreated'))
           }}
         />
       ) : targetModule === 'work_orders' ? (
@@ -923,23 +1052,23 @@ export default function AssetDetailPage() {
         <Sheet open={moduleDelegationOpen} onOpenChange={setModuleDelegationOpen}>
           <SheetContent side="right" className="w-[400px] sm:w-[540px]">
             <SheetHeader>
-              <SheetTitle>Módulo: {targetModule}</SheetTitle>
+              <SheetTitle>{t('detail.moduleTitle', { module: targetModule })}</SheetTitle>
               <SheetDescription>
-                Creando registro en módulo externo para avanzar al estado <strong>{pendingTargetState}</strong>.
+                {t('detail.creatingRecordPrefix')} <strong>{pendingTargetState}</strong>.
               </SheetDescription>
             </SheetHeader>
             <div className="py-6 flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg mt-6">
                <p className="text-muted-foreground mb-4 px-4">
-                 Aquí se cargaría el componente remoto de <strong>{targetModule}</strong> embebido para este activo.
+                 {t('detail.remoteComponentPrefix')} <strong>{targetModule}</strong> {t('detail.remoteComponentSuffix')}
                </p>
                <Button onClick={() => {
-                  toast.success(`Registro creado en el módulo ${targetModule}`);
+                  toast.success(t('toast.recordCreated', { module: targetModule }));
                   setModuleDelegationOpen(false);
                   if (pendingTargetState) {
                     stateMutation.mutate({ toState: pendingTargetState, transitionData: { source_module: targetModule || 'unknown' } });
                   }
                }}>
-                  Simular Creación y Continuar
+                  {t('detail.simulateCreateContinue')}
                </Button>
             </div>
           </SheetContent>

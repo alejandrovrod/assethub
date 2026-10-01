@@ -9,6 +9,7 @@ using AssetHub.Infrastructure.Persistence;
 using AssetHub.Infrastructure.Security;
 using AssetHub.Api.Configuration;
 using AssetHub.Infrastructure.Tenancy;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
     });
 builder.Services.AddOpenApi();
+
+// ---------------------------------------------------------------------------
+// Localization (es / en). See LocalizationSetup for the culture matrix and the
+// Accept-Language resolution order. Registering localization also makes
+// ASP.NET Core model-binding and DataAnnotation messages culture-aware.
+// ---------------------------------------------------------------------------
+builder.Services.AddAssetHubLocalization();
+
 
 builder.Services.AddCors(options =>
 {
@@ -92,6 +101,12 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHand
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CheckSlugCommand>());
+
+// FluentValidation: register every validator in the Application assembly and run
+// them through the pipeline so failures surface as localized ValidationException
+// problem+json responses instead of reaching the handlers.
+builder.Services.AddValidatorsFromAssemblyContaining<AssetHub.Application.Assets.Commands.CreateAssetMaterialCommandValidator>();
+builder.Services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(AssetHub.Application.Common.Behaviors.ValidationBehavior<,>));
 builder.Services.AddAutoMapper(typeof(FinanceMappingProfile).Assembly);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
@@ -276,6 +291,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowVite");
 app.UseStaticFiles();
+
+// Must run before the exception middleware so that CultureInfo.CurrentCulture /
+// CurrentUICulture are already set when problem+json bodies are localized.
+app.UseRequestLocalization();
 
 app.UseRateLimiter();
 

@@ -68,7 +68,7 @@ public class AddMaintenancePartCommandHandler : IRequestHandler<AddMaintenancePa
         if (request.SourceType == "Internal")
         {
             if (!request.WarehouseId.HasValue)
-                throw new DomainException("warehouse_required", $"A warehouse is required to add internal parts. Order: {order.Id}");
+                throw new DomainException("warehouse_required", $"A warehouse is required to add internal parts. Order: {order.Id}", "Domain.WarehouseRequired", order.Id);
 
             // Post transaction
             var transaction = await _inventoryPostingService.PostTransactionAsync(

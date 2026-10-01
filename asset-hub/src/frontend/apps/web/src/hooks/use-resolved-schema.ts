@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { catalogService } from '@/services/catalog.service';
 
 export function useResolvedSchema(rawSchemaJson: string) {
+  const { t } = useTranslation('common');
   const [schema, setSchema] = useState<any>({});
   const [uiSchema, setUiSchema] = useState<any>({});
   const [isResolving, setIsResolving] = useState(true);
@@ -63,6 +65,30 @@ export function useResolvedSchema(rawSchemaJson: string) {
         }
       }
 
+      if (resolvedSchema.dependencies) {
+        for (const depKey of Object.keys(resolvedSchema.dependencies)) {
+          const dep = resolvedSchema.dependencies[depKey];
+          if (dep?.oneOf) {
+            for (const branch of dep.oneOf) {
+              if (branch?.properties) {
+                for (const key of Object.keys(branch.properties)) {
+                  const prop = branch.properties[key];
+                  if (prop?.format === 'employee') {
+                    generatedUiSchema[key] = { "ui:widget": "EmployeeSelectWidget" };
+                  } else if (prop?.format === 'team') {
+                    generatedUiSchema[key] = { "ui:widget": "TeamSelectWidget" };
+                  }
+                  if (prop?.type === 'date') {
+                    prop.type = 'string';
+                    prop.format = 'date';
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       if (catalogPromises.length > 0) {
         try {
           const results = await Promise.all(catalogPromises);
@@ -83,7 +109,7 @@ export function useResolvedSchema(rawSchemaJson: string) {
               delete prop.enum;
               delete prop.enumNames;
               prop.oneOf = [
-                { const: '_empty_', title: '(Catálogo Vacío)' }
+                { const: '_empty_', title: t('labels.emptyCatalog') }
               ];
             }
           });

@@ -2,10 +2,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Application.Resources;
 using AssetHub.Domain.Assets;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 
 namespace AssetHub.Application.Assets.Commands;
 
@@ -20,12 +22,12 @@ public record CreateAssetMaterialCommand(
 
 public class CreateAssetMaterialCommandValidator : AbstractValidator<CreateAssetMaterialCommand>
 {
-    public CreateAssetMaterialCommandValidator()
+    public CreateAssetMaterialCommandValidator(IStringLocalizer<SharedResource> localizer)
     {
-        RuleFor(x => x.AssetId).NotEmpty();
-        RuleFor(x => x.CatalogItemId).NotEmpty();
-        RuleFor(x => x.Quantity).GreaterThan(0);
-        RuleFor(x => x.UnitOfMeasure).NotEmpty();
+        RuleFor(x => x.AssetId).NotEmpty().WithMessage(localizer["Validation_NotEmpty"]);
+        RuleFor(x => x.CatalogItemId).NotEmpty().WithMessage(localizer["Validation_NotEmpty"]);
+        RuleFor(x => x.Quantity).GreaterThan(0).WithMessage(localizer["Validation_GreaterThan"]);
+        RuleFor(x => x.UnitOfMeasure).NotEmpty().WithMessage(localizer["Validation_NotEmpty"]);
     }
 }
 
@@ -49,7 +51,9 @@ public class CreateAssetMaterialCommandHandler : IRequestHandler<CreateAssetMate
             
         if (exists)
         {
-            throw new InvalidOperationException("This catalog item is already associated with the asset as a material."); // Handled as 409 Conflict in controller
+            // Message is a catalog key: ExceptionHandlingMiddleware resolves it for
+            // the culture of the request instead of returning a hardcoded sentence.
+            throw new InvalidOperationException("Domain.MaterialAlreadyAssociated"); // Handled as 409 Conflict in controller
         }
 
         var assetMaterial = new AssetMaterial

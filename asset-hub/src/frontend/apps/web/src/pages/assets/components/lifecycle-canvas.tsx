@@ -36,7 +36,14 @@ import {
 import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag, Palette, Maximize, Focus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface LifecycleCanvasProps {
   value: string;
@@ -45,21 +52,21 @@ interface LifecycleCanvasProps {
 }
 
 const ACTION_OPTIONS = [
-  { value: '', label: 'Ninguna' },
-  { value: 'CREATE_WORK_ORDER', label: 'Crear Orden de Trabajo' },
-  { value: 'NOTIFY_MANAGER', label: 'Notificar Supervisor' },
-];
+  { value: '', labelKey: 'lifecycle.actionOptions.none' },
+  { value: 'CREATE_WORK_ORDER', labelKey: 'lifecycle.actionOptions.createWorkOrder' },
+  { value: 'NOTIFY_MANAGER', labelKey: 'lifecycle.actionOptions.notifyManager' },
+] as const;
 
 const MODULE_OPTIONS = [
-  { value: '', label: 'Ninguno' },
-  { value: 'incidents', label: 'Módulo de Incidencias' },
-  { value: 'work_orders', label: 'Módulo de Órdenes de Trabajo' },
-];
+  { value: '', labelKey: 'lifecycle.moduleOptions.none' },
+  { value: 'incidents', labelKey: 'lifecycle.moduleOptions.incidents' },
+  { value: 'work_orders', labelKey: 'lifecycle.moduleOptions.workOrders' },
+] as const;
 
 const CONDITION_OPTIONS = [
-  { value: 'Any', label: 'Si ALGÚN hijo está en' },
-  { value: 'All', label: 'Si TODOS los hijos están en' },
-];
+  { value: 'Any', labelKey: 'lifecycle.conditionOptions.any' },
+  { value: 'All', labelKey: 'lifecycle.conditionOptions.all' },
+] as const;
 
 function ChildStatesInput({
   value,
@@ -68,12 +75,13 @@ function ChildStatesInput({
   value: string[];
   onChange: (states: string[]) => void;
 }) {
+  const { t } = useTranslation('assets');
   const [text, setText] = useState(value.join(', '));
 
   return (
     <Input
       className="h-8 text-xs"
-      placeholder="Ej: Activo, Instalado_Activo"
+      placeholder={t('lifecycle.childStatesPlaceholder')}
       value={text}
       onChange={(e) => {
         setText(e.target.value);
@@ -85,6 +93,7 @@ function ChildStatesInput({
 }
 
 function CustomControls({ wrapperRef }: { wrapperRef: React.RefObject<HTMLDivElement | null> }) {
+  const { t } = useTranslation('assets');
   const { fitView } = useReactFlow();
 
   const toggleFullscreen = () => {
@@ -103,15 +112,15 @@ function CustomControls({ wrapperRef }: { wrapperRef: React.RefObject<HTMLDivEle
     <Controls showFitView={false}>
       <ControlButton 
         onClick={() => fitView({ duration: 800 })} 
-        title="Ajustar y Centrar Vista"
-        aria-label="Ajustar y Centrar Vista"
+        title={t('lifecycle.fitView')}
+        aria-label={t('lifecycle.fitView')}
       >
         <Focus className="h-4 w-4" />
       </ControlButton>
       <ControlButton 
         onClick={toggleFullscreen} 
-        title="Pantalla Completa"
-        aria-label="Pantalla Completa"
+        title={t('lifecycle.fullscreen')}
+        aria-label={t('lifecycle.fullscreen')}
       >
         <Maximize className="h-4 w-4" />
       </ControlButton>
@@ -121,13 +130,13 @@ function CustomControls({ wrapperRef }: { wrapperRef: React.RefObject<HTMLDivEle
 
 // -- Semantic Colors & Smart Defaults --
 const PRESET_COLORS = [
-  { label: 'Gris (Borrador / Neutro)', value: '#94a3b8' },
-  { label: 'Azul (En progreso / Asignado)', value: '#3b82f6' },
-  { label: 'Verde (Completado / Resuelto)', value: '#10b981' },
-  { label: 'Rojo (Problema / Cancelado)', value: '#ef4444' },
-  { label: 'Amarillo (Espera / Pausado)', value: '#f59e0b' },
-  { label: 'Morado (Especial / Externo)', value: '#8b5cf6' },
-];
+  { labelKey: 'lifecycle.presetColors.gray', value: '#94a3b8' },
+  { labelKey: 'lifecycle.presetColors.blue', value: '#3b82f6' },
+  { labelKey: 'lifecycle.presetColors.green', value: '#10b981' },
+  { labelKey: 'lifecycle.presetColors.red', value: '#ef4444' },
+  { labelKey: 'lifecycle.presetColors.yellow', value: '#f59e0b' },
+  { labelKey: 'lifecycle.presetColors.purple', value: '#8b5cf6' },
+] as const;
 
 const getSmartColorForState = (stateName: string) => {
   const lower = stateName.toLowerCase();
@@ -146,6 +155,7 @@ function ColorSwatchPicker({
   value: string;
   onChange: (val: string) => void;
 }) {
+  const { t } = useTranslation('assets');
   const [isCustom, setIsCustom] = useState(() => !PRESET_COLORS.some((c) => c.value === value));
   const [localColor, setLocalColor] = useState(value);
 
@@ -160,7 +170,7 @@ function ColorSwatchPicker({
         {PRESET_COLORS.map((c) => (
           <button
             key={c.value}
-            title={c.label}
+            title={t(c.labelKey)}
             onClick={() => {
               setIsCustom(false);
               onChange(c.value);
@@ -175,7 +185,7 @@ function ColorSwatchPicker({
         ))}
 
         <button
-          title="Color Personalizado"
+          title={t('lifecycle.customColor')}
           onClick={() => setIsCustom(true)}
           className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all bg-muted ${
             isCustom
@@ -208,6 +218,7 @@ function ColorSwatchPicker({
 }
 
 export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvasProps) {
+  const { t } = useTranslation('assets');
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -221,16 +232,40 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     try {
       if (!schemaJson) return [];
       const schema = JSON.parse(schemaJson);
-      if (schema?.properties) {
-        return Object.keys(schema.properties).map((key) => ({
-          key,
-          title: schema.properties[key].title || key,
-        }));
+      const allProps = { ...(schema.properties || {}) };
+      
+      if (schema.dependencies) {
+        Object.values(schema.dependencies).forEach((config: any) => {
+          if (config.oneOf) {
+            config.oneOf.forEach((opt: any) => {
+              if (opt.properties) {
+                Object.entries(opt.properties).forEach(([k, propDef]: [string, any]) => {
+                  if (k !== Object.keys(opt.properties)[0]) { 
+                    allProps[k] = propDef;
+                  }
+                });
+              }
+            });
+          }
+        });
       }
+
+      const rawFields = Object.keys(allProps).map((key) => {
+        const prop = allProps[key];
+        return {
+          key,
+          title: prop.title || key,
+          tab: typeof prop.tab === 'string' && prop.tab.trim() ? prop.tab.trim() : 'General',
+        };
+      });
+
+      // Remove duplicates that might arise from multiple dependencies
+      const uniqueMap = new Map();
+      rawFields.forEach((f) => uniqueMap.set(f.key, f));
+      return Array.from(uniqueMap.values());
     } catch (e) {
       return [];
     }
-    return [];
   }, [schemaJson]);
 
   const availableTargetFields = useMemo(() => {
@@ -320,9 +355,10 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
       };
 
       if (parsed.nodes && Array.isArray(parsed.nodes) && parsed.nodes.length > 0) {
-        const loadedNodes = parsed.nodes.map((n: Node) => {
+        const effectiveInitialId = initialStateId || parsed.nodes.find((n: Node) => n.data?.isInitial)?.id || parsed.nodes[0]?.id || '';
+        const loadedNodes = parsed.nodes.map((n: Node, idx: number) => {
           const config = stateConfigs[n.id] || {};
-          const isInitial = n.id === initialStateId;
+          const isInitial = n.id === effectiveInitialId || (idx === 0 && !effectiveInitialId);
           return {
             ...n,
             data: {
@@ -502,7 +538,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     if (!newNodeName.trim()) return;
     const name = newNodeName.trim();
     if (nodes.some((n) => n.id === name)) {
-      alert('Ya existe un estado con ese nombre');
+      alert(t('lifecycle.stateExists'));
       return;
     }
     const newNode: Node = {
@@ -602,7 +638,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     if (newId === oldId) return;
 
     if (nodes.some((n) => n.id === newId)) {
-      alert('Ya existe un estado con ese nombre');
+      alert(t('lifecycle.stateExists'));
       setEditingNodeId(oldId);
       return;
     }
@@ -646,19 +682,19 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
   const validationMessages = useMemo(() => {
     const messages: string[] = [];
     if (nodes.length > 0 && !initialState) {
-      messages.push('Definí un estado inicial.');
+      messages.push(t('lifecycle.defineInitialState'));
     }
     nodes.forEach((n) => {
       const config = n.data?.stateConfig || {};
       if (config.isTerminal) {
         const hasOutgoing = edges.some((e) => e.source === n.id);
         if (hasOutgoing) {
-          messages.push(`El estado terminal "${n.id}" no debería tener salidas.`);
+          messages.push(t('lifecycle.terminalOutgoing', { state: n.id }));
         }
       }
     });
     return messages;
-  }, [nodes, edges, initialState]);
+  }, [nodes, edges, initialState, t]);
 
   return (
     <TooltipProvider>
@@ -666,10 +702,9 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold">Ciclo de vida del activo</h4>
+              <h4 className="text-sm font-semibold">{t('lifecycle.title')}</h4>
               <p className="text-sm text-muted-foreground max-w-2xl">
-                Creá los estados por los que pasará el activo y conectálos con flechas para indicar
-                las transiciones permitidas. El primer estado que agregues se marca como inicial.
+                {t('lifecycle.description')}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -680,25 +715,25 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 onClick={() => setShowHelp((v) => !v)}
               >
                 <Info className="h-4 w-4 mr-2" />
-                {showHelp ? 'Ocultar ayuda' : 'Mostrar ayuda'}
+                {showHelp ? t('lifecycle.hideHelp') : t('lifecycle.showHelp')}
               </Button>
               <Button
                 type="button"
                 onClick={() => {
-                  const val = prompt('Pegá el JSON aquí:');
+                  const val = prompt(t('lifecycle.pasteJsonPrompt'));
                   if (val) {
                     try {
                       JSON.parse(val);
                       onChange(val);
                     } catch (e) {
-                      alert('El JSON ingresado no es válido');
+                      alert(t('lifecycle.invalidJson'));
                     }
                   }
                 }}
                 variant="outline"
                 size="sm"
               >
-                Importar JSON
+                {t('lifecycle.importJson')}
               </Button>
             </div>
           </div>
@@ -707,20 +742,20 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
             <div className="flex flex-wrap gap-2 text-xs">
               <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200">
                 <Star className="h-3 w-3" />
-                Estado inicial
+                {t('lifecycle.initialState')}
               </Badge>
               <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border-red-200">
                 <Flag className="h-3 w-3" />
-                Estado terminal
+                {t('lifecycle.terminalState')}
               </Badge>
               <Badge variant="outline" className="gap-1">
-                Clic en un estado para editarlo
+                {t('lifecycle.clickToEdit')}
               </Badge>
               <Badge variant="outline" className="gap-1">
-                Arrastrá entre puntos para conectar estados
+                {t('lifecycle.dragToConnect')}
               </Badge>
               <Badge variant="outline" className="gap-1">
-                Delete / Backspace para borrar lo seleccionado
+                {t('lifecycle.deleteHint')}
               </Badge>
             </div>
           )}
@@ -741,14 +776,14 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
           <div className="flex flex-col flex-1 gap-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Nombre del nuevo estado..."
+                placeholder={t('lifecycle.newStatePlaceholder')}
                 value={newNodeName}
                 onChange={(e) => setNewNodeName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddNode()}
               />
               <Button type="button" onClick={handleAddNode} variant="secondary">
                 <Plus className="h-4 w-4 mr-2" />
-                Agregar Estado
+                {t('lifecycle.addState')}
               </Button>
             </div>
             <div ref={wrapperRef} className="flex-1 border rounded bg-background overflow-hidden relative">
@@ -782,7 +817,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
               <DialogHeader className="pt-2 pb-4 border-b mb-6">
                 <DialogTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-muted-foreground" />
-                  Configurar Estado
+                  {t('lifecycle.configureState')}
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-2">
                   <Input
@@ -794,7 +829,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Configurá las propiedades visuales y reglas de negocio para este estado.
+                  {t('lifecycle.configureDescription')}
                 </p>
               </DialogHeader>
 
@@ -804,7 +839,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                     {selectedNode.data?.isInitial ? (
                       <span className="flex items-center text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-md border border-green-200">
                         <Star className="h-4 w-4 mr-2" />
-                        Este es el estado inicial
+                        {t('lifecycle.isInitial')}
                       </span>
                     ) : (
                       <Button
@@ -814,7 +849,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                         onClick={() => handleSetInitial(selectedNode.id)}
                       >
                         <Star className="h-4 w-4 mr-2" />
-                        Marcar como inicial
+                        {t('lifecycle.markInitial')}
                       </Button>
                     )}
                   </div>
@@ -822,13 +857,13 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                   {/* Apariencia */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider">
-                      Apariencia
+                      {t('lifecycle.appearance')}
                     </h4>
 
                     <div className="flex flex-col gap-3 p-3 border rounded-lg bg-card">
                       <div>
-                        <Label className="text-sm font-medium">Color de Etiqueta</Label>
-                        <p className="text-xs text-muted-foreground">El color predeterminado se asigna por el nombre del estado.</p>
+                        <Label className="text-sm font-medium">{t('lifecycle.labelColor')}</Label>
+                        <p className="text-xs text-muted-foreground">{t('lifecycle.defaultColorHint')}</p>
                       </div>
                       <ColorSwatchPicker
                         value={selectedNode.data?.stateConfig?.color || '#94a3b8'}
@@ -840,7 +875,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                   {/* Configuración de Comportamiento */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider">
-                      Comportamiento
+                      {t('lifecycle.behavior')}
                     </h4>
 
                     <div className="p-4 border rounded-lg bg-card space-y-4">
@@ -852,16 +887,16 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                         />
                         <div>
                           <Label htmlFor="isTerminal" className="text-sm font-medium cursor-pointer">
-                            Estado Terminal
+                            {t('lifecycle.terminalLabel')}
                           </Label>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Marcá este estado como el final del ciclo. No permitirá más transiciones.
+                            {t('lifecycle.terminalHint')}
                           </p>
                         </div>
                       </div>
 
                       <div className="pt-2 space-y-1.5">
-                        <Label className="text-sm font-medium">Acción Automática (OnEnter)</Label>
+                        <Label className="text-sm font-medium">{t('lifecycle.autoAction')}</Label>
                         <Select
                           value={selectedNode.data?.stateConfig?.onEnterAction || ''}
                           onValueChange={(val) => updateSelectedNodeConfig('onEnterAction', val)}
@@ -872,7 +907,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                           <SelectContent>
                             {ACTION_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
+                                {t(opt.labelKey)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -881,18 +916,18 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
 
                       {selectedNode.data?.stateConfig?.onEnterAction === 'NOTIFY_MANAGER' && (
                         <div className="pt-2 space-y-1.5 animate-in fade-in slide-in-from-top-2">
-                          <Label className="text-sm font-medium">Campo Destinatario de Notificación</Label>
+                          <Label className="text-sm font-medium">{t('lifecycle.notificationTargetField')}</Label>
                           <Select
                             value={selectedNode.data?.stateConfig?.notificationTargetFieldId || ''}
                             onValueChange={(val) => updateSelectedNodeConfig('notificationTargetFieldId', val)}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Seleccioná un campo de Empleado o Equipo" />
+                              <SelectValue placeholder={t('lifecycle.selectNotificationField')} />
                             </SelectTrigger>
                             <SelectContent>
                               {availableTargetFields.length === 0 ? (
                                 <SelectItem value="_empty_" disabled>
-                                  No hay campos de Empleado/Equipo en la plantilla
+                                  {t('lifecycle.noEmployeeTeamFields')}
                                 </SelectItem>
                               ) : (
                                 availableTargetFields.map((field) => (
@@ -907,7 +942,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                       )}
 
                       <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Módulo Asociado (Delegación)</Label>
+                        <Label className="text-sm font-medium">{t('lifecycle.associatedModule')}</Label>
                         <Select
                           value={selectedNode.data?.stateConfig?.associatedModule || ''}
                           onValueChange={(val) => updateSelectedNodeConfig('associatedModule', val)}
@@ -918,7 +953,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                           <SelectContent>
                             {MODULE_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
+                                {t(opt.labelKey)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -930,12 +965,12 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                   {/* Reglas de Transición */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider">
-                      Reglas de Transición
+                      {t('lifecycle.transitionRules')}
                     </h4>
 
                     <div className="p-4 border rounded-lg bg-card space-y-4">
                       <div>
-                        <Label className="text-sm font-medium">Campos Requeridos</Label>
+                        <Label className="text-sm font-medium">{t('lifecycle.requiredFields')}</Label>
                         <div className="mt-2 space-y-2 border rounded-md p-3 max-h-48 overflow-y-auto bg-background">
                           {(() => {
                             const currentFields = (selectedNode.data?.stateConfig?.requiresFields || []) as string[];
@@ -965,49 +1000,70 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                                       className="text-sm font-medium cursor-pointer text-destructive"
                                     >
                                       {ghost}{' '}
-                                      <span className="text-xs font-normal">(No existe en esquema)</span>
+                                      <span className="text-xs font-normal">{t('lifecycle.notInSchema')}</span>
                                     </Label>
                                   </div>
                                 ))}
                                 {availableFields.length === 0 && ghostFields.length === 0 ? (
                                   <p className="text-xs text-muted-foreground italic">
-                                    No hay atributos definidos en el esquema.
+                                    {t('lifecycle.noSchemaAttributes')}
                                   </p>
                                 ) : (
-                                  availableFields.map((field) => {
-                                    const isChecked = currentFields.includes(field.key);
+                                  (() => {
+                                    const grouped = availableFields.reduce((acc, field) => {
+                                      const t = field.tab || 'General';
+                                      if (!acc[t]) acc[t] = [];
+                                      acc[t].push(field);
+                                      return acc;
+                                    }, {} as Record<string, typeof availableFields>);
+
                                     return (
-                                      <div key={field.key} className="flex items-center space-x-2">
-                                        <Switch
-                                          id={`field-${field.key}`}
-                                          checked={isChecked}
-                                          onCheckedChange={(c) => {
-                                            const newFields = c
-                                              ? [...currentFields, field.key]
-                                              : currentFields.filter((f) => f !== field.key);
-                                            updateSelectedNodeConfig('requiresFields', newFields);
-                                          }}
-                                        />
-                                        <Label
-                                          htmlFor={`field-${field.key}`}
-                                          className="text-sm font-medium cursor-pointer"
-                                        >
-                                          {field.title}{' '}
-                                          <span className="text-xs text-muted-foreground font-normal">
-                                            ({field.key})
-                                          </span>
-                                        </Label>
-                                      </div>
+                                      <Accordion type="multiple" defaultValue={Object.keys(grouped)} className="w-full">
+                                        {Object.entries(grouped).map(([tabName, fields]: [string, any]) => (
+                                          <AccordionItem key={tabName} value={tabName} className="border-none">
+                                            <AccordionTrigger className="py-2 hover:no-underline text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 px-3 rounded-t-md border-b">
+                                              {tabName}
+                                            </AccordionTrigger>
+                                            <AccordionContent className="pt-2 pb-4 px-2 space-y-2 bg-muted/10 border-x border-b rounded-b-md mb-3">
+                                              {fields.map((field: any) => {
+                                                const isChecked = currentFields.includes(field.key);
+                                                return (
+                                                  <div key={field.key} className="flex items-center space-x-2">
+                                                    <Switch
+                                                      id={`field-${field.key}`}
+                                                      checked={isChecked}
+                                                      onCheckedChange={(c) => {
+                                                        const newFields = c
+                                                          ? [...currentFields, field.key]
+                                                          : currentFields.filter((f) => f !== field.key);
+                                                        updateSelectedNodeConfig('requiresFields', newFields);
+                                                      }}
+                                                    />
+                                                    <Label
+                                                      htmlFor={`field-${field.key}`}
+                                                      className="text-sm font-medium cursor-pointer"
+                                                    >
+                                                      {field.title}{' '}
+                                                      <span className="text-xs text-muted-foreground font-normal">
+                                                        ({field.key})
+                                                      </span>
+                                                    </Label>
+                                                  </div>
+                                                );
+                                              })}
+                                            </AccordionContent>
+                                          </AccordionItem>
+                                        ))}
+                                      </Accordion>
                                     );
-                                  })
+                                  })()
                                 )}
                               </>
                             );
                           })()}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1.5">
-                          Seleccioná los atributos que el usuario deberá completar antes de entrar a este
-                          estado.
+                          {t('lifecycle.requiredFieldsHint')}
                         </p>
                       </div>
                     </div>
@@ -1016,13 +1072,12 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                   {/* Dependencias de Hijos */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider">
-                      Propagación de Hijos
+                      {t('lifecycle.childPropagation')}
                     </h4>
 
                     <div className="p-4 border rounded-lg bg-card space-y-4">
                       <p className="text-xs text-muted-foreground">
-                        Definí reglas para que este estado transicione automáticamente según el estado
-                        de los componentes dependientes (hijos).
+                        {t('lifecycle.childPropagationHint')}
                       </p>
 
                       <div className="space-y-3">
@@ -1034,7 +1089,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                             >
                               <div className="flex justify-between items-center pb-2 border-b">
                                 <span className="font-semibold text-xs text-muted-foreground uppercase">
-                                  Regla #{idx + 1}
+                                  {t('lifecycle.ruleNumber', { number: idx + 1 })}
                                 </span>
                                 <Button
                                   variant="ghost"
@@ -1053,7 +1108,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
 
                               <div className="space-y-1.5">
                                 <Label className="text-[11px] uppercase text-muted-foreground font-semibold">
-                                  Condición
+                                  {t('lifecycle.condition')}
                                 </Label>
                                 <Select
                                   value={dep.conditionType || 'Any'}
@@ -1072,7 +1127,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                                   <SelectContent>
                                     {CONDITION_OPTIONS.map((opt) => (
                                       <SelectItem key={opt.value} value={opt.value}>
-                                        {opt.label}
+                                        {t(opt.labelKey)}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1081,7 +1136,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
 
                               <div className="space-y-1.5">
                                 <Label className="text-[11px] uppercase text-muted-foreground font-semibold">
-                                  Estados de los hijos (separados por comas)
+                                  {t('lifecycle.childStatesLabel')}
                                 </Label>
                                 <ChildStatesInput
                                   value={dep.childStates || []}
@@ -1098,11 +1153,11 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
 
                               <div className="space-y-1.5">
                                 <Label className="text-[11px] uppercase text-muted-foreground font-semibold">
-                                  Forzar Estado al Padre
+                                  {t('lifecycle.forceParentState')}
                                 </Label>
                                 <Input
                                   className="h-8 text-xs font-medium"
-                                  placeholder="Ej: Mantenimiento Parcial"
+                                  placeholder={t('lifecycle.forceParentPlaceholder')}
                                   value={dep.targetState || ''}
                                   onChange={(e) => {
                                     const currentDeps = (
@@ -1131,7 +1186,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                           updateSelectedNodeConfig('childStateDependencies', currentDeps);
                         }}
                       >
-                        <Plus className="h-4 w-4 mr-2" /> Nueva Regla
+                        <Plus className="h-4 w-4 mr-2" /> {t('lifecycle.newRule')}
                       </Button>
                     </div>
                   </div>

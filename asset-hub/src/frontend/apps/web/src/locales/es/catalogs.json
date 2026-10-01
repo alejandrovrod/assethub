@@ -1,0 +1,58 @@
+{
+  "title": "Catálogos",
+  "description": "Gestioná los catálogos base del sistema.",
+  "newItem": "Nuevo Elemento",
+  "labels": {
+    "label": "Etiqueta",
+    "order": "Orden"
+  },
+  "empty": {
+    "catalogs": "No hay catálogos.",
+    "items": "Este catálogo no tiene elementos.",
+    "selectCatalog": "Seleccioná un catálogo para ver sus elementos"
+  },
+  "pagination": {
+    "totalItems": "Total: {{count}} elementos",
+    "perPage": "{{count}} / pág"
+  },
+  "dialog": {
+    "editCatalog": "Editar Catálogo",
+    "newCatalog": "Nuevo Catálogo",
+    "editItem": "Editar Elemento"
+  },
+  "toast": {
+    "catalogCreated": "Catálogo creado exitosamente",
+    "createCatalogError": "Error al crear el catálogo",
+    "catalogUpdated": "Catálogo actualizado exitosamente",
+    "updateCatalogError": "Error al actualizar el catálogo",
+    "itemCreated": "Elemento creado exitosamente",
+    "createItemError": "Error al crear el elemento",
+    "itemUpdated": "Elemento actualizado exitosamente",
+    "updateItemError": "Error al actualizar el elemento",
+    "itemDeleted": "Elemento eliminado"
+  },
+  "form": {
+    "saving": "Guardando...",
+    "catalog": {
+      "codeMinLength": "El código debe tener al menos 2 caracteres.",
+      "labelMinLength": "La etiqueta debe tener al menos 2 caracteres.",
+      "codePlaceholder": "Ej: ASSET_TYPE",
+      "codeDescription": "Identificador único del catálogo (solo mayúsculas y guiones bajos recomendado).",
+      "labelPlaceholder": "Ej: Tipo de Activo",
+      "modules": "Módulos",
+      "modulesDescription": "Seleccione en qué módulos de la aplicación debe estar disponible este catálogo.",
+      "moduleAssets": "Activos",
+      "moduleIncidents": "Incidencias",
+      "moduleTasks": "Tareas",
+      "moduleMaintenance": "Mantenimiento",
+      "moduleOrders": "Órdenes",
+      "moduleStaff": "Personal"
+    },
+    "item": {
+      "codeRequired": "El código es obligatorio.",
+      "labelRequired": "La etiqueta es obligatoria.",
+      "codePlaceholder": "Ej: LAPTOP",
+      "labelPlaceholder": "Ej: Computadora Portátil"
+    }
+  }
+}

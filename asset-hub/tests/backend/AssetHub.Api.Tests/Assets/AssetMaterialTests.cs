@@ -37,7 +37,7 @@ public class AssetMaterialTests
     public void Validator_Should_Fail_If_Quantity_Is_Zero_Or_Negative()
     {
         // Arrange
-        var validator = new CreateAssetMaterialCommandValidator();
+        var validator = new CreateAssetMaterialCommandValidator(LocalizationTestHelper.CreateLocalizer());
         var command = new CreateAssetMaterialCommand(
             AssetId: Guid.NewGuid(),
             CatalogItemId: Guid.NewGuid(),

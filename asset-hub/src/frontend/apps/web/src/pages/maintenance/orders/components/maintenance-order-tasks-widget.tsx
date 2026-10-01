@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 import { WorkTaskFormSheet } from '../../components/work-task-form-sheet'
 
 const TASK_STATE_ICONS: Record<string, React.ReactNode> = {
@@ -17,12 +18,19 @@ const TASK_STATE_ICONS: Record<string, React.ReactNode> = {
   cancelled: <AlertCircle className="h-3.5 w-3.5 text-red-500" />,
 }
 
-const TASK_STATE_LABELS: Record<string, string> = {
-  todo: 'Por hacer',
-  rework: 'Rehacer',
-  in_progress: 'En progreso',
-  done: 'Completada',
-  cancelled: 'Cancelada',
+type TaskStateLabelKey =
+  | 'tasks.states.todo'
+  | 'tasks.states.rework'
+  | 'tasks.states.inProgress'
+  | 'tasks.states.done'
+  | 'tasks.states.cancelled'
+
+const TASK_STATE_LABEL_KEYS: Record<string, TaskStateLabelKey> = {
+  todo: 'tasks.states.todo',
+  rework: 'tasks.states.rework',
+  in_progress: 'tasks.states.inProgress',
+  done: 'tasks.states.done',
+  cancelled: 'tasks.states.cancelled',
 }
 
 interface MaintenanceOrderTasksWidgetProps {
@@ -37,6 +45,7 @@ interface MaintenanceOrderTasksWidgetProps {
 }
 
 export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplateId, propertiesJson, state, validationMode, checkedTaskIds, onToggleTaskCheck }: MaintenanceOrderTasksWidgetProps) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canCreateTasks = can('tasks:create')
   const queryClient = useQueryClient()
@@ -51,7 +60,7 @@ export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplate
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <span>Tareas asociadas</span>
+          <span>{t('orders.associatedTasks')}</span>
           {!isLoading && tasks && (
             <span className="text-xs text-muted-foreground font-normal">({tasks.length})</span>
           )}
@@ -65,7 +74,7 @@ export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplate
             disabled={state === 'verified'}
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Agregar
+            {t('common:actions.add')}
           </Button>
         )}
       </div>
@@ -75,7 +84,7 @@ export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplate
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : !tasks || tasks.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic">Sin tareas asociadas</p>
+        <p className="text-xs text-muted-foreground italic">{t('orders.noAssociatedTasks')}</p>
       ) : (
         <div className="space-y-2">
           {tasks.map((task) => (
@@ -105,7 +114,7 @@ export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplate
                 )}
               </div>
               <Badge variant="outline" className="text-[10px] shrink-0">
-                {TASK_STATE_LABELS[task.state] || task.state}
+                {TASK_STATE_LABEL_KEYS[task.state] ? t(TASK_STATE_LABEL_KEYS[task.state]) : task.state}
               </Badge>
             </div>
           ))}

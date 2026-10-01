@@ -74,7 +74,7 @@ public class CreateAssetTemplateCommandHandler : IRequestHandler<CreateAssetTemp
         }
         catch (Exception ex)
         {
-            throw new InvalidTemplateSchemaException($"SchemaJson inválido: {ex.Message}");
+            throw new InvalidTemplateSchemaException(ex.Message);
         }
 
         // Validar extrayendo referencias a catálogos en el schema y verificándolas

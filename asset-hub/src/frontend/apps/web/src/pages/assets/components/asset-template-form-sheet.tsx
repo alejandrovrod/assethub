@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { assetTemplateService } from '@/services/asset-template.service'
@@ -16,13 +17,17 @@ import { toast } from 'sonner'
 import { SchemaBuilder } from './schema-builder'
 import { LifecycleCanvas } from './lifecycle-canvas'
 import { MaintenanceChecklistBuilder } from './maintenance-checklist-builder'
-import { SchemaFieldPreview } from './schema-field-preview'
+import { SchemaFieldPreview, type SchemaFieldDefinition } from './schema-field-preview'
 import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
 import { Info, FileText, List, GitBranch, CheckSquare, Eye } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/i18n'
+
+type PreviewField = SchemaFieldDefinition & { tab: string; section?: string }
 
 const formSchema = z.object({
-  code: z.string().min(1, 'Código es requerido').max(50),
-  name: z.string().min(1, 'Nombre es requerido').max(100),
+  code: z.string().min(1, { error: () => i18n.t('assets:validation.codeRequired') }).max(50),
+  name: z.string().min(1, { error: () => i18n.t('assets:validation.nameRequired') }).max(100),
   description: z.string().max(500).optional(),
   businessEntityTypeId: z.string().optional(),
   schemaJson: z.string().refine((val) => {
@@ -33,7 +38,7 @@ const formSchema = z.object({
     } catch {
       return false
     }
-  }, 'Debe ser un JSON válido'),
+  }, { error: () => i18n.t('assets:validation.invalidJson') }),
   lifecycleStates: z.string().refine((val) => {
     if (!val) return true
     try {
@@ -42,7 +47,7 @@ const formSchema = z.object({
     } catch {
       return false
     }
-  }, 'Debe ser un JSON válido'),
+  }, { error: () => i18n.t('assets:validation.invalidJson') }),
   maintenanceChecklist: z.string().optional(),
 })
 
@@ -114,15 +119,36 @@ function MaintenanceChecklistField() {
 }
 
 function PreviewTabContent() {
+  const { t } = useTranslation(['assets', 'common'])
   const form = useFormContext<FormValues>()
   const schemaJson = useWatch({ control: form.control, name: 'schemaJson' })
   const lifecycleStates = useWatch({ control: form.control, name: 'lifecycleStates' })
   const maintenanceChecklist = useWatch({ control: form.control, name: 'maintenanceChecklist' })
+  const [activePreviewTab, setActivePreviewTab] = useState<string | null>(null)
 
-  const previewFields = useMemo(() => {
+  const preview = useMemo(() => {
     try {
       const schema = JSON.parse(schemaJson || '{}')
-      return Object.entries(schema.properties || {}).map(([key, prop]: [string, any]) => ({
+      const allProps = { ...(schema.properties || {}) }
+      
+      if (schema.dependencies) {
+        Object.values(schema.dependencies).forEach((config: any) => {
+          if (config.oneOf) {
+            config.oneOf.forEach((opt: any) => {
+              if (opt.properties) {
+                // Do not include the parent condition field itself, just the dependent ones
+                Object.entries(opt.properties).forEach(([k, propDef]: [string, any]) => {
+                  if (k !== Object.keys(opt.properties)[0]) { // The first key is usually the parent condition
+                    allProps[k] = propDef
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+
+      const rawFields: PreviewField[] = Object.entries(allProps).map(([key, prop]: [string, any]) => ({
         keyName: key,
         title: prop.title || key,
         type: prop.type === 'array' && prop.items?.format === 'data-url' ? 'files'
@@ -134,11 +160,26 @@ function PreviewTabContent() {
         required: (schema.required || []).includes(key),
         enumOptions: prop.enum?.join(', ') || undefined,
         catalogCode: prop.catalogCode || undefined,
+        tab: typeof prop.tab === 'string' && prop.tab.trim() ? prop.tab.trim() : 'General',
+        section: typeof prop.section === 'string' && prop.section.trim() ? prop.section.trim() : undefined,
       }))
+      
+      // Filter out duplicate fields (because multiple catch blocks might define the same field logic)
+      const fields = Array.from(new Map(rawFields.map(f => [f.keyName, f])).values())
+      // Tab order: x-form-tabs metadata first, then first appearance in properties.
+      const tabs: string[] = []
+      const pushTab = (t: string) => { if (t && !tabs.includes(t)) tabs.push(t) }
+      const xTabs = Array.isArray(schema['x-form-tabs']) ? schema['x-form-tabs'] : []
+      xTabs.forEach((t: unknown) => { if (typeof t === 'string') pushTab(t.trim()) })
+      fields.forEach((f) => pushTab(f.tab))
+      if (tabs.length === 0) tabs.push('General')
+      return { fields, tabs }
     } catch {
-      return []
+      return { fields: [] as PreviewField[], tabs: [] as string[] }
     }
   }, [schemaJson])
+
+  const previewFields = preview.fields
 
   const lifecycleSummary = useMemo(() => {
     try {
@@ -163,32 +204,78 @@ function PreviewTabContent() {
     }
   }, [maintenanceChecklist])
 
+  const renderPreviewGroup = (group: PreviewField[]) => {
+    const sectionless = group.filter((f) => !f.section)
+    const sectionOrder: string[] = []
+    group.forEach((f) => {
+      if (f.section && !sectionOrder.includes(f.section)) sectionOrder.push(f.section)
+    })
+    return (
+      <div className="space-y-4">
+        {sectionless.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {sectionless.map((f) => (
+              <SchemaFieldPreview key={f.keyName} field={f} />
+            ))}
+          </div>
+        )}
+        {sectionOrder.map((section) => (
+          <div key={section}>
+            <h5 className="text-sm font-semibold">{section}</h5>
+            <Separator className="my-2" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {group
+                .filter((f) => f.section === section)
+                .map((f) => (
+                  <SchemaFieldPreview key={f.keyName} field={f} />
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  const previewTabValue =
+    activePreviewTab && preview.tabs.includes(activePreviewTab) ? activePreviewTab : preview.tabs[0]
+
   return (
     <TabsContent value="preview" className="flex flex-col gap-6 mt-0 overflow-y-auto">
       <Alert className="bg-muted border-border">
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Esta es una vista aproximada de cómo se verá la plantilla para el usuario final.
+          {t('preview.approximateView')}
         </AlertDescription>
       </Alert>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold">Atributos del activo</h4>
+        <h4 className="text-sm font-semibold">{t('preview.assetAttributes')}</h4>
         {previewFields.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay atributos configurados.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {previewFields.map((field) => (
-              <SchemaFieldPreview key={field.keyName} field={field} />
+          <p className="text-sm text-muted-foreground">{t('empty.noAttributes')}</p>
+        ) : preview.tabs.length >= 2 ? (
+          <Tabs value={previewTabValue} onValueChange={setActivePreviewTab}>
+            <TabsList className="h-auto flex-wrap justify-start gap-1 bg-muted/60 p-1">
+              {preview.tabs.map((tab) => (
+                <TabsTrigger key={tab} value={tab} className="h-auto px-3 py-1.5">
+                  {tab}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {preview.tabs.map((tab) => (
+              <TabsContent key={tab} value={tab} className="mt-3">
+                {renderPreviewGroup(preview.fields.filter((f) => f.tab === tab))}
+              </TabsContent>
             ))}
-          </div>
+          </Tabs>
+        ) : (
+          renderPreviewGroup(preview.fields)
         )}
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold">Ciclo de vida</h4>
+        <h4 className="text-sm font-semibold">{t('preview.lifecycle')}</h4>
         {lifecycleSummary.states.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay estados configurados.</p>
+          <p className="text-sm text-muted-foreground">{t('empty.noStates')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {lifecycleSummary.states.map((state) => (
@@ -207,13 +294,13 @@ function PreviewTabContent() {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold">Checklist de mantenimiento</h4>
+        <h4 className="text-sm font-semibold">{t('preview.maintenanceChecklist')}</h4>
         {checklistTasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay tareas configuradas.</p>
+          <p className="text-sm text-muted-foreground">{t('empty.noTasks')}</p>
         ) : (
           <ul className="list-decimal list-inside text-sm space-y-1">
             {checklistTasks.map((task: any, idx: number) => (
-              <li key={idx}>{task.title || 'Tarea sin nombre'}</li>
+              <li key={idx}>{task.title || t('preview.untitledTask')}</li>
             ))}
           </ul>
         )}
@@ -223,6 +310,7 @@ function PreviewTabContent() {
 }
 
 export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) {
+  const { t } = useTranslation(['assets', 'common'])
   const queryClient = useQueryClient()
 
   const form = useForm<FormValues>({
@@ -266,31 +354,55 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
     }
   }, [open, template, form])
 
+  const normalizeLifecycleStates = (rawJson: string) => {
+    try {
+      const parsed = JSON.parse(rawJson || '{}')
+      if (!parsed.initialState) {
+        const stateKeys = Object.keys(parsed.states || parsed.transitions || {})
+        if (stateKeys.length > 0) {
+          parsed.initialState = stateKeys[0]
+        } else {
+          parsed.initialState = 'Active'
+        }
+      }
+      return parsed
+    } catch {
+      return { initialState: 'Active', transitions: {}, states: {} }
+    }
+  }
+
   const createMutation = useMutation({
     mutationFn: assetTemplateService.createTemplate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-templates'] })
-      toast.success('Plantilla creada exitosamente')
+      toast.success(t('toast.templateCreated'))
       onOpenChange(false)
     },
-    onError: () => toast.error('Error al crear la plantilla'),
+    onError: (err: unknown) => {
+      const msg = (err as any)?.response?.data?.detail || t('toast.templateCreateError')
+      toast.error(msg)
+    },
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: FormValues) => assetTemplateService.updateTemplate(template.id, {
-      name: data.name,
-      description: data.description || '',
-      schemaJson: data.schemaJson,
-      allowedChildTemplateIds: [],
-      lifecycleStates: JSON.parse(data.lifecycleStates || '{}'),
-      maintenanceChecklist: data.maintenanceChecklist || ''
-    }),
+    mutationFn: (data: FormValues) =>
+      assetTemplateService.updateTemplate(template.id, {
+        name: data.name,
+        description: data.description || '',
+        schemaJson: data.schemaJson,
+        allowedChildTemplateIds: [],
+        lifecycleStates: normalizeLifecycleStates(data.lifecycleStates),
+        maintenanceChecklist: data.maintenanceChecklist || '',
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-templates'] })
-      toast.success('Plantilla actualizada exitosamente')
+      toast.success(t('toast.templateUpdated'))
       onOpenChange(false)
     },
-    onError: () => toast.error('Error al actualizar la plantilla'),
+    onError: (err: unknown) => {
+      const msg = (err as any)?.response?.data?.detail || t('toast.templateUpdateError')
+      toast.error(msg)
+    },
   })
 
   const onSubmit = (data: FormValues) => {
@@ -302,8 +414,8 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
         description: data.description || '',
         businessEntityTypeId: data.businessEntityTypeId || '00000000-0000-0000-0000-000000000000',
         allowedChildTemplateIds: [],
-        lifecycleStates: JSON.parse(data.lifecycleStates || '{}'),
-        maintenanceChecklist: data.maintenanceChecklist || ''
+        lifecycleStates: normalizeLifecycleStates(data.lifecycleStates),
+        maintenanceChecklist: data.maintenanceChecklist || '',
       })
     }
   }
@@ -320,20 +432,19 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
             onSubmit={form.handleSubmit(onSubmit, (err) => console.log('FORM ERRORS:', err))}
             header={
               <SheetHeader className="p-6 pb-4">
-                <SheetTitle>{template ? 'Editar Plantilla' : 'Nueva Plantilla'}</SheetTitle>
+                <SheetTitle>{template ? t('form.editTemplate') : t('form.newTemplate')}</SheetTitle>
                 <SheetDescription>
-                  Configurá paso a paso los datos básicos, atributos, ciclo de vida y checklist de la
-                  plantilla de activo.
+                  {t('form.templateDescription')}
                 </SheetDescription>
               </SheetHeader>
             }
             footer={
               <>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </Button>
                 <Button type="submit" disabled={isPending}>
-                  {isPending ? 'Guardando...' : 'Guardar Plantilla'}
+                  {isPending ? t('form.saving') : t('form.saveTemplate')}
                 </Button>
               </>
             }
@@ -342,7 +453,7 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
               <Alert variant="destructive" className="mb-4">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Revisá los campos marcados en rojo antes de guardar.
+                  {t('form.checkMarkedFields')}
                 </AlertDescription>
               </Alert>
             )}
@@ -351,23 +462,23 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
               <TabsList className="self-start mb-4 flex-wrap h-auto">
                 <TabsTrigger value="general">
                   <FileText className="h-4 w-4 mr-2" />
-                  General
+                  {t('tabs.general')}
                 </TabsTrigger>
                 <TabsTrigger value="attributes">
                   <List className="h-4 w-4 mr-2" />
-                  Atributos
+                  {t('form.tabAttributes')}
                 </TabsTrigger>
                 <TabsTrigger value="lifecycle">
                   <GitBranch className="h-4 w-4 mr-2" />
-                  Ciclo de Vida
+                  {t('form.tabLifecycle')}
                 </TabsTrigger>
                 <TabsTrigger value="checklist">
                   <CheckSquare className="h-4 w-4 mr-2" />
-                  Checklist
+                  {t('form.tabChecklist')}
                 </TabsTrigger>
                 <TabsTrigger value="preview">
                   <Eye className="h-4 w-4 mr-2" />
-                  Vista Previa
+                  {t('form.tabPreview')}
                 </TabsTrigger>
               </TabsList>
 
@@ -378,10 +489,10 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                     name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Código</FormLabel>
+                        <FormLabel>{t('fields.code')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Ej: VEHICULO"
+                            placeholder={t('form.templateCodePlaceholder')}
                             readOnly={!!template}
                             className={template ? "bg-muted cursor-not-allowed text-muted-foreground" : ""}
                             {...field}
@@ -396,9 +507,9 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre</FormLabel>
+                        <FormLabel>{t('fields.name')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ej: Vehículos Ligeros" {...field} />
+                          <Input placeholder={t('form.templateNamePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -411,9 +522,9 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripción</FormLabel>
+                      <FormLabel>{t('table.headers.description')}</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Breve descripción de la plantilla..." {...field} />
+                        <Textarea placeholder={t('form.descriptionPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -421,11 +532,9 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                 />
 
                 <div className="bg-muted/30 rounded-md p-4 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground mb-1">¿Qué es una plantilla de activo?</p>
+                  <p className="font-medium text-foreground mb-1">{t('form.whatIsTemplateTitle')}</p>
                   <p>
-                    Es la definición de un tipo de activo (vehículo, herramienta, equipo). Los activos
-                    creados con esta plantilla heredarán los atributos, estados y checklist que
-                    configures en las siguientes pestañas.
+                    {t('form.whatIsTemplateBody')}
                   </p>
                 </div>
               </TabsContent>
@@ -434,8 +543,7 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                 <Alert className="bg-blue-50 text-blue-900 border-blue-200">
                   <Info className="h-4 w-4 text-blue-600" />
                   <AlertDescription>
-                    Los atributos son las características que completarán los usuarios al crear un
-                    activo de esta plantilla.
+                    {t('form.attributesAlert')}
                   </AlertDescription>
                 </Alert>
                 <SchemaBuilderField />
@@ -445,8 +553,7 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                 <Alert className="bg-blue-50 text-blue-900 border-blue-200">
                   <Info className="h-4 w-4 text-blue-600" />
                   <AlertDescription>
-                    El ciclo de vida define los estados por los que puede pasar un activo y las
-                    transiciones permitidas entre ellos.
+                    {t('form.lifecycleAlert')}
                   </AlertDescription>
                 </Alert>
                 <LifecycleCanvasField />
@@ -456,8 +563,7 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
                 <Alert className="bg-blue-50 text-blue-900 border-blue-200">
                   <Info className="h-4 w-4 text-blue-600" />
                   <AlertDescription>
-                    El checklist se utiliza como base para las órdenes de mantenimiento preventivo de
-                    los activos de esta plantilla.
+                    {t('form.checklistAlert')}
                   </AlertDescription>
                 </Alert>
                 <MaintenanceChecklistField />

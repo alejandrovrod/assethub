@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export interface MapLegendProps {
   states: { name: string; color: string }[]
@@ -17,19 +18,20 @@ export function MapLegend({
   hiddenRisks = [],
   onRiskToggle
 }: MapLegendProps) {
+  const { t } = useTranslation('common')
 
   const risks = [
-    { id: 'Low', label: 'Low (Bajo)', bgClass: 'bg-emerald-500', borderClass: 'border-emerald-600/30' },
-    { id: 'Moderate', label: 'Moderate (Moderado)', bgClass: 'bg-amber-500', borderClass: 'border-amber-600/30' },
-    { id: 'High', label: 'High (Alto)', bgClass: 'bg-orange-500', borderClass: 'border-orange-600/30' },
-    { id: 'Critical', label: 'Critical (Crítico)', bgClass: 'bg-destructive', borderClass: 'border-destructive/30' } // removed animate-pulse to avoid weird UI in legend
+    { id: 'Low', label: t('map.legend.riskLevels.low'), bgClass: 'bg-emerald-500', borderClass: 'border-emerald-600/30' },
+    { id: 'Moderate', label: t('map.legend.riskLevels.moderate'), bgClass: 'bg-amber-500', borderClass: 'border-amber-600/30' },
+    { id: 'High', label: t('map.legend.riskLevels.high'), bgClass: 'bg-orange-500', borderClass: 'border-orange-600/30' },
+    { id: 'Critical', label: t('map.legend.riskLevels.critical'), bgClass: 'bg-destructive', borderClass: 'border-destructive/30' } // removed animate-pulse to avoid weird UI in legend
   ]
 
   return (
     <div className="absolute bottom-6 left-2 z-[400] pointer-events-none flex flex-col gap-2 select-none">
       {states.length > 0 && (
         <div className="bg-background/90 backdrop-blur-sm border shadow-sm p-3 rounded-md pointer-events-auto">
-          <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Filtrar por Estado</h4>
+          <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">{t('map.legend.filterByState')}</h4>
           <div className="flex flex-col gap-1.5">
             {states.map((s, i) => {
               const isHidden = hiddenStates.includes(s.name)
@@ -56,7 +58,7 @@ export function MapLegend({
 
       {showRisk && (
         <div className="bg-background/90 backdrop-blur-sm border shadow-sm p-3 rounded-md pointer-events-auto">
-          <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Filtrar por Riesgo</h4>
+          <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">{t('map.legend.filterByRisk')}</h4>
           <div className="flex flex-col gap-1.5 text-xs">
             {risks.map((r) => {
               const isHidden = hiddenRisks.includes(r.id)
@@ -84,7 +86,7 @@ export function MapLegend({
                   <div className="w-3 h-3 rounded-sm bg-muted border border-muted-foreground/30 absolute" />
                   {!hiddenRisks.includes('None') && <Check className="w-3 h-3 text-muted-foreground absolute drop-shadow-md z-10" strokeWidth={3} />}
                </div>
-               <span className={hiddenRisks.includes('None') ? 'line-through' : ''}>Sin evaluar</span>
+               <span className={hiddenRisks.includes('None') ? 'line-through' : ''}>{t('map.legend.notEvaluated')}</span>
             </div>
           </div>
         </div>

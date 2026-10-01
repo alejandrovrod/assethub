@@ -1,0 +1,142 @@
+{
+  "catalogs": [
+    {
+      "code": "CLEANING_SUPPLIES",
+      "label": "Insumos y Químicos de Limpieza",
+      "targetModules": ["assets", "inventory", "maintenance"],
+      "items": [
+        {
+          "code": "CHEM-CLOR-01",
+          "defaultLabel": "Cloro Desinfectante Concentrado (L)",
+          "order": 1,
+          "translations": {
+            "es": "Cloro Desinfectante Concentrado (L)",
+            "en": "Concentrated Chlorine Bleach (L)"
+          }
+        },
+        {
+          "code": "CHEM-QUAT-02",
+          "defaultLabel": "Sanitizante Amonio Cuaternario 5ta Gen (L)",
+          "order": 2,
+          "translations": {
+            "es": "Sanitizante Amonio Cuaternario 5ta Gen (L)",
+            "en": "Quaternary Ammonium Sanitizer 5th Gen (L)"
+          }
+        },
+        {
+          "code": "CHEM-SOAP-03",
+          "defaultLabel": "Jabón Líquido Antibacterial para Manos (L)",
+          "order": 3,
+          "translations": {
+            "es": "Jabón Líquido Antibacterial para Manos (L)",
+            "en": "Antibacterial Liquid Hand Soap (L)"
+          }
+        },
+        {
+          "code": "CONS-BAG-90120",
+          "defaultLabel": "Bolsa de Basura Calibre 600 90x120cm (Pza)",
+          "order": 4,
+          "translations": {
+            "es": "Bolsa de Basura Calibre 600 90x120cm (Pza)",
+            "en": "Heavy Duty Trash Bags 90x120cm (Unit)"
+          }
+        },
+        {
+          "code": "CONS-MICROFIBER",
+          "defaultLabel": "Paño Microfibra Anti-estático (Pza)",
+          "order": 5,
+          "translations": {
+            "es": "Paño Microfibra Anti-estático (Pza)",
+            "en": "Anti-static Microfiber Cloth (Unit)"
+          }
+        },
+        {
+          "code": "CONS-MOP-HEAD",
+          "defaultLabel": "Repuesto de Mopa Industrial Algodón (Pza)",
+          "order": 6,
+          "translations": {
+            "es": "Repuesto de Mopa Industrial Algodón (Pza)",
+            "en": "Industrial Cotton Mop Head (Unit)"
+          }
+        }
+      ]
+    },
+    {
+      "code": "BIO_RISK_LEVEL",
+      "label": "Niveles de Riesgo y Criticidad Sanitaria",
+      "targetModules": ["assets", "maintenance"],
+      "items": [
+        {
+          "code": "RISK_LOW",
+          "defaultLabel": "Bajo (Áreas Administrativas y Pasillos)",
+          "order": 1,
+          "translations": {
+            "es": "Bajo (Áreas Administrativas y Pasillos)",
+            "en": "Low (Administrative Areas & Hallways)"
+          }
+        },
+        {
+          "code": "RISK_MEDIUM",
+          "defaultLabel": "Medio (Comedores, Vestidores, Salas Reunión)",
+          "order": 2,
+          "translations": {
+            "es": "Medio (Comedores, Vestidores, Salas Reunión)",
+            "en": "Medium (Dining, Lockers, Meeting Rooms)"
+          }
+        },
+        {
+          "code": "RISK_HIGH",
+          "defaultLabel": "Alto (Sanitarios, Cocinas, Consultorios)",
+          "order": 3,
+          "translations": {
+            "es": "Alto (Sanitarios, Cocinas, Consultorios)",
+            "en": "High (Restrooms, Kitchens, Clinics)"
+          }
+        }
+      ]
+    },
+    {
+      "code": "CLEANING_FREQUENCY",
+      "label": "Frecuencia de Limpieza",
+      "targetModules": ["assets", "maintenance"],
+      "items": [
+        {
+          "code": "FREQ_PER_SHIFT",
+          "defaultLabel": "Continuo por Turno",
+          "order": 1,
+          "translations": {
+            "es": "Continuo por Turno",
+            "en": "Continuous Per Shift"
+          }
+        },
+        {
+          "code": "FREQ_DAILY",
+          "defaultLabel": "Diario Fin de Turno",
+          "order": 2,
+          "translations": {
+            "es": "Diario Fin de Turno",
+            "en": "Daily End of Day"
+          }
+        },
+        {
+          "code": "FREQ_WEEKLY_DEEP",
+          "defaultLabel": "Semanal Profundo",
+          "order": 3,
+          "translations": {
+            "es": "Semanal Profundo",
+            "en": "Weekly Deep Clean"
+          }
+        },
+        {
+          "code": "FREQ_MONTHLY_DISINFECT",
+          "defaultLabel": "Mensual Desinfección Terminal",
+          "order": 4,
+          "translations": {
+            "es": "Mensual Desinfección Terminal",
+            "en": "Monthly Terminal Disinfection"
+          }
+        }
+      ]
+    }
+  ]
+}

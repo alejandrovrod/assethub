@@ -1,0 +1,48 @@
+{
+  "metrics": {
+    "title": "Confiabilidad",
+    "scopeAsset": "Métricas del activo",
+    "scopeTenant": "Métricas del tenant",
+    "correctiveOrders": "{{count}} órdenes correctivas",
+    "noData": "No hay datos suficientes.",
+    "mtbfHint": "Tiempo medio entre fallas",
+    "mttrRestoreLabel": "MTTR Restauración",
+    "mttrRestoreHint": "De falla a completado",
+    "mttrRepairLabel": "MTTR Reparación",
+    "mttrRepairHint": "De inicio de trabajo a completado"
+  },
+  "charts": {
+    "title": "Costo Total de Propiedad (TCO)",
+    "scopeAsset": "Costos del activo",
+    "scopeTenant": "Costos del tenant",
+    "entryCount": "{{count}} registros",
+    "annualized": "Anualizado",
+    "ageDays": "{{count}} días de antigüedad",
+    "empty": "Sin costos registrados.",
+    "costTypes": {
+      "labor": "Mano de obra",
+      "parts": "Repuestos",
+      "downtime": "Inactividad",
+      "externalServices": "Servicios externos",
+      "penalty": "Penalizaciones",
+      "other": "Otros"
+    },
+    "statusLabels": {
+      "sufficientData": "Anualizado",
+      "projected": "Proyectado",
+      "insufficientData": "Datos insuficientes",
+      "notApplicable": "N/A"
+    }
+  },
+  "table": {
+    "title": "Confiabilidad por activo",
+    "description": "MTBF y MTTR de los activos recientes",
+    "headers": {
+      "asset": "Activo",
+      "correctiveOrders": "Correctivas",
+      "mttrRestore": "MTTR Restauración",
+      "mttrRepair": "MTTR Reparación"
+    },
+    "empty": "Sin activos para mostrar."
+  }
+}

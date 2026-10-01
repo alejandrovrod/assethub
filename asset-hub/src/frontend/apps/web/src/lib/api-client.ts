@@ -51,6 +51,8 @@ const extractTenantFromUrl = () => {
   return null;
 }
 
+import { useLanguageStore } from '../store/language.store'
+
 // Request Interceptor: Inyectar el token JWT y el Tenant
 apiClient.interceptors.request.use((config) => {
   const state = useAuthStore.getState()
@@ -58,6 +60,9 @@ apiClient.interceptors.request.use((config) => {
     if (state.token) {
       config.headers.Authorization = `Bearer ${state.token}`
     }
+
+    // Idioma activo: el backend localiza mensajes de error/validación según Accept-Language
+    config.headers['Accept-Language'] = useLanguageStore.getState().lang
 
     // Primero intentamos sacar el tenant de la URL (Subdominio)
     const urlTenant = extractTenantFromUrl();

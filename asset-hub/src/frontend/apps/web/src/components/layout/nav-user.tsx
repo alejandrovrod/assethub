@@ -27,11 +27,13 @@ import {
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import { useAuthStore } from '@/store/auth.store'
 import { getMediaUrl } from '@/lib/api-client'
+import { useTranslation } from 'react-i18next'
 
 export function NavUser() {
   const { isMobile } = useSidebar()
   const [open, setOpen] = useDialogState()
   const { userProfile, tenantName } = useAuthStore()
+  const { t } = useTranslation('common')
 
   const user = userProfile
     ? {
@@ -40,7 +42,7 @@ export function NavUser() {
         avatar: getMediaUrl(userProfile.avatarUrl),
       }
     : {
-        name: 'Usuario',
+        name: t('labels.user'),
         email: '',
         avatar: '',
       }
@@ -61,7 +63,7 @@ export function NavUser() {
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{user.name}</span>
-                  <span className='truncate text-xs'>{user.email || tenantName || 'Sin tenant'}</span>
+                  <span className='truncate text-xs'>{user.email || tenantName || t('profile.noTenant')}</span>
                 </div>
                 <ChevronsUpDown className='ms-auto size-4' />
               </SidebarMenuButton>
@@ -80,7 +82,7 @@ export function NavUser() {
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
                     <span className='truncate font-semibold'>{user.name}</span>
-                    <span className='truncate text-xs'>{user.email || tenantName || 'Sin tenant'}</span>
+                    <span className='truncate text-xs'>{user.email || tenantName || t('profile.noTenant')}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>
@@ -88,7 +90,7 @@ export function NavUser() {
               <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <Sparkles />
-                  Mejorar a Pro
+                  {t('profile.upgradePro')}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -96,19 +98,19 @@ export function NavUser() {
                 <DropdownMenuItem asChild>
                   <Link to='/settings/account'>
                     <BadgeCheck />
-                    Cuenta
+                    {t('profile.account')}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to='/settings'>
                     <CreditCard />
-                    Facturación
+                    {t('nav.billing')}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to='/settings/notifications'>
                     <Bell />
-                    Notificaciones
+                    {t('nav.notifications')}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
@@ -118,7 +120,7 @@ export function NavUser() {
                 onClick={() => setOpen(true)}
               >
                 <LogOut />
-                Cerrar sesión
+                {t('nav.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

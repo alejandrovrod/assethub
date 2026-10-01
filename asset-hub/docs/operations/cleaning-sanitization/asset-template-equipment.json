@@ -1,0 +1,129 @@
+{
+  "code": "TPL_CLEANING_EQUIPMENT",
+  "name": "Equipo Recibido para Reparación",
+  "description": "Plantilla para registrar equipos recibidos de clientes para diagnóstico, mantenimiento y servicio técnico.",
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"ticket_number\":{\"title\":\"N.º de orden / ticket\",\"type\":\"string\"},\"entry_date\":{\"title\":\"Fecha de ingreso\",\"type\":\"string\",\"format\":\"date\"},\"entry_time\":{\"title\":\"Hora de ingreso\",\"type\":\"string\"},\"entry_channel\":{\"title\":\"Canal de ingreso\",\"type\":\"string\",\"enum\":[\"Presencial\",\"Teléfono\",\"Correo electrónico\",\"WhatsApp\",\"Web\",\"Tienda física\",\"Mensajería\",\"Otro\"]},\"current_status\":{\"title\":\"Estado actual\",\"type\":\"string\",\"enum\":[\"Recibido\",\"En revisión\",\"Esperando repuesto\",\"En reparación\",\"Listo\",\"Entregado\",\"Cancelado\"]},\"entry_agent\":{\"title\":\"Responsable de ingreso\",\"type\":\"string\",\"format\":\"employee\"},\"initial_notes\":{\"title\":\"Observaciones iniciales\",\"type\":\"string\"},\"customer_name\":{\"title\":\"Nombre o razón social\",\"type\":\"string\"},\"customer_tax_id\":{\"title\":\"Documento de identidad / NIT / RUC / RFC\",\"type\":\"string\"},\"customer_phone\":{\"title\":\"Teléfono principal\",\"type\":\"string\"},\"customer_phone_alt\":{\"title\":\"Teléfono secundario\",\"type\":\"string\"},\"customer_email\":{\"title\":\"Correo electrónico\",\"type\":\"string\"},\"customer_address\":{\"title\":\"Dirección\",\"type\":\"string\"},\"customer_city\":{\"title\":\"Ciudad / zona\",\"type\":\"string\"},\"customer_type\":{\"title\":\"Tipo de cliente\",\"type\":\"string\",\"enum\":[\"Particular\",\"Corporativo\",\"Mayorista\",\"Distribuidor\",\"Garantía\",\"Frecuente\"]},\"preferred_contact\":{\"title\":\"Método de contacto preferido\",\"type\":\"string\",\"enum\":[\"WhatsApp\",\"Llamada telefónica\",\"Correo electrónico\",\"SMS\"]},\"device_type\":{\"title\":\"Tipo de equipo\",\"type\":\"string\",\"enum\":[\"Computadora / Laptop\",\"Celular / Smartphone\",\"Tablet\",\"Impresora\",\"Servidor\",\"Televisor\",\"Electrodoméstico\",\"Maquinaria\",\"Otro\"]},\"brand\":{\"title\":\"Marca\",\"type\":\"string\"},\"model\":{\"title\":\"Modelo\",\"type\":\"string\"},\"serial_number\":{\"title\":\"Número de serie\",\"type\":\"string\"},\"imei_unique_id\":{\"title\":\"IMEI / ID único\",\"type\":\"string\"},\"color\":{\"title\":\"Color\",\"type\":\"string\"},\"specs\":{\"title\":\"Capacidad / configuración\",\"type\":\"string\"},\"accessories\":{\"title\":\"Accesorios incluidos\",\"type\":\"string\"},\"physical_condition\":{\"title\":\"Estado físico al ingreso\",\"type\":\"string\"},\"photos\":{\"title\":\"Fotos del equipo\",\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"data-url\"}},\"access_credentials\":{\"title\":\"Contraseña / PIN / acceso\",\"type\":\"string\"},\"has_warranty\":{\"title\":\"Garantía vigente\",\"type\":\"string\",\"enum\":[\"Vigente\",\"Vencida\",\"En revisión\",\"No aplica\"]},\"purchase_date\":{\"title\":\"Fecha de compra\",\"type\":\"string\",\"format\":\"date\"},\"invoice_doc\":{\"title\":\"Factura o comprobante\",\"type\":\"string\",\"format\":\"data-url\"},\"reported_failure\":{\"title\":\"Falla reportada por el cliente\",\"type\":\"string\"},\"observed_symptoms\":{\"title\":\"Síntomas observados\",\"type\":\"string\"},\"probable_cause\":{\"title\":\"Causa probable\",\"type\":\"string\"},\"urgency_level\":{\"title\":\"Nivel de urgencia\",\"type\":\"string\",\"enum\":[\"Bajo\",\"Medio\",\"Alto\",\"Crítico\"]},\"data_loss_risk\":{\"title\":\"Riesgo de pérdida de información\",\"type\":\"boolean\"},\"backup_required\":{\"title\":\"Se requiere respaldo previo\",\"type\":\"boolean\"},\"format_authorized\":{\"title\":\"Cliente autoriza formateo / borrado\",\"type\":\"boolean\"},\"customer_notes\":{\"title\":\"Observaciones del cliente\",\"type\":\"string\"},\"assigned_technician\":{\"title\":\"Técnico asignado\",\"type\":\"string\",\"format\":\"employee\"},\"inspection_date\":{\"title\":\"Fecha de revisión\",\"type\":\"string\",\"format\":\"date\"},\"technical_diagnosis\":{\"title\":\"Diagnóstico técnico\",\"type\":\"string\"},\"required_parts\":{\"title\":\"Repuestos necesarios\",\"type\":\"string\"},\"estimated_repair_time\":{\"title\":\"Tiempo estimado de reparación\",\"type\":\"string\"},\"labor_cost_est\":{\"title\":\"Costo estimado de mano de obra\",\"type\":\"number\"},\"parts_cost_est\":{\"title\":\"Costo estimado de repuestos\",\"type\":\"number\"},\"total_cost_est\":{\"title\":\"Costo total estimado\",\"type\":\"number\"},\"requires_approval\":{\"title\":\"Requiere aprobación del cliente\",\"type\":\"boolean\"},\"diagnosis_status\":{\"title\":\"Estado del diagnóstico\",\"type\":\"string\",\"enum\":[\"Pendiente\",\"Completado\",\"Requiere más revisión\",\"Requiere validación especializada\"]},\"quote_sent\":{\"title\":\"Presupuesto enviado al cliente\",\"type\":\"boolean\"},\"quote_sent_date\":{\"title\":\"Fecha de envío del presupuesto\",\"type\":\"string\",\"format\":\"date\"},\"quote_approved\":{\"title\":\"Cliente aprueba reparación\",\"type\":\"string\",\"enum\":[\"Pendiente\",\"Aceptado\",\"Rechazado\",\"Aprobado parcialmente\"]},\"quote_approval_date\":{\"title\":\"Fecha de aprobación\",\"type\":\"string\",\"format\":\"date\"},\"authorized_amount\":{\"title\":\"Monto autorizado\",\"type\":\"number\"},\"payment_method\":{\"title\":\"Forma de pago\",\"type\":\"string\",\"enum\":[\"Efectivo\",\"Transferencia\",\"Tarjeta de débito/crédito\",\"Crédito\",\"Contra entrega\"]},\"deposit_paid\":{\"title\":\"Anticipo pagado\",\"type\":\"boolean\"},\"deposit_amount\":{\"title\":\"Monto del anticipo\",\"type\":\"number\"},\"balance_due\":{\"title\":\"Saldo pendiente\",\"type\":\"number\"},\"special_terms\":{\"title\":\"Condiciones especiales\",\"type\":\"string\"},\"repair_status\":{\"title\":\"Estado de reparación\",\"type\":\"string\",\"enum\":[\"Pendiente\",\"En proceso\",\"Pausado\",\"Terminado\",\"Fallido\"]},\"repair_start_date\":{\"title\":\"Fecha de inicio de reparación\",\"type\":\"string\",\"format\":\"date\"},\"repair_technician\":{\"title\":\"Técnico ejecutor\",\"type\":\"string\",\"format\":\"employee\"},\"work_performed\":{\"title\":\"Trabajo realizado\",\"type\":\"string\"},\"parts_used\":{\"title\":\"Repuestos utilizados\",\"type\":\"string\"},\"parts_codes\":{\"title\":\"Código o referencia de repuestos\",\"type\":\"string\"},\"tests_conducted\":{\"title\":\"Pruebas realizadas\",\"type\":\"string\"},\"test_results\":{\"title\":\"Resultado de pruebas\",\"type\":\"string\",\"enum\":[\"Correcto\",\"Parcial\",\"Falla persistente\",\"Requiere nueva intervención\"]},\"repair_end_date\":{\"title\":\"Fecha de finalización\",\"type\":\"string\",\"format\":\"date\"},\"final_repair_notes\":{\"title\":\"Observaciones finales\",\"type\":\"string\"},\"ready_for_delivery\":{\"title\":\"Equipo listo para entrega\",\"type\":\"boolean\"},\"delivery_date\":{\"title\":\"Fecha de entrega\",\"type\":\"string\",\"format\":\"date\"},\"delivery_time\":{\"title\":\"Hora de entrega\",\"type\":\"string\"},\"delivered_to\":{\"title\":\"Recibido por\",\"type\":\"string\"},\"recipient_id\":{\"title\":\"Documento de identidad de quien recibe\",\"type\":\"string\"},\"delivery_mode\":{\"title\":\"Condición de entrega\",\"type\":\"string\",\"enum\":[\"Presencial / En tienda\",\"Envío por paquetería\",\"Mensajería / Domicilio\"]},\"carrier_name\":{\"title\":\"Transporte / empresa de envíos\",\"type\":\"string\"},\"tracking_number\":{\"title\":\"Número de guía\",\"type\":\"string\"},\"customer_signature\":{\"title\":\"Firma de conformidad\",\"type\":\"string\",\"format\":\"data-url\"},\"delivery_notes\":{\"title\":\"Observaciones del cliente en la entrega\",\"type\":\"string\"},\"final_device_condition\":{\"title\":\"Estado final del equipo\",\"type\":\"string\",\"enum\":[\"Operativo\",\"Entregado con recomendaciones\",\"Pendiente de prueba\",\"Irreparable\"]}},\"required\":[\"ticket_number\",\"entry_date\",\"customer_name\",\"customer_phone\",\"device_type\",\"brand\",\"model\",\"serial_number\",\"reported_failure\"]}",
+  "maintenanceChecklist": "1. Inspección visual y registro fotográfico de daños previos.\n2. Comprobación de encendido y test de componentes clave.\n3. Diagnóstico de falla reportada y presupuestación.\n4. Desmontaje, reparación o reemplazo de componentes autorizados.\n5. Pruebas de funcionamiento, estrés y control de calidad.\n6. Limpieza externa del equipo y empaque para entrega.\n7. Firma de conformidad y entrega con comprobante.",
+  "lifecycleStates": {
+    "initialState": "Recibido",
+    "transitions": {
+      "Recibido": [
+        "En_Revision",
+        "Cancelado"
+      ],
+      "En_Revision": [
+        "Esperando_Aprobacion",
+        "En_Reparacion",
+        "Irreparable",
+        "Cancelado"
+      ],
+      "Esperando_Aprobacion": [
+        "Esperando_Repuesto",
+        "En_Reparacion",
+        "Cancelado"
+      ],
+      "Esperando_Repuesto": [
+        "En_Reparacion",
+        "Cancelado"
+      ],
+      "En_Reparacion": [
+        "En_Control_Calidad",
+        "Esperando_Repuesto",
+        "Irreparable"
+      ],
+      "En_Control_Calidad": [
+        "En_Reparacion",
+        "Listo_Para_Entrega"
+      ],
+      "Listo_Para_Entrega": [
+        "Entregado"
+      ],
+      "Entregado": [],
+      "Irreparable": [
+        "Entregado"
+      ],
+      "Cancelado": [
+        "Entregado"
+      ]
+    },
+    "states": {
+      "Recibido": {
+        "color": "#64748b",
+        "isTerminal": false,
+        "requiresFields": [
+          "ticket_number",
+          "customer_name",
+          "customer_phone",
+          "device_type",
+          "brand",
+          "model",
+          "reported_failure"
+        ]
+      },
+      "En_Revision": {
+        "color": "#3b82f6",
+        "isTerminal": false,
+        "requiresFields": [
+          "assigned_technician"
+        ]
+      },
+      "Esperando_Aprobacion": {
+        "color": "#eab308",
+        "isTerminal": false,
+        "requiresFields": [
+          "technical_diagnosis",
+          "total_cost_est"
+        ]
+      },
+      "Esperando_Repuesto": {
+        "color": "#f97316",
+        "isTerminal": false,
+        "requiresFields": [
+          "required_parts"
+        ]
+      },
+      "En_Reparacion": {
+        "color": "#8b5cf6",
+        "isTerminal": false,
+        "requiresFields": [
+          "repair_technician"
+        ]
+      },
+      "En_Control_Calidad": {
+        "color": "#06b6d4",
+        "isTerminal": false,
+        "requiresFields": [
+          "work_performed",
+          "test_results"
+        ]
+      },
+      "Listo_Para_Entrega": {
+        "color": "#10b981",
+        "isTerminal": false,
+        "requiresFields": [
+          "ready_for_delivery"
+        ]
+      },
+      "Entregado": {
+        "color": "#059669",
+        "isTerminal": true,
+        "requiresFields": [
+          "delivery_date",
+          "delivered_to"
+        ]
+      },
+      "Irreparable": {
+        "color": "#ef4444",
+        "isTerminal": false,
+        "requiresFields": [
+          "technical_diagnosis"
+        ]
+      },
+      "Cancelado": {
+        "color": "#dc2626",
+        "isTerminal": false,
+        "requiresFields": []
+      }
+    }
+  }
+}

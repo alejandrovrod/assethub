@@ -22,10 +22,13 @@ import { mediaService } from '@/services/media.service'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getMediaUrl } from '@/lib/api-client'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsTenant() {
   const { can } = usePermissions()
   const canWrite = can('tenant:write')
+  const { t } = useTranslation('settings')
+  const { t: tCommon } = useTranslation('common')
   const [activeTab, setActiveTab] = useState('branding')
   const [settings, setSettings] = useState<TenantSettings>({})
   const [loading, setLoading] = useState(false)
@@ -54,7 +57,7 @@ export default function SettingsTenant() {
       setMappings(mappingsData)
       setTemplates(templatesData.items)
     } catch (error) {
-      toast.error('No se pudieron cargar las configuraciones del tenant.')
+      toast.error(t('tenant.toast.loadError'))
     } finally {
       setLoading(false)
     }
@@ -64,9 +67,9 @@ export default function SettingsTenant() {
     setIsSaving(true)
     try {
       await tenantService.updateSettings(settings)
-      toast.success('La configuración de marca ha sido actualizada.')
+      toast.success(t('tenant.toast.brandSaved'))
     } catch (error) {
-      toast.error('No se pudo guardar la configuración.')
+      toast.error(t('tenant.toast.saveError'))
     } finally {
       setIsSaving(false)
     }
@@ -80,9 +83,9 @@ export default function SettingsTenant() {
     try {
       const result = await mediaService.uploadMedia(file)
       setSettings((prev) => ({ ...prev, logoUrl: result.url }))
-      toast.success('El logo se ha subido correctamente.')
+      toast.success(t('tenant.toast.logoUploaded'))
     } catch (error) {
-      toast.error('No se pudo subir el logo.')
+      toast.error(t('tenant.toast.logoUploadError'))
     } finally {
       setUploading(false)
     }
@@ -112,9 +115,9 @@ export default function SettingsTenant() {
           return [...prev, newMapping]
         })
       }
-      toast.success('Regla de notificación actualizada.')
+      toast.success(t('tenant.toast.mappingUpdated'))
     } catch (error) {
-      toast.error('No se pudo actualizar la regla.')
+      toast.error(t('tenant.toast.mappingUpdateError'))
     }
   }
 
@@ -124,37 +127,37 @@ export default function SettingsTenant() {
   }
 
   if (loading) {
-    return <div className="p-4">Cargando configuración...</div>
+    return <div className="p-4">{t('tenant.loading')}</div>
   }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Configuración del Tenant</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{t('tenant.title')}</h2>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="branding">Marca (Branding)</TabsTrigger>
-          <TabsTrigger value="notifications">Reglas de Notificación</TabsTrigger>
+          <TabsTrigger value="branding">{t('tenant.tabs.branding')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('tenant.tabs.notifications')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="branding" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Personalización de Marca</CardTitle>
+              <CardTitle>{t('tenant.branding.title')}</CardTitle>
               <CardDescription>
-                Configura el logotipo y el correo de soporte que se mostrarán en tus plantillas de correo.
+                {t('tenant.branding.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="logo">Logo de la Empresa</Label>
+                <Label htmlFor="logo">{t('tenant.branding.logoLabel')}</Label>
                 <div className="flex items-center gap-4">
                   {settings.logoUrl && (
                     <img 
                       src={getMediaUrl(settings.logoUrl)} 
-                      alt="Logo" 
+                      alt={t('tenant.branding.logoAlt')} 
                       className="h-16 w-16 object-contain rounded border bg-white" 
                     />
                   )}
@@ -166,19 +169,19 @@ export default function SettingsTenant() {
                     disabled={uploading || !canWrite}
                     className="max-w-xs"
                   />
-                  {uploading && <span className="text-sm text-muted-foreground">Subiendo...</span>}
+                  {uploading && <span className="text-sm text-muted-foreground">{t('tenant.branding.uploading')}</span>}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Formatos soportados: PNG, JPG, GIF. Máximo 5MB.
+                  {t('tenant.branding.formats')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="supportEmail">Correo Electrónico de Soporte</Label>
+                <Label htmlFor="supportEmail">{t('tenant.branding.supportEmailLabel')}</Label>
                 <Input 
                   id="supportEmail" 
                   type="email"
-                  placeholder="soporte@tuempresa.com"
+                  placeholder={t('tenant.branding.supportEmailPlaceholder')}
                   value={settings.supportEmail || ''}
                   onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
                   disabled={!canWrite}
@@ -188,7 +191,7 @@ export default function SettingsTenant() {
 
               {canWrite && (
                 <Button onClick={handleSaveSettings} disabled={isSaving}>
-                  {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  {isSaving ? t('tenant.branding.saving') : tCommon('actions.saveChanges')}
                 </Button>
               )}
             </CardContent>
@@ -198,21 +201,21 @@ export default function SettingsTenant() {
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Reglas de Notificación</CardTitle>
+              <CardTitle>{t('tenant.notifications.title')}</CardTitle>
               <CardDescription>
-                Asigna plantillas de comunicación específicas a los eventos del sistema.
+                {t('tenant.notifications.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Eventos de Incidencias</h4>
+                <h4 className="text-sm font-medium">{t('tenant.notifications.sections.incidents')}</h4>
                 
                 <div className="grid grid-cols-[1fr_300px] items-center gap-4 border p-4 rounded-md">
                   <div>
-                    <Label>Incidencia Reportada</Label>
+                    <Label>{t('tenant.notifications.events.incidentReported.label')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Se dispara cuando un usuario reporta una nueva incidencia.
+                      {t('tenant.notifications.events.incidentReported.description')}
                     </p>
                   </div>
                   <Select 
@@ -221,10 +224,10 @@ export default function SettingsTenant() {
                     disabled={!canWrite}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar plantilla..." />
+                      <SelectValue placeholder={t('tenant.notifications.selectTemplate')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">-- Sistema por defecto --</SelectItem>
+                      <SelectItem value="none">{t('tenant.notifications.defaultSystemOption')}</SelectItem>
                       {templates.filter(t => t.entityScope?.toLowerCase() === 'incident').map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} ({t.code})
@@ -236,9 +239,9 @@ export default function SettingsTenant() {
 
                 <div className="grid grid-cols-[1fr_300px] items-center gap-4 border p-4 rounded-md">
                   <div>
-                    <Label>Estado de Incidencia Actualizado</Label>
+                    <Label>{t('tenant.notifications.events.incidentStatusChanged.label')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Se dispara cuando una incidencia cambia de estado (ej: a Resuelto).
+                      {t('tenant.notifications.events.incidentStatusChanged.description')}
                     </p>
                   </div>
                   <Select 
@@ -247,10 +250,10 @@ export default function SettingsTenant() {
                     disabled={!canWrite}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar plantilla..." />
+                      <SelectValue placeholder={t('tenant.notifications.selectTemplate')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">-- Sin notificación --</SelectItem>
+                      <SelectItem value="none">{t('tenant.notifications.noNotificationOption')}</SelectItem>
                       {templates.filter(t => t.entityScope?.toLowerCase() === 'incident').map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} ({t.code})
@@ -262,12 +265,12 @@ export default function SettingsTenant() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Eventos de Tareas de Trabajo</h4>
+                <h4 className="text-sm font-medium">{t('tenant.notifications.sections.workTasks')}</h4>
                 <div className="grid grid-cols-[1fr_300px] items-center gap-4 border p-4 rounded-md">
                   <div>
-                    <Label>Nueva Tarea Asignada</Label>
+                    <Label>{t('tenant.notifications.events.taskCreated.label')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Se dispara cuando se crea y asigna una nueva tarea de trabajo.
+                      {t('tenant.notifications.events.taskCreated.description')}
                     </p>
                   </div>
                   <Select 
@@ -276,10 +279,10 @@ export default function SettingsTenant() {
                     disabled={!canWrite}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar plantilla..." />
+                      <SelectValue placeholder={t('tenant.notifications.selectTemplate')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">-- Sistema por defecto --</SelectItem>
+                      <SelectItem value="none">{t('tenant.notifications.defaultSystemOption')}</SelectItem>
                       {templates.filter(t => t.entityScope?.toLowerCase() === 'worktask').map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} ({t.code})
@@ -291,12 +294,12 @@ export default function SettingsTenant() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Eventos de Mantenimiento</h4>
+                <h4 className="text-sm font-medium">{t('tenant.notifications.sections.maintenance')}</h4>
                 <div className="grid grid-cols-[1fr_300px] items-center gap-4 border p-4 rounded-md">
                   <div>
-                    <Label>Nueva Orden Generada</Label>
+                    <Label>{t('tenant.notifications.events.maintenanceOrderCreated.label')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Se dispara cuando se genera una nueva orden de mantenimiento.
+                      {t('tenant.notifications.events.maintenanceOrderCreated.description')}
                     </p>
                   </div>
                   <Select 
@@ -305,10 +308,10 @@ export default function SettingsTenant() {
                     disabled={!canWrite}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar plantilla..." />
+                      <SelectValue placeholder={t('tenant.notifications.selectTemplate')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">-- Sistema por defecto --</SelectItem>
+                      <SelectItem value="none">{t('tenant.notifications.defaultSystemOption')}</SelectItem>
                       {templates.filter(t => t.entityScope?.toLowerCase() === 'maintenanceorder').map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} ({t.code})
@@ -320,12 +323,12 @@ export default function SettingsTenant() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Eventos de Activos</h4>
+                <h4 className="text-sm font-medium">{t('tenant.notifications.sections.assets')}</h4>
                 <div className="grid grid-cols-[1fr_300px] items-center gap-4 border p-4 rounded-md">
                   <div>
-                    <Label>Cambio de Estado (con notificación)</Label>
+                    <Label>{t('tenant.notifications.events.assetStateChanged.label')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Se dispara cuando un activo cambia de estado y tiene configurada una acción de notificación.
+                      {t('tenant.notifications.events.assetStateChanged.description')}
                     </p>
                   </div>
                   <Select 
@@ -334,10 +337,10 @@ export default function SettingsTenant() {
                     disabled={!canWrite}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar plantilla..." />
+                      <SelectValue placeholder={t('tenant.notifications.selectTemplate')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">-- Sistema por defecto --</SelectItem>
+                      <SelectItem value="none">{t('tenant.notifications.defaultSystemOption')}</SelectItem>
                       {templates.filter(t => t.entityScope?.toLowerCase() === 'asset').map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} ({t.code})

@@ -35,25 +35,15 @@ import type {
 } from '@/services/communication-template.service'
 import { handleServerError } from '@/lib/handle-server-error'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 import { CommunicationTemplateFormSheet } from './components/communication-template-form-sheet'
 import { VersionHistorySheet } from './components/version-history-sheet'
 import { RenderPreviewDialog } from './components/render-preview-dialog'
 
-const SCOPE_LABELS: Record<CommunicationEntityScope, string> = {
-  incident: 'Incidencia',
-  maintenanceOrder: 'Orden de Mantenimiento',
-  workTask: 'Tarea de Trabajo',
-  asset: 'Activo',
-}
-
-const TYPE_LABELS: Record<CommunicationTemplateType, string> = {
-  email: 'Email',
-  document: 'Documento',
-}
-
 export default function CommunicationTemplatesPage() {
   const { can } = usePermissions()
   const canManage = can('communication-templates:manage')
+  const { t } = useTranslation(['communication', 'common'])
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -79,7 +69,7 @@ export default function CommunicationTemplatesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => communicationTemplateService.deleteTemplate(id),
     onSuccess: () => {
-      toast.success('Plantilla eliminada exitosamente')
+      toast.success(t('toast.deleted'))
       queryClient.invalidateQueries({ queryKey: ['communication-templates'] })
     },
     onError: (error) => {
@@ -94,19 +84,31 @@ export default function CommunicationTemplatesPage() {
 
   const handleDelete = (template: CommunicationTemplateSummary) => {
     if (
-      confirm(`¿Eliminar la plantilla "${template.name}" y todas sus versiones?`)
+      confirm(t('dialog.deleteConfirm', { name: template.name }))
     ) {
       deleteMutation.mutate(template.id)
     }
+  }
+
+  const scopeLabels: Record<CommunicationEntityScope, string> = {
+    incident: t('list.scopeOptions.incident'),
+    maintenanceOrder: t('list.scopeOptions.maintenanceOrder'),
+    workTask: t('list.scopeOptions.workTask'),
+    asset: t('list.scopeOptions.asset'),
+  }
+
+  const typeLabels: Record<CommunicationTemplateType, string> = {
+    email: t('list.typeOptions.email'),
+    document: t('list.typeOptions.document'),
   }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Plantillas de Comunicación</h1>
+          <h1 className="text-2xl font-semibold">{t('common:breadcrumbs.communication-templates')}</h1>
           <p className="text-sm text-muted-foreground">
-            Plantillas de email y documentos multi-idioma para notificaciones del sistema
+            {t('list.subtitle')}
           </p>
         </div>
         {canManage && (
@@ -117,22 +119,21 @@ export default function CommunicationTemplatesPage() {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Nueva Plantilla
+            {t('list.newTemplate')}
           </Button>
         )}
       </div>
 
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="border-b pb-4">
-          <CardTitle>Plantillas</CardTitle>
+          <CardTitle>{t('list.cardTitle')}</CardTitle>
           <CardDescription>
-            Definí el contenido de los correos que envía el sistema por evento
-            (orden creada, tarea asignada, cambio de estado de activo).
+            {t('list.cardDescription')}
           </CardDescription>
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <input
               className="h-9 w-64 rounded-md border border-input bg-transparent px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Buscar por código o nombre..."
+              placeholder={t('list.searchPlaceholder')}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -147,14 +148,14 @@ export default function CommunicationTemplatesPage() {
               }}
             >
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Ámbito" />
+                <SelectValue placeholder={t('list.scope')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los ámbitos</SelectItem>
-                <SelectItem value="incident">Incidencias</SelectItem>
-                <SelectItem value="maintenanceOrder">Órdenes</SelectItem>
-                <SelectItem value="workTask">Tareas</SelectItem>
-                <SelectItem value="asset">Activos</SelectItem>
+                <SelectItem value="all">{t('list.scopeAll')}</SelectItem>
+                <SelectItem value="incident">{t('list.scopeOptions.incident')}</SelectItem>
+                <SelectItem value="maintenanceOrder">{t('list.scopeOptions.maintenanceOrder')}</SelectItem>
+                <SelectItem value="workTask">{t('list.scopeOptions.workTask')}</SelectItem>
+                <SelectItem value="asset">{t('list.scopeOptions.asset')}</SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -165,12 +166,12 @@ export default function CommunicationTemplatesPage() {
               }}
             >
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Tipo" />
+                <SelectValue placeholder={t('common:labels.type')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="document">Documento</SelectItem>
+                <SelectItem value="all">{t('list.typeAll')}</SelectItem>
+                <SelectItem value="email">{t('list.typeOptions.email')}</SelectItem>
+                <SelectItem value="document">{t('list.typeOptions.document')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -184,42 +185,42 @@ export default function CommunicationTemplatesPage() {
           ) : pageItems.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
               <FileText className="h-8 w-8" />
-              <p>No hay plantillas configuradas</p>
+              <p>{t('empty.templates')}</p>
               <p className="text-xs">
-                Sin plantilla, el sistema usa el texto por defecto hardcodeado
+                {t('empty.templatesHint')}
               </p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Ámbito</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Idiomas</TableHead>
-                  <TableHead>Versión activa</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t('common:labels.code')}</TableHead>
+                  <TableHead>{t('common:labels.name')}</TableHead>
+                  <TableHead>{t('list.scope')}</TableHead>
+                  <TableHead>{t('common:labels.type')}</TableHead>
+                  <TableHead>{t('list.headers.languages')}</TableHead>
+                  <TableHead>{t('list.headers.activeVersion')}</TableHead>
+                  <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pageItems.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-mono text-xs">{t.code}</TableCell>
-                    <TableCell>{t.name}</TableCell>
+                {pageItems.map((tpl) => (
+                  <TableRow key={tpl.id}>
+                    <TableCell className="font-mono text-xs">{tpl.code}</TableCell>
+                    <TableCell>{tpl.name}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {SCOPE_LABELS[t.entityScope] ?? t.entityScope}
+                        {scopeLabels[tpl.entityScope] ?? tpl.entityScope}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {TYPE_LABELS[t.templateType] ?? t.templateType}
+                        {typeLabels[tpl.templateType] ?? tpl.templateType}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {t.locales.map((l) => (
+                        {tpl.locales.map((l) => (
                           <Badge key={l} variant="outline" className="uppercase">
                             {l}
                           </Badge>
@@ -227,8 +228,8 @@ export default function CommunicationTemplatesPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {t.activeVersionNumber
-                        ? `v${t.activeVersionNumber} (${t.versionCount} en total)`
+                      {tpl.activeVersionNumber
+                        ? t('list.versionTotal', { version: tpl.activeVersionNumber, total: tpl.versionCount })
                         : '—'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -236,16 +237,16 @@ export default function CommunicationTemplatesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Previsualizar"
-                          onClick={() => setPreviewTemplateId(t.id)}
+                          title={t('list.actions.preview')}
+                          onClick={() => setPreviewTemplateId(tpl.id)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Versiones"
-                          onClick={() => setHistoryTemplateId(t.id)}
+                          title={t('list.actions.versions')}
+                          onClick={() => setHistoryTemplateId(tpl.id)}
                         >
                           <History className="h-4 w-4" />
                         </Button>
@@ -254,9 +255,9 @@ export default function CommunicationTemplatesPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              title="Nueva versión"
+                              title={t('list.actions.newVersion')}
                               onClick={() => {
-                                setEditingTemplateId(t.id)
+                                setEditingTemplateId(tpl.id)
                                 setIsFormOpen(true)
                               }}
                             >
@@ -265,8 +266,8 @@ export default function CommunicationTemplatesPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              title="Eliminar"
-                              onClick={() => handleDelete(t)}
+                              title={t('common:actions.delete')}
+                              onClick={() => handleDelete(tpl)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -283,7 +284,7 @@ export default function CommunicationTemplatesPage() {
 
         <div className="flex items-center justify-between border-t px-4 py-3 shrink-0">
           <span className="text-sm text-muted-foreground">
-            Total: {totalCount}
+            {t('list.total', { total: totalCount })}
           </span>
           <div className="flex items-center gap-2">
             <Select
@@ -305,7 +306,7 @@ export default function CommunicationTemplatesPage() {
               </SelectContent>
             </Select>
             <span className="text-sm text-muted-foreground">
-              Página {page} de {totalPages}
+              {t('common:pagination.page', { page })} {t('common:pagination.of', { total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -313,7 +314,7 @@ export default function CommunicationTemplatesPage() {
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
             >
-              Anterior
+              {t('common:pagination.previous')}
             </Button>
             <Button
               variant="outline"
@@ -321,7 +322,7 @@ export default function CommunicationTemplatesPage() {
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Siguiente
+              {t('common:pagination.next')}
             </Button>
           </div>
         </div>

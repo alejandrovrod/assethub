@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { assetService, Asset } from '@/services/asset.service'
 import { AssetTemplate } from '@/services/asset-template.service'
 import Form from '@rjsf/core'
+import { rjsfTemplates } from '@/components/rjsf/templates'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { handleServerError } from '@/lib/handle-server-error'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
@@ -40,10 +41,12 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/i18n'
 
 const formSchema = z.object({
-  code: z.string().min(1, 'El código es requerido'),
-  name: z.string().min(1, 'El nombre es requerido'),
+  code: z.string().min(1, { error: () => i18n.t('assets:validation.codeRequired') }),
+  name: z.string().min(1, { error: () => i18n.t('assets:validation.nameRequired') }),
   parentId: z.string().nullable().optional(),
 })
 
@@ -57,6 +60,7 @@ interface AssetFormSheetProps {
 }
 
 export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFormSheetProps) {
+  const { t } = useTranslation(['assets', 'common'])
   const queryClient = useQueryClient()
   const [propertiesJson, setPropertiesJson] = useState<any>({})
   
@@ -101,7 +105,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
     mutationFn: assetService.createAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] })
-      toast.success('El activo se ha creado exitosamente.')
+      toast.success(t('toast.assetCreated'))
       onOpenChange(false)
     },
     onError: (error: unknown) => {
@@ -113,7 +117,7 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
     mutationFn: ({ id, data }: { id: string, data: any }) => assetService.updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] })
-      toast.success('El activo se ha actualizado exitosamente.')
+      toast.success(t('toast.assetUpdated'))
       onOpenChange(false)
     },
     onError: (error: unknown) => {
@@ -151,19 +155,19 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
             onSubmit={form.handleSubmit(onSubmit)}
             header={
               <SheetHeader className="p-6 pb-4">
-                <SheetTitle>{asset ? 'Editar' : 'Nuevo'} Activo: {template.name}</SheetTitle>
+                <SheetTitle>{asset ? t('form.editAssetTitle', { name: template.name }) : t('form.newAssetTitle', { name: template.name })}</SheetTitle>
                 <SheetDescription>
-                  Complete los datos generales y los atributos específicos de {template.name}.
+                  {t('form.assetDescription', { name: template.name })}
                 </SheetDescription>
               </SheetHeader>
             }
             footer={
               <>
                 <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar Activo'}
+                  {createMutation.isPending || updateMutation.isPending ? t('form.saving') : t('form.saveAsset')}
                 </Button>
               </>
             }
@@ -176,9 +180,9 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                   name="code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Código</FormLabel>
+                      <FormLabel>{t('fields.code')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: V-001" disabled={!!asset} {...field} />
+                        <Input placeholder={t('form.assetCodePlaceholder')} disabled={!!asset} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -190,9 +194,9 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre</FormLabel>
+                      <FormLabel>{t('fields.name')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Vehículo Utilitario" {...field} />
+                        <Input placeholder={t('form.assetNamePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -205,15 +209,15 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                     name="parentId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Activo Padre (Opcional)</FormLabel>
+                        <FormLabel>{t('form.parentAssetOptional')}</FormLabel>
                         <Select onValueChange={(val) => field.onChange(val === 'none' ? null : val)} value={field.value || 'none'}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar padre..." />
+                              <SelectValue placeholder={t('form.selectParentPlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">-- Ninguno --</SelectItem>
+                            <SelectItem value="none">{t('form.noParentOption')}</SelectItem>
                             {allAssets?.map(a => (
                               <SelectItem key={a.id} value={a.id}>{a.name} ({a.code})</SelectItem>
                             ))}
@@ -229,15 +233,16 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
               {/* RJSF rendered form */}
               {Object.keys(schema).length > 0 && (
                 <div className="mt-8 border-t pt-4">
-                  <h4 className="text-sm font-medium mb-4">Atributos Dinámicos</h4>
-                  <div className="rjsf-tailwind rjsf-single-column">
+                  <h4 className="text-sm font-medium mb-4">{t('form.dynamicAttributes')}</h4>
+                  <div className="rjsf-tailwind">
                   {isResolving ? (
-                    <div className="text-center p-4 text-muted-foreground text-sm">Cargando catálogos...</div>
+                    <div className="text-center p-4 text-muted-foreground text-sm">{t('form.loadingCatalogs')}</div>
                   ) : template?.schemaJson && (
                     <Form
                     schema={schema || {}}
                     uiSchema={uiSchema || {}}
                     validator={validator}
+                    templates={rjsfTemplates}
                     formData={propertiesJson}
                     onChange={(e) => setPropertiesJson(e.formData)}
                     widgets={{ 

@@ -17,8 +17,10 @@ import {
 import { AssetTemplateFormSheet } from './components/asset-template-form-sheet'
 import { SystemTemplateLibraryModal } from './components/system-template-library-modal'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 export default function AssetsTemplates() {
+  const { t } = useTranslation('assets')
   const { can } = usePermissions()
   const canCreate = can('asset-templates:create')
   const canUpdate = can('asset-templates:update')
@@ -50,18 +52,18 @@ export default function AssetsTemplates() {
     mutationFn: assetTemplateService.deleteTemplate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-templates'] })
-      toast.success('Plantilla eliminada')
+      toast.success(t('toast.templateDeleted'))
     },
-    onError: () => toast.error('Error al eliminar la plantilla')
+    onError: () => toast.error(t('toast.templateDeleteError'))
   })
 
   const cloneMutation = useMutation({
     mutationFn: assetTemplateService.cloneTemplate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asset-templates'] })
-      toast.success('Plantilla clonada exitosamente')
+      toast.success(t('toast.templateCloned'))
     },
-    onError: () => toast.error('Error al clonar la plantilla')
+    onError: () => toast.error(t('toast.templateCloneError'))
   })
 
   const handleCreate = () => {
@@ -75,9 +77,9 @@ export default function AssetsTemplates() {
   }
 
   const handleClone = (template: any) => {
-    const newCode = window.prompt('Ingresá el nuevo código para la plantilla clonada:', `${template.code}_COPY`)
+    const newCode = window.prompt(t('dialog.promptNewCode'), `${template.code}_COPY`)
     if (!newCode) return
-    const newName = window.prompt('Ingresá el nuevo nombre para la plantilla clonada:', `${template.name} (Copia)`)
+    const newName = window.prompt(t('dialog.promptNewName'), `${template.name} (Copia)`)
     if (!newName) return
 
     cloneMutation.mutate({ sourceTemplateId: template.id, newCode, newName })
@@ -88,15 +90,15 @@ export default function AssetsTemplates() {
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
           <div>
-            <CardTitle>Plantillas de Activos</CardTitle>
+            <CardTitle>{t('templates.pageTitle')}</CardTitle>
             <CardDescription className="mt-1.5">
-              Gestioná las plantillas (esquemas y ciclo de vida) para los distintos tipos de activos.
+              {t('templates.pageDescription')}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <SystemTemplateLibraryModal />
             {canCreate && (
-              <Button size="icon" onClick={handleCreate} title="Crear plantilla desde cero">
+              <Button size="icon" onClick={handleCreate} title={t('templates.createFromScratch')}>
                 <Plus className="h-4 w-4" />
               </Button>
             )}
@@ -110,19 +112,19 @@ export default function AssetsTemplates() {
               </div>
             ) : templates?.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center">
-                <p className="text-muted-foreground mb-4">No hay plantillas registradas.</p>
+                <p className="text-muted-foreground mb-4">{t('templates.emptyList')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table className="min-w-[800px]">
                   <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[120px]">Código</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead className="w-[100px]">Versión</TableHead>
-                    <TableHead className="w-[100px]">Estado</TableHead>
-                    <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                    <TableHead className="w-[120px]">{t('fields.code')}</TableHead>
+                    <TableHead>{t('fields.name')}</TableHead>
+                    <TableHead>{t('table.headers.description')}</TableHead>
+                    <TableHead className="w-[100px]">{t('table.headers.version')}</TableHead>
+                    <TableHead className="w-[100px]">{t('fields.status')}</TableHead>
+                    <TableHead className="w-[100px] text-right">{t('table.headers.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,9 +138,9 @@ export default function AssetsTemplates() {
                       <TableCell>v{template.version}</TableCell>
                       <TableCell>
                         {template.isActive ? (
-                          <Badge variant="default" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">Activo</Badge>
+                          <Badge variant="default" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">{t('status.active')}</Badge>
                         ) : (
-                          <Badge variant="secondary">Inactivo</Badge>
+                          <Badge variant="secondary">{t('status.inactive')}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -157,7 +159,7 @@ export default function AssetsTemplates() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            title="Clonar plantilla"
+                            title={t('templates.cloneTitle')}
                             onClick={() => handleClone(template)}
                           >
                             <Copy className="h-4 w-4" />
@@ -169,7 +171,7 @@ export default function AssetsTemplates() {
                             size="icon"
                             className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             onClick={() => {
-                              if (confirm('¿Estás seguro de eliminar esta plantilla?')) {
+                              if (confirm(t('dialog.deleteTemplateConfirm'))) {
                                 deleteMutation.mutate(template.id)
                               }
                             }}
@@ -190,17 +192,17 @@ export default function AssetsTemplates() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border px-4 py-3 shrink-0">
               <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                 <span className="text-sm text-muted-foreground">
-                  Total: {totalCount} plantillas
+                  {t('templates.totalTemplates', { count: totalCount })}
                 </span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1) }}>
                   <SelectTrigger className="w-[100px] h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10 / pág</SelectItem>
-                    <SelectItem value="20">20 / pág</SelectItem>
-                    <SelectItem value="50">50 / pág</SelectItem>
-                    <SelectItem value="100">100 / pág</SelectItem>
+                    <SelectItem value="10">{t('pagination.perPage', { size: 10 })}</SelectItem>
+                    <SelectItem value="20">{t('pagination.perPage', { size: 20 })}</SelectItem>
+                    <SelectItem value="50">{t('pagination.perPage', { size: 50 })}</SelectItem>
+                    <SelectItem value="100">{t('pagination.perPage', { size: 100 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -211,10 +213,10 @@ export default function AssetsTemplates() {
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
-                  Anterior
+                  {t('pagination.previous')}
                 </Button>
                 <div className="flex items-center text-sm px-2">
-                  Página {currentPage} de {totalPages}
+                  {t('pagination.pageOf', { current: currentPage, total: totalPages })}
                 </div>
                 <Button
                   variant="outline"
@@ -222,7 +224,7 @@ export default function AssetsTemplates() {
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
                 >
-                  Siguiente
+                  {t('pagination.next')}
                 </Button>
               </div>
             </div>

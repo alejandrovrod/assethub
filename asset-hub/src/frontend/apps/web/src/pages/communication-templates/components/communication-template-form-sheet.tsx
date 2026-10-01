@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import type { TFunction } from 'i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Plus, Send, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -42,41 +43,37 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { communicationTemplateService } from '@/services/communication-template.service'
 import type { CommunicationEntityScope } from '@/services/communication-template.service'
 import { handleServerError } from '@/lib/handle-server-error'
+import { useTranslation } from 'react-i18next'
 
 const formSheetContentClass = 'flex flex-col p-0 h-full gap-0 overflow-hidden'
 
-const translationSchema = z.object({
-  locale: z.string().min(2, 'Idioma obligatorio (ej. es, en)'),
-  subject: z.string().optional(),
-  content: z.string().optional(),
-  designJson: z.string().optional(),
-})
+const formSchema = (t: TFunction<'communication'>) => {
+  const translationSchema = z.object({
+    locale: z.string().min(2, t('form.validation.localeRequired')),
+    subject: z.string().optional(),
+    content: z.string().optional(),
+    designJson: z.string().optional(),
+  })
 
-const formSchema = z.object({
-  code: z
-    .string()
-    .min(1, 'El código es obligatorio')
-    .regex(/^[A-Z0-9-]+$/, 'Solo mayúsculas, números y guiones'),
-  name: z.string().min(1, 'El nombre es obligatorio'),
-  entityScope: z.enum(['incident', 'maintenanceOrder', 'workTask', 'asset']),
-  templateType: z.enum(['email', 'document']),
-  translations: z.array(translationSchema).min(1, 'Agregá al menos un idioma'),
-})
+  return z.object({
+    code: z
+      .string()
+      .min(1, t('form.validation.codeRequired'))
+      .regex(/^[A-Z0-9-]+$/, t('form.validation.codeFormat')),
+    name: z.string().min(1, t('form.validation.nameRequired')),
+    entityScope: z.enum(['incident', 'maintenanceOrder', 'workTask', 'asset']),
+    templateType: z.enum(['email', 'document']),
+    translations: z.array(translationSchema).min(1, t('form.validation.minLocale')),
+  })
+}
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof formSchema>>
 
 const VARIABLE_HINTS: Record<CommunicationEntityScope, string[]> = {
   incident: ['incident.title', 'incident.priority', 'incident.state', 'asset.name', 'recipient.name'],
   maintenanceOrder: ['order.id', 'order.title', 'order.kind', 'order.state', 'asset.name', 'asset.code', 'recipient.name'],
   workTask: ['task.id', 'task.title', 'task.state', 'task.type', 'task.priority', 'asset.name', 'recipient.name'],
   asset: ['asset.name', 'asset.code', 'asset.state', 'recipient.name'],
-}
-
-const SCOPE_LABELS: Record<CommunicationEntityScope, string> = {
-  incident: 'Incidencia',
-  maintenanceOrder: 'Orden de Mantenimiento',
-  workTask: 'Tarea de Trabajo',
-  asset: 'Activo',
 }
 
 interface TranslationFormSheetProps {
@@ -91,6 +88,7 @@ export function CommunicationTemplateFormSheet({
   templateId,
 }: TranslationFormSheetProps) {
   const queryClient = useQueryClient()
+  const { t } = useTranslation(['communication', 'common'])
   const [activeLocaleTab, setActiveLocaleTab] = useState('es')
   const [createNewVersion, setCreateNewVersion] = useState(false)
   const [testEmailOpen, setTestEmailOpen] = useState(false)
@@ -105,7 +103,7 @@ export function CommunicationTemplateFormSheet({
   })
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema(t)),
     defaultValues: {
       code: '',
       name: '',
@@ -125,11 +123,11 @@ export function CommunicationTemplateFormSheet({
         entityScope: detail.entityScope,
         templateType: detail.templateType,
         translations:
-          active?.translations.map((t) => ({
-            locale: t.locale,
-            subject: t.subject ?? '',
-            content: t.content,
-            designJson: t.designJson ?? '',
+          active?.translations.map((tr) => ({
+            locale: tr.locale,
+            subject: tr.subject ?? '',
+            content: tr.content,
+            designJson: tr.designJson ?? '',
           })) ?? [{ locale: 'es', subject: '', content: '', designJson: '' }],
       })
       if (active?.translations[0]) {
@@ -153,11 +151,18 @@ export function CommunicationTemplateFormSheet({
   const templateType = formValues.templateType
   const entityScope = formValues.entityScope
 
+  const scopeLabels: Record<CommunicationEntityScope, string> = {
+    incident: t('form.scopeOptions.incident'),
+    maintenanceOrder: t('form.scopeOptions.maintenanceOrder'),
+    workTask: t('form.scopeOptions.workTask'),
+    asset: t('form.scopeOptions.asset'),
+  }
+
 
   const createMutation = useMutation({
     mutationFn: communicationTemplateService.createTemplate,
     onSuccess: () => {
-      toast.success('Plantilla creada exitosamente')
+      toast.success(t('toast.created'))
       queryClient.invalidateQueries({ queryKey: ['communication-templates'] })
       onOpenChange(false)
     },
@@ -167,15 +172,15 @@ export function CommunicationTemplateFormSheet({
   const addVersionMutation = useMutation({
     mutationFn: (values: FormValues) =>
       communicationTemplateService.addVersion(templateId!, {
-        translations: values.translations.map((t) => ({
-          locale: t.locale,
-          subject: values.templateType === 'email' ? t.subject || null : null,
-          content: t.content ?? '',
-          designJson: templateType === 'email' ? t.designJson : undefined,
+        translations: values.translations.map((tr) => ({
+          locale: tr.locale,
+          subject: values.templateType === 'email' ? tr.subject || null : null,
+          content: tr.content ?? '',
+          designJson: templateType === 'email' ? tr.designJson : undefined,
         })),
       }),
     onSuccess: () => {
-      toast.success('Nueva versión creada exitosamente')
+      toast.success(t('toast.versionCreated'))
       queryClient.invalidateQueries({ queryKey: ['communication-templates'] })
       queryClient.invalidateQueries({ queryKey: ['communication-template'] })
       onOpenChange(false)
@@ -187,15 +192,15 @@ export function CommunicationTemplateFormSheet({
   const updateVersionMutation = useMutation({
     mutationFn: (values: FormValues) =>
       communicationTemplateService.updateVersion(templateId!, detail!.activeVersionId!, {
-        translations: values.translations.map((t) => ({
-          locale: t.locale,
-          subject: values.templateType === 'email' ? t.subject || null : null,
-          content: t.content ?? '',
-          designJson: templateType === 'email' ? t.designJson : undefined,
+        translations: values.translations.map((tr) => ({
+          locale: tr.locale,
+          subject: values.templateType === 'email' ? tr.subject || null : null,
+          content: tr.content ?? '',
+          designJson: templateType === 'email' ? tr.designJson : undefined,
         })),
       }),
     onSuccess: () => {
-      toast.success('Versión actualizada exitosamente')
+      toast.success(t('toast.versionUpdated'))
       queryClient.invalidateQueries({ queryKey: ['communication-templates'] })
       queryClient.invalidateQueries({ queryKey: ['communication-template'] })
       onOpenChange(false)
@@ -212,17 +217,17 @@ export function CommunicationTemplateFormSheet({
         // prueba refleje exactamente lo que el usuario está viendo; si el
         // editor está vacío, el backend usa la versión activa guardada
         translations: (form.getValues('translations') ?? [])
-          .filter((t) => (t.content ?? '').trim().length > 0)
-          .map((t) => ({
-            locale: t.locale,
-            subject: templateType === 'email' ? t.subject || null : null,
-            content: t.content ?? '',
+          .filter((tr) => (tr.content ?? '').trim().length > 0)
+          .map((tr) => ({
+            locale: tr.locale,
+            subject: templateType === 'email' ? tr.subject || null : null,
+            content: tr.content ?? '',
           })),
       }),
-    onMutate: () => toast.loading('Enviando correo de prueba...'),
+    onMutate: () => toast.loading(t('toast.testSending')),
     onSuccess: (_data, _to, ctx) => {
       if (ctx) toast.dismiss(ctx)
-      toast.success(`Correo de prueba enviado a ${_to}`)
+      toast.success(t('toast.testSent', { to: _to }))
       setTestEmailOpen(false)
     },
     onError: (error, _to, ctx) => {
@@ -239,7 +244,7 @@ export function CommunicationTemplateFormSheet({
 
   const addLocale = () => {
     const current = form.getValues('translations')
-    const used = new Set(current.map((t) => t.locale))
+    const used = new Set(current.map((tr) => tr.locale))
     const next = ['en', 'pt', 'fr', 'de', 'it'].find((l) => !used.has(l)) ?? 'en'
     form.setValue('translations', [
       ...current,
@@ -253,10 +258,10 @@ export function CommunicationTemplateFormSheet({
     if (current.length <= 1) return
     form.setValue(
       'translations',
-      current.filter((t) => t.locale !== locale)
+      current.filter((tr) => tr.locale !== locale)
     )
     if (activeLocaleTab === locale) {
-      setActiveLocaleTab(current.filter((t) => t.locale !== locale)[0].locale)
+      setActiveLocaleTab(current.filter((tr) => tr.locale !== locale)[0].locale)
     }
   }
 
@@ -270,11 +275,11 @@ export function CommunicationTemplateFormSheet({
     } else {
       createMutation.mutate({
         ...values,
-        translations: values.translations.map((t) => ({
-          locale: t.locale,
-          subject: values.templateType === 'email' ? t.subject || null : null,
-          content: t.content ?? '',
-          designJson: templateType === 'email' ? t.designJson : undefined,
+        translations: values.translations.map((tr) => ({
+          locale: tr.locale,
+          subject: values.templateType === 'email' ? tr.subject || null : null,
+          content: tr.content ?? '',
+          designJson: templateType === 'email' ? tr.designJson : undefined,
         })),
       })
     }
@@ -291,8 +296,8 @@ export function CommunicationTemplateFormSheet({
             <SheetHeader className="p-6 pb-4 border-b">
               <SheetTitle>
                 {isEditing
-                  ? `Editar — ${detail?.name ?? ''}`
-                  : 'Nueva Plantilla de Comunicación'}
+                  ? t('form.editTitle', { name: detail?.name ?? '' })
+                  : t('form.createTitle')}
               </SheetTitle>
             </SheetHeader>
           }
@@ -304,12 +309,12 @@ export function CommunicationTemplateFormSheet({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Cancelar
+                {t('common:actions.cancel')}
               </Button>
               {!isEditing ? (
                 <Button type="button" onClick={form.handleSubmit((v) => onSubmit(v, 'create'))} disabled={isPending}>
                   {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Crear plantilla
+                  {t('form.createTemplate')}
                 </Button>
               ) : (
                 <div className="flex items-center gap-4">
@@ -320,7 +325,7 @@ export function CommunicationTemplateFormSheet({
                       onCheckedChange={setCreateNewVersion}
                     />
                     <Label htmlFor="new-version-switch" className="text-sm font-normal cursor-pointer select-none">
-                      Guardar como versión nueva
+                      {t('form.saveAsNewVersion')}
                     </Label>
                   </div>
                   {templateType === 'email' && (
@@ -334,7 +339,7 @@ export function CommunicationTemplateFormSheet({
                       disabled={isPending || sendTestEmailMutation.isPending}
                     >
                       <Send className="mr-2 h-4 w-4" />
-                      Enviar Prueba
+                      {t('form.sendTest')}
                     </Button>
                   )}
                   <Button
@@ -343,7 +348,7 @@ export function CommunicationTemplateFormSheet({
                     disabled={isPending || (!createNewVersion && !detail?.activeVersionId)}
                   >
                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {createNewVersion ? 'Crear Nueva Versión' : 'Guardar'}
+                    {createNewVersion ? t('form.createNewVersion') : t('common:actions.save')}
                   </Button>
                 </div>
               )}
@@ -357,7 +362,7 @@ export function CommunicationTemplateFormSheet({
                 {Object.keys(form.formState.errors).length > 0 && (
                   <Alert variant="destructive">
                     <AlertDescription>
-                      Revisá los campos marcados: hay errores de validación.
+                      {t('form.validationAlert')}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -368,7 +373,7 @@ export function CommunicationTemplateFormSheet({
                     name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Código</FormLabel>
+                        <FormLabel>{t('common:labels.code')}</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="ORDER-CREATED"
@@ -385,9 +390,9 @@ export function CommunicationTemplateFormSheet({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre</FormLabel>
+                        <FormLabel>{t('common:labels.name')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Orden de mantenimiento creada" {...field} />
+                          <Input placeholder={t('form.namePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -398,7 +403,7 @@ export function CommunicationTemplateFormSheet({
                     name="entityScope"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ámbito</FormLabel>
+                        <FormLabel>{t('form.scope')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -410,10 +415,10 @@ export function CommunicationTemplateFormSheet({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {(Object.keys(SCOPE_LABELS) as CommunicationEntityScope[]).map(
+                            {(Object.keys(scopeLabels) as CommunicationEntityScope[]).map(
                               (s) => (
                                 <SelectItem key={s} value={s}>
-                                  {SCOPE_LABELS[s]}
+                                  {scopeLabels[s]}
                                 </SelectItem>
                               )
                             )}
@@ -428,7 +433,7 @@ export function CommunicationTemplateFormSheet({
                     name="templateType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tipo</FormLabel>
+                        <FormLabel>{t('common:labels.type')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -440,8 +445,8 @@ export function CommunicationTemplateFormSheet({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="document">Documento</SelectItem>
+                            <SelectItem value="email">{t('form.typeOptions.email')}</SelectItem>
+                            <SelectItem value="document">{t('form.typeOptions.document')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -456,9 +461,9 @@ export function CommunicationTemplateFormSheet({
                 <Tabs value={activeLocaleTab} onValueChange={setActiveLocaleTab} className="flex flex-col h-full">
                   <div className="flex items-center gap-2 shrink-0 border-b pb-2">
                     <TabsList>
-                      {translations.map((t) => (
-                        <TabsTrigger key={t.locale} value={t.locale}>
-                          <span className="uppercase">{t.locale}</span>
+                      {translations.map((tr) => (
+                        <TabsTrigger key={tr.locale} value={tr.locale}>
+                          <span className="uppercase">{tr.locale}</span>
                         </TabsTrigger>
                       ))}
                     </TabsList>
@@ -469,7 +474,7 @@ export function CommunicationTemplateFormSheet({
                       onClick={addLocale}
                     >
                       <Plus className="mr-1 h-4 w-4" />
-                      Idioma
+                      {t('common:language.label')}
                     </Button>
                     {translations.length > 1 && (
                       <Button
@@ -479,15 +484,15 @@ export function CommunicationTemplateFormSheet({
                         onClick={() => removeLocale(activeLocaleTab)}
                       >
                         <Trash2 className="mr-1 h-4 w-4 text-destructive" />
-                        Quitar
+                        {t('common:actions.remove')}
                       </Button>
                     )}
                   </div>
 
-                  {translations.map((t, idx) => (
+                  {translations.map((tr, idx) => (
                     <TabsContent
-                      key={t.locale}
-                      value={t.locale}
+                      key={tr.locale}
+                      value={tr.locale}
                       className="flex-1 min-h-0 mt-4 flex flex-col gap-4"
                     >
                       {templateType === 'email' && (
@@ -496,10 +501,10 @@ export function CommunicationTemplateFormSheet({
                           name={`translations.${idx}.subject`}
                           render={({ field }) => (
                             <FormItem className="shrink-0">
-                              <FormLabel>Asunto ({t.locale})</FormLabel>
+                              <FormLabel>{t('form.subjectLabel', { locale: tr.locale })}</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="Nueva orden {{order.title}}"
+                                  placeholder={t('form.subjectPlaceholder')}
                                   {...field}
                                 />
                               </FormControl>
@@ -537,7 +542,7 @@ export function CommunicationTemplateFormSheet({
                                                 render={({ field: contentField }) => (
                                                     <Textarea
                                                         className="flex-1 min-h-[300px] font-mono text-sm resize-none"
-                                                        placeholder="Escribí el texto acá..."
+                                                        placeholder={t('form.contentPlaceholder')}
                                                         {...contentField}
                                                     />
                                                 )}
@@ -562,11 +567,9 @@ export function CommunicationTemplateFormSheet({
       <Dialog open={testEmailOpen} onOpenChange={setTestEmailOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Enviar correo de prueba</DialogTitle>
+            <DialogTitle>{t('form.testEmailTitle')}</DialogTitle>
             <DialogDescription>
-              Se enviará la plantilla actual ({activeLocaleTab.toUpperCase()}) con
-              datos de ejemplo a la dirección que indiques. No se generan eventos
-              reales en el sistema.
+              {t('form.testEmailDescription', { locale: activeLocaleTab.toUpperCase() })}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -580,7 +583,7 @@ export function CommunicationTemplateFormSheet({
                 type="email"
                 required
                 autoFocus
-                placeholder="destino@empresa.com"
+                placeholder={t('form.testEmailPlaceholder')}
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
               />
@@ -591,11 +594,11 @@ export function CommunicationTemplateFormSheet({
                   onClick={() => setTestEmailOpen(false)}
                   disabled={sendTestEmailMutation.isPending}
                 >
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </Button>
                 <Button type="submit" disabled={sendTestEmailMutation.isPending || !testEmail.trim()}>
                   {sendTestEmailMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Enviar
+                  {t('common:actions.send')}
                 </Button>
               </DialogFooter>
             </div>

@@ -1,0 +1,106 @@
+{
+  "list": {
+    "subtitle": "Plantillas de email y documentos multi-idioma para notificaciones del sistema",
+    "newTemplate": "Nueva Plantilla",
+    "cardTitle": "Plantillas",
+    "cardDescription": "Definí el contenido de los correos que envía el sistema por evento (orden creada, tarea asignada, cambio de estado de activo).",
+    "searchPlaceholder": "Buscar por código o nombre...",
+    "scope": "Ámbito",
+    "scopeAll": "Todos los ámbitos",
+    "scopeOptions": {
+      "incident": "Incidencias",
+      "maintenanceOrder": "Órdenes",
+      "workTask": "Tareas",
+      "asset": "Activos"
+    },
+    "typeAll": "Todos los tipos",
+    "typeOptions": {
+      "email": "Email",
+      "document": "Documento"
+    },
+    "headers": {
+      "languages": "Idiomas",
+      "activeVersion": "Versión activa"
+    },
+    "versionTotal": "v{{version}} ({{total}} en total)",
+    "total": "Total: {{total}}",
+    "actions": {
+      "preview": "Previsualizar",
+      "versions": "Versiones",
+      "newVersion": "Nueva versión"
+    }
+  },
+  "empty": {
+    "templates": "No hay plantillas configuradas",
+    "templatesHint": "Sin plantilla, el sistema usa el texto por defecto hardcodeado"
+  },
+  "dialog": {
+    "deleteConfirm": "¿Eliminar la plantilla \"{{name}}\" y todas sus versiones?"
+  },
+  "toast": {
+    "deleted": "Plantilla eliminada exitosamente",
+    "created": "Plantilla creada exitosamente",
+    "versionCreated": "Nueva versión creada exitosamente",
+    "versionUpdated": "Versión actualizada exitosamente",
+    "versionActivated": "Versión activada exitosamente",
+    "testSending": "Enviando correo de prueba...",
+    "testSent": "Correo de prueba enviado a {{to}}"
+  },
+  "form": {
+    "createTitle": "Nueva Plantilla de Comunicación",
+    "editTitle": "Editar — {{name}}",
+    "createTemplate": "Crear plantilla",
+    "saveAsNewVersion": "Guardar como versión nueva",
+    "sendTest": "Enviar Prueba",
+    "createNewVersion": "Crear Nueva Versión",
+    "validationAlert": "Revisá los campos marcados: hay errores de validación.",
+    "namePlaceholder": "Orden de mantenimiento creada",
+    "scope": "Ámbito",
+    "scopeOptions": {
+      "incident": "Incidencia",
+      "maintenanceOrder": "Orden de Mantenimiento",
+      "workTask": "Tarea de Trabajo",
+      "asset": "Activo"
+    },
+    "typeOptions": {
+      "email": "Email",
+      "document": "Documento"
+    },
+    "subjectLabel": "Asunto ({{locale}})",
+    "subjectPlaceholder": "Nueva orden {{order.title}}",
+    "contentPlaceholder": "Escribí el texto acá...",
+    "testEmailTitle": "Enviar correo de prueba",
+    "testEmailDescription": "Se enviará la plantilla actual ({{locale}}) con datos de ejemplo a la dirección que indiques. No se generan eventos reales en el sistema.",
+    "testEmailPlaceholder": "destino@empresa.com",
+    "validation": {
+      "localeRequired": "Idioma obligatorio (ej. es, en)",
+      "codeRequired": "El código es obligatorio",
+      "codeFormat": "Solo mayúsculas, números y guiones",
+      "nameRequired": "El nombre es obligatorio",
+      "minLocale": "Agregá al menos un idioma"
+    }
+  },
+  "preview": {
+    "title": "Previsualización — {{name}}",
+    "description": "Vista renderizada con variables vacías (los valores reales se completan al enviar). Las variables desconocidas se muestran como texto vacío.",
+    "printPdf": "Imprimir / PDF",
+    "subject": "Asunto",
+    "body": "Cuerpo",
+    "scopeVariables": "Variables del ámbito",
+    "documentFallback": "Documento"
+  },
+  "versions": {
+    "title": "Historial de versiones",
+    "description": "{{name}} ({{code}}) — activá la versión que el sistema debe usar",
+    "version": "Versión {{number}}",
+    "active": "Activa",
+    "createdOn": "Creada el {{date}}",
+    "activate": "Activar"
+  },
+  "editor": {
+    "image": "Imagen",
+    "lineBreak": "Salto de línea",
+    "noVariables": "No hay variables disponibles",
+    "htmlPlaceholder": "<html>\\n  <body>\\n    Escribí el HTML acá...\\n  </body>\\n</html>"
+  }
+}

@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export interface ChecklistTask {
   id: string
@@ -46,6 +47,7 @@ function SortableTask({
   onUpdate: (id: string, updates: Partial<ChecklistTask>) => void
   onDelete: (id: string) => void
 }) {
+  const { t } = useTranslation('assets')
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
@@ -67,7 +69,7 @@ function SortableTask({
         <Input
           value={task.title}
           onChange={(e) => onUpdate(task.id, { title: e.target.value })}
-          placeholder="Nombre de la tarea (ej. Revisar nivel de aceite)"
+          placeholder={t('checklist.taskNamePlaceholder')}
           className="flex-1"
         />
         <Button
@@ -84,13 +86,13 @@ function SortableTask({
         <Input
           value={task.frequency || ''}
           onChange={(e) => onUpdate(task.id, { frequency: e.target.value })}
-          placeholder="Frecuencia sugerida (ej. Cada 5.000 km)"
+          placeholder={t('checklist.frequencyPlaceholder')}
           className="text-sm"
         />
         <Textarea
           value={task.description || ''}
           onChange={(e) => onUpdate(task.id, { description: e.target.value })}
-          placeholder="Instrucciones breves..."
+          placeholder={t('checklist.instructionsPlaceholder')}
           className="text-sm min-h-[2.5rem] resize-none"
           rows={1}
         />
@@ -100,6 +102,7 @@ function SortableTask({
 }
 
 export function MaintenanceChecklistBuilder({ value, onChange }: MaintenanceChecklistBuilderProps) {
+  const { t } = useTranslation('assets')
   const [tasks, setTasks] = useState<ChecklistTask[]>([])
 
   useEffect(() => {
@@ -170,12 +173,11 @@ export function MaintenanceChecklistBuilder({ value, onChange }: MaintenanceChec
     <div className="flex flex-col gap-4 border rounded-md p-4 bg-muted/10">
       <div className="flex justify-between items-start gap-4">
         <p className="text-sm text-muted-foreground">
-          Definí las tareas recomendadas para el mantenimiento preventivo. Podés reordenarlas
-          arrastrándolas.
+          {t('checklist.description')}
         </p>
         <Button type="button" onClick={addTask} variant="secondary" size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Agregar Tarea
+          {t('checklist.addTask')}
         </Button>
       </div>
 
@@ -192,7 +194,7 @@ export function MaintenanceChecklistBuilder({ value, onChange }: MaintenanceChec
             ))}
             {tasks.length === 0 && (
               <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground">
-                No hay tareas configuradas. Hacé clic en "Agregar Tarea" para comenzar.
+                {t('checklist.empty', { action: t('checklist.addTask') })}
               </div>
             )}
           </div>

@@ -1,0 +1,564 @@
+{
+  "list": {
+    "title": "Mantenimiento",
+    "incidents": "Incidencias",
+    "tasks": "Tareas",
+    "orders": "Órdenes",
+    "preventivePlans": "Planes de mantenimiento",
+    "workflowTemplates": "Plantillas de flujo",
+    "empty": "No hay elementos para mostrar",
+    "newIncident": "Reportar incidencia",
+    "newTask": "Nueva tarea",
+    "newOrder": "Nueva orden",
+    "newPlan": "Nuevo plan"
+  },
+  "fields": {
+    "title": "Título",
+    "description": "Descripción",
+    "priority": "Prioridad",
+    "status": "Estado",
+    "asset": "Activo",
+    "assignee": "Asignado a",
+    "dueDate": "Fecha límite",
+    "createdAt": "Fecha de creación",
+    "estimatedHours": "Horas estimadas",
+    "cost": "Costo",
+    "scheduledShort": "Prog."
+  },
+  "priority": {
+    "low": "Baja",
+    "medium": "Media",
+    "high": "Alta",
+    "critical": "Crítica"
+  },
+  "status": {
+    "open": "Abierta",
+    "inProgress": "En progreso",
+    "onHold": "En espera",
+    "completed": "Completada",
+    "cancelled": "Cancelada"
+  },
+  "kanban": {
+    "todo": "Por hacer",
+    "inProgress": "En progreso",
+    "done": "Hecho",
+    "columns": {
+      "todo": "Pendiente",
+      "rework": "Corrección",
+      "inProgress": "En progreso",
+      "done": "Terminada",
+      "cancelled": "Cancelada"
+    },
+    "noPriority": "Sin prioridad",
+    "unassigned": "Sin asignación"
+  },
+  "incidents": {
+    "description": "Gestioná las incidencias reportadas en los activos.",
+    "totalCount": "Total: {{count}} incidencias",
+    "columns": {
+      "reportedAt": "Reportado el"
+    },
+    "filters": {
+      "title": "Filtros",
+      "searchTitle": "Búsqueda",
+      "searchPlaceholder": "Título o activo...",
+      "loading": "Cargando filtros...",
+      "optionSearch": "Buscar opción...",
+      "optionNotFound": "No se encontró la opción.",
+      "mobileTrigger": "Filtros y Búsqueda"
+    }
+  },
+  "tasks": {
+    "title": "Tareas de Mantenimiento",
+    "description": "Seguimiento de tareas de mantenimiento, asignaciones y vencimientos.",
+    "searchPlaceholder": "Buscar por título...",
+    "filterByState": "Filtrar por estado",
+    "initialState": "Inicial",
+    "untitledOrder": "Orden sin título",
+    "taskCount": "{{count}} tareas",
+    "totalCount": "Total: {{count}} tareas",
+    "views": {
+      "list": "Lista",
+      "kanban": "Kanban"
+    },
+    "columns": {
+      "due": "Vencimiento",
+      "assigned": "Asignado"
+    },
+    "states": {
+      "todo": "Por hacer",
+      "rework": "Rehacer",
+      "inProgress": "En progreso",
+      "done": "Completada",
+      "cancelled": "Cancelada"
+    },
+    "orderStates": {
+      "draft": "Borrador",
+      "approved": "Aprobada",
+      "scheduled": "Programada",
+      "inProgress": "En progreso",
+      "done": "Realizada",
+      "verified": "Verificada",
+      "cancelled": "Cancelada"
+    }
+  },
+  "detail": {
+    "notFound": "Incidencia no encontrada.",
+    "reported": "Reportado",
+    "changeStateTo": "Cambiar estado a:",
+    "changeTo": "Cambiar a {{state}}",
+    "noneAvailable": "Ninguno disponible",
+    "noDescription": "Sin descripción.",
+    "descriptionPlaceholder": "Sin descripción",
+    "resolvingCatalogs": "Resolviendo catálogos...",
+    "noAttributes": "No hay atributos configurados.",
+    "noAdditionalDetails": "Sin detalles adicionales",
+    "systemUser": "Sistema / Autenticado",
+    "enteredData": "Datos ingresados:",
+    "internalId": "ID Interno",
+    "resolvedAt": "Fecha de Resolución",
+    "taskTitlePlaceholder": "Título de la tarea",
+    "dueLabel": "Vence",
+    "due": "Vencimiento",
+    "independentTask": "Tarea Independiente",
+    "selectPriority": "Seleccionar prioridad",
+    "selectType": "Seleccionar tipo",
+    "changeState": "Cambiar estado",
+    "stateChangeBlocked": "No se puede cambiar el estado de la tarea porque la orden principal no está En progreso.",
+    "noTransitions": "No hay transiciones disponibles",
+    "tabs": {
+      "timeline": "Bitácora",
+      "details": "Detalle"
+    },
+    "sections": {
+      "generalDescription": "Descripción General",
+      "incidentInfo": "Información de la Incidencia",
+      "specificAttributes": "Atributos específicos ({{name}}).",
+      "eventLog": "Bitácora de Eventos",
+      "eventLogDescription": "Historial de cambios de estado y acciones de esta incidencia.",
+      "metadata": "Metadatos",
+      "generatedOrder": "Orden Generada",
+      "derivedTasks": "Tareas derivadas"
+    },
+    "blockReasons": {
+      "activeOrder": "No se puede cerrar: Hay una orden de mantenimiento correctiva activa.",
+      "openTasks": "No se puede cerrar: Hay tareas abiertas asociadas a esta incidencia."
+    },
+    "related": {
+      "maintenanceOrder": "Orden de mantenimiento",
+      "incident": "Incidencia",
+      "preventivePlan": "Plan preventivo",
+      "recurrence": "Recurrencia",
+      "origin": "Origen"
+    }
+  },
+  "comments": {
+    "defaultAuthor": "Usuario",
+    "placeholder": "Agregar un comentario...",
+    "writePlaceholder": "Escribir comentario...",
+    "submit": "Comentar"
+  },
+  "form": {
+    "reportIncident": "Reportar Incidencia",
+    "reportIncidentDescription": "Creá una nueva incidencia asignada a un activo.",
+    "saving": "Guardando...",
+    "titlePlaceholder": "Resumen del problema",
+    "incidentDetailsPlaceholder": "Detalles de la incidencia...",
+    "selectAsset": "Seleccione un activo",
+    "searchTypePlaceholder": "Escriba para buscar...",
+    "noAssetsFound": "No se encontraron activos.",
+    "templateType": "Plantilla (Tipo)",
+    "selectTemplate": "Seleccione una plantilla",
+    "additionalProperties": "Propiedades Adicionales",
+    "loadingCatalogs": "Cargando catálogos...",
+    "taskType": "Tipo de tarea",
+    "editTitle": "Editar Tarea",
+    "createTitle": "Nueva Tarea de Trabajo",
+    "editDescription": "Modificá los datos de la tarea.",
+    "createDescription": "Creá una tarea de trabajo y asignala al responsable.",
+    "relatedEntity": "Entidad relacionada",
+    "taskTitlePlaceholder": "Resumen de la tarea",
+    "descriptionPlaceholder": "Detalles opcionales...",
+    "dueDateLabel": "Fecha de vencimiento",
+    "selectDatePlaceholder": "Seleccionar fecha",
+    "selectPlaceholder": "Seleccionar...",
+    "createTask": "Crear tarea",
+    "validation": {
+      "titleRequired": "Título es requerido",
+      "assetRequired": "Activo es requerido",
+      "templateRequired": "Plantilla es requerida",
+      "taskTitleRequired": "El título es requerido",
+      "taskTypeRequired": "El tipo de tarea es requerido",
+      "priorityRequired": "La prioridad es requerida"
+    },
+    "filters": {
+      "search": "Búsqueda",
+      "assignedEmployee": "Empleado asignado",
+      "searchEmployee": "Buscar empleado...",
+      "noEmployees": "No se encontraron empleados.",
+      "assignedTeam": "Equipo asignado",
+      "searchTeam": "Buscar equipo...",
+      "noTeams": "No se encontraron equipos.",
+      "searchAsset": "Buscar activo...",
+      "incident": "Incidencia",
+      "searchIncident": "Buscar incidencia...",
+      "noIncidents": "No se encontraron incidencias.",
+      "dueFrom": "Vencimiento desde",
+      "dueTo": "Vencimiento hasta",
+      "startDatePlaceholder": "Fecha inicial",
+      "endDatePlaceholder": "Fecha final",
+      "states": {
+        "allStates": "Todos los estados",
+        "todo": "Pendiente",
+        "inProgress": "En progreso",
+        "done": "Terminada",
+        "cancelled": "Cancelada"
+      }
+    }
+  },
+  "toast": {
+    "stateUpdated": "Estado actualizado",
+    "stateChangeError": "Error al cambiar el estado",
+    "incidentUpdated": "Incidencia actualizada exitosamente",
+    "incidentReported": "Incidencia reportada exitosamente",
+    "incidentReportError": "Error al reportar la incidencia",
+    "taskDeleted": "Tarea eliminada",
+    "taskDeleteError": "Error al eliminar la tarea",
+    "taskUpdated": "Tarea actualizada",
+    "taskUpdateError": "Error al actualizar la tarea",
+    "taskCreated": "Tarea creada exitosamente",
+    "taskCreateError": "Error al crear la tarea",
+    "taskCompleted": "Tarea completada",
+    "assignmentUpdated": "Asignación actualizada",
+    "assignError": "Error al asignar la tarea",
+    "commentAdded": "Comentario agregado",
+    "commentError": "Error al agregar el comentario"
+  },
+  "dialog": {
+    "deleteTaskTitle": "¿Eliminar tarea?",
+    "deleteTaskBody": "Esta acción eliminará la tarea \"{{title}}\". No se puede deshacer.",
+    "changeToTitle": "Cambiar a '{{state}}'",
+    "transitionNeedsInfo": "Este estado requiere información adicional antes de continuar.",
+    "editDynamicInfo": "Editar Información Dinámica",
+    "editDynamicInfoDescription": "Modifica los atributos dinámicos de {{title}}"
+  },
+  "empty": {
+    "incidents": "No hay incidencias reportadas.",
+    "tasks": "No hay tareas de mantenimiento.",
+    "createFirstTask": "Crear la primera",
+    "activeIncidents": "No hay incidencias activas.",
+    "assetOrders": "No hay órdenes para este activo.",
+    "comments": "Aún no hay comentarios.",
+    "noComments": "No hay comentarios.",
+    "history": "No hay historial de cambios.",
+    "timeline": "No hay eventos registrados en la bitácora.",
+    "assetOpenTasks": "No hay tareas abiertas para este activo.",
+    "incidentTasks": "No hay tareas derivadas de esta incidencia.",
+    "statusChanges": "No hay cambios de estado registrados."
+  },
+  "widget": {
+    "predictiveHealth": "Salud Predictiva (XGBoost)",
+    "failureEstimate": "Estimación a falla:",
+    "moreThanOneYear": "Más de 1 año (Óptimo)",
+    "approxDays": "Aprox. {{count}} días",
+    "stable": "Estable",
+    "riskFactors": "Factores de riesgo:",
+    "reportedLabel": "Reportado",
+    "viewAll": "Ver todas"
+  },
+  "ordersWidget": {
+    "viewAll": "Ver todas las órdenes",
+    "kind": {
+      "corrective": "Correctiva",
+      "preventive": "Preventiva"
+    },
+    "status": {
+      "draft": "Borrador",
+      "approved": "Aprobada",
+      "scheduled": "Programada",
+      "inProgress": "En progreso",
+      "done": "Completada",
+      "verified": "Verificada",
+      "cancelled": "Cancelada",
+      "rescheduled": "Reprogramada"
+    }
+  },
+  "propagated": {
+    "title": "Información Propagada",
+    "editTitle": "Editar Información Propagada",
+    "editDescription": "Actualiza los datos adicionales para este registro."
+  },
+  "pagination": {
+    "perPage": "{{count}} / pág"
+  },
+  "orders": {
+    "title": "Órdenes de Mantenimiento",
+    "description": "Seguimiento de órdenes de mantenimiento, costos y verificación.",
+    "totalCount": "Total: {{count}} órdenes",
+    "empty": "No hay órdenes de mantenimiento.",
+    "associatedTasks": "Tareas asociadas",
+    "noAssociatedTasks": "Sin tareas asociadas",
+    "deleteTitle": "Eliminar orden",
+    "deleteBody": "¿Estás seguro de eliminar esta orden? Esta acción no se puede deshacer.",
+    "partsCount_one": "{{count}} parte",
+    "partsCount_other": "{{count}} partes",
+    "states": {
+      "all": "Todas"
+    },
+    "columns": {
+      "scheduled": "Programado",
+      "createdAt": "Creada"
+    },
+    "toast": {
+      "deleted": "Orden eliminada",
+      "deleteError": "Error al eliminar la orden",
+      "created": "Orden creada",
+      "createError": "Error al crear la orden",
+      "updated": "Orden actualizada",
+      "updateError": "Error al actualizar la orden",
+      "planUnlinked": "Plan preventivo desvinculado",
+      "planUnlinkError": "Error al desvincular el plan"
+    },
+    "detail": {
+      "schedule": "Programación",
+      "start": "Inicio",
+      "end": "Fin",
+      "related": "Relacionados",
+      "unlinkPlan": "Desvincular plan preventivo",
+      "scheduleAction": "Programar",
+      "verify": "Verificar",
+      "missingTasks": "Faltan tareas ({{completed}}/{{total}})",
+      "readyToComplete": "Listo para completar",
+      "saveInfo": "Guardar Información"
+    },
+    "form": {
+      "editTitle": "Editar orden",
+      "createTitle": "Nueva orden de mantenimiento",
+      "editDescription": "Modificá los datos de la orden.",
+      "createDescription": "Creá una nueva orden de mantenimiento correctiva o preventiva.",
+      "mainInfo": "Información Principal",
+      "typeLabel": "Tipo:",
+      "titlePlaceholder": "Ej. Revisión de motor",
+      "descriptionPlaceholder": "Agregá detalles adicionales, observaciones o instrucciones específicas para esta orden...",
+      "links": "Vínculos",
+      "associatedAsset": "Activo asociado",
+      "preventivePlanOptional": "Plan preventivo (opcional)",
+      "linkPlanPlaceholder": "Vincular a un plan...",
+      "noPlansFound": "No se encontraron planes.",
+      "planSelected": "Plan seleccionado",
+      "searchPlanPlaceholder": "Buscar plan...",
+      "templateTasks": "Tareas de plantilla",
+      "generateChecklistDescription": "Generar tareas base usando el checklist de la plantilla del activo",
+      "validation": {
+        "kindRequired": "El tipo es requerido",
+        "titleRequired": "El título es requerido",
+        "assetRequired": "El activo es requerido"
+      }
+    },
+    "parts": {
+      "title": "Partes / Repuestos",
+      "bomSuggested": "Sugeridos del Activo (BOM)",
+      "catalogItem": "Item del catálogo",
+      "searchPlaceholder": "Buscar repuesto...",
+      "noItemsFound": "No se encontraron repuestos.",
+      "unitCost": "Costo unitario",
+      "sourceLabel": "Origen del repuesto",
+      "sourceNone": "Sin stock",
+      "sourceInternal": "Inventario",
+      "sourceExternal": "Proveedor externo",
+      "warehouse": "Almacén",
+      "selectWarehouse": "Seleccioná el almacén",
+      "noWarehouses": "No hay almacenes configurados.",
+      "createOne": "Crear uno",
+      "supplierNamePlaceholder": "Nombre del proveedor",
+      "referencePlaceholder": "# orden, factura...",
+      "validation": {
+        "itemAndQuantity": "Completá el artículo y la cantidad",
+        "warehouseRequired": "Seleccioná el almacén de origen"
+      },
+      "toast": {
+        "added": "Parte agregada",
+        "addError": "Error al agregar parte",
+        "deleted": "Parte eliminada",
+        "deleteError": "Error al eliminar parte"
+      }
+    }
+  },
+  "preventivePlans": {
+    "title": "Planes de Mantenimiento",
+    "description": "Programá tareas y órdenes de mantenimiento preventivo recurrentes.",
+    "searchPlaceholder": "Buscar por nombre...",
+    "totalCount": "Total: {{count}} planes",
+    "empty": "No hay planes de mantenimiento.",
+    "createFirstPlan": "Crear el primero",
+    "resume": "Reanudar",
+    "runNow": "Ejecutar ahora",
+    "deleteTitle": "¿Eliminar plan?",
+    "deleteBody": "Esta acción eliminará el plan \"{{name}}\". Los elementos generados previamente no se verán afectados.",
+    "tabs": {
+      "active": "Activos",
+      "paused": "Pausados",
+      "calendar": "Calendario",
+      "generated": "Generados"
+    },
+    "status": {
+      "active": "Activo",
+      "paused": "Pausado"
+    },
+    "entityType": {
+      "workTask": "Tarea",
+      "maintenanceOrder": "Orden",
+      "both": "Ambas"
+    },
+    "columns": {
+      "target": "Objetivo",
+      "frequency": "Frecuencia",
+      "nextRun": "Próxima ejecución"
+    },
+    "cron": {
+      "daily": "Diario",
+      "weeklyMonday": "Semanal (lunes)",
+      "monthlyFirstDay": "Mensual (día 1)",
+      "weekly": "Semanal",
+      "monthlyDay": "Mensual (día {{day}})",
+      "everyMinutes": "Cada {{minutes}} min",
+      "dailyMidnight": "Diario (medianoche)",
+      "everyHour": "Cada hora",
+      "every5Minutes": "Cada 5 minutos",
+      "custom": "Personalizado"
+    },
+    "detail": {
+      "assetTarget": "Activo: {{name}}",
+      "templateTarget": "Plantilla: {{name}}",
+      "generatedType": "Tipo generado",
+      "dueOffsetDays": "Días hasta vencimiento",
+      "autoAssign": "Asignación automática",
+      "lastRun": "Última ejecución",
+      "endsAt": "Finaliza el"
+    },
+    "widget": {
+      "nextRun": "Próxima: {{date}}",
+      "noSchedule": "Sin programación",
+      "empty": "No hay planes asociados a este activo.",
+      "viewAll": "Ver todos"
+    },
+    "calendar": {
+      "next12": "Próximas 12 ejecuciones",
+      "next": "Próxima",
+      "empty": "No hay ejecuciones programadas."
+    },
+    "log": {
+      "records": "{{count}} registros",
+      "columns": {
+        "detail": "Detalle"
+      },
+      "status": {
+        "success": "Éxito",
+        "skipped": "Omitido",
+        "failed": "Error"
+      },
+      "empty": "No hay registros de ejecución todavía."
+    },
+    "generated": {
+      "tasksTab": "Tareas ({{count}})",
+      "ordersTab": "Órdenes ({{count}})",
+      "noTasks": "No hay tareas generadas.",
+      "noOrders": "No hay órdenes generadas.",
+      "assetLabel": "Activo: {{name}}",
+      "dueLabel": "Vence: {{date}}",
+      "scheduledLabel": "Prog: {{date}}"
+    },
+    "form": {
+      "editTitle": "Editar Plan",
+      "createTitle": "Nuevo Plan de Mantenimiento",
+      "description": "Configurá la recurrencia, objetivo y entregables del plan preventivo.",
+      "namePlaceholder": "Revisión mensual...",
+      "descriptionPlaceholder": "Descripción opcional",
+      "targetAsset": "Un activo específico",
+      "targetTemplate": "Todos los activos de una plantilla",
+      "assetTemplate": "Plantilla de activo",
+      "selectTemplatePlaceholder": "Seleccionar plantilla...",
+      "cronExpression": "Expresión cron",
+      "cronFormat": "Formato: minuto hora día mes día-semana",
+      "deliverableType": "Tipo de entregable",
+      "deliverableTask": "Tarea de trabajo",
+      "workflowTemplate": "Plantilla de Flujo",
+      "selectWorkflowPlaceholder": "Seleccionar flujo para las órdenes...",
+      "workflowDescription": "Define los campos y el ciclo de vida de las órdenes generadas",
+      "dueOffsetDescription": "Relativo a la fecha de ejecución programada",
+      "autoAssign": "Asignar automáticamente",
+      "employeeIdOptional": "ID Empleado (opcional)",
+      "teamIdOptional": "ID Equipo (opcional)",
+      "stateConditions": "Condiciones de estado del activo",
+      "stateConditionsDescription": "Solo se generarán tareas para activos que cumplan estas condiciones.",
+      "excludedStates": "Estados excluidos",
+      "endsAtOptional": "Finaliza el (opcional)",
+      "noEndDate": "Sin fecha de fin",
+      "fixErrors": "Corregí los siguientes errores antes de guardar:",
+      "createPlan": "Crear plan",
+      "validation": {
+        "nameRequired": "Nombre es requerido",
+        "cronRequired": "Expresión cron requerida",
+        "dueOffsetMin": "Debe ser >= 0",
+        "assetRequired": "Seleccioná un activo",
+        "templateRequired": "Seleccioná una plantilla",
+        "workflowRequired": "Seleccioná un flujo para las órdenes de mantenimiento"
+      }
+    },
+    "toast": {
+      "stateUpdated": "Estado del plan actualizado",
+      "deleted": "Plan eliminado",
+      "evaluated": "Evaluado: {{tasks}} tareas, {{orders}} órdenes, {{skipped}} omitidos",
+      "evaluateError": "Error al evaluar el plan",
+      "created": "Plan creado exitosamente",
+      "createError": "Error al crear el plan",
+      "updated": "Plan actualizado exitosamente",
+      "updateError": "Error al actualizar el plan"
+    }
+  },
+  "workflowTemplates": {
+    "title": "Plantillas de Flujos (Workflows)",
+    "description": "Gestioná las plantillas (esquemas y ciclo de vida) para incidencias y planes de mantenimiento.",
+    "empty": "No hay plantillas registradas.",
+    "totalCount": "Total: {{count}} plantillas",
+    "confirmDelete": "¿Estás seguro de eliminar esta plantilla?",
+    "toast": {
+      "deleted": "Plantilla eliminada",
+      "deleteError": "Error al eliminar la plantilla",
+      "created": "Plantilla creada exitosamente",
+      "createError": "Error al crear la plantilla",
+      "updated": "Plantilla actualizada exitosamente",
+      "updateError": "Error al actualizar la plantilla"
+    },
+    "form": {
+      "editTitle": "Editar Plantilla de Flujo",
+      "createTitle": "Nueva Plantilla de Flujo",
+      "description": "Configurá paso a paso los datos básicos, atributos y ciclo de vida de la plantilla de flujo.",
+      "loading": "Cargando plantilla...",
+      "reviewFields": "Revisá los campos marcados en rojo antes de guardar.",
+      "tabAttributes": "Atributos",
+      "tabLifecycle": "Ciclo de Vida",
+      "tabPreview": "Vista Previa",
+      "codePlaceholder": "Ej: FALLA_MECANICA",
+      "namePlaceholder": "Ej: Falla Mecánica General",
+      "workflowType": "Tipo de Flujo",
+      "typePreventive": "Plan de Mantenimiento Preventivo",
+      "descriptionPlaceholder": "Breve descripción de la plantilla...",
+      "whatIsTitle": "¿Qué es una plantilla de flujo?",
+      "whatIsBody": "Define los estados y atributos de una incidencia o un plan de mantenimiento. Las instancias creadas con esta plantilla seguirán el ciclo de vida que configures en las siguientes pestañas.",
+      "attributesAlert": "Los atributos son los datos adicionales que se pedirán al crear una incidencia o plan con esta plantilla.",
+      "lifecycleAlert": "El ciclo de vida define los estados por los que pasará una instancia de este flujo y las transiciones permitidas entre ellos.",
+      "previewAlert": "Esta es una vista aproximada de cómo se verá la plantilla para el usuario final.",
+      "attributesSectionTitle": "Atributos del flujo",
+      "lifecycleSectionTitle": "Ciclo de vida",
+      "noStates": "No hay estados configurados.",
+      "saveTemplate": "Guardar Plantilla",
+      "validation": {
+        "codeRequired": "Código es requerido",
+        "nameRequired": "Nombre es requerido",
+        "typeRequired": "Tipo es requerido",
+        "invalidJson": "Debe ser un JSON válido"
+      }
+    }
+  }
+}

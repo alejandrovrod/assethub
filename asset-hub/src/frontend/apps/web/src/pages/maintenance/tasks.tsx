@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { Plus, Loader2, Trash2, LayoutList, Kanban, Calendar, User, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react'
-import { workTaskService, type WorkTaskState, type WorkTaskSummary, STATE_LABELS } from '@/services/work-task.service'
+import { workTaskService, type WorkTaskState, type WorkTaskSummary } from '@/services/work-task.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -36,15 +36,24 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
-const STATE_OPTIONS: { value: WorkTaskState | 'all'; label: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'todo', label: 'Por hacer' },
-  { value: 'rework', label: 'Rehacer' },
-  { value: 'in_progress', label: 'En progreso' },
-  { value: 'done', label: 'Completada' },
-  { value: 'cancelled', label: 'Cancelada' },
-]
+const STATE_OPTIONS = [
+  { value: 'all', labelKey: 'common:status.all' },
+  { value: 'todo', labelKey: 'tasks.states.todo' },
+  { value: 'rework', labelKey: 'tasks.states.rework' },
+  { value: 'in_progress', labelKey: 'tasks.states.inProgress' },
+  { value: 'done', labelKey: 'tasks.states.done' },
+  { value: 'cancelled', labelKey: 'tasks.states.cancelled' },
+] as const
+
+const TASK_STATE_KEYS = {
+  todo: 'tasks.states.todo',
+  rework: 'tasks.states.rework',
+  in_progress: 'tasks.states.inProgress',
+  done: 'tasks.states.done',
+  cancelled: 'tasks.states.cancelled',
+} as const
 
 const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   todo: 'secondary',
@@ -55,6 +64,7 @@ const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructi
 }
 
 export default function MaintenanceTasks() {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canCreate = can('tasks:create')
   const canDelete = can('tasks:delete')
@@ -117,7 +127,7 @@ export default function MaintenanceTasks() {
     const rows: RowItem[] = []
 
     groups.forEach((tasks, orderId) => {
-      const orderTitle = tasks[0].maintenanceOrderTitle || 'Orden sin título'
+      const orderTitle = tasks[0].maintenanceOrderTitle || t('tasks.untitledOrder')
       const orderState = tasks[0].maintenanceOrderState
       rows.push({ type: 'order', orderId, orderTitle, orderState, taskCount: tasks.length, tasks })
 
@@ -133,7 +143,7 @@ export default function MaintenanceTasks() {
     }
 
     return rows
-  }, [items, expandedOrders])
+  }, [items, expandedOrders, t])
 
   useEffect(() => {
     if (selectedTaskId) {
@@ -156,7 +166,7 @@ export default function MaintenanceTasks() {
     mutationFn: (id: string) => workTaskService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
-      toast.success('Tarea eliminada')
+      toast.success(t('toast.taskDeleted'))
       if (selectedTask?.id) {
         setSearchParams((prev) => {
           prev.delete('selected')
@@ -164,7 +174,7 @@ export default function MaintenanceTasks() {
         }, { replace: true })
       }
     },
-    onError: () => toast.error('Error al eliminar la tarea'),
+    onError: () => toast.error(t('toast.taskDeleteError')),
   })
 
   const handleCreate = () => {
@@ -196,9 +206,9 @@ export default function MaintenanceTasks() {
         <Card className={`flex flex-1 flex-col overflow-hidden ${selectedTask ? 'max-w-[55%]' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
             <div>
-              <CardTitle>Tareas de Mantenimiento</CardTitle>
+              <CardTitle>{t('tasks.title')}</CardTitle>
               <CardDescription>
-                Seguimiento de tareas de mantenimiento, asignaciones y vencimientos.
+                {t('tasks.description')}
               </CardDescription>
             </div>
             {canCreate && (
@@ -210,7 +220,7 @@ export default function MaintenanceTasks() {
 
           <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-b">
             <Input
-              placeholder="Buscar por título..."
+              placeholder={t('tasks.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-xs"
@@ -220,12 +230,12 @@ export default function MaintenanceTasks() {
               onValueChange={(value) => setStateFilter(value as WorkTaskState | 'all')}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrar por estado" />
+                <SelectValue placeholder={t('tasks.filterByState')} />
               </SelectTrigger>
               <SelectContent>
                 {STATE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -235,11 +245,11 @@ export default function MaintenanceTasks() {
               <TabsList>
                 <TabsTrigger value="list" className="flex items-center gap-1">
                   <LayoutList className="h-4 w-4" />
-                  Lista
+                  {t('tasks.views.list')}
                 </TabsTrigger>
                 <TabsTrigger value="kanban" className="flex items-center gap-1">
                   <Kanban className="h-4 w-4" />
-                  Kanban
+                  {t('tasks.views.kanban')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -256,13 +266,13 @@ export default function MaintenanceTasks() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Título</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Vencimiento</TableHead>
-                        <TableHead>Asignado</TableHead>
-                        <TableHead>Activo</TableHead>
-                        <TableHead>Prioridad</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead>{t('common:labels.title')}</TableHead>
+                        <TableHead>{t('common:labels.status')}</TableHead>
+                        <TableHead>{t('tasks.columns.due')}</TableHead>
+                        <TableHead>{t('tasks.columns.assigned')}</TableHead>
+                        <TableHead>{t('fields.asset')}</TableHead>
+                        <TableHead>{t('common:labels.priority')}</TableHead>
+                        <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -281,16 +291,16 @@ export default function MaintenanceTasks() {
                                   <span>{row.orderTitle}</span>
                                   {row.orderState && (
                                     <Badge variant="outline" className="ml-2 uppercase text-[10px]">
-                                      {row.orderState === 'draft' ? 'Borrador' :
-                                        row.orderState === 'approved' ? 'Aprobada' :
-                                          row.orderState === 'scheduled' ? 'Programada' :
-                                            row.orderState === 'in_progress' ? 'En progreso' :
-                                              row.orderState === 'done' ? 'Realizada' :
-                                                row.orderState === 'verified' ? 'Verificada' :
-                                                  row.orderState === 'cancelled' ? 'Cancelada' : row.orderState}
+                                      {row.orderState === 'draft' ? t('tasks.orderStates.draft') :
+                                        row.orderState === 'approved' ? t('tasks.orderStates.approved') :
+                                          row.orderState === 'scheduled' ? t('tasks.orderStates.scheduled') :
+                                            row.orderState === 'in_progress' ? t('tasks.orderStates.inProgress') :
+                                              row.orderState === 'done' ? t('tasks.orderStates.done') :
+                                                row.orderState === 'verified' ? t('tasks.orderStates.verified') :
+                                                  row.orderState === 'cancelled' ? t('tasks.orderStates.cancelled') : row.orderState}
                                     </Badge>
                                   )}
-                                  <Badge variant="secondary" className="ml-2">{row.taskCount} tareas</Badge>
+                                  <Badge variant="secondary" className="ml-2">{t('tasks.taskCount', { count: row.taskCount })}</Badge>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -308,7 +318,7 @@ export default function MaintenanceTasks() {
                                 {task.title}
                               </TableCell>
                               <TableCell>
-                                <Badge variant={STATE_VARIANTS[task.state]}>{STATE_LABELS[task.state]}</Badge>
+                                <Badge variant={STATE_VARIANTS[task.state]}>{t(TASK_STATE_KEYS[task.state])}</Badge>
                               </TableCell>
                               <TableCell className="text-sm">
                                 {task.dueAt
@@ -337,20 +347,19 @@ export default function MaintenanceTasks() {
                                             </Button>
                                           </AlertDialogTrigger>
                                         </TooltipTrigger>
-                                        <TooltipContent>Eliminar</TooltipContent>
+                                        <TooltipContent>{t('common:actions.delete')}</TooltipContent>
                                       </Tooltip>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
-                                          <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
+                                          <AlertDialogTitle>{t('dialog.deleteTaskTitle')}</AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            Esta acción eliminará la tarea &quot;{task.title}&quot;. No se puede
-                                            deshacer.
+                                            {t('dialog.deleteTaskBody', { title: task.title })}
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                           <AlertDialogAction onClick={() => deleteMutation.mutate(task.id)}>
-                                            Eliminar
+                                            {t('common:actions.delete')}
                                           </AlertDialogAction>
                                         </AlertDialogFooter>
                                        </AlertDialogContent>
@@ -370,7 +379,7 @@ export default function MaintenanceTasks() {
                     {(['todo', 'in_progress', 'done', 'cancelled'] as WorkTaskState[]).map((state) => (
                       <div key={state} className="flex flex-col gap-2">
                         <div className="flex items-center justify-between px-1">
-                          <h3 className="text-sm font-medium">{STATE_LABELS[state]}</h3>
+                          <h3 className="text-sm font-medium">{t(TASK_STATE_KEYS[state])}</h3>
                           <Badge variant="outline">{tasksByState[state].length}</Badge>
                         </div>
                         <div className="bg-muted/40 rounded-lg p-2 space-y-2 min-h-[120px]">
@@ -419,10 +428,10 @@ export default function MaintenanceTasks() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-8 w-8 mb-2 opacity-50" />
-                  <p>No hay tareas de mantenimiento.</p>
+                  <p>{t('empty.tasks')}</p>
                   {canCreate && (
                     <Button variant="link" onClick={handleCreate}>
-                      Crear la primera
+                      {t('empty.createFirstTask')}
                     </Button>
                   )}
                 </div>
@@ -433,17 +442,17 @@ export default function MaintenanceTasks() {
               <div className="flex items-center justify-between border-t border-border px-4 py-3 shrink-0">
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-muted-foreground">
-                    Total: {totalCount} tareas
+                    {t('tasks.totalCount', { count: totalCount })}
                   </span>
                   <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                     <SelectTrigger className="w-[100px] h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="10">10 / pág</SelectItem>
-                      <SelectItem value="20">20 / pág</SelectItem>
-                      <SelectItem value="50">50 / pág</SelectItem>
-                      <SelectItem value="100">100 / pág</SelectItem>
+                      <SelectItem value="10">{t('pagination.perPage', { count: 10 })}</SelectItem>
+                      <SelectItem value="20">{t('pagination.perPage', { count: 20 })}</SelectItem>
+                      <SelectItem value="50">{t('pagination.perPage', { count: 50 })}</SelectItem>
+                      <SelectItem value="100">{t('pagination.perPage', { count: 100 })}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -454,10 +463,10 @@ export default function MaintenanceTasks() {
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
                   >
-                    Anterior
+                    {t('common:pagination.previous')}
                   </Button>
                   <div className="flex items-center text-sm px-2">
-                    Página {page} de {totalPages}
+                    {t('common:pagination.page', { page })} {t('common:pagination.of', { total: totalPages })}
                   </div>
                   <Button
                     variant="outline"
@@ -465,7 +474,7 @@ export default function MaintenanceTasks() {
                     onClick={() => setPage(p => p + 1)}
                     disabled={page >= totalPages}
                   >
-                    Siguiente
+                    {t('common:pagination.next')}
                   </Button>
                 </div>
               </div>

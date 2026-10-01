@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface CustomHtmlEditorProps {
   value: string
@@ -51,6 +52,7 @@ export function CustomHtmlEditor({
   const [viewMode, setViewMode] = useState<'split' | 'code' | 'preview'>('split')
   const [copied, setCopied] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const { t } = useTranslation('common')
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -128,21 +130,21 @@ export function CustomHtmlEditor({
 
         {/* Toolbar Botones Básicos */}
         <div className="flex items-center gap-0.5 mr-2">
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<b></b>')} title="Negrita">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<b></b>')} title={t('editor.bold')}>
             <Bold className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<i></i>')} title="Cursiva">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<i></i>')} title={t('editor.italic')}>
             <Italic className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<u></u>')} title="Subrayado">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<u></u>')} title={t('editor.underline')}>
             <Underline className="h-3.5 w-3.5" />
           </Button>
           <div className="w-px h-4 bg-zinc-800 mx-1" />
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<a href="#"></a>')} title="Enlace">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<a href="#"></a>')} title={t('editor.link')}>
             <LinkIcon className="h-3.5 w-3.5" />
           </Button>
           
-          <label title="Subir Imagen">
+          <label title={t('editor.uploadImage')}>
             <input
               type="file"
               accept="image/*"
@@ -156,7 +158,7 @@ export function CustomHtmlEditor({
                   insertAtCursor(`<img src="${import.meta.env.VITE_API_URL}${url}" alt="imagen del tenant" style="max-width: 100%;" />`)
                 } catch (error) {
                   console.error('Error uploading image', error)
-                  alert('Error al subir la imagen')
+                  alert(t('editor.uploadImageError'))
                 }
                 e.target.value = ''
               }}
@@ -170,16 +172,16 @@ export function CustomHtmlEditor({
           
           <div className="w-px h-4 bg-zinc-800 mx-1" />
           
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<ul>\n  <li></li>\n</ul>')} title="Lista viñetas">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<ul>\n  <li></li>\n</ul>')} title={t('editor.bulletList')}>
             <List className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<ol>\n  <li></li>\n</ol>')} title="Lista numerada">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<ol>\n  <li></li>\n</ol>')} title={t('editor.numberedList')}>
             <ListOrdered className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<h1></h1>')} title="Título H1">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<h1></h1>')} title={t('editor.heading1')}>
             <Heading1 className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<h2></h2>')} title="Título H2">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => insertAtCursor('<h2></h2>')} title={t('editor.heading2')}>
             <Heading2 className="h-3.5 w-3.5" />
           </Button>
 
@@ -190,30 +192,30 @@ export function CustomHtmlEditor({
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
                 <Layout className="size-3.5 mr-1" />
-                Bloques <ChevronDown className="size-3 ml-1 opacity-50" />
+                {t('editor.blocks')} <ChevronDown className="size-3 ml-1 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48 z-[100]">
-              <DropdownMenuLabel>Insertar Estructuras</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('editor.insertStructures')}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => insertAtCursor('<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8" />\n  <style>\n    body { font-family: sans-serif; }\n  </style>\n</head>\n<body>\n  \n</body>\n</html>')}>
-                <FileCode2 className="size-3.5 mr-2" /> HTML Completo
+                <FileCode2 className="size-3.5 mr-2" /> {t('editor.fullHtml')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => insertAtCursor('<div style="padding: 20px; background-color: #f3f4f6; border-radius: 8px;">\n  \n</div>')}>
-                <Layout className="size-3.5 mr-2" /> Contenedor (Div)
+                <Layout className="size-3.5 mr-2" /> {t('editor.containerDiv')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => insertAtCursor('<table width="100%" border="0" cellspacing="0" cellpadding="0">\n  <tr>\n    <td>Columna 1</td>\n    <td>Columna 2</td>\n  </tr>\n</table>')}>
-                <Table className="size-3.5 mr-2" /> Tabla
+                <Table className="size-3.5 mr-2" /> {t('editor.table')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => insertAtCursor('<a href="#" style="display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; border-radius: 4px;">Botón</a>')}>
-                <Code className="size-3.5 mr-2" /> Botón HTML
+                <Code className="size-3.5 mr-2" /> {t('editor.htmlButton')}
               </DropdownMenuItem>
               <div className="h-px bg-zinc-800 my-1" />
-              <DropdownMenuLabel>Componentes del Tenant</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('editor.tenantComponents')}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => insertAtCursor('<div style="text-align: center; padding: 20px; background-color: #ffffff; border-bottom: 1px solid #eaeaea;">\n  <img src="{{tenant.logo_url}}" alt="{{tenant.name}}" style="max-height: 50px;" />\n</div>')}>
-                <Image className="size-3.5 mr-2" /> Header del Tenant
+                <Image className="size-3.5 mr-2" /> {t('editor.tenantHeader')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => insertAtCursor('<div style="text-align: center; padding: 20px; font-size: 12px; color: #666; background-color: #f9f9f9;">\n  <p>&copy; {{tenant.name}}. Todos los derechos reservados.</p>\n  <p><a href="mailto:{{tenant.support_email}}" style="color: #666;">Contacto de Soporte</a></p>\n</div>')}>
-                <Layout className="size-3.5 mr-2" /> Footer del Tenant
+                <Layout className="size-3.5 mr-2" /> {t('editor.tenantFooter')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -230,11 +232,11 @@ export function CustomHtmlEditor({
               className="h-7 gap-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
             >
               <Braces className="size-3.5 text-amber-400" />
-              Variables
+              {t('editor.variables')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-            <DropdownMenuLabel>Insertar en el cursor</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('editor.insertAtCursor')}</DropdownMenuLabel>
             {variables.map((variable) => (
               <DropdownMenuItem
                 key={variable}
@@ -246,7 +248,7 @@ export function CustomHtmlEditor({
             ))}
             {variables.length === 0 && (
               <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                Sin variables disponibles
+                {t('editor.noVariables')}
               </div>
             )}
           </DropdownMenuContent>
@@ -273,9 +275,9 @@ export function CustomHtmlEditor({
           <div className="flex items-center rounded-md bg-zinc-900 p-0.5">
             {(
               [
-                ['split', 'Split'],
-                ['code', 'Código'],
-                ['preview', 'Preview'],
+                ['split', t('editor.viewSplit')],
+                ['code', t('editor.viewCode')],
+                ['preview', t('editor.viewPreview')],
               ] as const
             ).map(([mode, label]) => (
               <button
@@ -300,12 +302,12 @@ export function CustomHtmlEditor({
             size="sm"
             onClick={copyHtml}
             className="h-7 px-2 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
-            title="Copiar HTML"
+            title={t('editor.copyHtml')}
           >
             {copied ? (
               <Check className="size-3.5 text-emerald-400" />
             ) : (
-              'Copy'
+              t('editor.copy')
             )}
           </Button>
           
@@ -317,7 +319,7 @@ export function CustomHtmlEditor({
             size="icon" 
             className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" 
             onClick={() => setIsFullscreen(!isFullscreen)}
-            title="Pantalla Completa (Esc para salir)"
+            title={t('editor.fullscreen')}
           >
             {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
           </Button>
@@ -381,11 +383,11 @@ export function CustomHtmlEditor({
             <div className="flex h-8 shrink-0 items-center gap-1.5 border-b border-zinc-200 bg-zinc-50 px-3">
               <Eye className="size-3.5 text-zinc-400" />
               <span className="text-xs font-medium text-zinc-500">
-                Vista Previa en Vivo
+                {t('editor.livePreview')}
               </span>
             </div>
             <iframe
-              title="Vista previa del email"
+              title={t('editor.previewIframeTitle')}
               srcDoc={previewSrcDoc}
               sandbox=""
               className="h-full w-full flex-1 border-0 bg-white"

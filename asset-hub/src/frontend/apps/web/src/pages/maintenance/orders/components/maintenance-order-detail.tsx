@@ -16,8 +16,6 @@ import {
   type MaintenanceOrderSummary,
   type MaintenanceOrderState,
   type UpdateMaintenanceOrderDto,
-  STATE_LABELS,
-  KIND_LABELS,
   ALLOWED_TRANSITIONS,
 } from '@/services/maintenance-order.service'
 import { PropagatedPropertiesDisplay } from '../../components/propagated-properties-display'
@@ -29,14 +27,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/handle-server-error'
 import { Link } from 'react-router'
 import { usePermissions } from '@/hooks/use-permissions'
 import { MaintenanceOrderPartsEditor } from './maintenance-order-parts-editor'
 import { MaintenanceOrderTasksWidget } from './maintenance-order-tasks-widget'
+import { useTranslation } from 'react-i18next'
+import { useFormat } from '@/lib/format'
 
 const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   draft: 'outline',
@@ -49,12 +47,25 @@ const STATE_VARIANTS: Record<MaintenanceOrderState, 'default' | 'secondary' | 'd
   cancelled: 'destructive',
 }
 
+const ORDER_STATE_KEYS = {
+  draft: 'ordersWidget.status.draft',
+  approved: 'ordersWidget.status.approved',
+  scheduled: 'ordersWidget.status.scheduled',
+  in_progress: 'ordersWidget.status.inProgress',
+  done: 'ordersWidget.status.done',
+  rescheduled: 'ordersWidget.status.rescheduled',
+  verified: 'ordersWidget.status.verified',
+  cancelled: 'ordersWidget.status.cancelled',
+} as const
+
 interface MaintenanceOrderDetailProps {
   order: MaintenanceOrderSummary
   onClose: () => void
 }
 
 export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetailProps) {
+  const { t } = useTranslation(['maintenance', 'common'])
+  const { formatDate } = useFormat()
   const { can } = usePermissions()
   const canUpdate = can('maintenance:update')
   const canApprove = can('maintenance:approve')
@@ -65,6 +76,12 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   const canReject = can('maintenance:reject')
   const canCancel = can('maintenance:cancel')
   const queryClient = useQueryClient()
+
+  const kindLabel = (kind: string) => {
+    if (kind === 'corrective') return t('ordersWidget.kind.corrective')
+    if (kind === 'preventive') return t('ordersWidget.kind.preventive')
+    return kind
+  }
 
   const { data: detail, isLoading: isLoadingDetail } = useQuery({
     queryKey: ['maintenance-order', order.id],
@@ -125,9 +142,9 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-tasks', order.id] })
-      toast.success('Orden actualizada')
+      toast.success(t('orders.toast.updated'))
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al actualizar la orden')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('orders.toast.updateError'))),
   })
 
   const unlinkPreventivePlanMutation = useMutation({
@@ -135,9 +152,9 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
-      toast.success('Plan preventivo desvinculado')
+      toast.success(t('orders.toast.planUnlinked'))
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al desvincular el plan')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('orders.toast.planUnlinkError'))),
   })
 
   const stateMutation = useMutation({
@@ -161,9 +178,9 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', order.id] })
       queryClient.invalidateQueries({ queryKey: ['maintenance-order-tasks', order.id] })
       setCheckedTaskIds(new Set())
-      toast.success('Estado actualizado')
+      toast.success(t('toast.stateUpdated'))
     },
-    onError: (err: unknown) => toast.error(getApiErrorMessage(err, 'Error al cambiar el estado')),
+    onError: (err: unknown) => toast.error(getApiErrorMessage(err, t('toast.stateChangeError'))),
   })
 
   const displayedOrder = detail || order
@@ -185,12 +202,12 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {displayedOrder.title}
           </CardTitle>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant="outline">{KIND_LABELS[displayedOrder.kind] || displayedOrder.kind}</Badge>
-            <Badge variant={STATE_VARIANTS[state]}>{STATE_LABELS[state]}</Badge>
+            <Badge variant="outline">{kindLabel(displayedOrder.kind)}</Badge>
+            <Badge variant={STATE_VARIANTS[state]}>{t(ORDER_STATE_KEYS[state])}</Badge>
             {displayedOrder.scheduledStart && (
               <span className="text-xs flex items-center gap-1 text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                {format(parseApiDate(displayedOrder.scheduledStart), 'dd MMM', { locale: es })}
+                {formatDate(parseApiDate(displayedOrder.scheduledStart), { day: '2-digit', month: 'short' })}
               </span>
             )}
           </div>
@@ -209,7 +226,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
           <>
             {/* Title and description */}
             <div className="space-y-2">
-              <Label htmlFor="mo-title">Título</Label>
+              <Label htmlFor="mo-title">{t('common:labels.title')}</Label>
               <Input
                 id="mo-title"
                 value={title}
@@ -219,12 +236,12 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mo-description">Descripción</Label>
+              <Label htmlFor="mo-description">{t('common:labels.description')}</Label>
               <Textarea
                 id="mo-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Sin descripción"
+                placeholder={t('detail.descriptionPlaceholder')}
                 rows={3}
                 disabled={isInfoEditBlocked}
               />
@@ -235,11 +252,11 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {/* Schedule */}
             <div className="space-y-3">
               <h4 className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Programación
+                <Calendar className="h-4 w-4" /> {t('orders.detail.schedule')}
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="mo-start">Inicio</Label>
+                  <Label htmlFor="mo-start">{t('orders.detail.start')}</Label>
                   <Input
                     id="mo-start"
                     type="datetime-local"
@@ -249,7 +266,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="mo-end">Fin</Label>
+                  <Label htmlFor="mo-end">{t('orders.detail.end')}</Label>
                   <Input
                     id="mo-end"
                     type="datetime-local"
@@ -278,12 +295,12 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {/* Related */}
             <div className="space-y-3">
               <h4 className="text-sm font-medium flex items-center gap-2">
-                <Wrench className="h-4 w-4" /> Relacionados
+                <Wrench className="h-4 w-4" /> {t('orders.detail.related')}
               </h4>
               <div className="grid gap-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  <span className="text-muted-foreground w-32 shrink-0">Activo</span>
+                  <span className="text-muted-foreground w-32 shrink-0">{t('fields.asset')}</span>
                   <Link to={`/assets/${displayedOrder.assetId}`} className="text-sm font-medium hover:underline truncate">
                     {displayedOrder.assetName || displayedOrder.assetId}
                   </Link>
@@ -291,7 +308,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                 {displayedOrder.preventivePlanId && (
                   <div className="flex items-center gap-2 group">
                     <Clock className="h-4 w-4" />
-                    <span className="text-muted-foreground w-32 shrink-0">Plan preventivo</span>
+                    <span className="text-muted-foreground w-32 shrink-0">{t('detail.related.preventivePlan')}</span>
                     <Link to={`/maintenance/preventive-plans`} className="text-sm font-medium hover:underline truncate">
                       {displayedOrder.preventivePlanName || displayedOrder.preventivePlanId}
                     </Link>
@@ -301,7 +318,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         size="icon" 
                         className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" 
                         onClick={() => unlinkPreventivePlanMutation.mutate()}
-                        title="Desvincular plan preventivo"
+                        title={t('orders.detail.unlinkPlan')}
                         disabled={unlinkPreventivePlanMutation.isPending}
                       >
                         {unlinkPreventivePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2Off className="h-3 w-3 text-muted-foreground hover:text-destructive" />}
@@ -312,7 +329,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                 {displayedOrder.incidentId && (
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    <span className="text-muted-foreground w-32 shrink-0">Incidencia</span>
+                    <span className="text-muted-foreground w-32 shrink-0">{t('detail.related.incident')}</span>
                     <Link to={`/maintenance/incidents/${displayedOrder.incidentId}`} className="text-sm font-medium hover:underline truncate">
                       {displayedOrder.incidentTitle || displayedOrder.incidentId}
                     </Link>
@@ -325,10 +342,10 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
 
             {/* State transitions */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium">Cambiar estado</h4>
+              <h4 className="text-sm font-medium">{t('detail.changeState')}</h4>
               <div className="flex flex-wrap gap-2">
                 {allowedActions.length === 0 ? (
-                  <span className="text-sm text-muted-foreground">No hay transiciones disponibles</span>
+                  <span className="text-sm text-muted-foreground">{t('detail.noTransitions')}</span>
                 ) : (
                   <>
                     {allowedActions.includes('approved') && canApprove && (
@@ -338,7 +355,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         onClick={() => stateMutation.mutate('approve')}
                         disabled={stateMutation.isPending}
                       >
-                        <Check className="h-4 w-4 mr-1" /> Aprobar
+                        <Check className="h-4 w-4 mr-1" /> {t('common:actions.approve')}
                       </Button>
                     )}
                     {allowedActions.includes('scheduled') && canSchedule && (
@@ -348,7 +365,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         onClick={() => stateMutation.mutate('schedule')}
                         disabled={stateMutation.isPending}
                       >
-                        <Calendar className="h-4 w-4 mr-1" /> Programar
+                        <Calendar className="h-4 w-4 mr-1" /> {t('orders.detail.scheduleAction')}
                       </Button>
                     )}
                     {allowedActions.includes('in_progress') && canStart && (
@@ -358,7 +375,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         onClick={() => stateMutation.mutate('start')}
                         disabled={stateMutation.isPending}
                       >
-                        <Clock className="h-4 w-4 mr-1" /> Iniciar
+                        <Clock className="h-4 w-4 mr-1" /> {t('common:actions.start')}
                       </Button>
                     )}
                     {allowedActions.includes('done') && canComplete && (
@@ -369,14 +386,14 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                           onClick={() => stateMutation.mutate('complete')}
                           disabled={stateMutation.isPending || !isReadyToComplete}
                         >
-                          <Check className="h-4 w-4 mr-1" /> Completar
+                          <Check className="h-4 w-4 mr-1" /> {t('common:actions.complete')}
                         </Button>
                         {!isReadyToComplete && (
-                          <span className="text-xs text-muted-foreground">Faltan tareas ({completedTasks}/{totalTasks})</span>
+                          <span className="text-xs text-muted-foreground">{t('orders.detail.missingTasks', { completed: completedTasks, total: totalTasks })}</span>
                         )}
                         {isReadyToComplete && (
                           <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
-                            Listo para completar
+                            {t('orders.detail.readyToComplete')}
                           </Badge>
                         )}
                       </div>
@@ -389,7 +406,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                           onClick={() => stateMutation.mutate('verify')}
                           disabled={stateMutation.isPending || checkedTaskIds.size < totalTasks}
                         >
-                          <Check className="h-4 w-4 mr-1" /> Verificar
+                          <Check className="h-4 w-4 mr-1" /> {t('orders.detail.verify')}
                         </Button>
                         {checkedTaskIds.size < totalTasks && canReject && (
                           <Button
@@ -399,7 +416,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                             onClick={() => stateMutation.mutate('reject')}
                             disabled={stateMutation.isPending}
                           >
-                            <X className="h-4 w-4 mr-1" /> Rechazar
+                            <X className="h-4 w-4 mr-1" /> {t('common:actions.reject')}
                           </Button>
                         )}
                       </div>
@@ -412,7 +429,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                         onClick={() => stateMutation.mutate('cancel')}
                         disabled={stateMutation.isPending}
                       >
-                        <X className="h-4 w-4 mr-1" /> Cancelar
+                        <X className="h-4 w-4 mr-1" /> {t('common:actions.cancel')}
                       </Button>
                     )}
                   </>
@@ -445,7 +462,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
             {canUpdate && (
               <div className="flex justify-end gap-2">
                 <Button onClick={() => updateMutation.mutate({})} disabled={updateMutation.isPending || isInfoEditBlocked}>
-                  {updateMutation.isPending ? 'Guardando...' : 'Guardar Información'}
+                  {updateMutation.isPending ? t('form.saving') : t('orders.detail.saveInfo')}
                 </Button>
               </div>
             )}

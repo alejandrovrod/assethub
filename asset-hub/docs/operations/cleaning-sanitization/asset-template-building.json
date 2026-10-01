@@ -1,0 +1,40 @@
+{
+  "code": "TPL_BUILDING",
+  "name": "Edificio / Sede Inmobiliaria",
+  "description": "Plantilla contenedora principal para instalaciones, sedes corporativas, plazas comerciales o campus.",
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"building_name\":{\"title\":\"Nombre del Edificio / Sede\",\"type\":\"string\"},\"address\":{\"title\":\"Dirección Física Completa\",\"type\":\"string\"},\"total_floors\":{\"title\":\"Número de Niveles / Pisos\",\"type\":\"number\"},\"total_area_m2\":{\"title\":\"Área Total Construida (m²)\",\"type\":\"number\"},\"administrator\":{\"title\":\"Administrador de Sede\",\"type\":\"string\",\"format\":\"employee\"},\"operating_hours\":{\"title\":\"Horario Operativo\",\"type\":\"string\"}},\"required\":[\"building_name\",\"address\"]}",
+  "maintenanceChecklist": "1. Inspección general de accesos, fachadas y áreas perimetrales.\n2. Verificación de cuarto de basura central y compactadores.\n3. Supervisión de suministro de agua y presión en hidroneumáticos.\n4. Auditoría aleatoria de bitácoras de limpieza de pisos.",
+  "lifecycleStates": {
+    "initialState": "Operativo",
+    "transitions": {
+      "Operativo": [
+        "Mantenimiento_General",
+        "Fuera_De_Servicio"
+      ],
+      "Mantenimiento_General": [
+        "Operativo",
+        "Fuera_De_Servicio"
+      ],
+      "Fuera_De_Servicio": [
+        "Operativo"
+      ]
+    },
+    "states": {
+      "Operativo": {
+        "color": "#10b981",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "Mantenimiento_General": {
+        "color": "#f59e0b",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "Fuera_De_Servicio": {
+        "color": "#ef4444",
+        "isTerminal": false,
+        "requiresFields": []
+      }
+    }
+  }
+}

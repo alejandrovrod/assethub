@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { ChevronRight } from 'lucide-react'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
+import { useTranslation } from 'react-i18next'
 
 type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean
@@ -16,6 +17,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const location = useLocation()
   const pathnames = location.pathname.split('/').filter((x) => x)
   const { customTitle } = useBreadcrumbStore()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const onScroll = () => {
@@ -53,34 +55,13 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
         {/* Breadcrumbs */}
         <div className="flex items-center text-sm text-muted-foreground gap-2 capitalize hidden sm:flex">
           {pathnames.length === 0 ? (
-            <span className="font-medium text-foreground">Panel de Control</span>
+            <span className="font-medium text-foreground">{t('breadcrumbs.dashboard')}</span>
           ) : (
             pathnames.map((value, index) => {
               const isLast = index === pathnames.length - 1
               
-              const breadcrumbTranslations: Record<string, string> = {
-                'assets': 'Activos',
-                'dashboard': 'Dashboard',
-                'templates': 'Plantillas',
-                'maintenance': 'Mantenimiento',
-                'incidents': 'Incidencias',
-                'workflow-templates': 'Plantillas de flujo',
-                'tasks': 'Tareas',
-                'orders': 'Órdenes',
-                'preventive-plans': 'Planes preventivos',
-                'communication-templates': 'Plantillas de Comunicación',
-                'staff': 'Personal',
-                'employees': 'Empleados',
-                'teams': 'Equipos',
-                'catalogs': 'Catálogos',
-                'settings': 'Configuración',
-                'tenant': 'Organización',
-                'users': 'Usuarios',
-                'roles': 'Roles',
-                'audit': 'Auditoría',
-              }
-              
-              let displayValue = breadcrumbTranslations[value] || value.replace(/-/g, ' ')
+              // Dynamic key from the URL segment: falls back to the slug text
+              let displayValue: string = t(`breadcrumbs.${value}`, value.replace(/-/g, ' '))
               // If it's the last part and looks like a long ID (e.g., > 16 chars) and we have a custom title
               if (isLast && customTitle && value.length > 16) {
                  displayValue = customTitle

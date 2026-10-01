@@ -31,7 +31,7 @@ public class DeleteAssetTemplateCommandHandler : IRequestHandler<DeleteAssetTemp
         var usages = await _usageChecker.GetUsageCountAsync(existing.Id);
         if (usages > 0)
         {
-            throw new AssetTemplateInUseException($"El template está siendo usado por {usages} activos.");
+            throw new AssetTemplateInUseException(usages);
         }
 
         existing.IsActive = false;

@@ -1,20 +1,16 @@
-using System;
-
 namespace AssetHub.Domain.Exceptions;
 
-public class InvalidCatalogException : Exception
+/// <summary>
+/// Payload references catalog ids that are invalid or belong to another tenant.
+/// Mapped to HTTP 400 with an RFC 7807 body by ExceptionHandlingMiddleware.
+/// </summary>
+public class InvalidCatalogException : DomainException
 {
     public InvalidCatalogException()
-    {
-    }
-
-    public InvalidCatalogException(string message)
-        : base(message)
-    {
-    }
-
-    public InvalidCatalogException(string message, Exception inner)
-        : base(message, inner)
+        : base(
+            "invalid_catalog",
+            "One or more DefaultCatalogIds are invalid or do not belong to this tenant.",
+            "Domain.InvalidCatalogIds")
     {
     }
 }

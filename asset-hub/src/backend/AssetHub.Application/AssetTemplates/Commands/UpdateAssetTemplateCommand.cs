@@ -39,7 +39,7 @@ public class UpdateAssetTemplateCommandHandler : IRequestHandler<UpdateAssetTemp
         }
         catch (Exception ex)
         {
-            throw new InvalidTemplateSchemaException($"SchemaJson inválido: {ex.Message}");
+            throw new InvalidTemplateSchemaException(ex.Message);
         }
 
         await ValidateCatalogsAsync(request.SchemaJson, existing.TenantId, cancellationToken);

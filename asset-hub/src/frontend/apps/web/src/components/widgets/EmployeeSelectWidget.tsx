@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button'
 import { User } from 'lucide-react'
 import { apiClient as api } from '@/lib/api-client'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export function EmployeeSelectWidget(props: WidgetProps) {
   const { id, value, onChange, disabled, readonly } = props
   const [employeeName, setEmployeeName] = useState<string>('')
+  const { t } = useTranslation('common')
 
   // Fetch the employee name if a value is pre-selected and we don't have the name yet
   useEffect(() => {
@@ -17,7 +19,7 @@ export function EmployeeSelectWidget(props: WidgetProps) {
           setEmployeeName(`${res.data.firstName} ${res.data.lastName}`)
         }
       }).catch(() => {
-        setEmployeeName('Empleado no encontrado')
+        setEmployeeName(t('select.employeeNotFound'))
       })
     }
   }, [value, employeeName])
@@ -33,9 +35,9 @@ export function EmployeeSelectWidget(props: WidgetProps) {
         }}
         labelKey="name"
         valueKey="id"
-        placeholder="Buscar empleado..."
-        searchPlaceholder="Escriba para buscar..."
-        emptyText="No se encontraron empleados."
+        placeholder={t('select.employeePlaceholder')}
+        searchPlaceholder={t('labels.placeholder')}
+        emptyText={t('status.noResults')}
         onSelect={(item) => {
           onChange(item.id)
           setEmployeeName(item.name)
@@ -50,7 +52,7 @@ export function EmployeeSelectWidget(props: WidgetProps) {
             className="w-full justify-between font-normal"
             disabled={disabled || readonly}
           >
-            {value ? employeeName || 'Cargando...' : 'Buscar empleado...'}
+            {value ? employeeName || t('status.loading') : t('select.employeePlaceholder')}
             <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         )}

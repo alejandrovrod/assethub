@@ -18,6 +18,7 @@ import { assetService } from '@/services/asset.service'
 import { toast } from 'sonner'
 import { usePropagatedProperties } from '@/hooks/use-propagated-properties'
 import FormSchema from '@rjsf/core'
+import { rjsfTemplates } from '@/components/rjsf/templates'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
@@ -26,17 +27,19 @@ import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
 import { FormSheetLayout, formSheetContentClass } from '@/components/form-sheet-layout'
 import { cn } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
-const formSchema = z.object({
-  title: z.string().min(1, 'Título es requerido').max(200),
+const createFormSchema = (t: TFunction<'maintenance'>) => z.object({
+  title: z.string().min(1, t('form.validation.titleRequired')).max(200),
   description: z.string().optional(),
-  assetId: z.string().min(1, 'Activo es requerido'),
-  WorkflowTemplateId: z.string().min(1, 'Plantilla es requerida'),
+  assetId: z.string().min(1, t('form.validation.assetRequired')),
+  WorkflowTemplateId: z.string().min(1, t('form.validation.templateRequired')),
   typeId: z.string().optional(),
   priorityId: z.string().optional(),
 })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof createFormSchema>>
 
 interface Props {
   open: boolean
@@ -50,6 +53,7 @@ interface Props {
 }
 
 export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hideAssetSelector, targetAssetState, title, description }: Props) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canCreate = can('incidents:create')
   const queryClient = useQueryClient()
@@ -66,7 +70,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
   })
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(t)),
     defaultValues: {
       title: '',
       description: '',
@@ -167,10 +171,10 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
         queryClient.invalidateQueries({ queryKey: ['incidents', 'asset', assetId] })
         queryClient.invalidateQueries({ queryKey: ['assets'] })
       }
-      toast.success('Incidencia reportada exitosamente')
+      toast.success(t('toast.incidentReported'))
       onSuccess?.(id)
     },
-    onError: () => toast.error('Error al reportar la incidencia')
+    onError: () => toast.error(t('toast.incidentReportError'))
   })
 
   const onSubmit = (values: FormValues) => {
@@ -210,9 +214,9 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                     <AlertTriangle className="h-5 w-5" />
                   </div>
                   <div>
-                    <SheetTitle className="text-xl">{title ?? 'Reportar Incidencia'}</SheetTitle>
+                    <SheetTitle className="text-xl">{title ?? t('form.reportIncident')}</SheetTitle>
                     <SheetDescription>
-                      {description ?? 'Creá una nueva incidencia asignada a un activo.'}
+                      {description ?? t('form.reportIncidentDescription')}
                     </SheetDescription>
                   </div>
                 </div>
@@ -221,10 +225,10 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
             footer={
               <>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </Button>
                 <Button type="submit" disabled={reportMutation.isPending || !canCreate} className="min-w-[150px]">
-                  {reportMutation.isPending ? 'Guardando...' : 'Reportar Incidencia'}
+                  {reportMutation.isPending ? t('form.saving') : t('form.reportIncident')}
                 </Button>
               </>
             }
@@ -235,9 +239,9 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Título</FormLabel>
+                  <FormLabel>{t('common:labels.title')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Resumen del problema" {...field} />
+                    <Input placeholder={t('form.titlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -249,9 +253,9 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción</FormLabel>
+                  <FormLabel>{t('common:labels.description')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Detalles de la incidencia..." {...field} />
+                    <Textarea placeholder={t('form.incidentDetailsPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -267,7 +271,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                     <FormItem>
                       <FormLabel className="flex items-center gap-2 text-muted-foreground">
                         <Box className="h-4 w-4" />
-                        Activo
+                        {t('fields.asset')}
                       </FormLabel>
                       <FormControl>
                         <AsyncCombobox<{ id: string; name: string; code: string }>
@@ -277,9 +281,9 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                           }}
                           labelKey="name"
                           valueKey="id"
-                          placeholder="Seleccione un activo"
-                          searchPlaceholder="Escriba para buscar..."
-                          emptyText="No se encontraron activos."
+                          placeholder={t('form.selectAsset')}
+                          searchPlaceholder={t('form.searchTypePlaceholder')}
+                          emptyText={t('form.noAssetsFound')}
                           onSelect={(item) => {
                             field.onChange(item.id)
                             setAssetLabel(`${item.code} - ${item.name}`)
@@ -292,7 +296,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                               onClick={onClick}
                               className="w-full justify-between font-normal bg-background h-10"
                             >
-                              {assetLabel || 'Seleccione un activo'}
+                              {assetLabel || t('form.selectAsset')}
                               <Box className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           )}
@@ -310,7 +314,7 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                     <FormItem>
                       <FormLabel className="flex items-center gap-2 text-muted-foreground">
                         <Box className="h-4 w-4" />
-                        Activo
+                        {t('fields.asset')}
                       </FormLabel>
                       <FormControl>
                         <Input value={assetLabel || field.value} disabled />
@@ -328,12 +332,12 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
                   <FormItem>
                     <FormLabel className="flex items-center gap-2 text-muted-foreground">
                       <Tag className="h-4 w-4" />
-                      Plantilla (Tipo)
+                      {t('form.templateType')}
                     </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="h-10">
-                          <SelectValue placeholder="Seleccione una plantilla" />
+                          <SelectValue placeholder={t('form.selectTemplate')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -354,16 +358,23 @@ export function ReportIncidentSheet({ open, onOpenChange, onSuccess, assetId, hi
               <Card className="mt-8 overflow-hidden border-primary/20 bg-muted/20">
                 <div className="bg-primary/5 px-4 py-3 border-b border-primary/10 flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-primary" />
-                  <h4 className="text-sm font-semibold text-primary">Propiedades Adicionales</h4>
+                  <h4 className="text-sm font-semibold text-primary">{t('form.additionalProperties')}</h4>
                 </div>
                 <div className="p-4 rjsf-tailwind rjsf-single-column">
                   {isResolving ? (
-                    <div className="text-sm text-muted-foreground">Cargando catálogos...</div>
+                    <div className="text-sm text-muted-foreground">{t('form.loadingCatalogs')}</div>
                   ) : (
                     <FormSchema 
                       schema={schema} 
-                      uiSchema={uiSchema}
+                      uiSchema={{
+                        ...(uiSchema || {}),
+                        'ui:options': {
+                          ...(uiSchema?.['ui:options'] as any || {}),
+                          disableTabs: true
+                        }
+                      }}
                       validator={validator} 
+                      templates={rjsfTemplates}
                       formData={schemaData} 
                       onChange={e => setSchemaData(e.formData)} 
                       widgets={{ 

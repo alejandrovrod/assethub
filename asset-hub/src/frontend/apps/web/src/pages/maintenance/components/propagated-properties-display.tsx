@@ -11,11 +11,13 @@ import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import Form from '@rjsf/core'
+import { rjsfTemplates } from '@/components/rjsf/templates'
 import { customValidator as validator } from '@/lib/rjsf-validator'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
 import { WorkflowTemplateService } from '@/services/workflow-template.service'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   assetId?: string
@@ -31,6 +33,7 @@ interface Props {
 }
 
 export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incidentId, maintenanceOrderId, propertiesJson, disabled, onUpdate, isUpdating, inlineEdit, onChange }: Props) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<any>({})
 
@@ -69,7 +72,7 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
   })
 
   const rawSchemaJson = useMemo(() => {
-    let combined: any = { type: 'object', properties: {} }
+    let combined: any = { type: 'object', properties: {}, dependencies: {} }
     let hasProperties = false
 
     if (asset?.schemaJson) {
@@ -81,6 +84,15 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
           }
           Object.assign(combined.properties, parsed.properties)
           hasProperties = true
+        }
+        if (parsed.dependencies) {
+          Object.assign(combined.dependencies, parsed.dependencies)
+        }
+        if (parsed['x-form-tabs']) {
+          combined['x-form-tabs'] = parsed['x-form-tabs']
+        }
+        if (parsed['x-form-sections']) {
+          combined['x-form-sections'] = parsed['x-form-sections']
         }
       } catch (e) {}
     }
@@ -97,9 +109,22 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
               Object.assign(combined.properties, parsed.properties)
               hasProperties = true
             }
+            if (parsed.dependencies) {
+              Object.assign(combined.dependencies, parsed.dependencies)
+            }
+            if (parsed['x-form-tabs']) {
+              combined['x-form-tabs'] = parsed['x-form-tabs']
+            }
+            if (parsed['x-form-sections']) {
+              combined['x-form-sections'] = parsed['x-form-sections']
+            }
           } catch (e) {}
         }
       }
+    }
+
+    if (Object.keys(combined.dependencies).length === 0) {
+      delete combined.dependencies
     }
 
     return hasProperties ? JSON.stringify(combined) : ''
@@ -135,6 +160,23 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
         newSchema.properties[key] = prop
       }
     })
+
+    if (baseSchema.dependencies) {
+      newSchema.dependencies = {}
+      Object.keys(baseSchema.dependencies).forEach(depKey => {
+        if (newSchema.properties[depKey]) {
+          newSchema.dependencies[depKey] = baseSchema.dependencies[depKey]
+        }
+      })
+    }
+
+    if (baseSchema['x-form-tabs']) {
+      newSchema['x-form-tabs'] = baseSchema['x-form-tabs']
+    }
+    if (baseSchema['x-form-sections']) {
+      newSchema['x-form-sections'] = baseSchema['x-form-sections']
+    }
+
     return newSchema
   }, [schema, allWorkflowTemplateIds.length])
 
@@ -165,13 +207,20 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
       <div className="space-y-3 mt-6">
         <Separator />
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <FileText className="h-4 w-4" /> Información Propagada
+          <FileText className="h-4 w-4" /> {t('propagated.title')}
         </h4>
         <div className="rjsf-tailwind rjsf-single-column bg-muted/10 p-4 rounded-md border">
           <Form
             schema={subSchema}
-            uiSchema={uiSchema}
+            uiSchema={{
+              ...uiSchema,
+              'ui:options': {
+                ...(uiSchema?.['ui:options'] as any || {}),
+                disableTabs: true
+              }
+            }}
             validator={validator}
+            templates={rjsfTemplates}
             formData={properties}
             onChange={e => onChange?.(JSON.stringify(e.formData))}
             disabled={disabled}
@@ -197,12 +246,12 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-medium flex items-center gap-2">
-            <FileText className="h-4 w-4" /> Información Propagada
+            <FileText className="h-4 w-4" /> {t('propagated.title')}
           </h4>
           {onUpdate && !disabled && (
             <Button variant="ghost" size="sm" onClick={handleEditClick} className="h-8">
               <Pencil className="h-4 w-4 mr-2" />
-              Editar
+              {t('common:actions.edit')}
             </Button>
           )}
         </div>
@@ -250,9 +299,9 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
           <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-[540px] flex flex-col p-0 h-full">
             <div className="p-6 pb-2 border-b">
               <SheetHeader>
-                <SheetTitle>Editar Información Propagada</SheetTitle>
+                <SheetTitle>{t('propagated.editTitle')}</SheetTitle>
                 <SheetDescription>
-                  Actualiza los datos adicionales para este registro.
+                  {t('propagated.editDescription')}
                 </SheetDescription>
               </SheetHeader>
             </div>
@@ -260,8 +309,15 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
               <div className="rjsf-tailwind rjsf-single-column mt-6">
                 <Form
                   schema={subSchema}
-                  uiSchema={uiSchema}
+                  uiSchema={{
+                    ...uiSchema,
+                    'ui:options': {
+                      ...(uiSchema?.['ui:options'] as any || {}),
+                      disableTabs: true
+                    }
+                  }}
                   validator={validator}
+                  templates={rjsfTemplates}
                   formData={formData}
                   onChange={e => setFormData(e.formData)}
                   onSubmit={handleSubmit}
@@ -273,12 +329,12 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
                 >
                   <div className="flex justify-end mt-6 gap-2 border-t pt-4">
                     <Button variant="outline" type="button" onClick={() => setIsEditing(false)}>
-                      Cancelar
+                      {t('common:actions.cancel')}
                     </Button>
                     <Button type="submit" disabled={isUpdating}>
                       {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <Save className="mr-2 h-4 w-4" />
-                      Guardar Cambios
+                      {t('common:actions.saveChanges')}
                     </Button>
                   </div>
                 </Form>

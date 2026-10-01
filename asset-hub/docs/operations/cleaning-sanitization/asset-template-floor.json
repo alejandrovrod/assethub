@@ -1,0 +1,39 @@
+{
+  "code": "TPL_FLOOR",
+  "name": "Piso / Nivel",
+  "description": "Plantilla contenedora para pisos, niveles o secciones arquitectónicas de un edificio.",
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"floor_number\":{\"title\":\"Número o Denominación de Piso\",\"type\":\"string\"},\"floor_area_m2\":{\"title\":\"Superficie del Piso (m²)\",\"type\":\"number\"},\"lead_cleaner\":{\"title\":\"Líder de Cuadrilla Asignado\",\"type\":\"string\",\"format\":\"employee\"},\"cleaning_cart_station\":{\"title\":\"Ubicación Carrito de Limpieza / Estación\",\"type\":\"string\"}},\"required\":[\"floor_number\"]}",
+  "maintenanceChecklist": "1. Inspección de pasillos generales, elevadores y escaleras de emergencia.\n2. Vaciado de papeleras de áreas de tránsito común.\n3. Verificación de cuarto de servicio / pileta de trapeadores del nivel.\n4. Auditoría de estado de higiene de sanitarios y oficinas del piso.",
+  "lifecycleStates": {
+    "initialState": "Habilitado",
+    "transitions": {
+      "Habilitado": [
+        "En_Jornada_Limpieza",
+        "Clausurado_Temporal"
+      ],
+      "En_Jornada_Limpieza": [
+        "Habilitado"
+      ],
+      "Clausurado_Temporal": [
+        "Habilitado"
+      ]
+    },
+    "states": {
+      "Habilitado": {
+        "color": "#10b981",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "En_Jornada_Limpieza": {
+        "color": "#3b82f6",
+        "isTerminal": false,
+        "requiresFields": []
+      },
+      "Clausurado_Temporal": {
+        "color": "#ef4444",
+        "isTerminal": false,
+        "requiresFields": []
+      }
+    }
+  }
+}

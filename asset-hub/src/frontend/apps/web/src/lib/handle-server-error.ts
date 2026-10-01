@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import { toast } from 'sonner'
+import i18n from '@/i18n'
 
 /**
  * Extracts a human-readable message from a backend error response.
@@ -49,7 +50,7 @@ export function handleServerError(error: unknown) {
     console.log(error)
   }
 
-  let errMsg = getApiErrorMessage(error, 'Something went wrong!')
+  let errMsg = getApiErrorMessage(error, i18n.t('common:errors.generic'))
 
   if (
     error &&
@@ -57,7 +58,7 @@ export function handleServerError(error: unknown) {
     'status' in error &&
     Number(error.status) === 204
   ) {
-    errMsg = 'No content.'
+    errMsg = i18n.t('common:errors.noContent')
   }
 
   toast.error(errMsg)

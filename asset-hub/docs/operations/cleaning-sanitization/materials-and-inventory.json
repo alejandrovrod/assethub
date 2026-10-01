@@ -1,0 +1,74 @@
+{
+  "warehouse": {
+    "code": "WH-CLEANING-01",
+    "name": "Almacén Central de Químicos e Higiene",
+    "suggestedLocation": "Edificio Principal - Planta Baja / Cuarto Técnico"
+  },
+  "zoneBomRecommendations": [
+    {
+      "zoneType": "Baño / Sanitario Público",
+      "materials": [
+        {
+          "catalogItemCode": "CHEM-CLOR-01",
+          "quantity": 0.25,
+          "unitOfMeasure": "Litros",
+          "isCritical": true,
+          "notes": "Consumo estimado por ciclo de lavado profundo"
+        },
+        {
+          "catalogItemCode": "CONS-BAG-90120",
+          "quantity": 2.0,
+          "unitOfMeasure": "Piezas",
+          "isCritical": false,
+          "notes": "Cambio de bolsas en cestos principales"
+        },
+        {
+          "catalogItemCode": "CHEM-SOAP-03",
+          "quantity": 0.5,
+          "unitOfMeasure": "Litros",
+          "isCritical": true,
+          "notes": "Relleno de dispensadores automáticos"
+        }
+      ]
+    },
+    {
+      "zoneType": "Oficina / Pasillo / Áreas Comunes",
+      "materials": [
+        {
+          "catalogItemCode": "CHEM-QUAT-02",
+          "quantity": 0.15,
+          "unitOfMeasure": "Litros",
+          "isCritical": false,
+          "notes": "Sanitización de superficies y trapeado"
+        },
+        {
+          "catalogItemCode": "CONS-MICROFIBER",
+          "quantity": 1.0,
+          "unitOfMeasure": "Piezas",
+          "isCritical": false,
+          "notes": "Rotación de paño para polvo"
+        }
+      ]
+    }
+  ],
+  "stockPolicies": [
+    {
+      "catalogItemCode": "CHEM-CLOR-01",
+      "minStock": 20.0,
+      "reorderPoint": 35.0,
+      "unit": "Litros"
+    },
+    {
+      "catalogItemCode": "CHEM-QUAT-02",
+      "minStock": 15.0,
+      "reorderPoint": 25.0,
+      "unit": "Litros"
+    },
+    {
+      "catalogItemCode": "CONS-BAG-90120",
+      "minStock": 100.0,
+      "reorderPoint": 250.0,
+      "unit": "Piezas"
+    }
+  ]
+}

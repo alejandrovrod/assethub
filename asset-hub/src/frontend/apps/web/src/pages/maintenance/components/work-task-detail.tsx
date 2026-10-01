@@ -14,7 +14,7 @@ import {
   Send,
   ArrowRight,
 } from 'lucide-react'
-import { workTaskService, WorkTaskState, CreateWorkTaskRequest, WorkTaskSummary, STATE_LABELS } from '@/services/work-task.service'
+import { workTaskService, WorkTaskState, CreateWorkTaskRequest, WorkTaskSummary } from '@/services/work-task.service'
 import { PropagatedPropertiesDisplay } from './propagated-properties-display'
 import { catalogService } from '@/services/catalog.service'
 import { Button } from '@/components/ui/button'
@@ -39,9 +39,18 @@ import { es } from 'date-fns/locale'
 import { Link } from 'react-router'
 import { parseApiDate } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
+import { useTranslation } from 'react-i18next'
 
 const PRIORITY_CATALOG_CODE = 'priority'
 const TASK_TYPE_CATALOG_CODE = 'tasktype'
+
+const TASK_STATE_KEYS = {
+  todo: 'tasks.states.todo',
+  rework: 'tasks.states.rework',
+  in_progress: 'tasks.states.inProgress',
+  done: 'tasks.states.done',
+  cancelled: 'tasks.states.cancelled',
+} as const
 
 const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   todo: 'secondary',
@@ -65,6 +74,7 @@ interface WorkTaskDetailProps {
 }
 
 export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
+  const { t } = useTranslation(['maintenance', 'common'])
   const { can } = usePermissions()
   const canUpdate = can('tasks:update')
   const canAssign = can('tasks:assign')
@@ -138,9 +148,9 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
       queryClient.invalidateQueries({ queryKey: ['work-task', task.id] })
-      toast.success('Tarea actualizada')
+      toast.success(t('toast.taskUpdated'))
     },
-    onError: () => toast.error('Error al actualizar la tarea'),
+    onError: () => toast.error(t('toast.taskUpdateError')),
   })
 
   const stateMutation = useMutation({
@@ -149,9 +159,9 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
       queryClient.setQueryData(['work-task', task.id], data)
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
       queryClient.invalidateQueries({ queryKey: ['work-task-history', task.id] })
-      toast.success('Estado actualizado')
+      toast.success(t('toast.stateUpdated'))
     },
-    onError: () => toast.error('Error al cambiar el estado'),
+    onError: () => toast.error(t('toast.stateChangeError')),
   })
 
   const assignMutation = useMutation({
@@ -163,18 +173,18 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
       queryClient.invalidateQueries({ queryKey: ['work-task', task.id] })
-      toast.success('Asignación actualizada')
+      toast.success(t('toast.assignmentUpdated'))
     },
-    onError: () => toast.error('Error al asignar la tarea'),
+    onError: () => toast.error(t('toast.assignError')),
   })
 
   const commentMutation = useMutation({
     mutationFn: (text: string) => workTaskService.addComment(task.id, text),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-task-comments', task.id] })
-      toast.success('Comentario agregado')
+      toast.success(t('toast.commentAdded'))
     },
-    onError: () => toast.error('Error al agregar el comentario'),
+    onError: () => toast.error(t('toast.commentError')),
   })
 
   const [commentText, setCommentText] = useState('')
@@ -217,27 +227,27 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={isInfoEditBlocked}
-            placeholder="Título de la tarea"
+            placeholder={t('detail.taskTitlePlaceholder')}
           />
           <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant={STATE_VARIANTS[state]}>{STATE_LABELS[state]}</Badge>
+            <Badge variant={STATE_VARIANTS[state]}>{t(TASK_STATE_KEYS[state])}</Badge>
             {displayedTask.dueAt && (
               <span className="text-xs flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                Vence {format(parseApiDate(displayedTask.dueAt), 'dd MMM yyyy', { locale: es })}
+                {t('detail.dueLabel')} {format(parseApiDate(displayedTask.dueAt), 'dd MMM yyyy', { locale: es })}
               </span>
             )}
           </CardDescription>
 
           <div className="mt-4 border rounded-md p-2 bg-muted/10">
             {(!displayedTask.maintenanceOrderId && !displayedTask.incidentId && !displayedTask.preventivePlanId) && (
-              <Badge variant="secondary" className="w-fit mb-2">Tarea Independiente</Badge>
+              <Badge variant="secondary" className="w-fit mb-2">{t('detail.independentTask')}</Badge>
             )}
 
             <div className="grid gap-1 text-sm">
               <RelatedLink
                 icon={<FileText className="h-4 w-4" />}
-                label="Orden de mantenimiento"
+                label={t('detail.related.maintenanceOrder')}
                 name={displayedTask.maintenanceOrderTitle}
                 id={displayedTask.maintenanceOrderId}
                 to={displayedTask.maintenanceOrderId ? `/maintenance/orders?selected=${displayedTask.maintenanceOrderId}` : undefined}
@@ -245,7 +255,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
               />
               <RelatedLink
                 icon={<AlertTriangle className="h-4 w-4" />}
-                label="Incidencia"
+                label={t('detail.related.incident')}
                 name={displayedTask.incidentTitle}
                 id={displayedTask.incidentId}
                 to={displayedTask.incidentId ? `/maintenance/incidents/${displayedTask.incidentId}` : undefined}
@@ -253,7 +263,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
               />
               <RelatedLink
                 icon={<ClipboardList className="h-4 w-4" />}
-                label="Plan preventivo"
+                label={t('detail.related.preventivePlan')}
                 name={displayedTask.preventivePlanName}
                 id={displayedTask.preventivePlanId}
                 to={displayedTask.preventivePlanId ? `/maintenance/preventive-plans?selected=${displayedTask.preventivePlanId}` : undefined}
@@ -261,7 +271,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
               />
               <RelatedLink
                 icon={<Package className="h-4 w-4" />}
-                label="Activo"
+                label={t('fields.asset')}
                 name={displayedTask.assetName}
                 id={displayedTask.assetId}
                 to={displayedTask.assetId ? `/assets/${displayedTask.assetId}` : undefined}
@@ -278,9 +288,9 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
       <CardContent className="flex-1 p-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
           <TabsList className="mx-4 mt-4 w-fit">
-            <TabsTrigger value="details">Detalle</TabsTrigger>
-            <TabsTrigger value="history">Historial</TabsTrigger>
-            <TabsTrigger value="comments">Comentarios</TabsTrigger>
+            <TabsTrigger value="details">{t('detail.tabs.details')}</TabsTrigger>
+            <TabsTrigger value="history">{t('common:labels.history')}</TabsTrigger>
+            <TabsTrigger value="comments">{t('common:labels.comments')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="flex-1 overflow-auto px-4 pb-4">
@@ -291,12 +301,12 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             ) : (
               <div className="space-y-5 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="wt-description">Descripción</Label>
+                  <Label htmlFor="wt-description">{t('common:labels.description')}</Label>
                   <Textarea
                     id="wt-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Sin descripción"
+                    placeholder={t('detail.descriptionPlaceholder')}
                     rows={3}
                     disabled={isInfoEditBlocked}
                   />
@@ -304,7 +314,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="wt-dueAt">Vencimiento</Label>
+                    <Label htmlFor="wt-dueAt">{t('detail.due')}</Label>
                     <Input
                       id="wt-dueAt"
                       type="date"
@@ -315,10 +325,10 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Prioridad</Label>
+                    <Label>{t('common:labels.priority')}</Label>
                     <Select disabled={isInfoEditBlocked} value={priorityCatalogItemId} onValueChange={setPriorityCatalogItemId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar prioridad" />
+                        <SelectValue placeholder={t('detail.selectPriority')} />
                       </SelectTrigger>
                       <SelectContent>
                         {priorityItems?.map((item) => (
@@ -331,10 +341,10 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                   </div>
 
                   <div className="space-y-2 col-span-2">
-                    <Label>Tipo de tarea</Label>
+                    <Label>{t('form.taskType')}</Label>
                     <Select disabled={isInfoEditBlocked} value={taskTypeCatalogItemId} onValueChange={setTaskTypeCatalogItemId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar tipo" />
+                        <SelectValue placeholder={t('detail.selectType')} />
                       </SelectTrigger>
                       <SelectContent>
                         {taskTypeItems?.map((item) => (
@@ -365,20 +375,20 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                 <Separator />
 
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium">Cambiar estado</h4>
+                  <h4 className="text-sm font-medium">{t('detail.changeState')}</h4>
                   
                   {isStateChangeBlocked && (
                     <div className="text-xs text-destructive bg-destructive/10 p-2 rounded-md border border-destructive/20 flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       <span>
-                        No se puede cambiar el estado de la tarea porque la orden principal no está En progreso.
+                        {t('detail.stateChangeBlocked')}
                       </span>
                     </div>
                   )}
 
                   <div className="flex flex-wrap gap-2">
                     {allowedStates.length === 0 || !canChangeState ? (
-                      <span className="text-sm text-muted-foreground">No hay transiciones disponibles</span>
+                      <span className="text-sm text-muted-foreground">{t('detail.noTransitions')}</span>
                     ) : (
                       allowedStates.map((target) => (
                         <Button
@@ -388,7 +398,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                           onClick={() => stateMutation.mutate(target)}
                           disabled={stateMutation.isPending || isStateChangeBlocked}
                         >
-                          {STATE_LABELS[target]}
+                          {t(TASK_STATE_KEYS[target])}
                         </Button>
                       ))
                     )}
@@ -401,7 +411,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                     disabled={updateMutation.isPending || assignMutation.isPending || isInfoEditBlocked}
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Guardar cambios
+                    {t('common:actions.saveChanges')}
                   </Button>
                 </div>
               </div>
@@ -416,7 +426,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                 </div>
               ) : !historyEntries || historyEntries.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-8 text-center border border-dashed rounded-md">
-                  No hay historial de cambios.
+                  {t('empty.history')}
                 </div>
               ) : (
                 <div className="relative space-y-4 pl-2 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-px before:bg-border">
@@ -428,10 +438,10 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           {entry.fromState && (
-                            <Badge variant="outline">{STATE_LABELS[entry.fromState as WorkTaskState] || entry.fromState}</Badge>
+                            <Badge variant="outline">{TASK_STATE_KEYS[entry.fromState as WorkTaskState] ? t(TASK_STATE_KEYS[entry.fromState as WorkTaskState]) : entry.fromState}</Badge>
                           )}
                           <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                          <Badge>{STATE_LABELS[entry.toState as WorkTaskState] || entry.toState}</Badge>
+                          <Badge>{TASK_STATE_KEYS[entry.toState as WorkTaskState] ? t(TASK_STATE_KEYS[entry.toState as WorkTaskState]) : entry.toState}</Badge>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {format(parseApiDate(entry.changedAt), 'PPp', { locale: es })}
@@ -453,7 +463,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                 </div>
               ) : !comments || comments.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-8 text-center border border-dashed rounded-md">
-                  No hay comentarios.
+                  {t('empty.noComments')}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -476,7 +486,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
                 <Textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Escribir comentario..."
+                  placeholder={t('comments.writePlaceholder')}
                   className="min-h-[60px] resize-none"
                 />
                 <Button type="submit" size="icon" disabled={commentMutation.isPending || !commentText.trim()}>
@@ -506,6 +516,7 @@ function RelatedLink({
   to?: string
   isPrimary?: boolean
 }) {
+  const { t } = useTranslation('maintenance')
   if (!id) return null
   const display = name || id
 
@@ -520,7 +531,7 @@ function RelatedLink({
       ) : (
         <span className={`text-sm truncate ${isPrimary ? 'font-semibold text-foreground' : ''}`}>{display}</span>
       )}
-      {isPrimary && <Badge variant="outline" className="ml-auto text-[10px] uppercase h-5">Origen</Badge>}
+      {isPrimary && <Badge variant="outline" className="ml-auto text-[10px] uppercase h-5">{t('detail.related.origin')}</Badge>}
     </div>
   )
 }

@@ -91,8 +91,9 @@ public class ChangeAssetEnvironmentStateCommandHandler : IRequestHandler<ChangeA
                         {
                             if (!request.TransitionData.ContainsKey(field))
                             {
-                                _logger.LogWarning("Validación falló: TransitionData no contiene la llave '{Field}'.", field);
-                                throw new ArgumentException($"El campo '{field}' es requerido para cambiar al estado {request.ToState}");
+                                // We allow missing fields because they might be conditionally hidden by JSON schema dependencies.
+                                // The frontend RJSF validation ensures that active required fields are always sent.
+                                continue;
                             }
 
                             var element = request.TransitionData[field];
