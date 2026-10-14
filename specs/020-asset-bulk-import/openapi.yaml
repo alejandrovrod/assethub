@@ -1,0 +1,177 @@
+openapi: 3.0.3
+info:
+  title: AssetHub - Módulo de Importación Masiva e Histórica de Activos
+  version: 1.0.0
+  description: Endpoints para descarga de plantillas dinámicas, prevalidación (dry-run) e importación en lote de activos.
+paths:
+  /api/v1/assets/import/template/{assetTemplateId}:
+    get:
+      summary: Descargar plantilla de importación dinámica
+      description: Genera un archivo Excel (.xlsx) o CSV con columnas fijas y dinámicas según el SchemaJson de la plantilla.
+      parameters:
+        - name: assetTemplateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [xlsx, csv]
+            default: xlsx
+      responses:
+        '200':
+          description: Archivo de plantilla generado.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+        '404':
+          description: Plantilla no encontrada o inactiva.
+
+  /api/v1/assets/import/validate:
+    post:
+      summary: Validar y simular importación (Dry-Run)
+      description: Procesa el archivo sin persistir datos, validando reglas de negocio, unicidad y esquema dinámico.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - assetTemplateId
+              properties:
+                file:
+                  type: string
+                  format: binary
+                assetTemplateId:
+                  type: string
+                  format: uuid
+                columnMappingsJson:
+                  type: string
+                  description: JSON opcional con el mapa de correspondencia entre encabezados del archivo y campos del sistema.
+      responses:
+        '200':
+          description: Resultado de la validación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportValidationResult'
+        '400':
+          description: Archivo corrupto o parámetros inválidos.
+
+  /api/v1/assets/import/execute:
+    post:
+      summary: Ejecutar importación en lote
+      description: Persiste los activos válidos creando jerarquías y eventos de ciclo de vida histórico.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - assetTemplateId
+              properties:
+                file:
+                  type: string
+                  format: binary
+                assetTemplateId:
+                  type: string
+                  format: uuid
+                continueOnError:
+                  type: boolean
+                  default: false
+                columnMappingsJson:
+                  type: string
+      responses:
+        '200':
+          description: Importación completada satisfactoriamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportExecutionResult'
+        '422':
+          description: Errores de validación que impiden la importación atómica.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportValidationResult'
+
+components:
+  schemas:
+    ImportValidationResult:
+      type: object
+      properties:
+        totalRows:
+          type: integer
+        validRows:
+          type: integer
+        invalidRows:
+          type: integer
+        hasErrors:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRowError'
+        preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRowPreview'
+
+    ImportRowError:
+      type: object
+      properties:
+        rowNumber:
+          type: integer
+        code:
+          type: string
+        field:
+          type: string
+        message:
+          type: string
+
+    ImportRowPreview:
+      type: object
+      properties:
+        rowNumber:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        state:
+          type: string
+        parentCode:
+          type: string
+          nullable: true
+        properties:
+          type: object
+
+    ImportExecutionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        totalProcessed:
+          type: integer
+        importedCount:
+          type: integer
+        failedCount:
+          type: integer
+        importedAssetIds:
+          type: array
+          items:
+            type: string
+            format: uuid

@@ -5,9 +5,10 @@ import { assetService, Asset } from '@/services/asset.service'
 import { assetTemplateService, AssetTemplate } from '@/services/asset-template.service'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Filter, LayoutGrid, List, Activity } from 'lucide-react'
+import { Plus, Trash2, Filter, LayoutGrid, List, Activity, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { AssetFormSheet } from './components/asset-form-sheet'
+import { AssetImportWizard } from './components/asset-import-wizard'
 import { AssetGlobalMapModal } from '@/components/map/AssetGlobalMapModal'
 import { AsyncCombobox } from '@/components/ui/async-combobox'
 import { Input } from '@/components/ui/input'
@@ -56,12 +57,14 @@ import {
 
 export default function AssetsPage() {
   const { t } = useTranslation(['assets', 'common'])
-  const { can } = usePermissions()
+  const { can, canAny } = usePermissions()
   const canCreate = can('assets:create')
   const canDelete = can('assets:delete')
+  const canImport = canAny(['assets:create', 'assets:import'])
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [importWizardOpen, setImportWizardOpen] = useState(false)
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<AssetTemplate | null>(null)
   const [mapModalOpen, setMapModalOpen] = useState(false)
@@ -251,6 +254,13 @@ export default function AssetsPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /><path d="M15 5.764v15" /><path d="M9 3.236v15" /></svg>
             {t('list.viewOnMap')}
           </Button>
+
+          {canImport && (
+            <Button variant="outline" onClick={() => setImportWizardOpen(true)} className="flex items-center gap-2 shrink-0">
+              <Upload className="h-4 w-4" />
+              {t('import.importButton', 'Importar Activos')}
+            </Button>
+          )}
 
           {canCreate && (
             <AsyncCombobox
@@ -585,6 +595,11 @@ export default function AssetsPage() {
         open={mapModalOpen}
         onOpenChange={setMapModalOpen}
         assets={assets || []}
+      />
+
+      <AssetImportWizard
+        open={importWizardOpen}
+        onOpenChange={setImportWizardOpen}
       />
     </div>
   )
