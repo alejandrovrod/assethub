@@ -153,7 +153,9 @@
     "codeOrNamePlaceholder": "Code or name...",
     "loading": "Loading filters...",
     "searchOptionPlaceholder": "Search option...",
-    "optionNotFound": "No option found."
+    "optionNotFound": "No option found.",
+    "state": "Status",
+    "riskLevel": "Risk Level"
   },
   "risk": {
     "low": "Low",
@@ -357,7 +359,18 @@
     "searchEmployee": "Search employee...",
     "searchTeam": "Search team...",
     "freeText": "Free text",
-    "required": "Required"
+    "required": "Required",
+    "interactiveHint": "Drag fields by their handle to reorder them, drop them onto another section or tab header to move them, and reorder tabs by their handle. Every change is saved to the schema automatically.",
+    "dragToReorder": "Drag to reorder",
+    "dragTabToReorder": "Drag to reorder tabs",
+    "moveToTab": "Move to tab",
+    "newSection": "New section",
+    "sectionNamePlaceholder": "Section name",
+    "renameSection": "Rename section",
+    "moveSectionUp": "Move section up",
+    "moveSectionDown": "Move section down",
+    "dropHere": "Drop fields here",
+    "invalidSchema": "The JSON schema is invalid. Fix it in the Attributes tab."
   },
   "empty": {
     "noAttributes": "No attributes configured.",

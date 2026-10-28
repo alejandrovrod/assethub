@@ -77,6 +77,8 @@ export function WorkflowTemplateFormSheet({ open, onOpenChange, templateId, onSu
     },
   })
 
+  const watchedName = form.watch('name')
+
   useEffect(() => {
     if (open) {
       if (template) {
@@ -184,7 +186,11 @@ export function WorkflowTemplateFormSheet({ open, onOpenChange, templateId, onSu
       <SheetContent className="sm:max-w-[1200px] w-[95vw] flex flex-col p-0" aria-describedby={undefined}>
         <div className="p-6 pb-2 border-b shrink-0">
           <SheetHeader>
-            <SheetTitle>{templateId ? t('workflowTemplates.form.editTitle') : t('workflowTemplates.form.createTitle')}</SheetTitle>
+            <SheetTitle>
+              {templateId 
+                ? `${t('workflowTemplates.form.editTitle')}${watchedName ? ` - ${watchedName}` : (template?.name ? ` - ${template.name}` : '')}`
+                : t('workflowTemplates.form.createTitle')}
+            </SheetTitle>
             <SheetDescription>
               {t('workflowTemplates.form.description')}
             </SheetDescription>

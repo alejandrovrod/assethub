@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import Form from '@rjsf/core'
 import { rjsfTemplates } from '@/components/rjsf/templates'
 import { customValidator as validator } from '@/lib/rjsf-validator'
+import { validateDynamicRules, getDynamicValidationErrors } from '@/lib/dynamic-validation-rules'
 import { Pencil, Check, X, Cpu, Info } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
@@ -142,12 +143,9 @@ export default function AssetDetailPage() {
         geoJson = JSON.stringify({ type: 'Point', coordinates: [args.longitude, args.latitude] })
       }
       return assetService.updateAsset(id!, {
-        code: args.code ?? asset!.code,
-        name: args.name ?? asset!.name,
-        installedAt: asset!.installedAt,
-        commissionedAt: asset!.commissionedAt,
-        conditionIndex: asset!.conditionIndex,
-        propertiesJson: args.propertiesJson ?? (asset!.propertiesJson || '{}'),
+        code: args.code,
+        name: args.name,
+        propertiesJson: args.propertiesJson,
         geoJson
       })
     },
@@ -307,6 +305,19 @@ export default function AssetDetailPage() {
   }
 
   const onSubmit = ({ formData: newFormData }: any) => {
+    if ((schema as any)?.properties) {
+      const dynamicErrors = getDynamicValidationErrors(
+        newFormData, 
+        (schema as any).properties, 
+        (k, opts) => t(k as any, opts)
+      )
+
+      if (dynamicErrors.length > 0) {
+        const firstErr = dynamicErrors[0]
+        toast.error(`${firstErr.fieldTitle}: ${firstErr.message}`)
+        return
+      }
+    }
     updateMutation.mutate({ propertiesJson: JSON.stringify(newFormData) })
   }
 
@@ -890,7 +901,16 @@ export default function AssetDetailPage() {
                 schema={schema} 
                 uiSchema={uiSchema}
                 validator={validator}
+                liveValidate
+                customValidate={(formVals, errors) => {
+                  if ((schema as any)?.properties) {
+                    validateDynamicRules(formVals, (schema as any).properties, errors, (k, opts) => t(k as any, opts));
+                  }
+                  return errors;
+                }}
                 templates={rjsfTemplates}
+                showErrorList={false}
+                noHtml5Validate
                 formData={formData}
                 onChange={e => setFormData(e.formData)}
                 onSubmit={onSubmit}

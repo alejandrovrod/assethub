@@ -11,7 +11,17 @@ using NetTopologySuite.IO;
 
 namespace AssetHub.Application.Assets.Queries;
 
-public record SearchAssetsQuery(string? SearchTerm, Guid? TemplateId, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AncestorId = null, bool? RootOnly = false, int Page = 1, int PageSize = 50) : IRequest<PagedResult<AssetDto>>;
+public record SearchAssetsQuery(
+    string? SearchTerm, 
+    Guid? TemplateId, 
+    string? State, 
+    Dictionary<string, Guid>? CatalogFilters = null, 
+    Guid? AncestorId = null, 
+    bool? RootOnly = false, 
+    int Page = 1, 
+    int PageSize = 50,
+    string? RiskLevel = null
+) : IRequest<PagedResult<AssetDto>>;
 
 public record AssetSummaryDto(Guid Id, string Code, string Name, string State, string? StateColor);
 
@@ -96,6 +106,26 @@ public class SearchAssetsQueryHandler : IRequestHandler<SearchAssetsQuery, Paged
 
                 // Y buscar en el nuevo PropertiesJson
                 q = q.Where(a => (a.PropertiesJson != null && a.PropertiesJson.Contains(catalogItemIdStr)) || assetIdsWithAttr.Contains(a.Id));
+            }
+        }
+
+        if (!string.IsNullOrEmpty(request.RiskLevel))
+        {
+            if (request.RiskLevel.Equals("None", StringComparison.OrdinalIgnoreCase))
+            {
+                // Assets without any health prediction
+                q = q.Where(a => !_dbContext.AssetHealthPredictions.Any(p => p.AssetId == a.Id));
+            }
+            else
+            {
+                // Assets whose latest health prediction matches the specified RiskLevel
+                var matchingAssetIds = _dbContext.AssetHealthPredictions
+                    .GroupBy(p => p.AssetId)
+                    .Select(g => g.OrderByDescending(p => p.CreatedAt).FirstOrDefault())
+                    .Where(p => p != null && p.RiskLevel == request.RiskLevel)
+                    .Select(p => p!.AssetId);
+
+                q = q.Where(a => matchingAssetIds.Contains(a.Id));
             }
         }
 

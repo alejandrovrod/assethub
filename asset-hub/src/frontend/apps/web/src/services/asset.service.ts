@@ -52,11 +52,17 @@ export interface AdvancedSearchRequest {
   searchTerm?: string
   templateId?: string
   state?: string
+  riskLevel?: string
   ancestorId?: string
   catalogFilters?: Record<string, string>
   rootOnly?: boolean
   page?: number
   pageSize?: number
+}
+
+export interface AssetStateOption {
+  name: string
+  color?: string
 }
 
 export interface CatalogItemFilterDto {
@@ -84,12 +90,12 @@ export interface CreateAssetRequest {
 }
 
 export interface UpdateAssetRequest {
-  code: string
-  name: string
+  code?: string
+  name?: string
   installedAt?: string
   commissionedAt?: string
   conditionIndex?: number
-  propertiesJson: string
+  propertiesJson?: string
   geoJson?: string
 }
 
@@ -177,6 +183,11 @@ export const assetService = {
 
   getSearchFilters: async () => {
     const { data } = await apiClient.get<SearchFilterDto[]>('/assets/search-filters')
+    return data
+  },
+
+  getStates: async () => {
+    const { data } = await apiClient.get<AssetStateOption[]>('/assets/states')
     return data
   },
   

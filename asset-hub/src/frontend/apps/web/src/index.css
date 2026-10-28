@@ -89,15 +89,11 @@
 }
 
 .rjsf-tailwind .panel-danger {
-  @apply border border-destructive rounded-md p-4 mb-4;
+  display: none !important;
 }
 
-.rjsf-tailwind .panel-heading {
-  @apply text-destructive font-semibold mb-2;
-}
-
-.rjsf-tailwind .list-group {
-  @apply list-disc list-inside text-sm text-destructive;
+.rjsf-tailwind .field-description {
+  @apply text-xs text-muted-foreground mt-1;
 }
 
 @keyframes float {

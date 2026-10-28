@@ -37,9 +37,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { GripVertical, Plus, Trash2, AlertCircle, Eye, EyeOff, LayoutPanelTop, Edit2, X, ChevronLeft, ChevronRight, PanelLeft, LayoutGrid } from 'lucide-react';
+import { GripVertical, Plus, Trash2, AlertCircle, Eye, EyeOff, LayoutPanelTop, Edit2, X, ChevronLeft, ChevronRight, PanelLeft, LayoutGrid, ShieldAlert } from 'lucide-react';
 import { SchemaFieldPreview } from './schema-field-preview';
 import { useTranslation } from 'react-i18next';
+import { FieldValidationRule, ComparisonOperator } from '@/lib/dynamic-validation-rules';
 
 interface SchemaField {
   id: string; // React key, immutable
@@ -57,6 +58,7 @@ interface SchemaField {
     fieldId: string;
     value: string;
   };
+  validationRules?: FieldValidationRule[];
 }
 
 interface SchemaTab {
@@ -445,6 +447,405 @@ const SortableField = memo(function SortableField({
               </PopoverContent>
             </Popover>
 
+            {/* Validation Rules Popover */}
+            {!field.isSectionDivider && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={field.validationRules && field.validationRules.length > 0 ? "default" : "ghost"}
+                    size="icon"
+                    className={`h-8 w-8 ${!field.validationRules || field.validationRules.length === 0 ? 'text-muted-foreground' : ''}`}
+                    title="Reglas avanzadas (comparaciones, rangos, fechas relativas, patrones, requerido condicional)"
+                  >
+                    <ShieldAlert className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[420px]" side="left">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div>
+                        <h4 className="font-medium text-sm leading-none mb-1">Reglas de Validación</h4>
+                        <p className="text-xs text-muted-foreground">
+                          Restricciones de negocio y validación cruzada.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          const current = field.validationRules || [];
+                          let newRule: FieldValidationRule;
+                          if (field.type === 'number') {
+                            newRule = { id: generateId(), type: 'range', min: undefined, max: undefined };
+                          } else if (field.type === 'date') {
+                            newRule = { id: generateId(), type: 'dateConstraint', dateConstraint: 'pastOnly' };
+                          } else if (field.type === 'string') {
+                            newRule = { id: generateId(), type: 'pattern', patternPreset: 'email' };
+                          } else {
+                            newRule = { id: generateId(), type: 'requiredIf', requiredIfField: '', requiredIfOperator: 'notEmpty' };
+                          }
+                          onUpdate(field.id, { validationRules: [...current, newRule] });
+                        }}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Regla
+                      </Button>
+                    </div>
+
+                    {(!field.validationRules || field.validationRules.length === 0) ? (
+                      <p className="text-xs text-muted-foreground italic py-3 text-center">
+                        Sin reglas configuradas para este campo.
+                      </p>
+                    ) : (
+                      <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                        {field.validationRules.map((rule, idx) => (
+                          <div key={rule.id || idx} className="p-2.5 rounded-md border bg-muted/30 space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <Select
+                                value={rule.type}
+                                onValueChange={(val: any) => {
+                                  const updated = [...(field.validationRules || [])];
+                                  updated[idx] = {
+                                    id: rule.id || generateId(),
+                                    type: val,
+                                    operator: val === 'compareField' ? 'gt' : undefined,
+                                    targetField: val === 'compareField' ? '' : undefined,
+                                    dateConstraint: val === 'dateConstraint' ? 'pastOnly' : undefined,
+                                    patternPreset: val === 'pattern' ? 'email' : undefined,
+                                    requiredIfField: val === 'requiredIf' ? '' : undefined,
+                                    requiredIfOperator: val === 'requiredIf' ? 'notEmpty' : undefined,
+                                  };
+                                  onUpdate(field.id, { validationRules: updated });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-52">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(field.type === 'number' || field.type === 'date' || field.type === 'string') && (
+                                    <SelectItem value="compareField">Comparar con otro campo</SelectItem>
+                                  )}
+                                  {field.type === 'number' && (
+                                    <SelectItem value="range">Rango numérico (Mín / Máx)</SelectItem>
+                                  )}
+                                  {field.type === 'date' && (
+                                    <SelectItem value="dateConstraint">Restricción temporal (Hoy / Pasado / Futuro)</SelectItem>
+                                  )}
+                                  {field.type === 'string' && (
+                                    <SelectItem value="pattern">Patrón de texto / Formato Regex</SelectItem>
+                                  )}
+                                  <SelectItem value="requiredIf">Obligatorio condicional (Required If)</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  const updated = (field.validationRules || []).filter((_, i) => i !== idx);
+                                  onUpdate(field.id, { validationRules: updated.length > 0 ? updated : undefined });
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+
+                            {/* 1. Comparación de campos */}
+                            {rule.type === 'compareField' && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Condición</Label>
+                                  <Select
+                                    value={rule.operator || 'gt'}
+                                    onValueChange={(op: ComparisonOperator) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      updated[idx] = { ...rule, operator: op };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {field.type === 'date' ? (
+                                        <>
+                                          <SelectItem value="gt">Posterior a (&gt;)</SelectItem>
+                                          <SelectItem value="gte">Posterior o igual (&gt;=)</SelectItem>
+                                          <SelectItem value="lt">Anterior a (&lt;)</SelectItem>
+                                          <SelectItem value="lte">Anterior o igual (&lt;=)</SelectItem>
+                                          <SelectItem value="eq">Igual a (==)</SelectItem>
+                                          <SelectItem value="neq">Distinta de (!=)</SelectItem>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <SelectItem value="gt">Mayor que (&gt;)</SelectItem>
+                                          <SelectItem value="gte">Mayor o igual (&gt;=)</SelectItem>
+                                          <SelectItem value="lt">Menor que (&lt;)</SelectItem>
+                                          <SelectItem value="lte">Menor o igual (&lt;=)</SelectItem>
+                                          <SelectItem value="eq">Igual a (==)</SelectItem>
+                                          <SelectItem value="neq">Distinto de (!=)</SelectItem>
+                                        </>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Campo a comparar</Label>
+                                  <Select
+                                    value={rule.targetField || 'none'}
+                                    onValueChange={(tgt) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      updated[idx] = { ...rule, targetField: tgt === 'none' ? '' : tgt };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs">
+                                      <SelectValue placeholder="Seleccionar..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-- Seleccionar --</SelectItem>
+                                      {allFields
+                                        .filter((f: SchemaField) => {
+                                          if (f.id === field.id || f.isSectionDivider) return false;
+                                          if (field.type === 'date') return f.type === 'date';
+                                          if (field.type === 'number') return f.type === 'number';
+                                          return true; // text or other types
+                                        })
+                                        .map((f: SchemaField) => (
+                                          <SelectItem key={f.id} value={f.keyName || f.id}>
+                                            {f.title || f.keyName || '(Sin título)'}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 2. Rango Numérico */}
+                            {rule.type === 'range' && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Mínimo</Label>
+                                  <Input
+                                    type="number"
+                                    value={rule.min !== undefined && rule.min !== null ? rule.min : ''}
+                                    placeholder="Sin mín"
+                                    onChange={(e) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                      updated[idx] = { ...rule, min: val };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                    className="h-7 text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Máximo</Label>
+                                  <Input
+                                    type="number"
+                                    value={rule.max !== undefined && rule.max !== null ? rule.max : ''}
+                                    placeholder="Sin máx"
+                                    onChange={(e) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                      updated[idx] = { ...rule, max: val };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                    className="h-7 text-xs"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 3. Restricciones de Fecha contra Hoy */}
+                            {rule.type === 'dateConstraint' && (
+                              <div className="space-y-2">
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Restricción respecto a Hoy</Label>
+                                  <Select
+                                    value={rule.dateConstraint || 'pastOnly'}
+                                    onValueChange={(dc: any) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      updated[idx] = { ...rule, dateConstraint: dc };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pastOnly">Solo fechas pasadas o hoy (&lt;= Hoy)</SelectItem>
+                                      <SelectItem value="futureOnly">Solo fechas futuras o hoy (&gt;= Hoy)</SelectItem>
+                                      <SelectItem value="strictlyPast">Estrictamente en el pasado (&lt; Hoy)</SelectItem>
+                                      <SelectItem value="strictlyFuture">Estrictamente en el futuro (&gt; Hoy)</SelectItem>
+                                      <SelectItem value="maxDaysInPast">Máximo N días en el pasado</SelectItem>
+                                      <SelectItem value="maxDaysInFuture">Máximo N días en el futuro</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                {(rule.dateConstraint === 'maxDaysInPast' || rule.dateConstraint === 'maxDaysInFuture') && (
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Cantidad de días (N)</Label>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={rule.dateDays || ''}
+                                      placeholder="Ej: 30"
+                                      onChange={(e) => {
+                                        const updated = [...(field.validationRules || [])];
+                                        const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+                                        updated[idx] = { ...rule, dateDays: val };
+                                        onUpdate(field.id, { validationRules: updated });
+                                      }}
+                                      className="h-7 text-xs"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* 4. Patrones y Formatos Regex */}
+                            {rule.type === 'pattern' && (
+                              <div className="space-y-2">
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Tipo de Formato</Label>
+                                  <Select
+                                    value={rule.patternPreset || 'email'}
+                                    onValueChange={(ps: any) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      updated[idx] = { ...rule, patternPreset: ps };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="email">Correo Electrónico</SelectItem>
+                                      <SelectItem value="phone">Teléfono Internacional</SelectItem>
+                                      <SelectItem value="alphanumeric">Alfanumérico (A-Z, 0-9, -, _)</SelectItem>
+                                      <SelectItem value="rfc_mx">RFC (México)</SelectItem>
+                                      <SelectItem value="vin">Número de Serie / VIN (17 caracteres)</SelectItem>
+                                      <SelectItem value="custom">Regex personalizado</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                {rule.patternPreset === 'custom' && (
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Expresión regular (sin slashes)</Label>
+                                    <Input
+                                      value={rule.customRegex || ''}
+                                      placeholder="Ej: ^[A-Z]{3}-\d{4}$"
+                                      onChange={(e) => {
+                                        const updated = [...(field.validationRules || [])];
+                                        updated[idx] = { ...rule, customRegex: e.target.value };
+                                        onUpdate(field.id, { validationRules: updated });
+                                      }}
+                                      className="h-7 text-xs font-mono"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* 5. Obligatorio Condicional (Required If) */}
+                            {rule.type === 'requiredIf' && (
+                              <div className="space-y-2">
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground uppercase">Obligatorio si el campo...</Label>
+                                  <Select
+                                    value={rule.requiredIfField || 'none'}
+                                    onValueChange={(fld) => {
+                                      const updated = [...(field.validationRules || [])];
+                                      updated[idx] = { ...rule, requiredIfField: fld === 'none' ? '' : fld };
+                                      onUpdate(field.id, { validationRules: updated });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs">
+                                      <SelectValue placeholder="Seleccionar campo..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-- Seleccionar --</SelectItem>
+                                      {allFields
+                                        .filter((f: SchemaField) => f.id !== field.id && !f.isSectionDivider)
+                                        .map((f: SchemaField) => (
+                                          <SelectItem key={f.id} value={f.keyName || f.id}>
+                                            {f.title || f.keyName}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Condición</Label>
+                                    <Select
+                                      value={rule.requiredIfOperator || 'notEmpty'}
+                                      onValueChange={(op: any) => {
+                                        const updated = [...(field.validationRules || [])];
+                                        updated[idx] = { ...rule, requiredIfOperator: op };
+                                        onUpdate(field.id, { validationRules: updated });
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-7 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="notEmpty">No está vacío</SelectItem>
+                                        <SelectItem value="eq">Es igual a</SelectItem>
+                                        <SelectItem value="neq">Es distinto de</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {rule.requiredIfOperator !== 'notEmpty' && (
+                                    <div>
+                                      <Label className="text-[10px] text-muted-foreground uppercase">Valor esperado</Label>
+                                      <Input
+                                        value={rule.requiredIfValue || ''}
+                                        placeholder="Ej: true o código"
+                                        onChange={(e) => {
+                                          const updated = [...(field.validationRules || [])];
+                                          updated[idx] = { ...rule, requiredIfValue: e.target.value };
+                                          onUpdate(field.id, { validationRules: updated });
+                                        }}
+                                        className="h-7 text-xs"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            <div>
+                              <Label className="text-[10px] text-muted-foreground uppercase">Mensaje de error personalizado (opcional)</Label>
+                              <Input
+                                value={rule.customMessage || ''}
+                                placeholder="Mensaje visible si no se cumple la regla"
+                                onChange={(e) => {
+                                  const updated = [...(field.validationRules || [])];
+                                  updated[idx] = { ...rule, customMessage: e.target.value || undefined };
+                                  onUpdate(field.id, { validationRules: updated });
+                                }}
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+
             <Button
               variant="ghost"
               size="icon"
@@ -581,6 +982,7 @@ const SortableField = memo(function SortableField({
     prev.availableTabs === next.availableTabs &&
     prev.activeTabId === next.activeTabId &&
     prev.sectionsForActiveTab === next.sectionsForActiveTab &&
+    prev.allFields === next.allFields &&
     prev.validation.emptyKey === next.validation.emptyKey &&
     prev.validation.duplicateKey === next.validation.duplicateKey &&
     prev.validation.missingConfig === next.validation.missingConfig &&
@@ -601,13 +1003,29 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
   const tabsRef = useRef<SchemaTab[]>(DEFAULT_TABS);
   const renameCanceledRef = useRef(false);
   const isCommittingRef = useRef(false);
+  // Last JSON string WE emitted via onChange (to tell our own echoes apart
+  // from external edits, e.g. drag & drop in the Preview tab).
+  const lastEmittedRef = useRef<string | null>(null);
+  // Last `value` we (re)loaded internal state from.
+  const loadedValueRef = useRef<string | null>(null);
 
   const { data: catalogs = EMPTY_CATALOGS } = useQuery({
     queryKey: ['catalogs'],
     queryFn: () => catalogService.getCatalogs(),
   });
 
+  // Loads internal state from `value`. Runs on mount AND whenever `value`
+  // changes (the memo comparator below lets value updates through).
+  // Own debounced emits are skipped via lastEmittedRef; only external edits
+  // (e.g. interactive reorder in the Preview tab) trigger a reload.
   useEffect(() => {
+    if (value === loadedValueRef.current) return;
+    if (value === lastEmittedRef.current) {
+      loadedValueRef.current = value;
+      return;
+    }
+    // An external change wins over any keystroke still waiting in the debounce.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     try {
       if (!value) return;
       const schema = JSON.parse(value);
@@ -744,6 +1162,7 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
           tab,
           section,
           visibleIf: prop._visibleIf,
+          validationRules: prop.validationRules || prop._validationRules || undefined,
         });
       });
 
@@ -755,12 +1174,14 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
       const loadedTabs: SchemaTab[] = tabOrder.map((label) => ({ id: label, label }));
       tabsRef.current = loadedTabs;
       setTabs(loadedTabs);
-      setActiveTabId(loadedTabs[0].id);
+      // Preserve the working tab when resyncing from an external edit.
+      setActiveTabId((prev) => (loadedTabs.some((t) => t.id === prev) ? prev : loadedTabs[0].id));
       setFields(loadedFields);
+      loadedValueRef.current = value;
     } catch (e) {
       console.error('Error parsing schema JSON', e);
     }
-  }, []); // Run only once
+  }); // Intentionally no deps: guarded inside via loadedValueRef/lastEmittedRef
 
   const keyCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -869,6 +1290,24 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
           propConfig.tab = tab;
         }
         if (f.section) propConfig.section = f.section;
+
+        if (f.validationRules && f.validationRules.length > 0) {
+          propConfig.validationRules = f.validationRules;
+
+          // Also populate standard JSON Schema constraints for native validation
+          for (const rule of f.validationRules) {
+            if (rule.type === 'range') {
+              if (rule.min !== undefined && rule.min !== null && !isNaN(Number(rule.min))) {
+                propConfig.minimum = Number(rule.min);
+              }
+              if (rule.max !== undefined && rule.max !== null && !isNaN(Number(rule.max))) {
+                propConfig.maximum = Number(rule.max);
+              }
+            } else if (rule.type === 'pattern' && rule.customRegex) {
+              propConfig.pattern = rule.customRegex;
+            }
+          }
+        }
 
         return propConfig;
       };
@@ -999,7 +1438,9 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
         schema['x-form-sections'] = sectionsByTab;
       }
 
-      onChangeRef.current(JSON.stringify(schema, null, 2));
+      const json = JSON.stringify(schema, null, 2);
+      lastEmittedRef.current = json;
+      onChangeRef.current(json);
     }, 300);
   }, []);
 
@@ -1486,7 +1927,9 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
     </TooltipProvider>
   );
 }, (prev, next) => {
-  // SchemaBuilder only uses `value` on initial mount to populate state.
-  // We don't want it to re-render every time react-hook-form echoes the value back down.
-  return prev.onChange === next.onChange;
+  // Re-render when the schema JSON actually changes so external edits
+  // (e.g. drag & drop in the Preview tab) flow in and hit the guarded
+  // reload effect above. Own debounced emits are skipped there via
+  // lastEmittedRef, so no reload loop happens.
+  return prev.onChange === next.onChange && prev.value === next.value;
 });

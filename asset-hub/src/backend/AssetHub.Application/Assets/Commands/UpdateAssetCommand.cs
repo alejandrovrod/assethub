@@ -12,7 +12,16 @@ using NetTopologySuite.IO;
 
 namespace AssetHub.Application.Assets.Commands;
 
-public record UpdateAssetCommand(Guid AssetId, string Code, string Name, DateTime? InstalledAt, DateTime? CommissionedAt, decimal? ConditionIndex, string PropertiesJson, string? GeoJson) : IRequest<bool>;
+public record UpdateAssetCommand(
+    Guid AssetId,
+    string? Code,
+    string? Name,
+    DateTime? InstalledAt,
+    DateTime? CommissionedAt,
+    decimal? ConditionIndex,
+    string? PropertiesJson,
+    string? GeoJson
+) : IRequest<bool>;
 
 public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand, bool>
 {
@@ -28,37 +37,48 @@ public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand, boo
         var asset = await _dbContext.Assets.Include(a => a.AssetTemplate).FirstOrDefaultAsync(a => a.Id == request.AssetId, cancellationToken);
         if (asset == null) return false;
 
-        asset.Code = request.Code;
-        asset.Name = request.Name;
-        asset.InstalledAt = request.InstalledAt;
-        asset.CommissionedAt = request.CommissionedAt;
-        asset.ConditionIndex = request.ConditionIndex;
-        asset.PropertiesJson = request.PropertiesJson ?? "{}";
+        if (request.Code != null) asset.Code = request.Code;
+        if (request.Name != null) asset.Name = request.Name;
+        if (request.InstalledAt.HasValue) asset.InstalledAt = request.InstalledAt;
+        if (request.CommissionedAt.HasValue) asset.CommissionedAt = request.CommissionedAt;
+        if (request.ConditionIndex.HasValue) asset.ConditionIndex = request.ConditionIndex;
         asset.UpdatedAt = DateTime.UtcNow;
 
-        if (!string.IsNullOrEmpty(asset.AssetTemplate?.SchemaJson) && !string.IsNullOrEmpty(request.PropertiesJson))
+        if (request.PropertiesJson != null)
         {
-            var schema = await NJsonSchema.JsonSchema.FromJsonAsync(asset.AssetTemplate.SchemaJson, cancellationToken);
-            var errors = schema.Validate(request.PropertiesJson);
-            if (errors.Count > 0)
+            if (!string.IsNullOrEmpty(asset.AssetTemplate?.SchemaJson) && !string.IsNullOrEmpty(request.PropertiesJson))
             {
-                var errorMessages = string.Join(", ", errors.Select(e => $"{e.Path}: {e.Kind}"));
-                throw new InvalidOperationException($"El JSON no cumple con el esquema: {errorMessages}");
+                var schema = await NJsonSchema.JsonSchema.FromJsonAsync(asset.AssetTemplate.SchemaJson, cancellationToken);
+                var errors = schema.Validate(request.PropertiesJson);
+                if (errors.Count > 0)
+                {
+                    var errorMessages = string.Join(", ", errors.Select(e => $"{e.Path}: {e.Kind}"));
+                    throw new InvalidOperationException($"El JSON no cumple con el esquema: {errorMessages}");
+                }
             }
+            asset.PropertiesJson = request.PropertiesJson;
         }
 
         // Parsear Geo
-        if (!string.IsNullOrEmpty(request.GeoJson))
+        if (request.GeoJson != null)
         {
-            var reader = new GeoJsonReader();
-            var geometry = reader.Read<Geometry>(request.GeoJson);
-            if (geometry.GeometryType != "Point" && geometry.GeometryType != "LineString" && geometry.GeometryType != "Polygon")
+            if (string.IsNullOrWhiteSpace(request.GeoJson))
             {
-                throw new InvalidOperationException("GeoJson must be Point, LineString or Polygon.");
+                asset.Geo = null;
+                asset.GeoType = null;
             }
-            geometry.SRID = 4326;
-            asset.Geo = geometry;
-            asset.GeoType = geometry.GeometryType;
+            else
+            {
+                var reader = new GeoJsonReader();
+                var geometry = reader.Read<Geometry>(request.GeoJson);
+                if (geometry.GeometryType != "Point" && geometry.GeometryType != "LineString" && geometry.GeometryType != "Polygon")
+                {
+                    throw new InvalidOperationException("GeoJson must be Point, LineString or Polygon.");
+                }
+                geometry.SRID = 4326;
+                asset.Geo = geometry;
+                asset.GeoType = geometry.GeometryType;
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

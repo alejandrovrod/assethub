@@ -26,17 +26,41 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     const candidates = [data?.detail, data?.title, data?.message]
     for (const candidate of candidates) {
       if (typeof candidate === 'string' && candidate.trim().length > 0) {
-        return candidate
+        return formatSchemaErrorMessage(candidate)
       }
     }
 
     const axiosMessage = (error as AxiosError).message
     if (typeof axiosMessage === 'string' && axiosMessage.length > 0) {
-      return axiosMessage
+      return formatSchemaErrorMessage(axiosMessage)
     }
   }
 
   return fallback
+}
+
+/** Translates technical NJsonSchema validation errors like `#/field_123: NumberTooSmall` into clear user messages */
+function formatSchemaErrorMessage(msg: string): string {
+  if (!msg.includes('El JSON no cumple con el esquema')) return msg
+
+  return msg.replace(/#\/([a-zA-Z0-9_-]+):\s*([a-zA-Z0-9_-]+)/g, (_match, _field, kind) => {
+    switch (kind) {
+      case 'NumberTooSmall':
+        return 'el valor es menor que el mínimo permitido'
+      case 'NumberTooBig':
+        return 'el valor excede el máximo permitido'
+      case 'StringTooShort':
+        return 'el texto es más corto que el mínimo requerido'
+      case 'StringTooLong':
+        return 'el texto excede el largo máximo'
+      case 'PatternMismatch':
+        return 'no cumple con el formato o patrón requerido'
+      case 'PropertyRequired':
+        return 'campo obligatorio faltante'
+      default:
+        return kind
+    }
+  })
 }
 
 export function handleServerError(error: unknown) {

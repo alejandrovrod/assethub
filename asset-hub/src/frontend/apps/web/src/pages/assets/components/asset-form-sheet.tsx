@@ -12,6 +12,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
+import { validateDynamicRules, getDynamicValidationErrors } from '@/lib/dynamic-validation-rules'
 import { cn } from '@/lib/utils'
 
 import {
@@ -125,10 +126,25 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
     }
   })
 
+  const { schema, uiSchema, isResolving } = useResolvedSchema(template?.schemaJson || '{}')
+
   function onSubmit(values: AssetFormValues) {
-    // Validamos el propertiesJson contra el schema si es necesario
-    // pero @rjsf/core ya maneja la validación antes de dejarnos hacer submit
-    
+    // Validate dynamic properties against configured validation rules and schema
+    if (schema?.properties) {
+      const dynamicErrors = getDynamicValidationErrors(
+        propertiesJson, 
+        schema.properties, 
+        (k, opts) => t(k as any, opts)
+      )
+
+      if (dynamicErrors.length > 0) {
+        // Show first error message in toast
+        const firstErr = dynamicErrors[0]
+        toast.error(`${firstErr.fieldTitle}: ${firstErr.message}`)
+        return
+      }
+    }
+
     const payload = {
       ...values,
       assetTemplateId: template.id,
@@ -144,8 +160,6 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
       })
     }
   }
-
-  const { schema, uiSchema, isResolving } = useResolvedSchema(template?.schemaJson || '{}')
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -242,7 +256,16 @@ export function AssetFormSheet({ open, onOpenChange, asset, template }: AssetFor
                     schema={schema || {}}
                     uiSchema={uiSchema || {}}
                     validator={validator}
+                    liveValidate
+                    customValidate={(formData, errors) => {
+                      if (schema?.properties) {
+                        validateDynamicRules(formData, schema.properties, errors, (k, opts) => t(k as any, opts));
+                      }
+                      return errors;
+                    }}
                     templates={rjsfTemplates}
+                    showErrorList={false}
+                    noHtml5Validate
                     formData={propertiesJson}
                     onChange={(e) => setPropertiesJson(e.formData)}
                     widgets={{ 

@@ -72,10 +72,12 @@ export default function AssetsPage() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [catalogFilters, setCatalogFilters] = useState<Record<string, string>>({})
+  const [stateFilter, setStateFilter] = useState<string>('')
+  const [riskFilter, setRiskFilter] = useState<string>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  const isSearching = searchTerm.trim().length > 0 || Object.keys(catalogFilters).length > 0
+  const isSearching = searchTerm.trim().length > 0 || Object.keys(catalogFilters).length > 0 || !!stateFilter || !!riskFilter
 
   const riskLabel = (level?: string) => {
     if (!level) return level
@@ -92,12 +94,14 @@ export default function AssetsPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [searchTerm, catalogFilters, pageSize])
+  }, [searchTerm, catalogFilters, stateFilter, riskFilter, pageSize])
 
   const { data: pagedResult, isLoading: isLoadingAssets } = useQuery({
-    queryKey: ['assets', searchTerm, catalogFilters, page, pageSize],
+    queryKey: ['assets', searchTerm, catalogFilters, stateFilter, riskFilter, page, pageSize],
     queryFn: () => assetService.advancedSearch({
       searchTerm: searchTerm || undefined,
+      state: stateFilter || undefined,
+      riskLevel: riskFilter || undefined,
       catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined,
       rootOnly: !isSearching,
       page,
@@ -111,6 +115,28 @@ export default function AssetsPage() {
     queryKey: ['asset-filters'],
     queryFn: () => assetService.getSearchFilters()
   })
+
+  const { data: availableStates } = useQuery({
+    queryKey: ['asset-states'],
+    queryFn: () => assetService.getStates()
+  })
+
+  // Cargar todos los activos con los mismos filtros para el mapa global cuando el modal está abierto
+  const { data: mapAssetsResult } = useQuery({
+    queryKey: ['map-assets', searchTerm, catalogFilters, stateFilter, riskFilter],
+    queryFn: () => assetService.advancedSearch({
+      searchTerm: searchTerm || undefined,
+      state: stateFilter || undefined,
+      riskLevel: riskFilter || undefined,
+      catalogFilters: Object.keys(catalogFilters).length > 0 ? catalogFilters : undefined,
+      rootOnly: false,
+      page: 1,
+      pageSize: 500
+    }),
+    enabled: mapModalOpen
+  })
+
+  const mapAssets = mapAssetsResult?.items || assets
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => assetService.deleteAsset(id),
@@ -147,6 +173,158 @@ export default function AssetsPage() {
       </div>
 
       <ScrollArea className="flex-1 min-h-0 pr-4">
+        {/* Filtro por Estado */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-2">{t('filters.state')}</h4>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full justify-between"
+              >
+                <span className="flex items-center gap-2 truncate">
+                  {stateFilter ? (
+                    <>
+                      {availableStates?.find(s => s.name === stateFilter)?.color && (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: availableStates.find(s => s.name === stateFilter)?.color }}
+                        />
+                      )}
+                      <span>{stateFilter}</span>
+                    </>
+                  ) : (
+                    t('common:labels.all')
+                  )}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-3rem)] sm:w-full p-0">
+              <Command>
+                <CommandInput placeholder={t('filters.searchOptionPlaceholder')} />
+                <CommandList>
+                  <CommandEmpty>{t('filters.optionNotFound')}</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem onSelect={() => setStateFilter('')}>
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          !stateFilter ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {t('common:labels.all')}
+                    </CommandItem>
+                    {availableStates?.map((s) => (
+                      <CommandItem
+                        key={s.name}
+                        onSelect={() => setStateFilter(stateFilter === s.name ? '' : s.name)}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            stateFilter === s.name ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex items-center gap-2">
+                          {s.color && (
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: s.color }}
+                            />
+                          )}
+                          <span>{s.name}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Filtro por Nivel de Riesgo */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-2">{t('filters.riskLevel')}</h4>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full justify-between"
+              >
+                <span className="flex items-center gap-2 truncate">
+                  {riskFilter ? (
+                    riskFilter === 'None' ? (
+                      t('common:map.legend.notEvaluated')
+                    ) : (
+                      <>
+                        <span
+                          className={cn(
+                            "w-2.5 h-2.5 rounded-sm shrink-0",
+                            riskFilter === 'Low' && "bg-emerald-500",
+                            riskFilter === 'Moderate' && "bg-amber-500",
+                            riskFilter === 'High' && "bg-orange-500",
+                            riskFilter === 'Critical' && "bg-destructive"
+                          )}
+                        />
+                        <span>{t(`common:map.legend.riskLevels.${riskFilter.toLowerCase()}` as any)}</span>
+                      </>
+                    )
+                  ) : (
+                    t('common:labels.all')
+                  )}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-3rem)] sm:w-full p-0">
+              <Command>
+                <CommandInput placeholder={t('filters.searchOptionPlaceholder')} />
+                <CommandList>
+                  <CommandEmpty>{t('filters.optionNotFound')}</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem onSelect={() => setRiskFilter('')}>
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          !riskFilter ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {t('common:labels.all')}
+                    </CommandItem>
+                    {[
+                      { id: 'Low', label: t('common:map.legend.riskLevels.low'), dotClass: 'bg-emerald-500' },
+                      { id: 'Moderate', label: t('common:map.legend.riskLevels.moderate'), dotClass: 'bg-amber-500' },
+                      { id: 'High', label: t('common:map.legend.riskLevels.high'), dotClass: 'bg-orange-500' },
+                      { id: 'Critical', label: t('common:map.legend.riskLevels.critical'), dotClass: 'bg-destructive' },
+                      { id: 'None', label: t('common:map.legend.notEvaluated'), dotClass: 'bg-muted border border-muted-foreground/30' }
+                    ].map((r) => (
+                      <CommandItem
+                        key={r.id}
+                        onSelect={() => setRiskFilter(riskFilter === r.id ? '' : r.id)}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            riskFilter === r.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex items-center gap-2">
+                          <span className={cn("w-2.5 h-2.5 rounded-sm shrink-0", r.dotClass)} />
+                          <span>{r.label}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {isLoadingFilters ? (
           <div className="text-sm text-muted-foreground">{t('filters.loading')}</div>
         ) : searchFilters?.map((filter) => (
@@ -594,7 +772,7 @@ export default function AssetsPage() {
       <AssetGlobalMapModal
         open={mapModalOpen}
         onOpenChange={setMapModalOpen}
-        assets={assets || []}
+        assets={mapAssets || []}
       />
 
       <AssetImportWizard

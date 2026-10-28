@@ -153,7 +153,9 @@
     "codeOrNamePlaceholder": "Código o nombre...",
     "loading": "Cargando filtros...",
     "searchOptionPlaceholder": "Buscar opción...",
-    "optionNotFound": "No se encontró la opción."
+    "optionNotFound": "No se encontró la opción.",
+    "state": "Estado",
+    "riskLevel": "Nivel de Riesgo"
   },
   "risk": {
     "low": "Bajo",
@@ -357,7 +359,18 @@
     "searchEmployee": "Buscar empleado...",
     "searchTeam": "Buscar equipo...",
     "freeText": "Texto libre",
-    "required": "Obligatorio"
+    "required": "Obligatorio",
+    "interactiveHint": "Arrastrá los campos desde el handle para reordenarlos, soltalos en otra sección o sobre otra pestaña para moverlos, y reordená las pestañas desde su handle. Todo cambio se guarda en el esquema automáticamente.",
+    "dragToReorder": "Arrastrar para reordenar",
+    "dragTabToReorder": "Arrastrar para reordenar pestañas",
+    "moveToTab": "Mover a la pestaña",
+    "newSection": "Nueva sección",
+    "sectionNamePlaceholder": "Nombre de la sección",
+    "renameSection": "Renombrar sección",
+    "moveSectionUp": "Subir sección",
+    "moveSectionDown": "Bajar sección",
+    "dropHere": "Soltá los campos aquí",
+    "invalidSchema": "El esquema JSON no es válido. Corregilo en la pestaña Atributos."
   },
   "empty": {
     "noAttributes": "No hay atributos configurados.",

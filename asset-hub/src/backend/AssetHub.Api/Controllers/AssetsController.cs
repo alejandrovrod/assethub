@@ -23,9 +23,9 @@ public class AssetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state, [FromQuery] Guid? ancestorId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? templateId, [FromQuery] string? state, [FromQuery] string? riskLevel, [FromQuery] Guid? ancestorId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state, null, ancestorId, false, page, pageSize));
+        var result = await _mediator.Send(new SearchAssetsQuery(q, templateId, state, null, ancestorId, false, page, pageSize, riskLevel));
         return Ok(result);
     }
 
@@ -41,7 +41,8 @@ public class AssetsController : ControllerBase
             request.AncestorId,
             request.RootOnly,
             request.Page,
-            request.PageSize));
+            request.PageSize,
+            request.RiskLevel));
         return Ok(result);
     }
 
@@ -49,6 +50,13 @@ public class AssetsController : ControllerBase
     public async Task<IActionResult> GetSearchFilters()
     {
         var result = await _mediator.Send(new GetActiveSearchFiltersQuery());
+        return Ok(result);
+    }
+
+    [HttpGet("states")]
+    public async Task<IActionResult> GetStates()
+    {
+        var result = await _mediator.Send(new GetAssetStatesQuery());
         return Ok(result);
     }
 
@@ -253,6 +261,7 @@ public class AdvancedSearchRequest
     public string? SearchTerm { get; set; }
     public Guid? TemplateId { get; set; }
     public string? State { get; set; }
+    public string? RiskLevel { get; set; }
     public Guid? AncestorId { get; set; }
     public Dictionary<string, Guid>? CatalogFilters { get; set; }
     public bool? RootOnly { get; set; }
@@ -276,12 +285,12 @@ public class CreateAssetRequest
 
 public class UpdateAssetRequest
 {
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
+    public string? Code { get; set; }
+    public string? Name { get; set; }
     public DateTime? InstalledAt { get; set; }
     public DateTime? CommissionedAt { get; set; }
     public decimal? ConditionIndex { get; set; }
-    public string PropertiesJson { get; set; } = "{}";
+    public string? PropertiesJson { get; set; }
     public string? GeoJson { get; set; }
 }
 
