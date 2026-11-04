@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Concurrency;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +21,14 @@ public class StockBalanceDto
     public decimal QuantityOnHand { get; set; }
     public decimal AverageUnitCost { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Versión de la fila. El cliente offline la persiste y la devuelve en
+    /// <c>If-Match</c> al consumir: sin esto no tendría forma de mandar la precondición
+    /// y el consumo sería siempre "última escritura gana".
+    /// </summary>
+    [JsonPropertyName("etag")]
+    public string ETag { get; set; } = string.Empty;
 }
 
 public class GetStockBalancesQuery : IRequest<List<StockBalanceDto>>
@@ -70,7 +80,8 @@ public class GetStockBalancesQueryHandler : IRequestHandler<GetStockBalancesQuer
                 ?? s.CatalogItem!.Code,
             QuantityOnHand = s.QuantityOnHand,
             AverageUnitCost = s.AverageUnitCost,
-            UpdatedAt = s.UpdatedAt
+            UpdatedAt = s.UpdatedAt,
+            ETag = RowVersionToken.ToToken(s.RowVersion) ?? string.Empty
         }).ToList();
     }
 }

@@ -46,6 +46,7 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Tasks.TaskStatusHistory> TaskStatusHistories { get; }
     DbSet<AssetHub.Domain.Tasks.TaskEvidence> TaskEvidences { get; }
     DbSet<AssetHub.Domain.Tasks.TaskComment> TaskComments { get; }
+    DbSet<AssetHub.Domain.Tasks.TaskChecklist> TaskChecklists { get; }
 
     DbSet<AssetFinanceBook> AssetFinanceBooks { get; }
     DbSet<AssetDepreciationSchedule> AssetDepreciationSchedules { get; }
@@ -61,6 +62,8 @@ public interface ITenantDbContext
     DbSet<AssetHub.Domain.Inventory.StockBalance> StockBalances { get; }
     DbSet<AssetHub.Domain.Inventory.InventoryTransaction> InventoryTransactions { get; }
     DbSet<AssetHub.Domain.Inventory.TenantInventorySettings> TenantInventorySettings { get; }
+
+    DbSet<AssetHub.Domain.Field.TenantFieldAppSettings> TenantFieldAppSettings { get; }
 
     DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplate> CommunicationTemplates { get; }
     DbSet<AssetHub.Domain.CommunicationTemplates.CommunicationTemplateVersion> CommunicationTemplateVersions { get; }

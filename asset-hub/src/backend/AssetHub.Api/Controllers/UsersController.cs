@@ -80,6 +80,18 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id}/reset-password")]
+    [Authorize(Policy = "permission:users:manage")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request)
+    {
+        await _mediator.Send(new AdminResetPasswordCommand
+        {
+            UserId = id,
+            NewPassword = request.NewPassword
+        });
+        return NoContent();
+    }
+
     [HttpDelete("{id}/roles/{roleId}")]
     [Authorize(Policy = "permission:users:manage")]
     public async Task<IActionResult> RemoveRole(Guid id, Guid roleId)
@@ -140,4 +152,9 @@ public class UsersController : ControllerBase
 public class AssignRoleRequest
 {
     public Guid RoleId { get; set; }
+}
+
+public class AdminResetPasswordRequest
+{
+    public string NewPassword { get; set; } = string.Empty;
 }

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Tasks;
 using MediatR;
@@ -39,9 +40,16 @@ public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskComman
         if (WorkTaskStates.TerminalStates.Contains(task.State))
             throw new InvalidOperationException("No se puede editar una tarea en un estado terminal");
 
-        if (request.AssignedEmployeeId.HasValue)
+        var assignedEmployeeId = request.AssignedEmployeeId;
+        var effectiveProps = request.PropertiesJson ?? task.PropertiesJson;
+        if (!assignedEmployeeId.HasValue && WorkflowProperties.TryGetExecutorId(effectiveProps, out var executorId))
         {
-            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.AssignedEmployeeId.Value, cancellationToken);
+            assignedEmployeeId = executorId;
+        }
+
+        if (assignedEmployeeId.HasValue)
+        {
+            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == assignedEmployeeId.Value, cancellationToken);
             if (emp == null || !emp.IsActive)
                 throw new ArgumentException("Empleado asignado no encontrado o inactivo");
         }
@@ -58,7 +66,7 @@ public class UpdateWorkTaskCommandHandler : IRequestHandler<UpdateWorkTaskComman
         task.DueAt = request.DueAt;
         task.TaskTypeCatalogItemId = request.TaskTypeCatalogItemId;
         task.PriorityCatalogItemId = request.PriorityCatalogItemId;
-        task.AssignedEmployeeId = request.AssignedEmployeeId;
+        task.AssignedEmployeeId = assignedEmployeeId;
         task.AssignedTeamId = request.AssignedTeamId;
         if (request.PropertiesJson != null)
             task.PropertiesJson = request.PropertiesJson;

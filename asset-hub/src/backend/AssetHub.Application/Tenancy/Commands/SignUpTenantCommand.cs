@@ -55,11 +55,15 @@ public class SignUpTenantCommandHandler : IRequestHandler<SignUpTenantCommand, S
         }
 
         // 2. Create Tenant
+        var enterprisePlan = await _catalogDb.Plans
+            .FirstOrDefaultAsync(p => p.Code == "enterprise", cancellationToken);
+
         var tenant = new Tenant
         {
             Id = Guid.NewGuid(),
             Slug = request.Slug,
             Name = request.OrgName,
+            PlanId = enterprisePlan?.Id ?? Guid.Empty,
             Status = TenantStatus.Provisioning
         };
 

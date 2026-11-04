@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Tasks.Dtos;
+using AssetHub.Domain.Concurrency;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -76,7 +77,19 @@ public class GetWorkTasksQueryHandler : IRequestHandler<GetWorkTasksQuery, GetWo
 
         if (request.IncidentId.HasValue)
         {
-            query = query.Where(t => t.IncidentId == request.IncidentId.Value);
+            var incidentId = request.IncidentId.Value;
+
+            // Una tarea tiene un único padre, así que las tareas de reparación cuelgan
+            // de la orden y no de la incidencia. Para que la incidencia muestre todo lo
+            // que se hizo, se incluyen también las tareas de sus órdenes de mantenimiento.
+            var incidentOrderIds = await _db.MaintenanceOrders
+                .Where(o => o.IncidentId == incidentId && !o.IsDeleted)
+                .Select(o => o.Id)
+                .ToListAsync(cancellationToken);
+
+            query = query.Where(t =>
+                t.IncidentId == incidentId ||
+                (t.MaintenanceOrderId != null && incidentOrderIds.Contains(t.MaintenanceOrderId.Value)));
         }
 
         if (request.MaintenanceOrderId.HasValue)
@@ -121,6 +134,7 @@ public class GetWorkTasksQueryHandler : IRequestHandler<GetWorkTasksQuery, GetWo
             .Select(t => new WorkTaskSummaryDto
             {
                 Id = t.Id,
+                RowVersion = t.RowVersion,
                 Title = t.Title,
                 State = t.State,
                 DueAt = t.DueAt,
@@ -139,14 +153,46 @@ public class GetWorkTasksQueryHandler : IRequestHandler<GetWorkTasksQuery, GetWo
                 AssignedEmployeeName = t.AssignedEmployee != null ? $"{t.AssignedEmployee.FirstName} {t.AssignedEmployee.LastName}" : null,
                 AssignedTeamId = t.AssignedTeamId,
                 AssignedTeamName = t.AssignedTeam != null ? t.AssignedTeam.Name : null,
-                PriorityLabel = t.PriorityCatalogItem != null
-                    ? t.PriorityCatalogItem.Translations
-                        .Where(tr => tr.Locale == "es")
-                        .Select(tr => tr.Label)
-                        .FirstOrDefault()
-                    : null
+                PriorityLabel = _db.CatalogItemTranslations
+                    .Where(tr => tr.CatalogItemId == t.PriorityCatalogItemId && tr.Locale == "es")
+                    .Select(tr => tr.Label)
+                    .FirstOrDefault(),
+                Description = t.Description,
+                PropertiesJson = t.PropertiesJson
             })
             .ToListAsync(cancellationToken);
+
+        // El encoder no es traducible a SQL: se calcula en memoria sobre los bytes.
+        foreach (var item in items)
+        {
+            item.ETag = RowVersionToken.ToToken(item.RowVersion);
+        }
+
+        // El checklist se resuelve en una segunda consulta, no con un join en la
+        // proyección: tocar la navegación dentro del `Select` hace que EF la traduzca
+        // como INNER JOIN y las tareas sin formulario desaparezcan del listado.
+        if (items.Count > 0)
+        {
+            var taskIds = items.Select(i => i.Id).ToList();
+            var checklistRows = await _db.TaskChecklists
+                .AsNoTracking()
+                .Where(c => taskIds.Contains(c.WorkTaskId))
+                .Select(c => new { c.WorkTaskId, c.RowVersion })
+                .ToListAsync(cancellationToken);
+
+            var checklistByTask = checklistRows
+                .GroupBy(c => c.WorkTaskId)
+                .ToDictionary(g => g.Key, g => g.First().RowVersion);
+
+            foreach (var item in items)
+            {
+                if (checklistByTask.TryGetValue(item.Id, out var checklistRowVersion))
+                {
+                    item.HasChecklist = true;
+                    item.ChecklistETag = RowVersionToken.ToToken(checklistRowVersion);
+                }
+            }
+        }
 
         return new GetWorkTasksResult
         {

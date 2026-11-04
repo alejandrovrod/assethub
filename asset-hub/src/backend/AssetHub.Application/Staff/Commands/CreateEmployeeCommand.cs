@@ -95,6 +95,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         // para no dejar accesos huérfanos.
         ApplicationUser? createdUser = null;
         string? temporalPassword = null;
+        bool isNewUser = false;
 
         if (request.CreateUserAccess)
         {
@@ -104,29 +105,42 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
             var existing = await _userManager.FindByEmailAsync(email);
             if (existing != null)
-                throw new ArgumentException($"Ya existe un usuario con el email '{email}'.");
-
-            temporalPassword = GenerateTemporalPassword();
-
-            createdUser = new ApplicationUser
             {
-                Id = Guid.NewGuid(),
-                UserName = email,
-                Email = email,
-                FullName = $"{request.FirstName} {request.LastName}".Trim(),
-                TenantId = tenantId,
-                EmailConfirmed = true
-            };
+                var isLinked = await _db.Employees.AnyAsync(e => e.UserId == existing.Id && !e.IsDeleted, cancellationToken);
+                if (isLinked)
+                    throw new ArgumentException($"El usuario con el email '{email}' ya está vinculado a otro empleado.");
 
-            var result = await _userManager.CreateAsync(createdUser, temporalPassword);
-            if (!result.Succeeded)
-                throw new ArgumentException(string.Join(" ", result.Errors.Select(e => e.Description)));
-
-            var roleResult = await _userManager.AddToRoleAsync(createdUser, systemRole!.Name!);
-            if (!roleResult.Succeeded)
+                createdUser = existing;
+                if (!await _userManager.IsInRoleAsync(createdUser, systemRole!.Name!))
+                {
+                    await _userManager.AddToRoleAsync(createdUser, systemRole.Name!);
+                }
+            }
+            else
             {
-                await _userManager.DeleteAsync(createdUser);
-                throw new ArgumentException(string.Join(" ", roleResult.Errors.Select(e => e.Description)));
+                isNewUser = true;
+                temporalPassword = GenerateTemporalPassword();
+
+                createdUser = new ApplicationUser
+                {
+                    Id = Guid.NewGuid(),
+                    UserName = email,
+                    Email = email,
+                    FullName = $"{request.FirstName} {request.LastName}".Trim(),
+                    TenantId = tenantId,
+                    EmailConfirmed = true
+                };
+
+                var result = await _userManager.CreateAsync(createdUser, temporalPassword);
+                if (!result.Succeeded)
+                    throw new ArgumentException(string.Join(" ", result.Errors.Select(e => e.Description)));
+
+                var roleResult = await _userManager.AddToRoleAsync(createdUser, systemRole!.Name!);
+                if (!roleResult.Succeeded)
+                {
+                    await _userManager.DeleteAsync(createdUser);
+                    throw new ArgumentException(string.Join(" ", roleResult.Errors.Select(e => e.Description)));
+                }
             }
         }
 
@@ -152,8 +166,8 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         }
         catch
         {
-            // Compensación: falló el empleado -> revertir el usuario de Identity.
-            if (createdUser != null)
+            // Compensación: si falló la creación del empleado y el usuario fue recién creado, revertir.
+            if (isNewUser && createdUser != null)
             {
                 await _userManager.DeleteAsync(createdUser);
             }

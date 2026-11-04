@@ -40,7 +40,6 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   '/settings/users': 'users:read',
   '/settings/roles': 'roles:read',
   '/settings/audit': 'audit:read',
-  '/settings/account': 'profile:update',
 }
 
 export function AppSidebar() {

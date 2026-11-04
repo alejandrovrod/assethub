@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-type WorkTaskState = 'todo' | 'rework' | 'in_progress' | 'done' | 'cancelled'
+type WorkTaskState = 'todo' | 'rework' | 'in_progress' | 'paused' | 'done' | 'cancelled'
 
 interface Props {
   tasks: WorkTaskSummary[]
@@ -24,6 +24,7 @@ interface Column {
     | 'kanban.columns.todo'
     | 'kanban.columns.rework'
     | 'kanban.columns.inProgress'
+    | 'kanban.columns.paused'
     | 'kanban.columns.done'
     | 'kanban.columns.cancelled'
   color: string
@@ -33,6 +34,7 @@ const COLUMNS: Column[] = [
   { id: 'todo', titleKey: 'kanban.columns.todo', color: 'bg-slate-500' },
   { id: 'rework', titleKey: 'kanban.columns.rework', color: 'bg-orange-500' },
   { id: 'in_progress', titleKey: 'kanban.columns.inProgress', color: 'bg-blue-500' },
+  { id: 'paused', titleKey: 'kanban.columns.paused', color: 'bg-amber-500' },
   { id: 'done', titleKey: 'kanban.columns.done', color: 'bg-green-500' },
   { id: 'cancelled', titleKey: 'kanban.columns.cancelled', color: 'bg-red-500' },
 ]
@@ -73,6 +75,7 @@ export function WorkTaskKanban({ tasks, onStateChange }: Props) {
       todo: [],
       rework: [],
       in_progress: [],
+      paused: [],
       done: [],
       cancelled: [],
     }

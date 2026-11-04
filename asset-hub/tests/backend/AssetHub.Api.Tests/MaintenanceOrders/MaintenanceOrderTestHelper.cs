@@ -68,6 +68,70 @@ public static class MaintenanceOrderTestHelper
             => AsyncEnumerable.Empty<object?>();
     }
 
+    /// <summary>
+    /// Executes <see cref="CreateWorkTaskCommand"/> through its real handler instead of just
+    /// recording it. The incident handlers delegate task creation to that command, so a
+    /// recording-only mediator would leave the database without the task and hide the bug.
+    /// </summary>
+    public sealed class DispatchingMediator : IMediator
+    {
+        private readonly TenantDbContext _db;
+        private readonly ITenantResolver _resolver;
+
+        public DispatchingMediator(TenantDbContext db, ITenantResolver resolver)
+        {
+            _db = db;
+            _resolver = resolver;
+        }
+
+        public List<object> SentRequests { get; } = new();
+        public List<object> PublishedNotifications { get; } = new();
+
+        public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        {
+            SentRequests.Add(request);
+
+            if (request is Application.Tasks.Commands.CreateWorkTaskCommand create)
+            {
+                var handler = new Application.Tasks.Commands.CreateWorkTaskCommandHandler(_db, _resolver, this);
+                var id = handler.Handle(create, cancellationToken).GetAwaiter().GetResult();
+                return Task.FromResult((TResponse)(object)id);
+            }
+
+            return Task.FromResult(default(TResponse)!);
+        }
+
+        public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : IRequest
+        {
+            SentRequests.Add(request);
+            return Task.CompletedTask;
+        }
+
+        public Task<object?> Send(object request, CancellationToken cancellationToken = default)
+        {
+            SentRequests.Add(request);
+            return Task.FromResult<object?>(null);
+        }
+
+        public Task Publish(object notification, CancellationToken cancellationToken = default)
+        {
+            PublishedNotifications.Add(notification);
+            return Task.CompletedTask;
+        }
+
+        public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification
+        {
+            PublishedNotifications.Add(notification);
+            return Task.CompletedTask;
+        }
+
+        public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken = default)
+            => AsyncEnumerable.Empty<TResponse>();
+
+        public IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken = default)
+            => AsyncEnumerable.Empty<object?>();
+    }
+
     public static TenantDbContext CreateDbContext(Guid tenantId)
     {
         var resolver = new FakeTenantResolver(tenantId);

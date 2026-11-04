@@ -1,0 +1,656 @@
+openapi: 3.1.0
+info:
+  title: AssetHub — Contratos de sincronización para clientes offline
+  version: 1.0.0
+  description: |
+    Extensión del API de AssetHub que habilita clientes offline-first (PWA de campo).
+    Todos los cambios son aditivos: cuando el cliente no envía `Idempotency-Key` ni `If-Match`,
+    el comportamiento es el actual.
+
+    Convenciones:
+    - `Idempotency-Key`: UUID v4/v7. Obligatorio en los endpoints marcados. Se reutiliza en cada reintento.
+    - `ETag` / `If-Match`: token de concurrencia optimista (base64url del `RowVersion`, entre comillas).
+    - Errores: `ProblemDetails` con un campo `code` estable, legible por máquina.
+servers:
+  - url: https://api.assethub.local
+    description: Desarrollo
+
+tags:
+  - name: Auth
+  - name: WorkTasks
+  - name: Incidents
+  - name: Inventory
+  - name: Sync
+  - name: Meta
+
+paths:
+  /.well-known/jwks.json:
+    get:
+      tags: [Meta]
+      operationId: getJwks
+      summary: Claves públicas para validar el lease offline
+      security: []
+      responses:
+        "200":
+          description: Conjunto de claves de firma (actual + anterior)
+          headers:
+            Cache-Control:
+              schema: { type: string, example: "public, max-age=86400" }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      required: [kty, use, kid, n, e]
+                      properties:
+                        kty: { type: string, example: RSA }
+                        use: { type: string, example: sig }
+                        alg: { type: string, example: RS256 }
+                        kid: { type: string, example: "k-2026-09" }
+                        n: { type: string }
+                        e: { type: string, example: AQAB }
+
+  /api/v1/auth/offline-lease:
+    post:
+      tags: [Auth]
+      operationId: issueOfflineLease
+      summary: Emite un lease firmado para operar sin red
+      description: |
+        Requiere un access token válido. El lease **no** autoriza llamadas HTTP:
+        sólo habilita la operación local del cliente (lectura y escritura en IndexedDB).
+
+        Firma RS256 con la clave vigente del JWKS (`kid` en el header). El lease incluye
+        `jwks` en la respuesta para que el cliente cachee las claves públicas en el mismo
+        viaje, antes de quedarse sin red.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId]
+              properties:
+                deviceId:
+                  type: string
+                  format: uuid
+                  description: Identificador estable del dispositivo (generado en el cliente)
+      responses:
+        "200":
+          description: Lease emitido
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [leaseJwt, expiresIn, issuedAt, requireDeviceLock, jwks]
+                properties:
+                  leaseJwt: { type: string }
+                  expiresIn: { type: integer, example: 43200 }
+                  issuedAt: { type: string, format: date-time }
+                  requireDeviceLock:
+                    type: boolean
+                    description: Política del tenant; el cliente debe exigir bloqueo de pantalla
+                  jwks:
+                    type: object
+                    description: Claves públicas para verificar el lease sin red
+                    required: [keys]
+                    properties:
+                      keys:
+                        type: array
+                        items:
+                          type: object
+                          required: [kty, use, alg, kid, n, e]
+                          properties:
+                            kty: { type: string, example: RSA }
+                            use: { type: string, example: sig }
+                            alg: { type: string, example: RS256 }
+                            kid: { type: string, example: "k-2026-09" }
+                            n: { type: string }
+                            e: { type: string, example: AQAB }
+        "401":
+          description: Falta el access token o está vencido
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /api/v1/work-tasks/{taskId}/state:
+    put:
+      tags: [WorkTasks]
+      operationId: changeWorkTaskState
+      summary: Cambia el estado de una tarea (estricto)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKeyRequired"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state:
+                  type: string
+                  enum: [in_progress, paused, done]
+                clientTimestamp:
+                  type: string
+                  format: date-time
+                  description: Hora local del dispositivo (informativa, no autoritativa)
+      responses:
+        "200":
+          description: Estado actualizado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Idempotent-Replay:
+              $ref: "#/components/headers/IdempotentReplay"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, state, etag, allowedTransitions]
+                properties:
+                  id: { type: string, format: uuid }
+                  state: { type: string }
+                  startedAt: { type: [string, "null"], format: date-time }
+                  pausedAt: { type: [string, "null"], format: date-time }
+                  completedAt: { type: [string, "null"], format: date-time }
+                  totalPausedSeconds: { type: integer }
+                  etag: { type: string }
+                  allowedTransitions:
+                    type: array
+                    items: { type: string }
+        "409":
+          description: Transición inválida
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - type: object
+                    properties:
+                      code: { const: invalid_transition }
+                      currentState: { type: string }
+                      allowedTransitions:
+                        type: array
+                        items: { type: string }
+        "412":
+          $ref: "#/components/responses/VersionMismatch"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+
+  /api/v1/work-tasks/{taskId}/checklist:
+    get:
+      tags: [WorkTasks]
+      operationId: getTaskChecklist
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Checklist de la tarea (snapshot)
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskChecklist"
+        "204":
+          description: La tarea no tiene checklist
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [WorkTasks]
+      operationId: submitTaskChecklist
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKeyRequired"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [responseJson]
+              properties:
+                responseJson:
+                  type: string
+                  description: Objeto JSON serializado, validado contra `schemaJson` (draft-07)
+      responses:
+        "200":
+          description: Checklist guardado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskChecklist"
+        "412":
+          $ref: "#/components/responses/VersionMismatch"
+        "422":
+          description: El `responseJson` no valida contra el esquema
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - type: object
+                    properties:
+                      code: { const: checklist_validation_failed }
+                      fieldErrors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            field: { type: string }
+                            message: { type: string }
+
+  /api/v1/work-tasks/{taskId}/evidences:
+    get:
+      tags: [WorkTasks]
+      operationId: getTaskEvidences
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Evidencias de la tarea
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskEvidence"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/work-tasks/{taskId}/evidences/{evidenceId}:
+    delete:
+      tags: [WorkTasks]
+      operationId: deleteTaskEvidence
+      summary: >-
+        Elimina una evidencia de la tarea. Idempotente: si la evidencia ya no existe
+        responde 204, para que el reintento del outbox offline no se convierta en error.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+        - name: evidenceId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Evidencia eliminada, o ya inexistente (reintento del outbox)
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /api/v1/inventory/consumptions:
+    post:
+      tags: [Inventory]
+      operationId: consumeStock
+      summary: Registra el consumo de materiales ligado a una tarea (estricto e idempotente)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKeyRequired"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [warehouseId, catalogItemId, quantity, workTaskId]
+              properties:
+                warehouseId: { type: string, format: uuid }
+                catalogItemId: { type: string, format: uuid }
+                workTaskId: { type: string, format: uuid }
+                quantity: { type: number, exclusiveMinimum: 0 }
+                reason: { type: [string, "null"] }
+      responses:
+        "200":
+          description: >-
+            El consumo ya se había registrado con esa Idempotency-Key (replay a nivel
+            de dominio, por ejemplo después de que el registro de idempotencia expiró).
+            Devuelve el movimiento original y el saldo actual; no descuenta de nuevo.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, quantityOnHand, etag]
+                properties:
+                  id: { type: string, format: uuid }
+                  quantityOnHand: { type: number }
+                  negativeStockWarning: { type: boolean }
+                  etag: { type: string }
+        "201":
+          description: Consumo registrado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Idempotent-Replay:
+              $ref: "#/components/headers/IdempotentReplay"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, quantityOnHand, etag]
+                properties:
+                  id: { type: string, format: uuid }
+                  quantityOnHand: { type: number }
+                  negativeStockWarning: { type: boolean }
+                  etag: { type: string }
+        "400":
+          description: Falta la Idempotency-Key
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - type: object
+                    properties:
+                      code: { const: idempotency_key_required }
+        "409":
+          description: Stock insuficiente
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - type: object
+                    properties:
+                      code: { const: insufficient_stock }
+                      available: { type: number }
+                      requested: { type: number }
+                      alternatives:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            warehouseId: { type: string, format: uuid }
+                            warehouseName: { type: string }
+                            catalogItemId: { type: string, format: uuid }
+                            quantityOnHand: { type: number }
+        "412":
+          $ref: "#/components/responses/VersionMismatch"
+
+  /api/v1/work-tasks/changes:
+    get:
+      tags: [Sync]
+      operationId: getWorkTaskChanges
+      summary: Delta de tareas asignadas al usuario (keyset pagination)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/IncludeDeleted"
+        - name: assignedToMe
+          in: query
+          required: false
+          description: >-
+            Restringe a las tareas del empleado autenticado y de sus equipos. El PWA de
+            campo lo envía en `true`; sin él el alcance es el tenant completo, igual que
+            `GET /work-tasks`.
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Página de cambios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePage"
+        "400":
+          description: Cursor inválido
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - type: object
+                    properties:
+                      code: { const: invalid_cursor }
+
+  /api/v1/assets/changes:
+    get:
+      tags: [Sync]
+      operationId: getAssetChanges
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/IncludeDeleted"
+      responses:
+        "200":
+          description: Página de cambios de activos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePage"
+
+  /api/v1/incidents/changes:
+    get:
+      tags: [Sync]
+      operationId: getIncidentChanges
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/IncludeDeleted"
+      responses:
+        "200":
+          description: Página de cambios de incidencias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePage"
+
+  /api/v1/inventory/stock/changes:
+    get:
+      tags: [Sync]
+      operationId: getStockChanges
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Limit"
+        - name: warehouseId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Página de cambios de stock
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePage"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: ETag del recurso. `*` permitido sólo con permiso `tenant:write`.
+      schema: { type: string, example: '"AQIDBAUGBwg="' }
+    IdempotencyKeyRequired:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID v4/v7. Debe ser el mismo en todos los reintentos de la misma mutación.
+      schema: { type: string, format: uuid }
+    Since:
+      name: since
+      in: query
+      required: false
+      description: Cursor opaco devuelto por la llamada anterior. Ausente = primera página.
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+    IncludeDeleted:
+      name: includeDeleted
+      in: query
+      required: false
+      schema: { type: boolean, default: true }
+
+  headers:
+    ETag:
+      description: Token de concurrencia del recurso (base64url del RowVersion)
+      schema: { type: string }
+    IdempotentReplay:
+      description: Presente y `true` cuando la respuesta proviene de la caché de idempotencia
+      schema: { type: boolean }
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, description: Código estable legible por máquina }
+        detail: { type: [string, "null"] }
+        traceId: { type: [string, "null"] }
+    TaskChecklist:
+      type: object
+      required: [taskId, schemaJson, uiSchemaJson, state, version, etag]
+      properties:
+        taskId: { type: string, format: uuid }
+        schemaJson: { type: string, description: JSON Schema draft-07 }
+        uiSchemaJson: { type: string, description: UiSchema de RJSF v6 }
+        responseJson: { type: [string, "null"] }
+        state: { type: string, enum: [pending, submitted] }
+        submittedAt: { type: [string, "null"], format: date-time }
+        version: { type: integer }
+        etag: { type: string }
+    TaskEvidence:
+      type: object
+      required: [id, type, capturedAt, capturedByUserId]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [photo, signature, note, geocheck] }
+        blobUri: { type: [string, "null"] }
+        note: { type: [string, "null"] }
+        latitude: { type: [number, "null"] }
+        longitude: { type: [number, "null"] }
+        capturedAt: { type: string, format: date-time }
+        capturedByUserId: { type: string, format: uuid }
+    ChangePage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, updatedAt, deleted]
+            properties:
+              id: { type: string, format: uuid }
+              updatedAt: { type: string, format: date-time }
+              deleted: { type: boolean }
+              deletedAt: { type: [string, "null"], format: date-time }
+              etag:
+                type: [string, "null"]
+                description: >-
+                  Versión de la fila para el próximo `If-Match`. `null` en las filas
+                  borradas y en los proveedores sin rowversion.
+        nextCursor:
+          type: [string, "null"]
+          description: >-
+            Cursor de la última fila de la página. Se devuelve incluso cuando
+            `hasMore` es `false`, para que el cliente pueda reanudar el próximo pull
+            sin volver a sincronizar todo. Es `null` sólo si `items` vino vacío: en
+            ese caso el cliente conserva el cursor que había enviado.
+        hasMore:
+          type: boolean
+          description: Hay más cambios después de esta página.
+
+  responses:
+    Forbidden:
+      description: Sin permiso para el recurso
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Problem"
+              - type: object
+                properties:
+                  code: { const: forbidden }
+    NotFound:
+      description: Recurso inexistente en el tenant
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Problem"
+              - type: object
+                properties:
+                  code: { const: not_found }
+    Unprocessable:
+      description: Validación fallida
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Problem"
+              - type: object
+                properties:
+                  code: { const: validation_error }
+    PreconditionRequired:
+      description: Falta el header If-Match
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Problem"
+              - type: object
+                properties:
+                  code: { const: precondition_required }
+    VersionMismatch:
+      description: La versión enviada no es la actual
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Problem"
+              - type: object
+                properties:
+                  code: { const: version_mismatch }
+                  currentVersion: { type: string }
+                  currentState: { type: string }
+                  allowedTransitions:
+                    type: array
+                    items: { type: string }

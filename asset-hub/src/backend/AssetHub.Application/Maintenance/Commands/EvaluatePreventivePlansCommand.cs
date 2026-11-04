@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Maintenance.Events;
 using AssetHub.Application.Maintenance.Helpers;
+using AssetHub.Application.Tasks.Checklists;
 using AssetHub.Domain.Catalogs;
 using AssetHub.Domain.Maintenance;
 using AssetHub.Domain.Tasks;
@@ -209,6 +210,7 @@ public class EvaluatePreventivePlansCommandHandler : IRequestHandler<EvaluatePre
         {
             var asset = await _db.Assets
                 .IgnoreQueryFilters()
+                .Include(a => a.AssetTemplate)
                 .FirstOrDefaultAsync(a => a.TenantId == plan.TenantId && a.Id == plan.AssetId.Value && !a.IsDeleted, cancellationToken);
 
             return asset != null ? new List<AssetHub.Domain.Assets.Asset> { asset } : new List<AssetHub.Domain.Assets.Asset>();
@@ -218,6 +220,7 @@ public class EvaluatePreventivePlansCommandHandler : IRequestHandler<EvaluatePre
         {
             return await _db.Assets
                 .IgnoreQueryFilters()
+                .Include(a => a.AssetTemplate)
                 .Where(a => a.TenantId == plan.TenantId && a.AssetTemplateId == plan.AssetTemplateId.Value && !a.IsDeleted)
                 .ToListAsync(cancellationToken);
         }
@@ -325,6 +328,19 @@ public class EvaluatePreventivePlansCommandHandler : IRequestHandler<EvaluatePre
             };
 
             _db.WorkTasks.Add(task);
+
+            // Snapshot del checklist del activo: misma regla que en la creación manual,
+            // para que la tarea generada por el plan no sea un caso especial.
+            var checklist = TaskChecklistFactory.TryBuild(
+                plan.TenantId,
+                task.Id,
+                asset.AssetTemplate?.MaintenanceChecklist);
+
+            if (checklist is not null)
+            {
+                _db.TaskChecklists.Add(checklist);
+            }
+
             generated.Add(new GeneratedItem(PreventivePlanConstants.GeneratedEntityTypeWorkTask, task.Id));
         }
 

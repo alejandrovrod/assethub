@@ -157,6 +157,7 @@ public static class PermissionCatalog
         new PermissionDefinition("warehouses:update", "Inventario", "maintenance", "Actualizar almacenes"),
         new PermissionDefinition("warehouses:delete", "Inventario", "maintenance", "Eliminar almacenes"),
         new PermissionDefinition("stock:read", "Inventario", "maintenance", "Ver saldos de stock"),
+        new PermissionDefinition("inventory:consume", "Inventario", "maintenance", "Consumir materiales en una tarea propia (cliente de campo)"),
         new PermissionDefinition("stock:adjust", "Inventario", "maintenance", "Crear ajustes de stock"),
         new PermissionDefinition("transactions:read", "Inventario", "maintenance", "Ver transacciones de inventario"),
         new PermissionDefinition("receipts:create", "Inventario", "maintenance", "Registrar recepciones"),

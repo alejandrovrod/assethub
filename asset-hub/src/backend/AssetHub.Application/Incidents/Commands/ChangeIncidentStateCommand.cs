@@ -1,10 +1,14 @@
 using System;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Exceptions;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Incidents.Events;
 using AssetHub.Application.Incidents.Helpers;
+using AssetHub.Domain.Concurrency;
 using AssetHub.Domain.Incidents;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +21,14 @@ public class ChangeIncidentStateCommand : IRequest<Unit>
     public string TargetState { get; set; } = string.Empty;
     public string? PropertiesJson { get; set; }
     public bool ForceTransition { get; set; } = false;
+
+    /// <summary>
+    /// Versión que el cliente leyó, decodificada del header <c>If-Match</c>.
+    /// Sin esto, dos técnicos que cierran el mismo incidente desde sus tablets producen
+    /// dos eventos de ciclo de vida y un estado final arbitrario.
+    /// </summary>
+    [JsonIgnore]
+    public byte[]? ExpectedRowVersion { get; set; }
 }
 
 public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentStateCommand, Unit>
@@ -38,6 +50,15 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
             
         if (incident == null)
             throw new ArgumentException("Incident not found");
+
+        if (request.ExpectedRowVersion is { Length: > 0 }
+            && !incident.RowVersion.AsSpan().SequenceEqual(request.ExpectedRowVersion))
+        {
+            throw new ConcurrencyException(
+                "El incidente fue modificado por otra persona.",
+                currentState: incident.State,
+                currentETag: RowVersionToken.ToToken(incident.RowVersion));
+        }
 
         string fromState = incident.State;
         bool isTerminal = false;
@@ -120,6 +141,8 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
 
         incident.State = request.TargetState;
         
+        var propertiesBefore = incident.PropertiesJson;
+
         if (!string.IsNullOrWhiteSpace(request.PropertiesJson))
         {
             try
@@ -153,6 +176,8 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
             
         if (request.TargetState == IncidentStates.Closed || isTerminal)
             incident.ClosedAt = DateTime.UtcNow;
+
+        var propertiesChanged = !PropertyPropagation.SemanticJsonEquals(propertiesBefore, incident.PropertiesJson);
 
         if (fromState != request.TargetState)
         {
@@ -219,6 +244,12 @@ public class ChangeIncidentStateCommandHandler : IRequestHandler<ChangeIncidentS
                     request.TargetState
                 ), cancellationToken);
             }
+        }
+        else if (propertiesChanged)
+        {
+            // The form was edited without moving the incident: the open order still has to
+            // receive the new values, otherwise the edit dies inside the incident.
+            await _mediator.Publish(new IncidentPropertiesChangedEvent(incident.Id), cancellationToken);
         }
         
         return Unit.Value;

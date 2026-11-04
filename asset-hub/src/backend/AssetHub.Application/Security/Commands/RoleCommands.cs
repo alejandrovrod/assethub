@@ -55,13 +55,20 @@ internal static class RolePermissionHelper
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, ct);
 
-        var enabledModules = tenant?.PlanId == null
-            ? null // sin plan => sin restricciones (demo/seed)
-            : ParseEnabledModules(await platformDb.Plans
+        HashSet<string>? enabledModules = null;
+        if (tenant != null && tenant.PlanId != Guid.Empty)
+        {
+            var planModulesJson = await platformDb.Plans
                 .AsNoTracking()
                 .Where(pl => pl.Id == tenant.PlanId)
                 .Select(pl => pl.EnabledModules)
-                .FirstOrDefaultAsync(ct));
+                .FirstOrDefaultAsync(ct);
+
+            if (!string.IsNullOrWhiteSpace(planModulesJson))
+            {
+                enabledModules = ParseEnabledModules(planModulesJson);
+            }
+        }
 
         if (enabledModules != null)
         {

@@ -37,6 +37,24 @@
   <data name="Error_Conflict" xml:space="preserve">
     <value>La operación entra en conflicto con el estado actual del recurso.</value>
   </data>
+  <data name="Error_InvalidTransition" xml:space="preserve">
+    <value>El recurso no puede pasar a ese estado.</value>
+  </data>
+  <data name="Error_InvalidFieldAppSettings" xml:space="preserve">
+    <value>La política del cliente de campo de esta organización no es válida.</value>
+  </data>
+  <data name="field_app_settings_invalid" xml:space="preserve">
+    <value>offlineLeaseHours debe estar entre {1} y {2} horas (configurado: {0}).</value>
+  </data>
+  <data name="field_role_task_not_assigned" xml:space="preserve">
+    <value>La tarea no está asignada a vos ni a un equipo del que formes parte.</value>
+  </data>
+  <data name="field_role_cannot_cancel" xml:space="preserve">
+    <value>El rol de campo no puede cancelar tareas. Pedile a la oficina que la cancele.</value>
+  </data>
+  <data name="field_role_cannot_reassign" xml:space="preserve">
+    <value>El rol de campo no puede reasignar tareas.</value>
+  </data>
   <data name="Error_TenantRequired" xml:space="preserve">
     <value>Se requiere una organización (tenant) para esta operación.</value>
   </data>
@@ -147,6 +165,9 @@
   </data>
   <data name="insufficient_stock" xml:space="preserve">
     <value>Stock insuficiente para completar la operación.</value>
+  </data>
+  <data name="invalid_transition" xml:space="preserve">
+    <value>Transición de estado inválida de '{0}' a '{1}'.</value>
   </data>
   <data name="non_existent_stock_balance" xml:space="preserve">
     <value>No se puede registrar una cantidad negativa para un saldo de inventario inexistente.</value>

@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using AssetHub.Api.Http;
 using AssetHub.Application.Assets.Commands;
 using AssetHub.Application.Assets.Queries;
+using AssetHub.Application.Sync.Dtos;
+using AssetHub.Application.Sync.Queries;
 using AssetHub.Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -20,6 +23,23 @@ public class AssetsController : ControllerBase
     public AssetsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>Delta sync de activos (022 §8).</summary>
+    [HttpGet("changes")]
+    public async Task<ActionResult<ChangePageDto>> GetChanges(
+        [FromQuery] string? since,
+        [FromQuery] int? limit,
+        [FromQuery] bool includeDeleted = true)
+    {
+        var result = await _mediator.Send(new GetAssetChangesQuery
+        {
+            Since = since,
+            Limit = limit,
+            IncludeDeleted = includeDeleted,
+        });
+
+        return Ok(result);
     }
 
     [HttpGet]
@@ -65,6 +85,13 @@ public class AssetsController : ControllerBase
     {
         var result = await _mediator.Send(new GetAssetByIdQuery(id));
         if (result == null) return NotFound();
+
+        var etag = ETagHelper.ToHeader(result.ETag);
+        if (!string.IsNullOrEmpty(etag))
+        {
+            Response.Headers.ETag = etag;
+        }
+
         return Ok(result);
     }
 

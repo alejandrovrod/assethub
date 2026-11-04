@@ -224,6 +224,60 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
           </div>
         ) : (
           <>
+            {/* Related */}
+            {(displayedOrder.assetId || displayedOrder.preventivePlanId || displayedOrder.incidentId) && (
+              <>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Wrench className="h-4 w-4" /> {t('orders.detail.related')}
+                  </h4>
+                  <div className="grid gap-2 text-sm">
+                    {displayedOrder.assetId && (
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span className="text-muted-foreground w-32 shrink-0">{t('fields.asset')}</span>
+                        <Link to={`/assets/${displayedOrder.assetId}`} className="text-sm font-medium hover:underline truncate">
+                          {displayedOrder.assetName || displayedOrder.assetId}
+                        </Link>
+                      </div>
+                    )}
+                    {displayedOrder.preventivePlanId && (
+                      <div className="flex items-center gap-2 group">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-muted-foreground w-32 shrink-0">{t('detail.related.preventivePlan')}</span>
+                        <Link to={`/maintenance/preventive-plans`} className="text-sm font-medium hover:underline truncate">
+                          {displayedOrder.preventivePlanName || displayedOrder.preventivePlanId}
+                        </Link>
+                        {state !== 'verified' && canUpdate && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" 
+                            onClick={() => unlinkPreventivePlanMutation.mutate()}
+                            title={t('orders.detail.unlinkPlan')}
+                            disabled={unlinkPreventivePlanMutation.isPending}
+                          >
+                            {unlinkPreventivePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2Off className="h-3 w-3 text-muted-foreground hover:text-destructive" />}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {displayedOrder.incidentId && (
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-muted-foreground w-32 shrink-0">{t('detail.related.incident')}</span>
+                        <Link to={`/maintenance/incidents/${displayedOrder.incidentId}`} className="text-sm font-medium hover:underline truncate">
+                          {displayedOrder.incidentTitle || displayedOrder.incidentId}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+              </>
+            )}
+
             {/* Title and description */}
             <div className="space-y-2">
               <Label htmlFor="mo-title">{t('common:labels.title')}</Label>
@@ -289,54 +343,6 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                 onChange={setPropertiesJson}
               />
             )}
-
-            <Separator />
-
-            {/* Related */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Wrench className="h-4 w-4" /> {t('orders.detail.related')}
-              </h4>
-              <div className="grid gap-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  <span className="text-muted-foreground w-32 shrink-0">{t('fields.asset')}</span>
-                  <Link to={`/assets/${displayedOrder.assetId}`} className="text-sm font-medium hover:underline truncate">
-                    {displayedOrder.assetName || displayedOrder.assetId}
-                  </Link>
-                </div>
-                {displayedOrder.preventivePlanId && (
-                  <div className="flex items-center gap-2 group">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-muted-foreground w-32 shrink-0">{t('detail.related.preventivePlan')}</span>
-                    <Link to={`/maintenance/preventive-plans`} className="text-sm font-medium hover:underline truncate">
-                      {displayedOrder.preventivePlanName || displayedOrder.preventivePlanId}
-                    </Link>
-                    {state !== 'verified' && canUpdate && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" 
-                        onClick={() => unlinkPreventivePlanMutation.mutate()}
-                        title={t('orders.detail.unlinkPlan')}
-                        disabled={unlinkPreventivePlanMutation.isPending}
-                      >
-                        {unlinkPreventivePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2Off className="h-3 w-3 text-muted-foreground hover:text-destructive" />}
-                      </Button>
-                    )}
-                  </div>
-                )}
-                {displayedOrder.incidentId && (
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-muted-foreground w-32 shrink-0">{t('detail.related.incident')}</span>
-                    <Link to={`/maintenance/incidents/${displayedOrder.incidentId}`} className="text-sm font-medium hover:underline truncate">
-                      {displayedOrder.incidentTitle || displayedOrder.incidentId}
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
 
             <Separator />
 

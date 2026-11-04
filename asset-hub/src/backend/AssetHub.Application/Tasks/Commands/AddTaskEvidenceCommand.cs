@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Field;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Tasks;
 using MediatR;
@@ -26,19 +27,29 @@ public class AddTaskEvidenceCommandHandler : IRequestHandler<AddTaskEvidenceComm
     private readonly ITenantDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantResolver _tenantResolver;
+    private readonly FieldTaskAccess _access;
 
-    public AddTaskEvidenceCommandHandler(ITenantDbContext db, ICurrentUser currentUser, ITenantResolver tenantResolver)
+    public AddTaskEvidenceCommandHandler(
+        ITenantDbContext db,
+        ICurrentUser currentUser,
+        ITenantResolver tenantResolver,
+        FieldTaskAccess access)
     {
         _db = db;
         _currentUser = currentUser;
         _tenantResolver = tenantResolver;
+        _access = access;
     }
 
     public async Task<Guid> Handle(AddTaskEvidenceCommand request, CancellationToken cancellationToken)
     {
-        var taskExists = await _db.WorkTasks.AnyAsync(t => t.Id == request.WorkTaskId, cancellationToken);
-        if (!taskExists)
+        var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
+        if (task is null)
             throw new ArgumentException("Tarea no encontrada");
+
+        // Un técnico de campo sólo adjunta evidencias a tareas propias. Subir una foto a la
+        // tarea de otro equipo es justamente el error que la tablet no puede detectar sola.
+        await _access.EnsureCanOperateAsync(task, cancellationToken);
 
         if (request.Type == "geocheck")
         {
@@ -49,6 +60,15 @@ public class AddTaskEvidenceCommandHandler : IRequestHandler<AddTaskEvidenceComm
         {
             if (string.IsNullOrWhiteSpace(request.BlobUri))
                 throw new ArgumentException("La evidencia de foto requiere un BlobUri");
+
+            // Idempotencia: Si ya existe una evidencia con el mismo BlobUri para esta tarea, retornar su ID existente
+            var existing = await _db.TaskEvidences
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.WorkTaskId == request.WorkTaskId && e.BlobUri == request.BlobUri, cancellationToken);
+            if (existing != null)
+            {
+                return existing.Id;
+            }
         }
 
         var evidence = new TaskEvidence

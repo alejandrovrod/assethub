@@ -137,6 +137,9 @@ export default function SettingsUsers() {
           fullName: fullName.trim(),
           isActive,
         })
+        if (password.trim()) {
+          await userService.resetPassword(editingUser.id, password.trim())
+        }
         // Sincronizar roles (agregar/quitar)
         const current = new Set(editingUser.roles.map((r) => r.id))
         for (const roleId of selectedRoles) {
@@ -588,18 +591,29 @@ export default function SettingsUsers() {
               />
             </div>
 
-            {!editingUser && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="user-password">{t('users.dialog.passwordLabel')}</Label>
-                <Input
-                  id="user-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('users.dialog.passwordPlaceholder')}
-                />
-              </div>
-            )}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="user-password">
+                {editingUser
+                  ? 'Nueva contraseña (opcional)'
+                  : t('users.dialog.passwordLabel')}
+              </Label>
+              <Input
+                id="user-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={
+                  editingUser
+                    ? 'Dejar en blanco para no cambiar'
+                    : t('users.dialog.passwordPlaceholder')
+                }
+              />
+              {editingUser && (
+                <span className="text-[11px] text-muted-foreground">
+                  Ingresa una nueva contraseña si deseas restablecer el acceso de este usuario.
+                </span>
+              )}
+            </div>
 
             <div className="flex flex-col gap-2">
               <Label>{t('roles.title')}</Label>

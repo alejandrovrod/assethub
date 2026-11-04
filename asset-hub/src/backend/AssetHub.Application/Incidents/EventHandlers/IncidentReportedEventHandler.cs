@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.CommunicationTemplates.Rendering;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Incidents.Events;
 using MediatR;
@@ -43,24 +44,11 @@ public class IncidentReportedEventHandler : INotificationHandler<IncidentReporte
         {
             var propsDoc = JsonDocument.Parse(notification.PropertiesJson);
 
-            // Revisa si existe "reportar_a" o "recibe_a"
-            string? targetFieldId = null;
-            if (propsDoc.RootElement.TryGetProperty("reportar_a", out _))
+            // El destinatario vive en las propiedades dinámicas del template, no en la columna
+            // AssignedEmployeeId. Ver WorkflowProperties.AssigneeKeys.
+            if (!WorkflowProperties.TryGetAssigneeId(propsDoc.RootElement, out var targetEmployeeId))
             {
-                targetFieldId = "reportar_a";
-            }
-            else if (propsDoc.RootElement.TryGetProperty("recibe_a", out _))
-            {
-                targetFieldId = "recibe_a";
-            }
-
-            if (targetFieldId == null) return;
-            if (!propsDoc.RootElement.TryGetProperty(targetFieldId, out var targetValueElement)) return;
-
-            var targetValueStr = targetValueElement.GetString();
-            if (!Guid.TryParse(targetValueStr, out var targetEmployeeId))
-            {
-                _logger.LogWarning("=> El valor del campo destinatario {TargetFieldId} no es un GUID válido (Incidencia).", targetFieldId);
+                _logger.LogWarning("=> La incidencia no declara destinatario en sus propiedades dinámicas.");
                 return;
             }
 

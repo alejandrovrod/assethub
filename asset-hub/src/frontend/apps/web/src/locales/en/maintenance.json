@@ -46,6 +46,7 @@
       "todo": "Pending",
       "rework": "Correction",
       "inProgress": "In progress",
+      "paused": "Paused",
       "done": "Done",
       "cancelled": "Cancelled"
     },
@@ -89,6 +90,7 @@
       "todo": "To do",
       "rework": "Rework",
       "inProgress": "In progress",
+      "paused": "Paused",
       "done": "Completed",
       "cancelled": "Cancelled"
     },
@@ -126,6 +128,7 @@
     "changeState": "Change status",
     "stateChangeBlocked": "The task status cannot be changed because the main work order is not In progress.",
     "noTransitions": "No transitions available",
+    "deleteEvidence": "Delete evidence",
     "tabs": {
       "timeline": "Log",
       "details": "Details"
@@ -211,6 +214,7 @@
         "allStates": "All statuses",
         "todo": "Pending",
         "inProgress": "In progress",
+        "paused": "Paused",
         "done": "Done",
         "cancelled": "Cancelled"
       }
@@ -232,11 +236,14 @@
     "assignmentUpdated": "Assignment updated",
     "assignError": "Error assigning the task",
     "commentAdded": "Comment added",
-    "commentError": "Error adding the comment"
+    "commentError": "Error adding the comment",
+    "evidenceDeleted": "Evidence deleted",
+    "evidenceDeleteError": "Error deleting the evidence"
   },
   "dialog": {
     "deleteTaskTitle": "Delete task?",
     "deleteTaskBody": "This will delete the task \"{{title}}\". This action cannot be undone.",
+    "deleteEvidenceBody": "Delete this evidence? This action cannot be undone.",
     "changeToTitle": "Change to '{{state}}'",
     "transitionNeedsInfo": "This status requires additional information before continuing.",
     "editDynamicInfo": "Edit Dynamic Information",

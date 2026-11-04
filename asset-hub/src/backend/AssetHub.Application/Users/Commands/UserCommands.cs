@@ -376,3 +376,61 @@ public class RemoveUserRoleCommandHandler : IRequestHandler<RemoveUserRoleComman
         return Unit.Value;
     }
 }
+
+/// <summary>
+/// Permite a un administrador del tenant restablecer la contraseña de un usuario.
+/// </summary>
+public class AdminResetPasswordCommand : IRequest<Unit>
+{
+    public Guid UserId { get; set; }
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class AdminResetPasswordCommandHandler : IRequestHandler<AdminResetPasswordCommand, Unit>
+{
+    private readonly ISecurityDbContext _db;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ITenantResolver _tenantResolver;
+    private readonly ICurrentUser _currentUser;
+
+    public AdminResetPasswordCommandHandler(
+        ISecurityDbContext db,
+        UserManager<ApplicationUser> userManager,
+        ITenantResolver tenantResolver,
+        ICurrentUser currentUser)
+    {
+        _db = db;
+        _userManager = userManager;
+        _tenantResolver = tenantResolver;
+        _currentUser = currentUser;
+    }
+
+    public async Task<Unit> Handle(AdminResetPasswordCommand request, CancellationToken cancellationToken)
+    {
+        var tenantId = _tenantResolver.GetCurrentTenantId()
+            ?? throw new UnauthorizedAccessException("Tenant is required.");
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == request.UserId && u.TenantId == tenantId, cancellationToken)
+            ?? throw new ArgumentException("Usuario no encontrado.");
+
+        var newPassword = (request.NewPassword ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(newPassword))
+            throw new ArgumentException("La nueva contraseña es obligatoria.");
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        if (!result.Succeeded)
+        {
+            throw new ArgumentException(string.Join(" ", result.Errors.Select(e => e.Description)));
+        }
+
+        UserAuditHelper.Log(_db, tenantId, _currentUser.Id, "user.password_reset", user.Id,
+            newValues: "password reset by admin");
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Unit.Value;
+    }
+}
+

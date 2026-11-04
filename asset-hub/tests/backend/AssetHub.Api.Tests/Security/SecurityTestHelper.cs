@@ -30,6 +30,10 @@ public static class SecurityTestHelper
     public sealed class FakeCurrentUser : ICurrentUser
     {
         public Guid? Id { get; set; } = Guid.NewGuid();
+
+        public HashSet<string> Roles { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public bool IsInRole(string role) => Roles.Contains(role);
     }
 
     public static (SecurityDbContext Db, RoleManager<ApplicationRole> RoleManager) CreateSecurityDb()

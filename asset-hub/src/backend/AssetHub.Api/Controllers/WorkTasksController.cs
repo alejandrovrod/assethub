@@ -1,8 +1,12 @@
 using System;
 using System.Threading.Tasks;
+using AssetHub.Api.Filters;
+using AssetHub.Api.Http;
 using AssetHub.Application.Tasks.Commands;
 using AssetHub.Application.Tasks.Dtos;
 using AssetHub.Application.Tasks.Queries;
+using AssetHub.Application.Sync.Dtos;
+using AssetHub.Application.Sync.Queries;
 using AssetHub.Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +17,6 @@ namespace AssetHub.Api.Controllers;
 [ApiController]
 [Route("api/v1/work-tasks")]
 [Authorize]
-[RequirePlanLimits("tasks")]
 public class WorkTasksController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,6 +24,30 @@ public class WorkTasksController : ControllerBase
     public WorkTasksController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Delta sync de tareas (022 §8). Devuelve sólo lo que cambió desde <paramref name="since"/>.
+    ///
+    /// <paramref name="assignedToMe"/> es lo que usa el PWA de campo: la tablet no tiene por
+    /// qué llevar el trabajo de todo el tenant.
+    /// </summary>
+    [HttpGet("changes")]
+    public async Task<ActionResult<ChangePageDto>> GetChanges(
+        [FromQuery] string? since,
+        [FromQuery] int? limit,
+        [FromQuery] bool includeDeleted = true,
+        [FromQuery] bool assignedToMe = false)
+    {
+        var result = await _mediator.Send(new GetWorkTaskChangesQuery
+        {
+            Since = since,
+            Limit = limit,
+            IncludeDeleted = includeDeleted,
+            AssignedToMe = assignedToMe,
+        });
+
+        return Ok(result);
     }
 
     [HttpGet]
@@ -64,7 +91,7 @@ public class WorkTasksController : ControllerBase
         if (result == null)
             return NotFound();
 
-        return Ok(result);
+        return WithETag(result);
     }
 
     [HttpPost]
@@ -99,12 +126,16 @@ public class WorkTasksController : ControllerBase
     }
 
     [HttpPut("{id}/state")]
+    [HttpPost("{id}/state")]
+    [RequireIfMatch]
     public async Task<ActionResult<WorkTaskDetailDto>> ChangeState(Guid id, [FromBody] ChangeWorkTaskStateCommand command)
     {
         command.WorkTaskId = id;
+        command.ExpectedRowVersion = RequireIfMatchAttribute.GetExpectedVersion(HttpContext);
+
         await _mediator.Send(command);
         var result = await _mediator.Send(new GetWorkTaskByIdQuery(id));
-        return Ok(result);
+        return WithETag(result);
     }
 
     [HttpGet("{id}/history")]
@@ -114,11 +145,79 @@ public class WorkTasksController : ControllerBase
         return Ok(new { items = result });
     }
 
+    /// <summary>
+    /// Devuelve el checklist con su snapshot de esquema y su ETag propio.
+    /// 404 si la tarea no existe, 204 si existe pero no tiene formulario: para el
+    /// cliente offline son dos cosas distintas y las cachea distinto.
+    /// </summary>
+    [HttpGet("{id}/checklist")]
+    public async Task<IActionResult> GetChecklist(Guid id)
+    {
+        var result = await _mediator.Send(new GetTaskChecklistQuery(id));
+
+        if (!result.TaskExists)
+        {
+            return NotFound();
+        }
+
+        if (result.Checklist is null)
+        {
+            return NoContent();
+        }
+
+        var etag = ETagHelper.ToHeader(result.Checklist.ETag);
+        if (!string.IsNullOrEmpty(etag))
+        {
+            Response.Headers.ETag = etag;
+        }
+
+        return Ok(result.Checklist);
+    }
+
+    [HttpPut("{id}/checklist")]
+    [RequireIfMatch]
+    public async Task<ActionResult<TaskChecklistDto>> SubmitChecklist(Guid id, [FromBody] SubmitTaskChecklistCommand command)
+    {
+        command.TaskId = id;
+        command.ExpectedRowVersion = RequireIfMatchAttribute.GetExpectedVersion(HttpContext);
+
+        var result = await _mediator.Send(command);
+
+        var etag = ETagHelper.ToHeader(result.ETag);
+        if (!string.IsNullOrEmpty(etag))
+        {
+            Response.Headers.ETag = etag;
+        }
+
+        return Ok(result);
+    }
+
     [HttpPost("evaluate-due")]
     [Authorize(Roles = "Admin,System")]
     public async Task<ActionResult<EvaluateDueWorkTasksResult>> EvaluateDueTasks()
     {
         var result = await _mediator.Send(new EvaluateDueWorkTasksCommand());
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// El ETag viaja en el header (estándar HTTP) y además en el body, porque el cliente
+    /// offline persiste el body en IndexedDB: si sólo estuviera en el header, al
+    /// reconectar no tendría la versión que leyó y no podría mandar <c>If-Match</c>.
+    /// </summary>
+    private ActionResult<WorkTaskDetailDto> WithETag(WorkTaskDetailDto? result)
+    {
+        if (result is null)
+        {
+            return NotFound();
+        }
+
+        var header = ETagHelper.ToHeader(result.ETag);
+        if (!string.IsNullOrEmpty(header))
+        {
+            Response.Headers.ETag = header;
+        }
+
         return Ok(result);
     }
 }

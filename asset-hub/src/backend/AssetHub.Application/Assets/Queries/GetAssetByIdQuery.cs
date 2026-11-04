@@ -5,6 +5,7 @@ using AssetHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using AssetHub.Domain.AssetTemplates;
+using AssetHub.Domain.Concurrency;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Collections.Generic;
@@ -31,7 +32,8 @@ public record AssetDetailDto(
     DateTime? CommissionedAt,
     double? Latitude,
     double? Longitude,
-    string? GeoJson
+    string? GeoJson,
+    string? ETag = null
 );
 
 public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, AssetDetailDto?>
@@ -106,7 +108,8 @@ public class GetAssetByIdQueryHandler : IRequestHandler<GetAssetByIdQuery, Asset
             asset.CommissionedAt,
             asset.Geo?.Coordinate?.Y,
             asset.Geo?.Coordinate?.X,
-            geoJsonStr
+            geoJsonStr,
+            RowVersionToken.ToToken(asset.RowVersion)
         );
     }
 }

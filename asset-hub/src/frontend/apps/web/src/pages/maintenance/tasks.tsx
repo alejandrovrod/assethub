@@ -43,6 +43,7 @@ const STATE_OPTIONS = [
   { value: 'todo', labelKey: 'tasks.states.todo' },
   { value: 'rework', labelKey: 'tasks.states.rework' },
   { value: 'in_progress', labelKey: 'tasks.states.inProgress' },
+  { value: 'paused', labelKey: 'tasks.states.paused' },
   { value: 'done', labelKey: 'tasks.states.done' },
   { value: 'cancelled', labelKey: 'tasks.states.cancelled' },
 ] as const
@@ -51,6 +52,7 @@ const TASK_STATE_KEYS = {
   todo: 'tasks.states.todo',
   rework: 'tasks.states.rework',
   in_progress: 'tasks.states.inProgress',
+  paused: 'tasks.states.paused',
   done: 'tasks.states.done',
   cancelled: 'tasks.states.cancelled',
 } as const
@@ -59,6 +61,7 @@ const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructi
   todo: 'secondary',
   rework: 'outline',
   in_progress: 'default',
+  paused: 'outline',
   done: 'default',
   cancelled: 'destructive',
 }
@@ -192,11 +195,15 @@ export default function MaintenanceTasks() {
     todo: [],
     rework: [],
     in_progress: [],
+    paused: [],
     done: [],
     cancelled: [],
   }
   for (const task of items) {
-    tasksByState[task.state].push(task)
+    const bucket = tasksByState[task.state]
+    if (bucket) {
+      bucket.push(task)
+    }
   }
 
   return (
@@ -376,7 +383,7 @@ export default function MaintenanceTasks() {
                   </Table>
                 ) : (
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {(['todo', 'in_progress', 'done', 'cancelled'] as WorkTaskState[]).map((state) => (
+                    {(['todo', 'in_progress', 'paused', 'done', 'cancelled'] as WorkTaskState[]).map((state) => (
                       <div key={state} className="flex flex-col gap-2">
                         <div className="flex items-center justify-between px-1">
                           <h3 className="text-sm font-medium">{t(TASK_STATE_KEYS[state])}</h3>

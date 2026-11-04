@@ -29,7 +29,20 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
     {
-        var result = await _mediator.Send(new RefreshCommand(request.RefreshToken));
+        var result = await _mediator.Send(new RefreshCommand(request.RefreshToken, request.DeviceId));
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Emite un lease firmado para operar sin red (022 §4.4).
+    /// Requiere access token válido: el lease no es una credencial de API y no se
+    /// puede obtener con un refresh token.
+    /// </summary>
+    [HttpPost("offline-lease")]
+    [Authorize]
+    public async Task<IActionResult> IssueOfflineLease([FromBody] OfflineLeaseRequest request)
+    {
+        var result = await _mediator.Send(new IssueOfflineLeaseCommand(request.DeviceId));
         return Ok(result);
     }
 
@@ -181,6 +194,15 @@ public class LoginRequest
 public class RefreshRequest
 {
     public string RefreshToken { get; set; } = string.Empty;
+
+    /// <summary>Opcional: si viene, la respuesta trae un lease offline para ese dispositivo.</summary>
+    public string? DeviceId { get; set; }
+}
+
+public class OfflineLeaseRequest
+{
+    /// <summary>UUID estable del dispositivo, generado y persistido por el cliente.</summary>
+    public string? DeviceId { get; set; }
 }
 
 public class UpdateMeRequest

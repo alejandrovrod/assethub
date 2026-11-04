@@ -15,12 +15,14 @@ interface Props {
 type StateLabelKey =
   | 'form.filters.states.todo'
   | 'form.filters.states.inProgress'
+  | 'form.filters.states.paused'
   | 'form.filters.states.done'
   | 'form.filters.states.cancelled'
 
 const STATE_LABEL_KEYS: Record<string, StateLabelKey> = {
   todo: 'form.filters.states.todo',
   in_progress: 'form.filters.states.inProgress',
+  paused: 'form.filters.states.paused',
   done: 'form.filters.states.done',
   cancelled: 'form.filters.states.cancelled',
 }

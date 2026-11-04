@@ -46,6 +46,7 @@
       "todo": "Pendiente",
       "rework": "Corrección",
       "inProgress": "En progreso",
+      "paused": "Pausada",
       "done": "Terminada",
       "cancelled": "Cancelada"
     },
@@ -89,6 +90,7 @@
       "todo": "Por hacer",
       "rework": "Rehacer",
       "inProgress": "En progreso",
+      "paused": "Pausada",
       "done": "Completada",
       "cancelled": "Cancelada"
     },
@@ -126,6 +128,7 @@
     "changeState": "Cambiar estado",
     "stateChangeBlocked": "No se puede cambiar el estado de la tarea porque la orden principal no está En progreso.",
     "noTransitions": "No hay transiciones disponibles",
+    "deleteEvidence": "Eliminar evidencia",
     "tabs": {
       "timeline": "Bitácora",
       "details": "Detalle"
@@ -211,6 +214,7 @@
         "allStates": "Todos los estados",
         "todo": "Pendiente",
         "inProgress": "En progreso",
+        "paused": "Pausada",
         "done": "Terminada",
         "cancelled": "Cancelada"
       }
@@ -232,11 +236,14 @@
     "assignmentUpdated": "Asignación actualizada",
     "assignError": "Error al asignar la tarea",
     "commentAdded": "Comentario agregado",
-    "commentError": "Error al agregar el comentario"
+    "commentError": "Error al agregar el comentario",
+    "evidenceDeleted": "Evidencia eliminada",
+    "evidenceDeleteError": "Error al eliminar la evidencia"
   },
   "dialog": {
     "deleteTaskTitle": "¿Eliminar tarea?",
     "deleteTaskBody": "Esta acción eliminará la tarea \"{{title}}\". No se puede deshacer.",
+    "deleteEvidenceBody": "¿Eliminar esta evidencia? Esta acción no se puede deshacer.",
     "changeToTitle": "Cambiar a '{{state}}'",
     "transitionNeedsInfo": "Este estado requiere información adicional antes de continuar.",
     "editDynamicInfo": "Editar Información Dinámica",

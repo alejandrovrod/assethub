@@ -23,8 +23,7 @@ public class LoginInactiveUserTests
         var platformDb = await SecurityTestHelper.CreatePlatformDbWithTenantAsync(
             Guid.NewGuid(), "pro", "[\"assets\", \"maintenance\"]");
 
-        var config = new ConfigurationBuilder().Build();
-        var jwt = new JwtTokenGenerator(config);
+        var jwt = AssetHub.Api.Tests.Field.OfflineLeaseTestHelper.CreateAccessTokenGenerator();
         var handler = new LoginCommandHandler(userManager, jwt, db, platformDb);
         return (handler, db, userManager);
     }

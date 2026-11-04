@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Tasks.Dtos;
+using AssetHub.Application.Tasks.Helpers;
+using AssetHub.Domain.Concurrency;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,12 +70,24 @@ public class GetWorkTaskByIdQueryHandler : IRequestHandler<GetWorkTaskByIdQuery,
             Title = task.Title,
             Description = task.Description,
             State = task.State,
+            ETag = RowVersionToken.ToToken(task.RowVersion),
             TaskTypeCatalogItemId = task.TaskTypeCatalogItemId,
             TaskTypeLabel = taskTypeLabel,
             PriorityCatalogItemId = task.PriorityCatalogItemId,
             PriorityLabel = priorityLabel,
             DueAt = task.DueAt,
             CreatedAt = task.CreatedAt,
+            StartedAt = task.StartedAt,
+            PausedAt = task.PausedAt,
+            ResumedAt = task.ResumedAt,
+            CompletedAt = task.CompletedAt,
+            TotalPausedSeconds = task.TotalPausedSeconds,
+            // Se calcula al leer: persistirlo sería una segunda verdad de algo que ya
+            // está en StartedAt/CompletedAt/TotalPausedSeconds.
+            DurationSeconds = TaskTiming.NetDurationSeconds(task.StartedAt, task.CompletedAt, task.TotalPausedSeconds),
+            ReworkReason = task.ReworkReason,
+            ReworkedAt = task.ReworkedAt,
+            AllowedTransitions = TaskStateTransitionValidator.GetAllowedTransitions(task.State).ToList(),
             AssetId = task.AssetId ?? task.MaintenanceOrder?.AssetId ?? task.PreventivePlan?.AssetId ?? task.Incident?.AssetId,
             AssetName = task.Asset != null ? task.Asset.Name : (task.MaintenanceOrder?.Asset?.Name ?? task.PreventivePlan?.Asset?.Name ?? task.Incident?.Asset?.Name),
             IncidentId = task.IncidentId,

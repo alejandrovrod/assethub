@@ -10,6 +10,11 @@ public class NotFoundException : DomainException
     {
     }
 
+    /// <summary>Mensaje ya redactado, sin recurso/id ni clave de catálogo.</summary>
+    public NotFoundException(string message) : base("not_found", message)
+    {
+    }
+
     public NotFoundException(string resource, object key)
         : base("not_found", $"Resource '{resource}' with id '{key}' was not found.", "Error_NotFoundResource", resource, key)
     {

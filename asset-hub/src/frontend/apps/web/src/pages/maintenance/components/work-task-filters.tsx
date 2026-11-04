@@ -37,6 +37,7 @@ const STATE_OPTIONS = [
   { value: '', labelKey: 'form.filters.states.allStates' as const },
   { value: 'todo', labelKey: 'form.filters.states.todo' as const },
   { value: 'in_progress', labelKey: 'form.filters.states.inProgress' as const },
+  { value: 'paused', labelKey: 'form.filters.states.paused' as const },
   { value: 'done', labelKey: 'form.filters.states.done' as const },
   { value: 'cancelled', labelKey: 'form.filters.states.cancelled' as const },
 ]

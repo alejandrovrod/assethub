@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using AssetHub.Domain.AssetTemplates;
 using AssetHub.Domain.Catalogs;
+using AssetHub.Domain.Common;
 using AssetHub.Domain.EntityTypes;
 using AssetHub.Domain.Finance;
 using AssetHub.Application.Interfaces;
@@ -49,6 +52,9 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Analytics.CostEntry> CostEntries { get; set; } = null!;
 
     public DbSet<AssetHub.Domain.Inventory.TenantInventorySettings> TenantInventorySettings { get; set; } = null!;
+
+    /// <summary>Política del cliente de campo (022 §6.3). Una fila por tenant, opcional.</summary>
+    public DbSet<AssetHub.Domain.Field.TenantFieldAppSettings> TenantFieldAppSettings { get; set; } = null!;
     public DbSet<AssetHub.Domain.Inventory.Warehouse> Warehouses { get; set; } = null!;
     public DbSet<AssetHub.Domain.Inventory.StockBalance> StockBalances { get; set; } = null!;
     public DbSet<AssetHub.Domain.Inventory.InventoryTransaction> InventoryTransactions { get; set; } = null!;
@@ -70,6 +76,9 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetHub.Domain.Tasks.TaskStatusHistory> TaskStatusHistories { get; set; } = null!;
     public DbSet<AssetHub.Domain.Tasks.TaskEvidence> TaskEvidences { get; set; } = null!;
     public DbSet<AssetHub.Domain.Tasks.TaskComment> TaskComments { get; set; } = null!;
+    public DbSet<AssetHub.Domain.Tasks.TaskChecklist> TaskChecklists { get; set; } = null!;
+
+    public DbSet<AssetHub.Domain.Sync.HttpIdempotencyRecord> HttpIdempotencyRecords { get; set; } = null!;
 
     public DbSet<AssetFinanceBook> AssetFinanceBooks { get; set; } = null!;
     public DbSet<AssetDepreciationSchedule> AssetDepreciationSchedules { get; set; } = null!;
@@ -78,6 +87,71 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<AssetDisposal> AssetDisposals { get; set; } = null!;
     public DbSet<AssetCustodyTransfer> AssetCustodyTransfers { get; set; } = null!;
     public DbSet<AssetRepairCapitalization> AssetRepairCapitalizations { get; set; } = null!;
+
+    /// <summary>
+    /// Mantiene <see cref="AssetHub.Domain.Common.ITimestamped.UpdatedAt"/> al día para el
+    /// delta sync (022 §8.1).
+    ///
+    /// Se engancha en las sobrecargas con <c>acceptAllChangesOnSuccess</c> porque las demás
+    /// sobrecargas de <see cref="DbContext"/> terminan llamando a éstas: cubrir
+    /// <c>SaveChanges()</c> y <c>SaveChangesAsync(ct)</c> por separado dejaría pasar
+    /// cualquier llamada que use las otras firmas.
+    ///
+    /// Reglas, deliberadamente mínimas:
+    /// <list type="bullet">
+    ///   <item><c>Added</c>: <c>CreatedAt</c> sólo si nadie lo seteo (hay importadores que
+    ///   preservan la fecha original del archivo) y siempre <c>UpdatedAt</c>.</item>
+    ///   <item><c>Modified</c>: sólo <c>UpdatedAt</c>. No se toca <c>CreatedAt</c>.</item>
+    ///   <item>Cualquier otro estado: nada. Un <c>Deleted</c> físico no pasa por acá porque
+    ///   el borrado del dominio es lógico.</item>
+    /// </list>
+    ///
+    /// Se usa <c>DateTime.UtcNow</c> y no un reloj inyectable a propósito: el cursor
+    /// tiene que ser comparable contra lo que ya está en la base, y una fuente de tiempo
+    /// distinta por host (con desfasaje de reloj) haría que el delta saltee filas.
+    /// </summary>
+    /// <summary>
+    /// Fuente de tiempo del contexto. Es <c>virtual</c> para que los tests puedan fijarla:
+    /// el orden del delta depende de <c>UpdatedAt</c>, y probar paginación con timestamps
+    /// reales obliga a dormir el test para que el reloj avance.
+    /// </summary>
+    protected virtual DateTime UtcNow => DateTime.UtcNow;
+
+    private void ApplySyncTimestamps()
+    {
+        var now = UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<ITimestamped>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    if (entry.Entity.CreatedAt == default)
+                    {
+                        entry.Entity.CreatedAt = now;
+                    }
+
+                    entry.Entity.UpdatedAt = now;
+                    break;
+
+                case EntityState.Modified:
+                    entry.Entity.UpdatedAt = now;
+                    break;
+            }
+        }
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplySyncTimestamps();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ApplySyncTimestamps();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -165,6 +239,15 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasIndex(a => new { a.TenantId, a.Path });
             b.HasIndex(a => new { a.TenantId, a.ParentId });
 
+            // Delta sync (022 §8.2): el cliente offline pide "lo que cambió desde este
+            // cursor". Sin este índice cada pull es un scan + sort de todos los activos
+            // del tenant, que es la tabla más grande del sistema.
+            b.HasIndex(a => new { a.TenantId, a.UpdatedAt, a.Id });
+
+            // Token de concurrencia optimista: lo genera SQL Server en cada UPDATE y
+            // EF lo compara en el WHERE del UPDATE (protege la ventana leer-modificar-escribir).
+            b.Property(a => a.RowVersion).IsRowVersion();
+
             b.HasOne(a => a.Parent).WithMany().HasForeignKey(a => a.ParentId).OnDelete(DeleteBehavior.Restrict);
 
             b.HasMany(a => a.Incidents).WithOne(i => i.Asset).HasForeignKey(i => i.AssetId).OnDelete(DeleteBehavior.Restrict);
@@ -248,6 +331,10 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasQueryFilter(i => i.TenantId == CurrentTenantId && !i.IsDeleted);
             b.HasIndex(i => new { i.TenantId, i.State });
             b.HasIndex(i => new { i.TenantId, i.AssetId });
+            // Cursor del delta sync (022 §8.2).
+            b.HasIndex(i => new { i.TenantId, i.UpdatedAt, i.Id });
+
+            b.Property(i => i.RowVersion).IsRowVersion();
 
             b.HasOne(i => i.Asset).WithMany(a => a.Incidents).HasForeignKey(i => i.AssetId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(i => i.WorkflowTemplate).WithMany().HasForeignKey(i => i.WorkflowTemplateId).OnDelete(DeleteBehavior.Restrict);
@@ -360,6 +447,16 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasIndex(s => s.TenantId).IsUnique();
         });
 
+        // Política del cliente de campo (022 §6.3). Índice único por tenant: dos filas
+        // implicarían dos TTL distintos para el mismo técnico, y gana la que el proveedor de
+        // EF devuelva primero. La fila es opcional; el handler cae a los defaults.
+        modelBuilder.Entity<AssetHub.Domain.Field.TenantFieldAppSettings>(b =>
+        {
+            b.HasKey(s => s.Id);
+            b.HasQueryFilter(s => s.TenantId == CurrentTenantId);
+            b.HasIndex(s => s.TenantId).IsUnique();
+        });
+
         modelBuilder.Entity<AssetHub.Domain.Inventory.Warehouse>(b =>
         {
             b.HasKey(w => w.Id);
@@ -372,6 +469,9 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasKey(s => s.Id);
             b.HasQueryFilter(s => s.TenantId == CurrentTenantId);
             b.HasIndex(s => new { s.TenantId, s.WarehouseId, s.CatalogItemId }).IsUnique();
+            // Cursor del delta sync (022 §8.2). Los saldos no se borran, pero sí cambian
+            // de cantidad en cada movimiento: es la tabla con más rotación del módulo.
+            b.HasIndex(s => new { s.TenantId, s.UpdatedAt, s.Id });
             
             b.Property(s => s.QuantityOnHand).HasPrecision(18, 4);
             b.Property(s => s.AverageUnitCost).HasPrecision(18, 4);
@@ -388,6 +488,10 @@ public class TenantDbContext : DbContext, ITenantDbContext
             
             // Idempotency check per tenant
             b.HasIndex(t => new { t.TenantId, t.IdempotencyKey }).IsUnique();
+
+            // "¿Qué repuestos gastó esta OT?" — sin este índice la respuesta es un scan
+            // de toda la tabla de movimientos del tenant.
+            b.HasIndex(t => new { t.TenantId, t.WorkTaskId });
             
             b.Property(t => t.Quantity).HasPrecision(18, 4);
             b.Property(t => t.UnitCost).HasPrecision(18, 4);
@@ -395,6 +499,10 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasOne(t => t.Warehouse).WithMany().HasForeignKey(t => t.WarehouseId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(t => t.CatalogItem).WithMany().HasForeignKey(t => t.CatalogItemId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne<AssetHub.Domain.Maintenance.MaintenanceOrder>().WithMany().HasForeignKey(t => t.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
+            // Borrar una tarea NO debe borrar el rastro de lo que consumió: el movimiento
+            // de inventario es un hecho contable. `Restrict` + Restrict en el servicio
+            // significa que un borrado físico se bloquea, no que se propague.
+            b.HasOne<AssetHub.Domain.Tasks.WorkTask>().WithMany().HasForeignKey(t => t.WorkTaskId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne<AssetHub.Domain.Inventory.InventoryTransaction>().WithMany().HasForeignKey(t => t.ReversalOfId).OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -435,6 +543,11 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasQueryFilter(t => t.TenantId == CurrentTenantId && !t.IsDeleted);
             b.HasIndex(t => new { t.TenantId, t.State, t.IsDeleted });
             b.HasIndex(t => new { t.TenantId, t.IsDeleted });
+            // Cursor del delta sync (022 §8.2).
+            b.HasIndex(t => new { t.TenantId, t.UpdatedAt, t.Id });
+
+            b.Property(t => t.RowVersion).IsRowVersion();
+            b.Property(t => t.ReworkReason).HasMaxLength(1000);
             b.HasMany(t => t.TaskComments).WithOne(c => c.WorkTask).HasForeignKey(c => c.WorkTaskId).OnDelete(DeleteBehavior.Cascade);
             b.HasMany(t => t.StatusHistory).WithOne(h => h.WorkTask).HasForeignKey(h => h.WorkTaskId).OnDelete(DeleteBehavior.Cascade);
             b.HasIndex(t => new { t.TenantId, t.AssetId });
@@ -483,6 +596,24 @@ public class TenantDbContext : DbContext, ITenantDbContext
             b.HasKey(c => c.Id);
             b.HasQueryFilter(c => c.TenantId == CurrentTenantId);
             b.HasIndex(c => new { c.TenantId, c.WorkTaskId });
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Tasks.TaskChecklist>(b =>
+        {
+            b.HasKey(c => c.Id);
+            b.HasQueryFilter(c => c.TenantId == CurrentTenantId);
+
+            // "Uno por tarea" lo garantiza el índice único que EF crea sobre la FK del
+            // 1:1 (IX_TaskChecklists_WorkTaskId). Agregar además (TenantId, WorkTaskId)
+            // duplicaría la restricción: `WorkTaskId` ya es único por sí solo.
+
+            b.Property(c => c.State).HasMaxLength(24).IsRequired();
+            b.Property(c => c.RowVersion).IsRowVersion();
+
+            b.HasOne(c => c.WorkTask)
+                .WithOne(t => t.Checklist)
+                .HasForeignKey<AssetHub.Domain.Tasks.TaskChecklist>(c => c.WorkTaskId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<AssetHub.Domain.CommunicationTemplates.CommunicationTemplate>(b =>
@@ -632,6 +763,28 @@ public class TenantDbContext : DbContext, ITenantDbContext
 
             b.HasOne(c => c.MaintenanceOrder).WithMany().HasForeignKey(c => c.MaintenanceOrderId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(c => c.Asset).WithMany().HasForeignKey(c => c.AssetId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssetHub.Domain.Sync.HttpIdempotencyRecord>(b =>
+        {
+            b.HasKey(r => r.Id);
+
+            // Aislamiento multi-tenant: el proyecto no usa RLS de motor, así que el
+            // filtro es la única barrera. Un registro sin tenant nunca debe ser visible.
+            b.HasQueryFilter(r => r.TenantId == CurrentTenantId);
+
+            // La unicidad por tenant es la garantía real de idempotencia: si dos
+            // requests con la misma key entran en paralelo, sólo uno inserta.
+            b.HasIndex(r => new { r.TenantId, r.IdempotencyKey }).IsUnique();
+            b.HasIndex(r => r.CreatedAt);
+
+            b.Property(r => r.IdempotencyKey).HasMaxLength(64).IsRequired();
+            b.Property(r => r.Fingerprint).HasMaxLength(64).IsRequired();
+            b.Property(r => r.Method).HasMaxLength(16).IsRequired();
+            b.Property(r => r.Path).HasMaxLength(512).IsRequired();
+            b.Property(r => r.Status).HasMaxLength(24).IsRequired();
+            b.Property(r => r.ResponseContentType).HasMaxLength(128);
+            b.Property(r => r.ResponseHeadersJson).HasMaxLength(4000);
         });
 
         base.OnModelCreating(modelBuilder);

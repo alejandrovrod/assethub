@@ -1,8 +1,6 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { workTaskService } from '@/services/work-task.service'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -10,9 +8,7 @@ import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
-import { usePermissions } from '@/hooks/use-permissions'
 import { useTranslation } from 'react-i18next'
-import { WorkTaskFormSheet } from './work-task-form-sheet'
 
 interface IncidentTasksWidgetProps {
   incidentId: string
@@ -21,21 +17,20 @@ interface IncidentTasksWidgetProps {
 type StateLabelKey =
   | 'tasks.states.todo'
   | 'tasks.states.inProgress'
+  | 'tasks.states.paused'
   | 'tasks.states.done'
   | 'tasks.states.cancelled'
 
 const STATE_LABEL_KEYS: Record<string, StateLabelKey> = {
   todo: 'tasks.states.todo',
   in_progress: 'tasks.states.inProgress',
+  paused: 'tasks.states.paused',
   done: 'tasks.states.done',
   cancelled: 'tasks.states.cancelled',
 }
 
 export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
   const { t } = useTranslation('maintenance')
-  const { can } = usePermissions()
-  const canCreate = can('tasks:create')
-  const [isFormOpen, setIsFormOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['work-tasks', 'incident', incidentId],
@@ -47,14 +42,8 @@ export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">{t('detail.sections.derivedTasks')}</CardTitle>
-        {canCreate && (
-          <Button size="sm" variant="outline" onClick={() => setIsFormOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            {t('form.createTask')}
-          </Button>
-        )}
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -95,12 +84,6 @@ export function IncidentTasksWidget({ incidentId }: IncidentTasksWidgetProps) {
           </ScrollArea>
         )}
       </CardContent>
-
-      <WorkTaskFormSheet
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        prefill={{ incidentId }}
-      />
     </Card>
   )
 }

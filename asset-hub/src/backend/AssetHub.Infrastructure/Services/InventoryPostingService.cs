@@ -46,6 +46,7 @@ public class InventoryPostingService : IInventoryPostingService
         string reason,
         string idempotencyKey,
         Guid? maintenanceOrderId = null,
+        Guid? workTaskId = null,
         CancellationToken cancellationToken = default)
     {
         var tenantId = _tenantResolver.GetCurrentTenantId().Value;
@@ -125,6 +126,7 @@ public class InventoryPostingService : IInventoryPostingService
             WarehouseId = warehouseId,
             CatalogItemId = catalogItemId,
             MaintenanceOrderId = maintenanceOrderId,
+            WorkTaskId = workTaskId,
             Type = type,
             State = InventoryTransactionState.Posted,
             Quantity = quantity,

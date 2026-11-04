@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Application.Tasks.Checklists;
 using AssetHub.Application.Tasks.Helpers;
 using AssetHub.Domain.Tasks;
 using Cronos;
@@ -56,7 +57,7 @@ public class EvaluateTaskRecurrencesCommandHandler : IRequestHandler<EvaluateTas
                 {
                     var (defaultTaskTypeId, defaultPriorityId) = await TaskCatalogDefaults.EnsureDefaultCatalogsAsync(_db, recurrence.TenantId, cancellationToken);
 
-                    _db.WorkTasks.Add(new WorkTask
+                    var task = new WorkTask
                     {
                         Id = Guid.NewGuid(),
                         TenantId = recurrence.TenantId,
@@ -71,7 +72,27 @@ public class EvaluateTaskRecurrencesCommandHandler : IRequestHandler<EvaluateTas
                         MaintenanceOrderId = cmd.MaintenanceOrderId,
                         IncidentId = cmd.IncidentId,
                         TaskRecurrenceId = recurrence.Id
-                    });
+                    };
+
+                    _db.WorkTasks.Add(task);
+
+                    // La plantilla de la recurrencia es un CreateWorkTaskCommand
+                    // serializado: si trae checklist explícito se usa; si no, el de la
+                    // plantilla del activo. Igual que en la creación manual.
+                    var legacyChecklist = string.IsNullOrWhiteSpace(cmd.ChecklistJson)
+                        ? await TaskChecklistFactory.ResolveLegacyChecklistJsonAsync(
+                            _db,
+                            cmd.AssetId,
+                            cmd.MaintenanceOrderId,
+                            cmd.IncidentId,
+                            cancellationToken)
+                        : cmd.ChecklistJson;
+
+                    var checklist = TaskChecklistFactory.TryBuild(recurrence.TenantId, task.Id, legacyChecklist);
+                    if (checklist is not null)
+                    {
+                        _db.TaskChecklists.Add(checklist);
+                    }
                 }
             }
 

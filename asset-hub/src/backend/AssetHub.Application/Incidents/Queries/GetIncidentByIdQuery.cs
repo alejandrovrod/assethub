@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Concurrency;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -24,7 +25,8 @@ public record IncidentDetailDto(
     DateTime? ClosedAt,
     List<IncidentDetailDto.AttachmentDto> Attachments,
     IncidentDetailDto.MaintenanceOrderDto? MaintenanceOrder,
-    List<IncidentDetailDto.WorkTaskDto> WorkTasks
+    List<IncidentDetailDto.WorkTaskDto> WorkTasks,
+    string? ETag = null
 )
 {
     public record AttachmentDto(
@@ -99,9 +101,17 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
+        // Las tareas de reparación cuelgan de la orden (padre único), así que la
+        // incidencia debe incluir también las tareas de sus órdenes.
+        var incidentOrderIds = await _db.MaintenanceOrders
+            .Where(o => o.IncidentId == incident.Id && !o.IsDeleted)
+            .Select(o => o.Id)
+            .ToListAsync(cancellationToken);
+
         var tasks = await _db.WorkTasks
             .Include(t => t.AssignedEmployee)
-            .Where(t => t.IncidentId == incident.Id)
+            .Where(t => t.IncidentId == incident.Id ||
+                        (t.MaintenanceOrderId != null && incidentOrderIds.Contains(t.MaintenanceOrderId.Value)))
             .Select(t => new IncidentDetailDto.WorkTaskDto(
                 t.Id,
                 t.Title,
@@ -128,7 +138,8 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             incident.ClosedAt,
             attachments,
             order,
-            tasks
+            tasks,
+            RowVersionToken.ToToken(incident.RowVersion)
         );
     }
 }

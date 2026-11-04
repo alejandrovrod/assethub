@@ -5,6 +5,10 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build"
+    "build": "pnpm --filter web build",
+    "dev:field": "pnpm --filter field-pwa dev",
+    "build:field": "pnpm --filter field-pwa build",
+    "test:field": "pnpm --filter @asset-hub/core-offline test",
+    "e2e:field": "pnpm --filter field-pwa test:e2e"
   }
 }

@@ -26,6 +26,13 @@ public class CatalogsController : ControllerBase
         return Ok(new { items = result });
     }
 
+    [HttpGet("all-items")]
+    public async Task<IActionResult> GetAllCatalogItems([FromQuery] string locale = "es")
+    {
+        var result = await _mediator.Send(new GetAllCatalogItemsQuery(locale));
+        return Ok(new { items = result });
+    }
+
     [HttpPost]
     [Authorize(Policy = "permission:catalogs:create")] // En un entorno real se validaría policies / permissions
     public async Task<IActionResult> CreateCatalog([FromBody] CreateCatalogRequest request)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, CheckCircle2, Clock, AlertCircle, Plus } from 'lucide-react'
+import { Loader2, CheckCircle2, Clock, AlertCircle, Plus, Pause } from 'lucide-react'
 import { maintenanceOrderService } from '@/services/maintenance-order.service'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +14,7 @@ const TASK_STATE_ICONS: Record<string, React.ReactNode> = {
   todo: <Clock className="h-3.5 w-3.5 text-muted-foreground" />,
   rework: <AlertCircle className="h-3.5 w-3.5 text-orange-500" />,
   in_progress: <AlertCircle className="h-3.5 w-3.5 text-amber-500" />,
+  paused: <Pause className="h-3.5 w-3.5 text-amber-600" />,
   done: <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />,
   cancelled: <AlertCircle className="h-3.5 w-3.5 text-red-500" />,
 }
@@ -22,6 +23,7 @@ type TaskStateLabelKey =
   | 'tasks.states.todo'
   | 'tasks.states.rework'
   | 'tasks.states.inProgress'
+  | 'tasks.states.paused'
   | 'tasks.states.done'
   | 'tasks.states.cancelled'
 
@@ -29,6 +31,7 @@ const TASK_STATE_LABEL_KEYS: Record<string, TaskStateLabelKey> = {
   todo: 'tasks.states.todo',
   rework: 'tasks.states.rework',
   in_progress: 'tasks.states.inProgress',
+  paused: 'tasks.states.paused',
   done: 'tasks.states.done',
   cancelled: 'tasks.states.cancelled',
 }

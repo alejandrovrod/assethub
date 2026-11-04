@@ -22,9 +22,26 @@ public static class WorkTaskTestHelper
 
     public sealed class FakeCurrentUser : Application.Interfaces.ICurrentUser
     {
-        public FakeCurrentUser(Guid? id) => Id = id;
+        public FakeCurrentUser(Guid? id, IEnumerable<string>? roles = null)
+        {
+            Id = id;
+            Roles = new HashSet<string>(roles ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+        }
+
         public Guid? Id { get; }
+
+        public IReadOnlySet<string> Roles { get; }
+
+        public bool IsInRole(string role) => Roles.Contains(role);
     }
+
+    /// <summary>
+    /// Access de campo real sobre el contexto de test. Sin roles, el usuario no está
+    /// restringido y el comportamiento es el de siempre.
+    /// </summary>
+    public static Application.Field.FieldTaskAccess CreateTaskAccess(
+        ITenantDbContext db, Application.Interfaces.ICurrentUser user)
+        => new(db, user);
 
     public sealed class FakeMediator : IMediator
     {

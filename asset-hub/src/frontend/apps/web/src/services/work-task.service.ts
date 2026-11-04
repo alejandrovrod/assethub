@@ -1,6 +1,6 @@
 import { apiClient as api } from '@/lib/api-client'
 
-export type WorkTaskState = 'todo' | 'rework' | 'in_progress' | 'done' | 'cancelled'
+export type WorkTaskState = 'todo' | 'rework' | 'in_progress' | 'paused' | 'done' | 'cancelled'
 
 export interface WorkTaskSummary {
   id: string
@@ -27,11 +27,43 @@ export interface WorkTaskSummary {
   priorityCatalogItemId: string
   priorityLabel?: string
   createdAt: string
+  /**
+   * Token de versión (base64url, sin comillas). Se envía en `If-Match` entre comillas
+   * al mutar el recurso; el backend responde 412 si la versión ya no es la actual.
+   */
+  etag?: string
 }
 
 export interface WorkTaskDetail extends WorkTaskSummary {
   taskTypeLabel?: string
   propertiesJson?: string
+  startedAt?: string
+  /** Sólo presente mientras la tarea está pausada. */
+  pausedAt?: string
+  resumedAt?: string
+  completedAt?: string
+  /** Segundos acumulados en pausa, sumando todas las pausas. */
+  totalPausedSeconds?: number
+  /** Duración neta: bruto menos pausas. Nula si la tarea no está completada. */
+  durationSeconds?: number | null
+  reworkReason?: string
+  reworkedAt?: string
+  /**
+   * Estados alcanzables desde el actual, según el servidor. Es la fuente de verdad de la
+   * máquina de estados: el SPA no debe decidir por su cuenta qué botones mostrar.
+   */
+  allowedTransitions?: WorkTaskState[]
+}
+
+export interface WorkTaskEvidence {
+  id: string
+  type: string
+  blobUri?: string
+  note?: string
+  latitude?: number
+  longitude?: number
+  capturedByUserId: string
+  capturedAt: string
 }
 
 export interface WorkTaskHistoryEntry {
@@ -114,6 +146,7 @@ export const STATE_LABELS: Record<WorkTaskState, string> = {
   todo: 'Por hacer',
   rework: 'Rehacer',
   in_progress: 'En progreso',
+  paused: 'Pausada',
   done: 'Completada',
   cancelled: 'Cancelada',
 }
@@ -151,8 +184,15 @@ export const workTaskService = {
     await api.put(`/work-tasks/${id}`, payload)
   },
 
-  changeState: async (id: string, state: WorkTaskState): Promise<WorkTaskDetail> => {
-    const { data } = await api.put<WorkTaskDetail>(`/work-tasks/${id}/state`, { state })
+  changeState: async (id: string, state: WorkTaskState, etag?: string): Promise<WorkTaskDetail> => {
+    // Fail-closed: si no hay versión, no se manda el header y el backend responde 428.
+    // Mandar `*` convertiría la escritura en un last-write-wins silencioso, que es
+    // exactamente lo que If-Match existe para evitar.
+    const { data } = await api.put<WorkTaskDetail>(
+      `/work-tasks/${id}/state`,
+      { state },
+      etag ? { headers: { 'If-Match': `"${etag}"` } } : undefined,
+    )
     return data
   },
 
@@ -167,6 +207,15 @@ export const workTaskService = {
   getHistory: async (id: string): Promise<WorkTaskHistoryEntry[]> => {
     const { data } = await api.get<WorkTaskHistoryResponse>(`/work-tasks/${id}/history`)
     return data.items
+  },
+
+  getEvidences: async (id: string): Promise<WorkTaskEvidence[]> => {
+    const { data } = await api.get<any>(`/work-tasks/${id}/evidences`)
+    return Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : [])
+  },
+
+  deleteEvidence: async (taskId: string, evidenceId: string): Promise<void> => {
+    await api.delete(`/work-tasks/${taskId}/evidences/${evidenceId}`)
   },
 
   getComments: async (id: string): Promise<WorkTaskComment[]> => {

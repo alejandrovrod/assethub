@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Field;
 using AssetHub.Application.Interfaces;
 using AssetHub.Domain.Notifications;
 using MediatR;
@@ -20,15 +21,21 @@ public class AssignWorkTaskCommandHandler : IRequestHandler<AssignWorkTaskComman
 {
     private readonly ITenantDbContext _db;
     private readonly ITenantResolver _tenantResolver;
+    private readonly FieldTaskAccess _access;
 
-    public AssignWorkTaskCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver)
+    public AssignWorkTaskCommandHandler(ITenantDbContext db, ITenantResolver tenantResolver, FieldTaskAccess access)
     {
         _db = db;
         _tenantResolver = tenantResolver;
+        _access = access;
     }
 
     public async Task<Unit> Handle(AssignWorkTaskCommand request, CancellationToken cancellationToken)
     {
+        // Se evalúa antes de tocar la base: la respuesta es la misma exista o no la tarea
+        // (403, no 404), así el rol de campo no puede usar este endpoint para sondear ids.
+        _access.EnsureCanReassign();
+
         var tenantId = _tenantResolver.GetCurrentTenantId()!.Value;
         var task = await _db.WorkTasks.FirstOrDefaultAsync(t => t.Id == request.WorkTaskId, cancellationToken);
         if (task == null)

@@ -87,6 +87,10 @@ export const userService = {
     await api.put(`/users/${id}`, request)
   },
 
+  resetPassword: async (userId: string, newPassword: string): Promise<void> => {
+    await api.post(`/users/${userId}/reset-password`, { newPassword })
+  },
+
   deactivateUser: async (id: string): Promise<void> => {
     await api.delete(`/users/${id}`)
   },

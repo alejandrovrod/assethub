@@ -14,20 +14,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth.store'
-import { usePermissions } from '@/hooks/use-profile'
 import { handleServerError } from '@/lib/handle-server-error'
 import { getMediaUrl } from '@/lib/api-client'
 import { useTranslation } from 'react-i18next'
 
 export default function SettingsAccount() {
   const queryClient = useQueryClient()
-  const { can } = usePermissions()
   const { userProfile, setUserProfile } = useAuthStore()
   const { t } = useTranslation('settings')
   const { t: tCommon } = useTranslation('common')
-
-  const canManageProfile = can('users:manage') || can('profile:update')
-  const canManageMfa = can('mfa:configure')
 
   // Profile tab state
   const [fullName, setFullName] = useState(userProfile?.fullName ?? '')
@@ -217,22 +212,6 @@ export default function SettingsAccount() {
 
   const passwordStrength = newPassword.length === 0 ? 0 : Math.min(100, (newPassword.length / 12) * 100)
 
-  if (!canManageProfile && !canManageMfa) {
-    return (
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-          <div className="flex flex-col items-center gap-1 text-center">
-            <Shield className="h-8 w-8 text-muted-foreground" />
-            <h3 className="text-lg font-bold tracking-tight">{t('account.noAccess.title')}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t('account.noAccess.body')}
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
       <div className="flex items-center justify-between">
@@ -254,7 +233,7 @@ export default function SettingsAccount() {
             <Shield className="mr-2 h-4 w-4" />
             {t('account.security')}
           </TabsTrigger>
-          <TabsTrigger value="mfa" disabled={!canManageMfa}>
+          <TabsTrigger value="mfa">
             <Key className="mr-2 h-4 w-4" />
             {t('account.tabs.mfa')}
           </TabsTrigger>

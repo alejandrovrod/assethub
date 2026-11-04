@@ -14,6 +14,7 @@ const TASK_STATE_KEYS = {
   todo: 'tasks.states.todo',
   rework: 'tasks.states.rework',
   in_progress: 'tasks.states.inProgress',
+  paused: 'tasks.states.paused',
   done: 'tasks.states.done',
   cancelled: 'tasks.states.cancelled',
 } as const

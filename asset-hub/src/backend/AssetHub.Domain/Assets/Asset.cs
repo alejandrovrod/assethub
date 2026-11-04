@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NetTopologySuite.Geometries;
 using AssetHub.Domain.AssetTemplates;
+using AssetHub.Domain.Common;
 using AssetHub.Domain.Finance;
 using AssetHub.Domain.Incidents;
 using AssetHub.Domain.Maintenance;
@@ -9,7 +10,7 @@ using AssetHub.Domain.Tasks;
 
 namespace AssetHub.Domain.Assets;
 
-public class Asset
+public class Asset : ITimestamped
 {
     public Guid Id { get; set; }
     public Guid TenantId { get; set; }
@@ -57,4 +58,10 @@ public class Asset
     
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Token de concurrencia optimista (SQL Server <c>rowversion</c>). Ver
+    /// <see cref="AssetHub.Domain.Tasks.WorkTask.RowVersion"/>.
+    /// </summary>
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }

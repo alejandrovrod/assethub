@@ -15,7 +15,8 @@ public record WorkflowTemplateSummaryDto(
     string Name,
     string Description,
     string Type,
-    bool IsActive
+    bool IsActive,
+    string? SchemaJson = null
 );
 
 public record SearchWorkflowTemplatesQuery(string? SearchTerm, bool IncludeInactive = false) : IRequest<List<WorkflowTemplateSummaryDto>>;
@@ -50,7 +51,8 @@ public class SearchWorkflowTemplatesQueryHandler : IRequestHandler<SearchWorkflo
                 t.Name,
                 t.Description,
                 t.Type,
-                t.IsActive
+                t.IsActive,
+                t.SchemaJson
             ))
             .ToListAsync(cancellationToken);
     }

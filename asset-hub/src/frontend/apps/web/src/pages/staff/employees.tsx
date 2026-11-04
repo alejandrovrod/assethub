@@ -244,23 +244,28 @@ function EmployeeFormSheet({
   const [phoneNumber, setPhoneNumber] = useState('')
   const [roleCatalogItemId, setRoleCatalogItemId] = useState('')
 
-  // Acceso al sistema (solo en alta; un empleado editado ya tiene o no usuario)
-  const [createUserAccess, setCreateUserAccess] = useState(false)
+  // Acceso al sistema (por defecto activo al dar de alta un empleado)
+  const [createUserAccess, setCreateUserAccess] = useState(true)
   const [systemRoleId, setSystemRoleId] = useState('')
   const [temporalPassword, setTemporalPassword] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setTemporalPassword(null)
-      setCreateUserAccess(false)
-      setSystemRoleId('')
       if (employee) {
+        setCreateUserAccess(false)
+        setSystemRoleId('')
         setFirstName(employee.firstName)
         setLastName(employee.lastName)
         setEmail(employee.email)
         setPhoneNumber(employee.phoneNumber || '')
         setRoleCatalogItemId(employee.roleCatalogItemId)
       } else {
+        setCreateUserAccess(true)
+        const defaultRole = systemRoles.find(r => r.name === 'field-technician') ||
+                            systemRoles.find(r => r.name === 'Technician') ||
+                            systemRoles[0]
+        setSystemRoleId(defaultRole?.id || '')
         setFirstName('')
         setLastName('')
         setEmail('')
@@ -268,7 +273,18 @@ function EmployeeFormSheet({
         setRoleCatalogItemId('')
       }
     }
-  }, [open, employee])
+  }, [open, employee, systemRoles])
+
+  useEffect(() => {
+    if (!systemRoleId && createUserAccess && systemRoles.length > 0) {
+      const defaultRole = systemRoles.find(r => r.name === 'field-technician') ||
+                          systemRoles.find(r => r.name === 'Technician') ||
+                          systemRoles[0]
+      if (defaultRole) {
+        setSystemRoleId(defaultRole.id)
+      }
+    }
+  }, [createUserAccess, systemRoleId, systemRoles])
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateEmployeeDto) => employeeService.create(payload),

@@ -59,6 +59,8 @@ export interface IncidentDetail {
     assignedEmployeeName?: string
     dueAt?: string
   }[]
+  /** Token de versión (base64url, sin comillas); ver `WorkTaskSummary.etag`. */
+  etag?: string
 }
 
 export interface ReportIncidentDto {
@@ -123,8 +125,11 @@ export const incidentService = {
   },
 
   getById: async (id: string) => {
-    const { data } = await api.get<IncidentDetail>(`/incidents/${id}`)
-    return data
+    const res = await api.get<IncidentDetail>(`/incidents/${id}`)
+    const rawHeader = res.headers ? (res.headers['etag'] || res.headers['ETag']) : undefined
+    const cleanedHeader = typeof rawHeader === 'string' ? rawHeader.replace(/^["']|["']$/g, '') : undefined
+    const etag = res.data.etag || (res.data as any).eTag || cleanedHeader
+    return { ...res.data, etag }
   },
 
   report: async (payload: ReportIncidentDto) => {
@@ -132,8 +137,11 @@ export const incidentService = {
     return data.id
   },
 
-  changeState: async (id: string, payload: ChangeIncidentStateDto) => {
-    await api.patch(`/incidents/${id}/state`, payload)
+  changeState: async (id: string, payload: ChangeIncidentStateDto, etag?: string) => {
+    const matchVal = etag ? (etag.startsWith('"') ? etag : `"${etag}"`) : '*'
+    await api.patch(`/incidents/${id}/state`, payload, {
+      headers: { 'If-Match': matchVal },
+    })
   },
 
   getTimeline: async (id: string) => {

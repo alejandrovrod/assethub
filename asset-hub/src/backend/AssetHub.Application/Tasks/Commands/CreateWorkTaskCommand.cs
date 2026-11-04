@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
+using AssetHub.Application.Tasks.Checklists;
 using AssetHub.Application.Tasks.Helpers;
 using AssetHub.Domain.Tasks;
 using MediatR;
@@ -31,6 +33,13 @@ public class CreateWorkTaskCommand : IRequest<Guid>
     public Guid? AssignedTeamId { get; set; }
     
     public string PropertiesJson { get; set; } = "{}";
+
+    /// <summary>
+    /// Checklist legado (<c>{"tasks":[...]}</c>) para una tarea que no cuelga de un
+    /// activo con plantilla, o para sobreescribir la de la plantilla. Si se omite, el
+    /// snapshot se toma de la plantilla del activo.
+    /// </summary>
+    public string? ChecklistJson { get; set; }
 }
 
 public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskCommand, Guid>
@@ -90,9 +99,15 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
             priorityCatalogItemId = request.PriorityCatalogItemId ?? defaults.PriorityCatalogItemId;
         }
 
-        if (request.AssignedEmployeeId.HasValue)
+        var assignedEmployeeId = request.AssignedEmployeeId;
+        if (!assignedEmployeeId.HasValue && WorkflowProperties.TryGetExecutorId(request.PropertiesJson, out var executorId))
         {
-            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.AssignedEmployeeId.Value, cancellationToken);
+            assignedEmployeeId = executorId;
+        }
+
+        if (assignedEmployeeId.HasValue)
+        {
+            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Id == assignedEmployeeId.Value, cancellationToken);
             if (emp == null || !emp.IsActive)
                 throw new ArgumentException("Empleado asignado no encontrado o inactivo");
         }
@@ -120,12 +135,31 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
             IncidentId = request.IncidentId,
             PreventivePlanId = request.PreventivePlanId,
             TaskRecurrenceId = request.TaskRecurrenceId,
-            AssignedEmployeeId = request.AssignedEmployeeId,
+            AssignedEmployeeId = assignedEmployeeId,
             AssignedTeamId = request.AssignedTeamId,
             PropertiesJson = request.PropertiesJson
         };
 
         _db.WorkTasks.Add(task);
+
+        // Snapshot del checklist: el explícito del request manda; si no, se copia el de
+        // la plantilla del activo. Se copia ahora y no se consulta al leer, para que
+        // editar la plantilla mañana no reescriba el formulario de tareas ya creadas.
+        var legacyChecklist = string.IsNullOrWhiteSpace(request.ChecklistJson)
+            ? await TaskChecklistFactory.ResolveLegacyChecklistJsonAsync(
+                _db,
+                request.AssetId,
+                request.MaintenanceOrderId,
+                request.IncidentId,
+                cancellationToken)
+            : request.ChecklistJson;
+
+        var checklist = TaskChecklistFactory.TryBuild(tenantId, task.Id, legacyChecklist);
+        if (checklist is not null)
+        {
+            _db.TaskChecklists.Add(checklist);
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         await _mediator.Publish(new AssetHub.Application.Tasks.Events.WorkTaskCreatedEvent(

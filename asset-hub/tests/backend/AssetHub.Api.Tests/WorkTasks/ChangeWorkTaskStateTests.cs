@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Exceptions;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Tasks.Commands;
 using AssetHub.Domain.Catalogs;
@@ -39,11 +40,13 @@ public class ChangeWorkTaskStateTests
         db.WorkTasks.Add(task);
         await db.SaveChangesAsync();
 
+        var user = new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid());
         var handler = new ChangeWorkTaskStateCommandHandler(
             db,
-            new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid()),
+            user,
             new WorkTaskTestHelper.FakeTenantResolver(tenantId),
-            new WorkTaskTestHelper.FakeMediator());
+            new WorkTaskTestHelper.FakeMediator(),
+            WorkTaskTestHelper.CreateTaskAccess(db, user));
 
         await handler.Handle(new ChangeWorkTaskStateCommand { WorkTaskId = task.Id, NewState = "in_progress" }, CancellationToken.None);
 
@@ -67,15 +70,21 @@ public class ChangeWorkTaskStateTests
         db.WorkTasks.Add(task);
         await db.SaveChangesAsync();
 
+        var user = new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid());
         var handler = new ChangeWorkTaskStateCommandHandler(
             db,
-            new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid()),
+            user,
             new WorkTaskTestHelper.FakeTenantResolver(tenantId),
-            new WorkTaskTestHelper.FakeMediator());
+            new WorkTaskTestHelper.FakeMediator(),
+            WorkTaskTestHelper.CreateTaskAccess(db, user));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(
+        var ex = await Assert.ThrowsAsync<InvalidTransitionException>(() => handler.Handle(
             new ChangeWorkTaskStateCommand { WorkTaskId = task.Id, NewState = "done" },
             CancellationToken.None));
+
+        Assert.Equal("invalid_transition", ex.Code);
+        Assert.Equal("todo", ex.CurrentState);
+        Assert.Equal(new[] { "cancelled", "in_progress" }, ex.AllowedTransitions);
     }
 
     [Fact]
@@ -93,11 +102,13 @@ public class ChangeWorkTaskStateTests
         db.WorkTasks.Add(task);
         await db.SaveChangesAsync();
 
+        var user = new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid());
         var handler = new ChangeWorkTaskStateCommandHandler(
             db,
-            new WorkTaskTestHelper.FakeCurrentUser(Guid.NewGuid()),
+            user,
             new WorkTaskTestHelper.FakeTenantResolver(tenantId),
-            new WorkTaskTestHelper.FakeMediator());
+            new WorkTaskTestHelper.FakeMediator(),
+            WorkTaskTestHelper.CreateTaskAccess(db, user));
 
         await handler.Handle(new ChangeWorkTaskStateCommand { WorkTaskId = task.Id, NewState = "done" }, CancellationToken.None);
 

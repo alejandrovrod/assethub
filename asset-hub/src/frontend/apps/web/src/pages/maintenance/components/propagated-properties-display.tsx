@@ -40,19 +40,22 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
   const { data: asset } = useQuery({
     queryKey: ['asset', assetId],
     queryFn: () => assetService.getAssetById(assetId!),
-    enabled: !!assetId
+    enabled: !!assetId,
+    staleTime: 5 * 60_000,
   })
 
   const { data: incident } = useQuery({
     queryKey: ['incident', incidentId],
     queryFn: () => incidentService.getById(incidentId!),
-    enabled: !!incidentId
+    enabled: !!incidentId,
+    staleTime: 5 * 60_000,
   })
 
   const { data: order } = useQuery({
     queryKey: ['maintenance-order', maintenanceOrderId],
     queryFn: () => maintenanceOrderService.getById(maintenanceOrderId!),
-    enabled: !!maintenanceOrderId
+    enabled: !!maintenanceOrderId,
+    staleTime: 5 * 60_000,
   })
 
   const allWorkflowTemplateIds = useMemo(() => {
@@ -68,7 +71,8 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
     queryFn: async () => {
       return await Promise.all(allWorkflowTemplateIds.map(id => WorkflowTemplateService.getById(id)))
     },
-    enabled: allWorkflowTemplateIds.length > 0
+    enabled: allWorkflowTemplateIds.length > 0,
+    staleTime: 5 * 60_000,
   })
 
   const rawSchemaJson = useMemo(() => {
@@ -134,12 +138,14 @@ export function PropagatedPropertiesDisplay({ assetId, workflowTemplateId, incid
 
   const { data: allEmployees } = useQuery({
     queryKey: ['employees', 'all'],
-    queryFn: () => employeeService.getAll({ pageSize: 1000 }).then(res => res.items)
+    queryFn: () => employeeService.getAll({ pageSize: 1000 }).then(res => res.items),
+    staleTime: 5 * 60_000,
   })
 
   const { data: allTeams } = useQuery({
     queryKey: ['teams', 'all'],
-    queryFn: () => teamService.getAll({ pageSize: 1000 }).then(res => res.items)
+    queryFn: () => teamService.getAll({ pageSize: 1000 }).then(res => res.items),
+    staleTime: 5 * 60_000,
   })
 
   const properties = useMemo(() => {

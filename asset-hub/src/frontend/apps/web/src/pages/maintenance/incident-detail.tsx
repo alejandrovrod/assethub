@@ -131,7 +131,8 @@ export default function IncidentDetailPage() {
   }, [lifecycleConfig, pendingTargetState, schema])
 
   const stateMutation = useMutation({
-    mutationFn: (args: { targetState: string, propertiesJson?: string }) => incidentService.changeState(id!, args),
+    mutationFn: (args: { targetState: string, propertiesJson?: string }) =>
+      incidentService.changeState(id!, args, incident?.etag || (incident as any)?.eTag),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incident', id] })
       queryClient.invalidateQueries({ queryKey: ['incident-timeline', id] })
@@ -144,7 +145,7 @@ export default function IncidentDetailPage() {
   })
 
   const updatePropertiesMutation = useMutation({
-    mutationFn: (propertiesJson: string) => incidentService.changeState(id!, { targetState: incident!.state, propertiesJson }),
+    mutationFn: (propertiesJson: string) => incidentService.changeState(id!, { targetState: incident!.state, propertiesJson }, incident?.etag || (incident as any)?.eTag),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incident', id] })
       queryClient.invalidateQueries({ queryKey: ['incident-timeline', id] })

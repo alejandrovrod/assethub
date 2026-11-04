@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Maintenance.Events;
 using AssetHub.Application.Maintenance.Helpers;
+using AssetHub.Application.Tasks.Checklists;
 using AssetHub.Domain.Assets;
 using AssetHub.Domain.Maintenance;
 using AssetHub.Domain.Tasks;
@@ -409,6 +410,20 @@ public class EvaluatePreventivePlanCommandHandler : IRequestHandler<EvaluatePrev
             };
 
             _db.WorkTasks.Add(task);
+
+            // Este es el caso "una tarea = el plan completo", así que lleva el
+            // formulario entero del activo. El caso "una tarea por ítem" de arriba no
+            // lleva checklist propio: las tareas hijas ya son el checklist.
+            var checklist = TaskChecklistFactory.TryBuild(
+                plan.TenantId,
+                task.Id,
+                asset.AssetTemplate?.MaintenanceChecklist);
+
+            if (checklist is not null)
+            {
+                _db.TaskChecklists.Add(checklist);
+            }
+
             generated.Add(new GeneratedItem(PreventivePlanConstants.GeneratedEntityTypeWorkTask, task.Id));
 
             await _mediator.Publish(new AssetHub.Application.Tasks.Events.WorkTaskCreatedEvent(

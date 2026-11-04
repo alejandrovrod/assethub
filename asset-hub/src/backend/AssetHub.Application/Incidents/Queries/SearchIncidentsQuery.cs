@@ -18,7 +18,10 @@ public record IncidentSummaryDto(
     string AssetName,
     DateTime ReportedAt,
     DateTime? ResolvedAt,
-    DateTime? ClosedAt
+    DateTime? ClosedAt,
+    string? Description = null,
+    string? PropertiesJson = null,
+    Guid? WorkflowTemplateId = null
 );
 
 public record SearchIncidentsQuery(string? SearchTerm, string? State, Dictionary<string, Guid>? CatalogFilters = null, Guid? AssetId = null, int Page = 1, int PageSize = 50) : IRequest<PagedResult<IncidentSummaryDto>>;
@@ -82,7 +85,10 @@ public class SearchIncidentsQueryHandler : IRequestHandler<SearchIncidentsQuery,
                 i.Asset != null ? i.Asset.Name : "",
                 i.ReportedAt,
                 i.ResolvedAt,
-                i.ClosedAt
+                i.ClosedAt,
+                i.Description,
+                i.PropertiesJson,
+                i.WorkflowTemplateId
             ))
             .ToListAsync(cancellationToken);
 

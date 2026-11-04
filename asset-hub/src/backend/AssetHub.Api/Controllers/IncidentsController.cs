@@ -1,7 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using AssetHub.Api.Filters;
+using AssetHub.Api.Http;
 using AssetHub.Application.Incidents.Commands;
 using AssetHub.Application.Incidents.Queries;
+using AssetHub.Application.Sync.Dtos;
+using AssetHub.Application.Sync.Queries;
 using AssetHub.Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +16,6 @@ namespace AssetHub.Api.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Authorize]
-[RequirePlanLimits("incidents")] // Módulo incidents
 public class IncidentsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -24,6 +27,23 @@ public class IncidentsController : ControllerBase
     }
 
     private readonly AssetHub.Application.Interfaces.ITenantDbContext _db;
+
+    /// <summary>Delta sync de incidencias (022 §8).</summary>
+    [HttpGet("changes")]
+    public async Task<ActionResult<ChangePageDto>> GetChanges(
+        [FromQuery] string? since,
+        [FromQuery] int? limit,
+        [FromQuery] bool includeDeleted = true)
+    {
+        var result = await _mediator.Send(new GetIncidentChangesQuery
+        {
+            Since = since,
+            Limit = limit,
+            IncludeDeleted = includeDeleted,
+        });
+
+        return Ok(result);
+    }
 
     [HttpGet("fix")]
     [AllowAnonymous]
@@ -62,6 +82,13 @@ public class IncidentsController : ControllerBase
     {
         var result = await _mediator.Send(new GetIncidentByIdQuery(id));
         if (result == null) return NotFound();
+
+        var etag = ETagHelper.ToHeader(result.ETag);
+        if (!string.IsNullOrEmpty(etag))
+        {
+            Response.Headers.ETag = etag;
+        }
+
         return Ok(result);
     }
 
@@ -81,10 +108,21 @@ public class IncidentsController : ControllerBase
     }
 
     [HttpPatch("{id}/state")]
+    [RequireIfMatch]
     public async Task<IActionResult> ChangeState(Guid id, [FromBody] ChangeIncidentStateCommand command)
     {
         command.IncidentId = id;
+        command.ExpectedRowVersion = RequireIfMatchAttribute.GetExpectedVersion(HttpContext);
         await _mediator.Send(command);
+
+        // Se devuelve la nueva versión: el cliente que sigue editando no necesita releer.
+        var updated = await _mediator.Send(new GetIncidentByIdQuery(id));
+        var etag = ETagHelper.ToHeader(updated?.ETag);
+        if (!string.IsNullOrEmpty(etag))
+        {
+            Response.Headers.ETag = etag;
+        }
+
         return NoContent();
     }
 

@@ -37,8 +37,26 @@
   <data name="Error_Conflict" xml:space="preserve">
     <value>The operation conflicts with the current state of the resource.</value>
   </data>
+  <data name="Error_InvalidTransition" xml:space="preserve">
+    <value>The resource cannot move to that state.</value>
+  </data>
+  <data name="Error_InvalidFieldAppSettings" xml:space="preserve">
+    <value>The field app policy of this tenant is not valid.</value>
+  </data>
+  <data name="field_app_settings_invalid" xml:space="preserve">
+    <value>offlineLeaseHours must be between {1} and {2} hours (configured: {0}).</value>
+  </data>
   <data name="Error_TenantRequired" xml:space="preserve">
     <value>An organization (tenant) is required for this operation.</value>
+  </data>
+  <data name="field_role_task_not_assigned" xml:space="preserve">
+    <value>The task is not assigned to you or to a team you belong to.</value>
+  </data>
+  <data name="field_role_cannot_cancel" xml:space="preserve">
+    <value>The field role cannot cancel tasks. Ask the office to cancel it.</value>
+  </data>
+  <data name="field_role_cannot_reassign" xml:space="preserve">
+    <value>The field role cannot reassign tasks.</value>
   </data>
   <data name="Error_RateLimited" xml:space="preserve">
     <value>Too many requests. Please try again in a few seconds.</value>
@@ -147,6 +165,9 @@
   </data>
   <data name="insufficient_stock" xml:space="preserve">
     <value>Insufficient stock to complete the operation.</value>
+  </data>
+  <data name="invalid_transition" xml:space="preserve">
+    <value>Invalid state transition from '{0}' to '{1}'.</value>
   </data>
   <data name="non_existent_stock_balance" xml:space="preserve">
     <value>A negative quantity cannot be posted for a non-existent stock balance.</value>

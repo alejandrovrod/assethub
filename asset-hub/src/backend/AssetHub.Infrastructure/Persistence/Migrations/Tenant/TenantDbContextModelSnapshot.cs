@@ -197,6 +197,12 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -219,6 +225,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("TenantId", "ParentId");
 
                     b.HasIndex("TenantId", "Path");
+
+                    b.HasIndex("TenantId", "UpdatedAt", "Id");
 
                     b.ToTable("Assets", "tenant");
                 });
@@ -768,6 +776,38 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("BusinessEntityTypes", "tenant");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.Field.TenantFieldAppSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OfflineLeaseHours")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequireDeviceLock")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique();
+
+                    b.ToTable("TenantFieldAppSettings", "tenant");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Finance.AssetCustodyTransfer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1291,6 +1331,12 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTime?>("ClosedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -1316,6 +1362,12 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -1329,6 +1381,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.Property<Guid>("TypeId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("WorkflowTemplateId")
                         .HasColumnType("uniqueidentifier");
@@ -1346,6 +1401,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("TenantId", "AssetId");
 
                     b.HasIndex("TenantId", "State");
+
+                    b.HasIndex("TenantId", "UpdatedAt", "Id");
 
                     b.ToTable("Incidents", "tenant");
                 });
@@ -1482,6 +1539,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("WarehouseId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("WorkTaskId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CatalogItemId");
@@ -1492,8 +1552,12 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("WorkTaskId");
+
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique();
+
+                    b.HasIndex("TenantId", "WorkTaskId");
 
                     b.ToTable("InventoryTransactions", "tenant");
                 });
@@ -1535,6 +1599,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("CatalogItemId");
 
                     b.HasIndex("WarehouseId");
+
+                    b.HasIndex("TenantId", "UpdatedAt", "Id");
 
                     b.HasIndex("TenantId", "WarehouseId", "CatalogItemId")
                         .IsUnique();
@@ -2071,6 +2137,134 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("TeamMembers", "tenant");
                 });
 
+            modelBuilder.Entity("AssetHub.Domain.Sync.HttpIdempotencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("BodyTruncated")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("ResponseBody")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResponseContentType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ResponseHeadersJson")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<int?>("StatusCode")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("HttpIdempotencyRecords", "tenant");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Tasks.TaskChecklist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResponseJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SchemaJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("SubmittedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UiSchemaJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("WorkTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkTaskId")
+                        .IsUnique();
+
+                    b.ToTable("TaskChecklists", "tenant");
+                });
+
             modelBuilder.Entity("AssetHub.Domain.Tasks.TaskComment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2263,6 +2457,9 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid?>("MaintenanceOrderId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("PausedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid?>("PreventivePlanId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2272,6 +2469,25 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<string>("PropertiesJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResumedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReworkReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReworkedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReworkedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
@@ -2292,6 +2508,12 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalPausedSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -2332,6 +2554,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("TenantId", "TaskRecurrenceId");
 
                     b.HasIndex("TenantId", "State", "IsDeleted");
+
+                    b.HasIndex("TenantId", "UpdatedAt", "Id");
 
                     b.ToTable("WorkTasks", "tenant");
                 });
@@ -2846,6 +3070,11 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("AssetHub.Domain.Tasks.WorkTask", null)
+                        .WithMany()
+                        .HasForeignKey("WorkTaskId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("CatalogItem");
 
                     b.Navigation("Warehouse");
@@ -3014,6 +3243,17 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
                     b.Navigation("Employee");
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("AssetHub.Domain.Tasks.TaskChecklist", b =>
+                {
+                    b.HasOne("AssetHub.Domain.Tasks.WorkTask", "WorkTask")
+                        .WithOne("Checklist")
+                        .HasForeignKey("AssetHub.Domain.Tasks.TaskChecklist", "WorkTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkTask");
                 });
 
             modelBuilder.Entity("AssetHub.Domain.Tasks.TaskComment", b =>
@@ -3202,6 +3442,8 @@ namespace AssetHub.Infrastructure.Persistence.Migrations.Tenant
 
             modelBuilder.Entity("AssetHub.Domain.Tasks.WorkTask", b =>
                 {
+                    b.Navigation("Checklist");
+
                     b.Navigation("StatusHistory");
 
                     b.Navigation("TaskComments");

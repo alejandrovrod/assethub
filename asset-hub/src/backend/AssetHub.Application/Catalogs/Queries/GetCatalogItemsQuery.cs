@@ -11,7 +11,9 @@ namespace AssetHub.Application.Catalogs.Queries;
 
 public record GetCatalogItemsQuery(string CatalogCode, string Locale = "es", string? Search = null) : IRequest<List<CatalogItemDto>>;
 
-public record CatalogItemDto(Guid Id, string Code, string Label, int Order, Guid? ParentItemId, bool IsOverride);
+public record GetAllCatalogItemsQuery(string Locale = "es") : IRequest<List<CatalogItemDto>>;
+
+public record CatalogItemDto(Guid Id, string Code, string Label, int Order, Guid? ParentItemId, bool IsOverride, string? CatalogCode = null);
 
 public class GetCatalogItemsQueryHandler : IRequestHandler<GetCatalogItemsQuery, List<CatalogItemDto>>
 {
@@ -25,6 +27,7 @@ public class GetCatalogItemsQueryHandler : IRequestHandler<GetCatalogItemsQuery,
     public async Task<List<CatalogItemDto>> Handle(GetCatalogItemsQuery request, CancellationToken cancellationToken)
     {
         var query = _dbContext.CatalogItems
+            .Include(ci => ci.Catalog)
             .Include(ci => ci.Translations)
             .Where(ci => ci.Catalog!.Code == request.CatalogCode);
 
@@ -56,7 +59,48 @@ public class GetCatalogItemsQueryHandler : IRequestHandler<GetCatalogItemsQuery,
                 translation?.Label ?? bestMatch.Code,
                 bestMatch.Order,
                 bestMatch.ParentItemId,
-                bestMatch.TenantId.HasValue
+                bestMatch.TenantId.HasValue,
+                bestMatch.Catalog?.Code ?? request.CatalogCode
+            ));
+        }
+
+        return result.OrderBy(r => r.Order).ToList();
+    }
+}
+
+public class GetAllCatalogItemsQueryHandler : IRequestHandler<GetAllCatalogItemsQuery, List<CatalogItemDto>>
+{
+    private readonly ITenantDbContext _dbContext;
+
+    public GetAllCatalogItemsQueryHandler(ITenantDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<List<CatalogItemDto>> Handle(GetAllCatalogItemsQuery request, CancellationToken cancellationToken)
+    {
+        var items = await _dbContext.CatalogItems
+            .Include(ci => ci.Catalog)
+            .Include(ci => ci.Translations)
+            .ToListAsync(cancellationToken);
+
+        var grouped = items.GroupBy(i => (i.CatalogId, i.Code));
+        var result = new List<CatalogItemDto>();
+
+        foreach (var group in grouped)
+        {
+            var bestMatch = group.OrderByDescending(i => i.TenantId.HasValue ? 1 : 0).First();
+            var translation = bestMatch.Translations.FirstOrDefault(t => t.Locale == request.Locale)
+                           ?? bestMatch.Translations.FirstOrDefault(t => t.Locale == "es");
+
+            result.Add(new CatalogItemDto(
+                bestMatch.Id,
+                bestMatch.Code,
+                translation?.Label ?? bestMatch.Code,
+                bestMatch.Order,
+                bestMatch.ParentItemId,
+                bestMatch.TenantId.HasValue,
+                bestMatch.Catalog?.Code
             ));
         }
 

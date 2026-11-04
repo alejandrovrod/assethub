@@ -37,6 +37,15 @@
   <data name="Error_Conflict" xml:space="preserve">
     <value>La operación entra en conflicto con el estado actual del recurso.</value>
   </data>
+  <data name="field_role_task_not_assigned" xml:space="preserve">
+    <value>La tarea no está asignada a ti ni a un equipo del que formes parte.</value>
+  </data>
+  <data name="field_role_cannot_cancel" xml:space="preserve">
+    <value>El rol de campo no puede cancelar tareas. Solicita la cancelación a la oficina.</value>
+  </data>
+  <data name="field_role_cannot_reassign" xml:space="preserve">
+    <value>El rol de campo no puede reasignar tareas.</value>
+  </data>
   <data name="Error_TenantRequired" xml:space="preserve">
     <value>Se requiere una organización (tenant) para esta operación.</value>
   </data>

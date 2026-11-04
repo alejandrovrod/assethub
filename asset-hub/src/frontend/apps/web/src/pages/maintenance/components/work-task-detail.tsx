@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   X,
@@ -13,7 +13,11 @@ import {
   Save,
   Send,
   ArrowRight,
+  Camera,
+  Trash2,
 } from 'lucide-react'
+import { getMediaUrl } from '@/lib/api-client'
+import { LightboxModal } from '@/components/widgets/image-lightbox'
 import { workTaskService, WorkTaskState, CreateWorkTaskRequest, WorkTaskSummary } from '@/services/work-task.service'
 import { PropagatedPropertiesDisplay } from './propagated-properties-display'
 import { catalogService } from '@/services/catalog.service'
@@ -48,6 +52,7 @@ const TASK_STATE_KEYS = {
   todo: 'tasks.states.todo',
   rework: 'tasks.states.rework',
   in_progress: 'tasks.states.inProgress',
+  paused: 'tasks.states.paused',
   done: 'tasks.states.done',
   cancelled: 'tasks.states.cancelled',
 } as const
@@ -56,14 +61,20 @@ const STATE_VARIANTS: Record<WorkTaskState, 'default' | 'secondary' | 'destructi
   todo: 'secondary',
   rework: 'outline',
   in_progress: 'default',
+  paused: 'outline',
   done: 'default',
   cancelled: 'destructive',
 }
 
+/**
+ * Fallback mientras el detalle no llegó. La lista autoritativa viene del servidor en
+ * `allowedTransitions`: si se agrega una arista nueva, el SPA la muestra sin recompilar.
+ */
 const ALLOWED_TRANSITIONS: Record<WorkTaskState, WorkTaskState[]> = {
   todo: ['in_progress', 'cancelled'],
   rework: ['in_progress', 'cancelled'],
-  in_progress: ['done', 'cancelled'],
+  in_progress: ['paused', 'done', 'cancelled'],
+  paused: ['in_progress', 'done', 'cancelled'],
   done: [],
   cancelled: [],
 }
@@ -86,26 +97,37 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const { data: detail, isLoading: isLoadingDetail } = useQuery({
     queryKey: ['work-task', task.id],
     queryFn: () => workTaskService.getById(task.id),
+    staleTime: 60_000,
   })
 
   const { data: historyEntries, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['work-task-history', task.id],
     queryFn: () => workTaskService.getHistory(task.id),
+    staleTime: 30_000,
   })
 
   const { data: comments, isLoading: isLoadingComments } = useQuery({
     queryKey: ['work-task-comments', task.id],
     queryFn: () => workTaskService.getComments(task.id),
+    staleTime: 30_000,
+  })
+
+  const { data: evidences, isLoading: isLoadingEvidences } = useQuery({
+    queryKey: ['work-task-evidences', task.id],
+    queryFn: () => workTaskService.getEvidences(task.id),
+    staleTime: 5_000,
   })
 
   const { data: priorityItems } = useQuery({
     queryKey: ['catalog-items', PRIORITY_CATALOG_CODE],
     queryFn: () => catalogService.getCatalogItems(PRIORITY_CATALOG_CODE, 'es'),
+    staleTime: 5 * 60_000,
   })
 
   const { data: taskTypeItems } = useQuery({
     queryKey: ['catalog-items', TASK_TYPE_CATALOG_CODE],
     queryFn: () => catalogService.getCatalogItems(TASK_TYPE_CATALOG_CODE, 'es'),
+    staleTime: 5 * 60_000,
   })
 
   const [title, setTitle] = useState('')
@@ -116,6 +138,16 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   const [taskTypeCatalogItemId, setTaskTypeCatalogItemId] = useState('')
   const [assignedEmployeeId, setAssignedEmployeeId] = useState('')
   const [assignedTeamId, setAssignedTeamId] = useState('')
+
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  const evidenceImageUrls = useMemo(() => {
+    if (!evidences) return []
+    return evidences
+      .map((ev) => (ev.blobUri?.startsWith('http') ? ev.blobUri : getMediaUrl(ev.blobUri)))
+      .filter(Boolean) as string[]
+  }, [evidences])
 
   useEffect(() => {
     if (detail) {
@@ -154,7 +186,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
   })
 
   const stateMutation = useMutation({
-    mutationFn: (state: WorkTaskState) => workTaskService.changeState(task.id, state),
+    mutationFn: (state: WorkTaskState) => workTaskService.changeState(task.id, state, task.etag),
     onSuccess: (data) => {
       queryClient.setQueryData(['work-task', task.id], data)
       queryClient.invalidateQueries({ queryKey: ['work-tasks'] })
@@ -187,6 +219,15 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     onError: () => toast.error(t('toast.commentError')),
   })
 
+  const deleteEvidenceMutation = useMutation({
+    mutationFn: (evidenceId: string) => workTaskService.deleteEvidence(task.id, evidenceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-task-evidences', task.id] })
+      toast.success(t('toast.evidenceDeleted'))
+    },
+    onError: () => toast.error(t('toast.evidenceDeleteError')),
+  })
+
   const [commentText, setCommentText] = useState('')
 
   const handleSave = () => {
@@ -206,7 +247,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
 
   const displayedTask = detail || task
   const state = displayedTask.state
-  const allowedStates = ALLOWED_TRANSITIONS[state] || []
+  const allowedStates = detail?.allowedTransitions ?? ALLOWED_TRANSITIONS[state] ?? []
   
   const isStateChangeBlocked = Boolean(
     displayedTask.maintenanceOrderState && 
@@ -217,6 +258,12 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
     displayedTask.maintenanceOrderState && 
     ['done', 'verified', 'cancelled'].includes(displayedTask.maintenanceOrderState)
   )
+
+  const handleDeleteEvidence = (evidenceId: string) => {
+    if (isInfoEditBlocked) return
+    if (!window.confirm(t('dialog.deleteEvidenceBody'))) return
+    deleteEvidenceMutation.mutate(evidenceId)
+  }
 
   return (
     <Card className="flex flex-col overflow-hidden w-[45%] h-full">
@@ -289,11 +336,20 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
           <TabsList className="mx-4 mt-4 w-fit">
             <TabsTrigger value="details">{t('detail.tabs.details')}</TabsTrigger>
+            <TabsTrigger value="evidences" className="flex items-center gap-1.5">
+              <Camera className="h-3.5 w-3.5" />
+              Evidencias
+              {evidences && evidences.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                  {evidences.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="history">{t('common:labels.history')}</TabsTrigger>
             <TabsTrigger value="comments">{t('common:labels.comments')}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="flex-1 overflow-auto px-4 pb-4">
+          <TabsContent value="details" forceMount className="flex-1 overflow-auto px-4 pb-4 data-[state=inactive]:hidden">
             {isLoadingDetail ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -418,7 +474,86 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="history" className="flex-1 overflow-auto px-4 pb-4">
+          <TabsContent value="evidences" forceMount className="flex-1 overflow-auto px-4 pb-4 data-[state=inactive]:hidden">
+            <ScrollArea className="h-full">
+              {isLoadingEvidences ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : !evidences || evidences.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-8 text-center border border-dashed rounded-md mt-2">
+                  No hay evidencias fotográficas o técnicas registradas para esta tarea.
+                </div>
+              ) : (
+                <div className="pt-2">
+                  <div className="flex flex-wrap gap-2.5">
+                    {evidences.map((ev) => {
+                      const mediaUrl = ev.blobUri?.startsWith('http') ? ev.blobUri : getMediaUrl(ev.blobUri)
+                      return (
+                        <div
+                          key={ev.id}
+                          className="group relative flex flex-col w-24 shrink-0 rounded-lg border bg-card p-1 shadow-xs transition-all hover:shadow-sm"
+                        >
+                          {!isInfoEditBlocked && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEvidence(ev.id)}
+                              disabled={deleteEvidenceMutation.isPending}
+                              className="absolute -right-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:border-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                              title={t('detail.deleteEvidence')}
+                              aria-label={t('detail.deleteEvidence')}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                          {mediaUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const idx = evidenceImageUrls.indexOf(mediaUrl)
+                                setLightboxIndex(idx >= 0 ? idx : 0)
+                                setIsLightboxOpen(true)
+                              }}
+                              className="relative aspect-square w-full overflow-hidden rounded-md bg-muted/20 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-primary"
+                              title="Ver en pantalla completa (carrusel)"
+                            >
+                              <img
+                                src={mediaUrl}
+                                alt={ev.note || 'Evidencia'}
+                                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20 flex items-center justify-center">
+                                <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-sm" />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="flex aspect-square w-full items-center justify-center rounded-md bg-muted/20 text-muted-foreground">
+                              <Camera className="h-6 w-6 opacity-40" />
+                            </div>
+                          )}
+                          <div className="px-1 py-1 text-center">
+                            <span className="block truncate text-[11px] font-medium capitalize text-foreground">
+                              {ev.type}
+                            </span>
+                            <span className="block text-[9px] text-muted-foreground">
+                              {format(parseApiDate(ev.capturedAt), 'dd/MM HH:mm', { locale: es })}
+                            </span>
+                            {ev.note && (
+                              <p className="mt-0.5 truncate text-[9px] text-muted-foreground" title={ev.note}>
+                                {ev.note}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="history" forceMount className="flex-1 overflow-auto px-4 pb-4 data-[state=inactive]:hidden">
             <ScrollArea className="h-full">
               {isLoadingHistory ? (
                 <div className="flex items-center justify-center py-12">
@@ -455,7 +590,7 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="comments" className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
+          <TabsContent value="comments" forceMount className="flex flex-col flex-1 overflow-hidden px-4 pb-4 data-[state=inactive]:hidden">
             <ScrollArea className="flex-1 pr-2">
               {isLoadingComments ? (
                 <div className="flex items-center justify-center py-12">
@@ -496,6 +631,15 @@ export function WorkTaskDetail({ task, onClose }: WorkTaskDetailProps) {
             )}
           </TabsContent>
         </Tabs>
+
+        {evidenceImageUrls.length > 0 && (
+          <LightboxModal
+            isOpen={isLightboxOpen}
+            setIsOpen={setIsLightboxOpen}
+            images={evidenceImageUrls}
+            initialIndex={lightboxIndex}
+          />
+        )}
       </CardContent>
     </Card>
   )

@@ -22,4 +22,11 @@ public class CurrentUser : ICurrentUser
             return Guid.TryParse(idClaim, out var id) ? id : null;
         }
     }
+
+    /// <summary>
+    /// Delega en <c>ClaimsPrincipal.IsInRole</c> para que el rol salga de los claims
+    /// emitidos en el token (vía <c>RoleClaimType</c>), no de una consulta a la base.
+    /// </summary>
+    public bool IsInRole(string role) =>
+        !string.IsNullOrWhiteSpace(role) && _httpContextAccessor.HttpContext?.User?.IsInRole(role) == true;
 }

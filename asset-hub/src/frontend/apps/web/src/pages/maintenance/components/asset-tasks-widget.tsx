@@ -20,12 +20,14 @@ interface AssetTasksWidgetProps {
 type StateLabelKey =
   | 'tasks.states.todo'
   | 'tasks.states.inProgress'
+  | 'tasks.states.paused'
   | 'tasks.states.done'
   | 'tasks.states.cancelled'
 
 const STATE_LABEL_KEYS: Record<string, StateLabelKey> = {
   todo: 'tasks.states.todo',
   in_progress: 'tasks.states.inProgress',
+  paused: 'tasks.states.paused',
   done: 'tasks.states.done',
   cancelled: 'tasks.states.cancelled',
 }

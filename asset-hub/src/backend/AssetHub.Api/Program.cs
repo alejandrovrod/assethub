@@ -127,6 +127,13 @@ builder.Services.AddScoped<ITenantResolver, TenantResolver>();
 builder.Services.Configure<SchedulerSettings>(builder.Configuration.GetSection(SchedulerSettings.SectionName));
 builder.Services.AddScoped<IBillingProvider, ManualBillingProvider>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+// Lease offline (022 Fase 8). El anillo de claves es singleton porque importar el material
+// RSA una vez por request no aporta nada y cuesta; su mitad pública es la que se publica.
+builder.Services.AddSingleton<AssetHub.Infrastructure.Security.OfflineLeaseKeyRing>();
+builder.Services.AddSingleton<AssetHub.Application.Interfaces.IOfflineLeaseKeyProvider>(
+    sp => sp.GetRequiredService<AssetHub.Infrastructure.Security.OfflineLeaseKeyRing>());
+builder.Services.AddScoped<AssetHub.Application.Auth.OfflineLeaseIssuer>();
 builder.Services.AddScoped<IUsageTracker, UsageTracker>();
 builder.Services.AddScoped<ICatalogUsageChecker, AssetHub.Infrastructure.Catalogs.DummyCatalogUsageChecker>();
 builder.Services.AddScoped<IEntityTypeUsageChecker, AssetHub.Infrastructure.EntityTypes.DummyEntityTypeUsageChecker>();
@@ -138,7 +145,9 @@ builder.Services.AddScoped<IEmailService, AssetHub.Infrastructure.Services.Email
 builder.Services.AddScoped<AssetHub.Application.Interfaces.ITemplateRenderEngine, AssetHub.Infrastructure.Services.Templates.ScribanTemplateRenderEngine>();
 builder.Services.AddScoped<AssetHub.Application.Interfaces.ICommunicationTemplateService, AssetHub.Application.CommunicationTemplates.Rendering.CommunicationTemplateService>();
 builder.Services.AddScoped<AssetHub.Application.CommunicationTemplates.Rendering.TemplateVariableBuilder>();
+builder.Services.AddScoped<AssetHub.Application.Field.FieldTaskAccess>();
 builder.Services.AddHostedService<AssetHub.Api.Workers.PreventivePlanSchedulerService>();
+builder.Services.AddHostedService<AssetHub.Api.Workers.IdempotencyCleanupWorker>();
 
 var app = builder.Build();
 
@@ -286,9 +295,16 @@ if (app.Environment.IsDevelopment())
     // 6. Seed Role-Permission Matrix por tenant (R-ROLE-1: roles base con
     //    permisos default del catalogo; tenants ya creados en corridas previas)
     await RolePermissionMatrixSeeder.SeedAsync(securityDbContext, platformDb);
+
+    // 7. Rol de campo (022 T074). Después de la matriz porque necesita el catálogo de
+    //    permisos ya persistido, y con lista cerrada porque §10 es una lista cerrada.
+    await FieldTechnicianRoleSeeder.SeedAsync(securityDbContext, roleManager, platformDb);
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("AllowVite");
 app.UseStaticFiles();
 
@@ -303,10 +319,25 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TenantResolutionMiddleware>();
 
+// La idempotencia necesita TenantId y UserId ya resueltos, por eso va después de
+// TenantResolutionMiddleware y antes de MapControllers.
+app.UseMiddleware<AssetHub.Api.Middleware.IdempotencyMiddleware>();
+
 app.MapControllers();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapGet("/api/v1/ping", () => Results.Ok(new { message = "pong" }));
+
+// Claves públicas del lease offline (022 §6.2). Anónimo por diseño —no hay secretos acá— y
+// fuera de un controlador para que no lo alcance ninguna convención de [Authorize].
+app.MapGet(
+    AssetHub.Infrastructure.Security.OfflineLeaseKeyRing.JwksPath,
+    (AssetHub.Application.Interfaces.IOfflineLeaseKeyProvider keys, HttpContext context) =>
+    {
+        context.Response.Headers.CacheControl =
+            AssetHub.Infrastructure.Security.OfflineLeaseKeyRing.JwksCacheControl;
+        return Results.Ok(keys.GetPublicJwks());
+    });
 
 app.Run();
 
@@ -390,6 +421,124 @@ public static class RolePermissionMatrixSeeder
         }
 
         await securityDb.SaveChangesAsync();
+    }
+}
+
+/// <summary>
+/// Siembra el rol de campo (022 T074). Es idempotente en los tres niveles que toca:
+/// catálogo de permisos (las filas de <see cref="FieldTechnicianRole.Permissions"/>),
+/// definición del rol y matriz <c>RolePermissions</c> por tenant.
+///
+/// Va separado de <see cref="RolePermissionMatrixSeeder"/> a propósito: aquél siembra los
+/// roles base del sistema por rango de códigos ("todo lo que empieza con <c>tasks:</c>"),
+/// y el rol de campo necesita una lista **cerrada**. Una lista por rango le daría
+/// <c>tasks:delete</c> y se rompería la restricción de §10 sin que nadie lo note.
+/// </summary>
+public static class FieldTechnicianRoleSeeder
+{
+    public static async Task SeedAsync(
+        SecurityDbContext securityDb,
+        RoleManager<ApplicationRole> roleManager,
+        PlatformDbContext platformDb)
+    {
+        // 1. Permisos: el arranque en Development ya siembra el catálogo completo (1b), pero
+        //    los tests llaman a este seeder sobre una base vacía. Sin este paso, la matriz
+        //    saldría sin filas y el rol quedaría con permisos "que existen en el código"
+        //    pero no en la base, que es la peor combinación posible.
+        var existingCodes = await securityDb.Permissions.Select(p => p.Code).ToListAsync();
+        var catalogByCode = PermissionCatalog.All.ToDictionary(p => p.Code);
+
+        var missing = FieldTechnicianRole.Permissions
+            .Where(code => !existingCodes.Contains(code) && catalogByCode.ContainsKey(code))
+            .Select(code => catalogByCode[code])
+            .Select(def => new Permission
+            {
+                Id = Guid.NewGuid(),
+                Code = def.Code,
+                Description = def.Description,
+                Module = def.Module,
+                PlanModule = def.PlanModule
+            })
+            .ToList();
+
+        if (missing.Count > 0)
+        {
+            securityDb.Permissions.AddRange(missing);
+            await securityDb.SaveChangesAsync();
+        }
+
+        // 2. Rol: el nombre es el contrato con el cliente de campo, así que se busca por
+        //    nombre. Si un tenant lo borró, se recrea: sin rol no hay restricción ni permisos.
+        var role = await roleManager.FindByNameAsync(FieldTechnicianRole.Name);
+        if (role is null)
+        {
+            role = new ApplicationRole
+            {
+                Id = Guid.NewGuid(),
+                Name = FieldTechnicianRole.Name,
+                Description = FieldTechnicianRole.Description,
+                IsSystemDefault = true,
+                TenantId = null
+            };
+
+            var created = await roleManager.CreateAsync(role);
+            if (!created.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Could not seed role '{FieldTechnicianRole.Name}': " +
+                    string.Join("; ", created.Errors.Select(e => e.Description)));
+            }
+        }
+
+        // 3. Matriz por tenant: aditiva, nunca quita lo que un admin agregó a mano.
+        var permissionsByCode = await securityDb.Permissions
+            .Where(p => FieldTechnicianRole.Permissions.Contains(p.Code))
+            .ToDictionaryAsync(p => p.Code);
+
+        var tenants = await platformDb.Tenants.Select(t => t.Id).ToListAsync();
+        if (tenants.Count == 0)
+        {
+            return;
+        }
+
+        var assigned = await securityDb.RolePermissions
+            .Where(rp => rp.RoleId == role.Id && tenants.Contains(rp.TenantId))
+            .Select(rp => new { rp.TenantId, rp.PermissionId })
+            .ToListAsync();
+
+        var added = false;
+        foreach (var tenantId in tenants)
+        {
+            foreach (var code in FieldTechnicianRole.Permissions)
+            {
+                if (!permissionsByCode.TryGetValue(code, out var permission))
+                {
+                    // Un código del rol que no está en el catálogo es un error de
+                    // programación (typo en FieldTechnicianRole), no un estado válido.
+                    throw new InvalidOperationException(
+                        $"Permission '{code}' of role '{FieldTechnicianRole.Name}' is not in the permission catalog.");
+                }
+
+                if (assigned.Any(a => a.TenantId == tenantId && a.PermissionId == permission.Id))
+                {
+                    continue;
+                }
+
+                securityDb.RolePermissions.Add(new RolePermission
+                {
+                    TenantId = tenantId,
+                    RoleId = role.Id,
+                    PermissionId = permission.Id
+                });
+
+                added = true;
+            }
+        }
+
+        if (added)
+        {
+            await securityDb.SaveChangesAsync();
+        }
     }
 }
 

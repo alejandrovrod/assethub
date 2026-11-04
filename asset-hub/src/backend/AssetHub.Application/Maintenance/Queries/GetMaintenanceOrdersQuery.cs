@@ -99,7 +99,8 @@ public class GetMaintenanceOrdersQueryHandler : IRequestHandler<GetMaintenanceOr
                 IncidentTitle = o.Incident != null ? o.Incident.Title : null,
                 WorkflowTemplateId = o.WorkflowTemplateId != null ? o.WorkflowTemplateId : (o.Incident != null && o.Incident.WorkflowTemplateId != null ? o.Incident.WorkflowTemplateId : (o.PreventivePlan != null ? o.PreventivePlan.WorkflowTemplateId : null)),
                 AssignedEmployeeId = o.AssignedEmployeeId,
-                AssignedEmployeeName = o.AssignedEmployee != null ? $"{o.AssignedEmployee.FirstName} {o.AssignedEmployee.LastName}" : null
+                AssignedEmployeeName = o.AssignedEmployee != null ? $"{o.AssignedEmployee.FirstName} {o.AssignedEmployee.LastName}" : null,
+                PropertiesJson = o.PropertiesJson
             })
             .ToListAsync(cancellationToken);
 

@@ -16,6 +16,7 @@ public interface IInventoryPostingService
         string reason,
         string idempotencyKey,
         Guid? maintenanceOrderId = null,
+        Guid? workTaskId = null,
         CancellationToken cancellationToken = default);
 
     Task<bool> EnsureInventoryModeIsActiveAsync(Guid tenantId, CancellationToken cancellationToken);

@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using AssetHub.Api.Http;
+using AssetHub.Application.Common.Exceptions;
 using AssetHub.Application.Resources;
 using AssetHub.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
 namespace AssetHub.Api.Middleware;
@@ -43,6 +46,53 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
+        catch (InsufficientStockException ex)
+        {
+            // 409, no 422: el payload es válido y la regla se respetó; lo que falta son
+            // unidades. El cliente no debe corregir el request ni reintentarlo igual:
+            // debe resolver con las alternativas o pedir menos cantidad.
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status409Conflict,
+                "insufficient_stock",
+                Title("Error_InsufficientStock", "There is not enough stock for this operation."),
+                ex.Code,
+                detail: Localize(null, ex.Message, null),
+                errors: null,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["available"] = ex.Available,
+                    ["requested"] = ex.Requested,
+                    ["alternatives"] = ex.Alternatives
+                        .Select(a => new
+                        {
+                            warehouseId = a.WarehouseId,
+                            warehouseName = a.WarehouseName,
+                            catalogItemId = a.CatalogItemId,
+                            quantityOnHand = a.QuantityOnHand,
+                        })
+                        .ToList(),
+                });
+        }
+        catch (InvalidTransitionException ex)
+        {
+            // 409 con contexto, no 422: el cliente offline necesita `allowedTransitions`
+            // para corregir el intento sin releer el recurso. Va antes que DomainException
+            // porque hereda de ella.
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status409Conflict,
+                "invalid_transition",
+                Title("Error_InvalidTransition", "The resource cannot move to that state."),
+                ex.Code,
+                detail: Localize(ex.ResourceKey, ex.Message, ex.Args),
+                errors: null,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["currentState"] = ex.CurrentState,
+                    ["allowedTransitions"] = ex.AllowedTransitions.ToList(),
+                });
+        }
         catch (DomainException ex)
         {
             // ValidationException is a DomainException: handle it first so its
@@ -68,6 +118,78 @@ public class ExceptionHandlingMiddleware
                 ex.Code,
                 detail: null,
                 errors: null);
+        }
+        catch (ConcurrencyException ex)
+        {
+            // 412, no 422: el request era válido cuando el cliente lo armó; lo que falló
+            // es la base sobre la que se armó (la versión). El cliente reintenta después
+            // de reconciliar, no corrige el payload.
+            if (!string.IsNullOrEmpty(ex.CurrentETag))
+            {
+                context.Response.Headers.ETag = ETagHelper.ToHeader(ex.CurrentETag);
+            }
+
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status412PreconditionFailed,
+                "concurrency",
+                Title("Error_Concurrency", "The resource changed since you last read it."),
+                ex.Code,
+                detail: Localize(null, ex.Message, null),
+                errors: null,
+                extensions: BuildConcurrencyExtensions(ex));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Red de seguridad: el UPDATE afectó 0 filas porque la versión cambió entre
+            // el SELECT y el UPDATE del propio handler. No hay estado actual cargado
+            // confiable, así que el payload es mínimo y el cliente relee.
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status412PreconditionFailed,
+                "concurrency",
+                Title("Error_Concurrency", "The resource changed since you last read it."),
+                ConcurrencyException.ErrorCode,
+                detail: Title("Error_ConcurrencyRetry", "Reload the resource and retry the operation."),
+                errors: null);
+        }
+        catch (ChecklistValidationException ex)
+        {
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status422UnprocessableEntity,
+                "checklist_validation",
+                Title("Error_ChecklistValidation", "The checklist response does not match its schema."),
+                ex.Code,
+                detail: Localize(null, ex.Message, null),
+                errors: null,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["fieldErrors"] = ex.FieldErrors
+                        .Select(e => new { field = e.Field, message = e.Message })
+                        .ToList(),
+                });
+        }
+        catch (InvalidFieldAppSettingsException ex)
+        {
+            // 422, no 400: el request del técnico es válido; lo que está mal es la política
+            // del tenant. El cliente no debe reintentar ni corregir nada: el arreglo es de
+            // configuración, y `offlineLeaseHours` le dice a quien administra qué número
+            // corregir sin abrir la base.
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status422UnprocessableEntity,
+                "field_app_settings",
+                Title("Error_InvalidFieldAppSettings", "The field app policy of this tenant is not valid."),
+                ex.Code,
+                detail: Localize(ex.ResourceKey, ex.Message, ex.Args),
+                errors: null,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["offlineLeaseHours"] = ex.OfflineLeaseHours,
+                    ["minOfflineLeaseHours"] = ex.Min,
+                    ["maxOfflineLeaseHours"] = ex.Max,
+                });
         }
         catch (InvalidOperationException ex) when (!ex.Message.Contains("A second operation"))
         {
@@ -123,12 +245,35 @@ public class ExceptionHandlingMiddleware
         }
     }
 
+    private static IReadOnlyDictionary<string, object?>? BuildConcurrencyExtensions(ConcurrencyException ex)
+    {
+        var extensions = new Dictionary<string, object?>();
+
+        if (!string.IsNullOrEmpty(ex.CurrentState))
+        {
+            extensions["currentState"] = ex.CurrentState;
+        }
+
+        if (ex.AllowedTransitions is { Count: > 0 })
+        {
+            extensions["allowedTransitions"] = ex.AllowedTransitions;
+        }
+
+        if (!string.IsNullOrEmpty(ex.CurrentETag))
+        {
+            extensions["currentETag"] = ex.CurrentETag;
+        }
+
+        return extensions.Count == 0 ? null : extensions;
+    }
+
     private static int GetStatusCode(DomainException ex) => ex switch
     {
         PlanLimitExceededException => StatusCodes.Status402PaymentRequired,
         ModuleNotEnabledException => StatusCodes.Status403Forbidden,
         NotFoundException => StatusCodes.Status404NotFound,
         ValidationException => StatusCodes.Status400BadRequest,
+        InvalidTransitionException => StatusCodes.Status409Conflict,
         ConflictException => StatusCodes.Status409Conflict,
         AssetTemplateInUseException => StatusCodes.Status409Conflict,
         BusinessEntityTypeInUseException => StatusCodes.Status409Conflict,
@@ -142,7 +287,8 @@ public class ExceptionHandlingMiddleware
         string title,
         string? code,
         string? detail,
-        IReadOnlyDictionary<string, string[]>? errors)
+        IReadOnlyDictionary<string, string[]>? errors,
+        IReadOnlyDictionary<string, object?>? extensions = null)
     {
         // Deliberately not calling Response.Clear(): it would wipe the
         // Content-Language header that UseRequestLocalization already set.
@@ -159,6 +305,16 @@ public class ExceptionHandlingMiddleware
         if (code is not null) problem["code"] = code;
         if (!string.IsNullOrEmpty(detail)) problem["detail"] = detail;
         if (errors is { Count: > 0 }) problem["errors"] = errors;
+        if (extensions is { Count: > 0 })
+        {
+            foreach (var (key, value) in extensions)
+            {
+                if (value is not null)
+                {
+                    problem[key] = value;
+                }
+            }
+        }
 
         await context.Response.WriteAsync(JsonSerializer.Serialize(problem, JsonOptions));
     }
