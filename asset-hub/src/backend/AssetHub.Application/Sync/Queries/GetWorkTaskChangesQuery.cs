@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Application.Common.Cursors;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Sync.Dtos;
 using AssetHub.Domain.Concurrency;
@@ -80,9 +81,11 @@ public class GetWorkTaskChangesQueryHandler : IRequestHandler<GetWorkTaskChanges
             query = query.Where(t => !t.IsDeleted);
         }
 
+        Guid? employeeId = null;
+        IReadOnlyCollection<Guid> teamIds = [];
         if (request.AssignedToMe)
         {
-            var employeeId = await ResolveEmployeeIdAsync(tenantId, cancellationToken);
+            employeeId = await AssignedWork.ResolveEmployeeIdAsync(_db, _currentUser, cancellationToken);
 
             if (employeeId is null)
             {
@@ -91,16 +94,10 @@ public class GetWorkTaskChangesQueryHandler : IRequestHandler<GetWorkTaskChanges
                 return new ChangePageDto();
             }
 
-            var teamIds = await _db.TeamMembers
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .Where(m => m.TenantId == tenantId && m.EmployeeId == employeeId.Value)
-                .Select(m => m.TeamId)
-                .ToListAsync(cancellationToken);
+            teamIds = await AssignedWork.ResolveTeamIdsAsync(_db, employeeId.Value, cancellationToken);
 
-            query = query.Where(t =>
-                t.AssignedEmployeeId == employeeId.Value
-                || (t.AssignedTeamId != null && teamIds.Contains(t.AssignedTeamId.Value)));
+            // Prefiltro ancho en SQL: columna, equipo o mención del empleado en las props.
+            query = query.WhereAssignedCandidates(employeeId.Value, teamIds);
         }
 
         if (cursor is { } position)
@@ -126,38 +123,41 @@ public class GetWorkTaskChangesQueryHandler : IRequestHandler<GetWorkTaskChanges
                 t.IsDeleted,
                 t.DeletedAt,
                 t.RowVersion,
+                t.AssignedEmployeeId,
+                t.AssignedTeamId,
+                t.PropertiesJson,
             })
             .ToListAsync(cancellationToken);
 
-        var items = rows
-            .Select(r => new ChangeItemDto
+        // El prefilter de SQL es deliberadamente ancho, así que la decisión final se toma en
+        // memoria. El cursor avanza sobre TODO lo escaneado, no sobre lo entregado: si
+        // avanzara sólo con lo entregado, una página entera de filas ajenas dejaría al
+        // cliente atascado en el mismo cursor.
+        var scanned = rows.Take(limit).ToList();
+        var hasMore = rows.Count > limit;
+
+        var items = scanned
+            .Where(t => employeeId is not { } emp
+                || WorkflowProperties.MatchesExecutor(t.PropertiesJson, emp))
+            .Select(t => new ChangeItemDto
             {
-                Id = r.Id,
-                UpdatedAt = r.UpdatedAt,
-                Deleted = r.IsDeleted,
-                DeletedAt = r.DeletedAt,
+                Id = t.Id,
+                UpdatedAt = t.UpdatedAt,
+                Deleted = t.IsDeleted,
+                DeletedAt = t.DeletedAt,
                 // El token se arma en memoria: convertir el rowversion a base64url no se
                 // puede traducir a SQL.
-                ETag = r.IsDeleted ? null : RowVersionToken.ToToken(r.RowVersion),
+                ETag = t.IsDeleted ? null : RowVersionToken.ToToken(t.RowVersion),
             })
             .ToList();
 
-        return DeltaSync.BuildPage(items, limit);
-    }
-
-    private async Task<Guid?> ResolveEmployeeIdAsync(Guid tenantId, CancellationToken cancellationToken)
-    {
-        var userId = _currentUser.Id;
-
-        if (userId is null)
+        return new ChangePageDto
         {
-            return null;
-        }
-
-        return await _db.Employees
-            .AsNoTracking()
-            .Where(e => e.TenantId == tenantId && e.UserId == userId)
-            .Select(e => (Guid?)e.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+            Items = items,
+            HasMore = hasMore,
+            NextCursor = scanned.Count == 0
+                ? null
+                : KeysetCursor.Encode(scanned[^1].UpdatedAt, scanned[^1].Id),
+        };
     }
 }

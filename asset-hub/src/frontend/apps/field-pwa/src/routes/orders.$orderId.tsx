@@ -48,6 +48,10 @@ export function OrderDetailPage({
     return orderRepo.getParts(order.tenantId, orderId);
   }, [order?.tenantId, orderId]);
 
+  const totalTasks = tasks?.length ?? 0;
+  const completedTasks = tasks?.filter((t) => t.state === 'done' || t.state === 'cancelled').length ?? 0;
+  const isReadyToComplete = totalTasks === 0 || completedTasks === totalTasks;
+
   if (order === undefined) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -132,14 +136,21 @@ export function OrderDetailPage({
           )}
 
           {order.state === 'in_progress' && (
-            <button
-              onClick={handleCompleteOrder}
-              disabled={isProcessing}
-              className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-98 disabled:opacity-50"
-            >
-              <CheckCircle className="h-4 w-4" />
-              {isProcessing ? 'Completando…' : 'Completar Orden'}
-            </button>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <button
+                onClick={handleCompleteOrder}
+                disabled={isProcessing || !isReadyToComplete}
+                className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-98 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60"
+              >
+                <CheckCircle className="h-4 w-4" />
+                {isProcessing ? 'Completando…' : 'Completar Orden'}
+              </button>
+              {!isReadyToComplete && (
+                <span className="text-center text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                  Faltan tareas por finalizar ({completedTasks}/{totalTasks} completadas)
+                </span>
+              )}
+            </div>
           )}
         </div>
       </header>

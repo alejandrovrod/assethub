@@ -5,6 +5,7 @@ using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Tasks.Checklists;
 using AssetHub.Application.Tasks.Helpers;
+using AssetHub.Domain.Maintenance;
 using AssetHub.Domain.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -141,6 +142,19 @@ public class CreateWorkTaskCommandHandler : IRequestHandler<CreateWorkTaskComman
         };
 
         _db.WorkTasks.Add(task);
+
+        // Si la tarea se agrega a una orden de mantenimiento que ya estaba en estado "done",
+        // la orden debe reabrirse a "in_progress" ya que ahora tiene trabajo pendiente.
+        if (request.MaintenanceOrderId.HasValue)
+        {
+            var order = await _db.MaintenanceOrders
+                .FirstOrDefaultAsync(o => o.Id == request.MaintenanceOrderId.Value && o.TenantId == tenantId, cancellationToken);
+            if (order != null && order.State == MaintenanceOrderStates.Done)
+            {
+                order.State = MaintenanceOrderStates.InProgress;
+                order.CompletedAt = null;
+            }
+        }
 
         // Snapshot del checklist: el explícito del request manda; si no, se copia el de
         // la plantilla del activo. Se copia ahora y no se consulta al leer, para que

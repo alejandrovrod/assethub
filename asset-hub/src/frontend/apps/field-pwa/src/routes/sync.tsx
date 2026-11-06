@@ -3,6 +3,8 @@ import { useState, useMemo } from 'react';
 import { useSync } from '../features/sync/useSync';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@asset-hub/core-offline';
+import type { TaskRecord } from '@asset-hub/core-offline';
+import { TaskConflictDialog } from '../shared/components/TaskConflictDialog';
 import {
   CheckCircle2,
   Clock,
@@ -13,12 +15,14 @@ import {
   Database,
   ChevronDown,
   ChevronUp,
+  ShieldAlert,
 } from 'lucide-react';
 
 export function SyncPage() {
   const { state, drainNow } = useSync();
   const [filter, setFilter] = useState<'pending' | 'synced' | 'all'>('all');
   const [showCacheDetails, setShowCacheDetails] = useState(false);
+  const [conflictTask, setConflictTask] = useState<TaskRecord | null>(null);
 
   // Outbox mutations
   const outboxItems = useLiveQuery(() => db.outbox_mutations.toArray()) ?? [];
@@ -35,6 +39,7 @@ export function SyncPage() {
   const tasks = useLiveQuery(() => db.tasks.toArray()) ?? [];
   const tasksMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
   const pendingTasks = tasks.filter((t) => t.syncState === 'pending');
+  const conflictTasks = tasks.filter((t) => t.syncState === 'conflict');
 
   // Incidents
   const incidents = useLiveQuery(() => db.incidents.toArray()) ?? [];
@@ -202,6 +207,40 @@ export function SyncPage() {
 
       {/* Synchronized vs Pending Items Detailed List */}
       <div className="space-y-3">
+        {/* 0. Conflict Tasks (Requires explicit user decision) */}
+        {conflictTasks.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
+              <ShieldAlert className="h-4 w-4" />
+              Conflictos por Resolver ({conflictTasks.length})
+            </h4>
+            {conflictTasks.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs shadow-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-destructive/30 bg-destructive/10 text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground line-clamp-1">{t.title}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Modificada en servidor · Estado local: <span className="font-semibold uppercase text-foreground">{t.state}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setConflictTask(t)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground shadow-xs hover:bg-destructive/90 transition-all active:scale-95"
+                >
+                  Resolver
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* 1. Pending Tasks / Task State Changes */}
         {(filter === 'all' || filter === 'pending') && pendingTasks.length > 0 && (
           <div className="space-y-2">
@@ -480,6 +519,19 @@ export function SyncPage() {
         <div className="rounded-xl bg-destructive/10 p-3.5 text-xs text-destructive border border-destructive/20">
           Error en sincronización: {String(state.lastError)}
         </div>
+      )}
+
+      {/* Modal de resolución explícita de conflicto */}
+      {conflictTask && (
+        <TaskConflictDialog
+          task={conflictTask}
+          db={db}
+          onClose={() => setConflictTask(null)}
+          onResolved={() => {
+            setConflictTask(null);
+            drainNow();
+          }}
+        />
       )}
     </div>
   );

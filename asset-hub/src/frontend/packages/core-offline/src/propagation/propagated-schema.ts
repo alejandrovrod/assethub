@@ -144,7 +144,17 @@ export async function buildPropagatedAndResolvedSchema(
   ]) {
     if (rawJson) {
       try {
-        Object.assign(mergedFormData, JSON.parse(rawJson));
+        const parsed = JSON.parse(rawJson);
+        if (parsed && typeof parsed === 'object') {
+          // Normalise assignment alias: asignar_a is the canonical key
+          if (parsed.asignado_a && !parsed.asignar_a) {
+            parsed.asignar_a = parsed.asignado_a;
+          }
+          if (parsed.asignar_a && !parsed.asignado_a) {
+            parsed.asignado_a = parsed.asignar_a;
+          }
+          Object.assign(mergedFormData, parsed);
+        }
       } catch {
         // Ignore invalid JSON
       }

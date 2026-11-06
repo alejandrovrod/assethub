@@ -56,7 +56,10 @@ const TRANSITIONS: Record<SessionState, Partial<Record<SessionEvent, SessionStat
     LOGOUT: 'WIPED',
     WIPE: 'WIPED',
   },
-  WIPED: {},
+  WIPED: {
+    LOGOUT: 'WIPED',
+    WIPE: 'WIPED',
+  },
 };
 
 export class SessionStateMachine {

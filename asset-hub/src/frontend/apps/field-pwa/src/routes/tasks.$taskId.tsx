@@ -885,6 +885,7 @@ export function TaskDetailPage({
                 Propiedades Dinámicas Propagadas
               </h3>
               <PropagatedPropertiesDisplay
+                key={task.id}
                 ctx={{
                   tenantId: task.tenantId,
                   assetId: task.assetId,

@@ -7,7 +7,7 @@ import type {
   SyncState,
 } from '../db/schema';
 import type { AssignmentFilter } from './task.repository';
-import { matchesActorInProperties } from './assignment';
+import { matchesActorInProperties, parseProperties } from './assignment';
 
 export const DEFAULT_ORDER_ALLOWED_TRANSITIONS: Record<
   MaintenanceOrderState,
@@ -50,23 +50,22 @@ export class MaintenanceOrderRepository {
           return true;
         }
 
-        // Si la orden no tiene asignado explícito, es visible para el equipo del tenant
-        if (!order.assignedEmployeeId && !order.assignedTeamId && !(order as any).assignedToId) {
-          return true;
-        }
+        // The properties are the source of truth for assignment (see repositories/assignment.ts).
+        if (matchesActorInProperties(order.propertiesJson, [empId, userId])) return true;
+
+        const teamId = order.assignedTeamId?.toLowerCase();
+        if (teamId && teamSet.has(teamId)) return true;
+
+        // Legacy rows only: once a row carries dynamic properties, the properties decide
+        // who executes it and the column must not resurrect an old owner.
+        if (parseProperties(order.propertiesJson) !== undefined) return false;
 
         const orderEmp = order.assignedEmployeeId?.toLowerCase();
-        if (empId && orderEmp === empId) {
-          return true;
-        }
+        if (empId && orderEmp === empId) return true;
         if (userId && (orderEmp === userId || (order as any).assignedToId?.toLowerCase() === userId)) {
           return true;
         }
-        if (order.assignedTeamId && teamSet.has(order.assignedTeamId.toLowerCase())) {
-          return true;
-        }
-        // The properties are the source of truth for assignment (see repositories/assignment.ts).
-        if (matchesActorInProperties(order.propertiesJson, [empId, userId])) return true;
+
         return false;
       })
       .sort((a, b) => a.scheduledStartMs - b.scheduledStartMs);

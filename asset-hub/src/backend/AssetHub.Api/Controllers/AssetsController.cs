@@ -295,6 +295,9 @@ public class AdvancedSearchRequest
     public Guid? AssetId { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 50;
+
+    /// <summary>Limita el resultado al trabajo asignado al usuario autenticado.</summary>
+    public bool AssignedToMe { get; set; }
 }
 
 public class CreateAssetRequest

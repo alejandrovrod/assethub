@@ -192,6 +192,23 @@ public class WorkTasksController : ControllerBase
         return Ok(result);
     }
 
+    public record UpdateWorkTaskPropertiesRequest(string PropertiesJson);
+
+    [HttpPut("{id}/properties")]
+    [RequireIfMatch]
+    public async Task<IActionResult> UpdateProperties(Guid id, [FromBody] UpdateWorkTaskPropertiesRequest request)
+    {
+        var command = new UpdateWorkTaskPropertiesCommand
+        {
+            WorkTaskId = id,
+            PropertiesJson = request.PropertiesJson,
+            ExpectedRowVersion = RequireIfMatchAttribute.GetExpectedVersion(HttpContext)
+        };
+
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
     [HttpPost("evaluate-due")]
     [Authorize(Roles = "Admin,System")]
     public async Task<ActionResult<EvaluateDueWorkTasksResult>> EvaluateDueTasks()

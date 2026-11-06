@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, TaskRepository, type TaskRecord } from '@asset-hub/core-offline';
 
 export interface UrgencyGroups {
+  conflicts: TaskRecord[];
   rework: TaskRecord[];
   overdue: TaskRecord[];
   today: TaskRecord[];
@@ -15,6 +16,7 @@ export function groupTasksByUrgency(tasks: TaskRecord[]): UrgencyGroups {
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const endOfToday = startOfToday + 86400000 - 1;
 
+  const conflicts: TaskRecord[] = [];
   const rework: TaskRecord[] = [];
   const overdue: TaskRecord[] = [];
   const today: TaskRecord[] = [];
@@ -22,9 +24,9 @@ export function groupTasksByUrgency(tasks: TaskRecord[]): UrgencyGroups {
   const completed: TaskRecord[] = [];
 
   for (const t of tasks) {
-    // Finished work is history, not "upcoming": without this split every done task with
-    // a past due date landed in Próximas and drowned the real workload.
-    if (t.state === 'done' || t.state === 'cancelled') {
+    if (t.syncState === 'conflict') {
+      conflicts.push(t);
+    } else if (t.state === 'done' || t.state === 'cancelled') {
       completed.push(t);
     } else if (t.state === 'rework') {
       rework.push(t);
@@ -39,7 +41,7 @@ export function groupTasksByUrgency(tasks: TaskRecord[]): UrgencyGroups {
 
   completed.sort((a, b) => b.dueAtMs - a.dueAtMs);
 
-  return { rework, overdue, today, upcoming, completed };
+  return { conflicts, rework, overdue, today, upcoming, completed };
 }
 
 export function useTasks(
@@ -64,9 +66,9 @@ export function useTasks(
     ],
   );
 
-  const groups = tasks
+  const groups: UrgencyGroups = tasks
     ? groupTasksByUrgency(tasks)
-    : { rework: [], overdue: [], today: [], upcoming: [], completed: [] };
+    : { conflicts: [], rework: [], overdue: [], today: [], upcoming: [], completed: [] };
 
   return {
     tasks: tasks ?? [],

@@ -33,13 +33,15 @@ public class IncidentsController : ControllerBase
     public async Task<ActionResult<ChangePageDto>> GetChanges(
         [FromQuery] string? since,
         [FromQuery] int? limit,
-        [FromQuery] bool includeDeleted = true)
+        [FromQuery] bool includeDeleted = true,
+        [FromQuery] bool assignedToMe = false)
     {
         var result = await _mediator.Send(new GetIncidentChangesQuery
         {
             Since = since,
             Limit = limit,
             IncludeDeleted = includeDeleted,
+            AssignedToMe = assignedToMe,
         });
 
         return Ok(result);
@@ -59,9 +61,9 @@ public class IncidentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? state, [FromQuery] Guid? assetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, [FromQuery] bool assignedToMe = false)
     {
-        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId, page, pageSize));
+        var result = await _mediator.Send(new SearchIncidentsQuery(q, state, null, assetId, page, pageSize, assignedToMe));
         return Ok(result);
     }
 
@@ -70,7 +72,7 @@ public class IncidentsController : ControllerBase
     {
         request ??= new AssetHub.Api.Controllers.AdvancedSearchRequest();
         try {
-            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters, request.AssetId, request.Page, request.PageSize));
+            var result = await _mediator.Send(new SearchIncidentsQuery(request.SearchTerm, request.State, request.CatalogFilters, request.AssetId, request.Page, request.PageSize, request.AssignedToMe));
             return Ok(result);
         } catch (Exception ex) {
             return StatusCode(500, new { error = ex.ToString() });

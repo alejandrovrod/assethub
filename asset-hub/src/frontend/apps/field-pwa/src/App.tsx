@@ -77,6 +77,7 @@ export function App() {
           ← Volver a Mi Jornada
         </button>
         <TaskDetailPage
+          key={selectedTaskId}
           taskId={selectedTaskId}
           onNavigateOrder={(orderId) => {
             setSelectedTaskId(null);
@@ -103,6 +104,7 @@ export function App() {
           ← Volver a Órdenes
         </button>
         <OrderDetailPage
+          key={selectedOrderId}
           orderId={selectedOrderId}
           onNavigateTask={(taskId) => {
             setSelectedOrderId(null);
@@ -122,6 +124,7 @@ export function App() {
   if (selectedAssetId) {
     return (
       <AssetDetailPage
+        key={selectedAssetId}
         assetId={selectedAssetId}
         tenantId={session.tenantSlug ?? 'default'}
         onClose={() => setSelectedAssetId(null)}

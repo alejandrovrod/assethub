@@ -155,16 +155,16 @@ export async function completeTask(
 
     await db.tasks.update(taskId, patch);
 
-    // Propagate state to parent order if all tasks of the order are now done/cancelled
+    // Propagate state to parent order ONLY if ALL tasks of the order are strictly completed ('done')
     if (task.maintenanceOrderId) {
       const orderTasks = await db.tasks
         .where('maintenanceOrderId')
         .equals(task.maintenanceOrderId)
         .toArray();
-      const allTerminal = orderTasks.every(
-        (t) => t.id === taskId || t.state === 'done' || t.state === 'cancelled',
+      const allDone = orderTasks.length > 0 && orderTasks.every(
+        (t) => t.id === taskId || t.state === 'done',
       );
-      if (allTerminal) {
+      if (allDone) {
         await db.maintenance_orders.update(task.maintenanceOrderId, {
           state: 'done',
           completedAtLocalIso: now,

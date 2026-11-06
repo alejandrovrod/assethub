@@ -1,8 +1,10 @@
 // routes/index.tsx — "Mi Jornada" (Work tasks grouped by urgency)
 import { useState } from 'react';
-import { RefreshCw, AlertTriangle, Clock, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Clock, Calendar, CheckCircle, AlertCircle, ShieldAlert } from 'lucide-react';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import type { TaskRecord, SyncState } from '@asset-hub/core-offline';
+import { db } from '@asset-hub/core-offline';
+import { TaskConflictDialog } from '../shared/components/TaskConflictDialog';
 
 interface MiJornadaPageProps {
   userId: string;
@@ -34,6 +36,7 @@ export function MiJornadaPage({
 }: MiJornadaPageProps) {
   const { groups, isLoading } = useTasks({ tenantId, userId, employeeId, teamIds });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [conflictTask, setConflictTask] = useState<TaskRecord | null>(null);
 
   const handleRefresh = async () => {
     if (!onRefresh) return;
@@ -101,6 +104,30 @@ export function MiJornadaPage({
           <p className="text-xs">Disfruta tu jornada o refresca para sincronizar.</p>
         </div>
       ) : null}
+
+      {/* 0. Conflictos de sincronización (requiere decisión del usuario) */}
+      {groups.conflicts.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-2 text-destructive">
+            <ShieldAlert className="h-5 w-5" />
+            <h3 className="font-bold">Conflictos por Resolver ({groups.conflicts.length})</h3>
+          </div>
+          <div className="space-y-2">
+            {groups.conflicts.map((task) => (
+              <div key={task.id} className="relative">
+                <TaskCard task={task} onSelect={() => setConflictTask(task)} />
+                <button
+                  onClick={() => setConflictTask(task)}
+                  className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg bg-destructive/15 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/25 transition-colors"
+                >
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  Resolver Conflicto con Servidor
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 1. Tareas Devueltas / Rework (prioridad máxima con motivo) */}
       {groups.rework.length > 0 && (
@@ -175,6 +202,18 @@ export function MiJornadaPage({
             ))}
           </div>
         </section>
+      )}
+      {/* Modal de resolución de conflicto */}
+      {conflictTask && (
+        <TaskConflictDialog
+          task={conflictTask}
+          db={db}
+          onClose={() => setConflictTask(null)}
+          onResolved={() => {
+            setConflictTask(null);
+            if (onRefresh) onRefresh();
+          }}
+        />
       )}
     </div>
   );

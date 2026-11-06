@@ -326,7 +326,7 @@ export function WorkflowTemplateFormSheet({ open, onOpenChange, templateId, onSu
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <SchemaBuilder value={field.value} onChange={field.onChange} />
+                            <SchemaBuilder value={field.value} onChange={field.onChange} allowEditableInField={true} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

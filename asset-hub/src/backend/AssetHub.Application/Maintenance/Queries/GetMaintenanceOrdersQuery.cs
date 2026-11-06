@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Maintenance.Dtos;
 using MediatR;
@@ -18,6 +19,13 @@ public class GetMaintenanceOrdersQuery : IRequest<GetMaintenanceOrdersResult>
     public Guid? PreventivePlanId { get; set; }
     public Guid? IncidentId { get; set; }
     public string? Search { get; set; }
+
+    /// <summary>
+    /// Restricts to the orders the authenticated employee executes. Checks both the
+    /// <c>AssignedEmployeeId</c> column and the executor declared in <c>PropertiesJson</c>.
+    /// </summary>
+    public bool AssignedToMe { get; set; }
+
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 }
@@ -33,10 +41,12 @@ public class GetMaintenanceOrdersResult
 public class GetMaintenanceOrdersQueryHandler : IRequestHandler<GetMaintenanceOrdersQuery, GetMaintenanceOrdersResult>
 {
     private readonly ITenantDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public GetMaintenanceOrdersQueryHandler(ITenantDbContext db)
+    public GetMaintenanceOrdersQueryHandler(ITenantDbContext db, ICurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<GetMaintenanceOrdersResult> Handle(GetMaintenanceOrdersQuery request, CancellationToken cancellationToken)
@@ -70,6 +80,41 @@ public class GetMaintenanceOrdersQueryHandler : IRequestHandler<GetMaintenanceOr
             query = query.Where(o =>
                 o.Title.ToLower().Contains(term) ||
                 (o.Asset != null && o.Asset.Name.ToLower().Contains(term)));
+        }
+
+        if (request.AssignedToMe)
+        {
+            var employeeId = await AssignedWork.ResolveEmployeeIdAsync(_db, _currentUser, cancellationToken);
+
+            // Sin ficha de empleado no hay trabajo asignado: no se devuelve el tenant.
+            if (employeeId is null)
+            {
+                return new GetMaintenanceOrdersResult
+                {
+                    Items = [],
+                    TotalCount = 0,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
+            }
+
+            var assignedIds = await AssignedWork.ExactOrderIdsAsync(
+                query.WhereAssignedCandidates(employeeId.Value),
+                employeeId.Value,
+                cancellationToken);
+
+            if (assignedIds.Count == 0)
+            {
+                return new GetMaintenanceOrdersResult
+                {
+                    Items = [],
+                    TotalCount = 0,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
+            }
+
+            query = query.Where(o => assignedIds.Contains(o.Id));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

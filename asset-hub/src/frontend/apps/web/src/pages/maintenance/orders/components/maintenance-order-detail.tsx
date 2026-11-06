@@ -193,6 +193,7 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
   const totalTasks = tasks.length
   const completedTasks = tasks.filter(t => t.state === 'done' || t.state === 'cancelled').length
   const isReadyToComplete = totalTasks === 0 || completedTasks === totalTasks
+  const allTasksCompleted = totalTasks > 0 && tasks.every(t => t.state === 'done' || t.state === 'cancelled')
 
   return (
     <Card className="flex flex-col overflow-hidden w-[45%] h-full">
@@ -410,11 +411,11 @@ export function MaintenanceOrderDetail({ order, onClose }: MaintenanceOrderDetai
                           variant="outline"
                           size="sm"
                           onClick={() => stateMutation.mutate('verify')}
-                          disabled={stateMutation.isPending || checkedTaskIds.size < totalTasks}
+                          disabled={stateMutation.isPending || !allTasksCompleted || checkedTaskIds.size < totalTasks}
                         >
                           <Check className="h-4 w-4 mr-1" /> {t('orders.detail.verify')}
                         </Button>
-                        {checkedTaskIds.size < totalTasks && canReject && (
+                        {(!allTasksCompleted || checkedTaskIds.size < totalTasks) && canReject && (
                           <Button
                             variant="outline"
                             size="sm"

@@ -295,6 +295,13 @@ export function createDrainer(
         break;
       case 'block':
         patch.status = 'blocked';
+        if (mutation.aggregateType === 'task') {
+          try {
+            await db.tasks.update(mutation.aggregateId, { syncState: 'conflict' });
+          } catch {
+            // best-effort
+          }
+        }
         break;
       case 'dead':
         patch.status = 'dead';

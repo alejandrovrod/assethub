@@ -50,7 +50,7 @@ public class RejectMaintenanceOrderCommandHandler : IRequestHandler<RejectMainte
 
         foreach (var task in order.WorkTasks)
         {
-            if (!request.ApprovedTaskIds.Contains(task.Id))
+            if (!request.ApprovedTaskIds.Contains(task.Id) && task.State == WorkTaskStates.Done)
             {
                 task.State = WorkTaskStates.Rework;
             }

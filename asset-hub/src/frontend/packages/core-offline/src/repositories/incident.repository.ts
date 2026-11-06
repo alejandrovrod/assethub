@@ -1,7 +1,7 @@
 import type { FieldDatabase } from '../db/database';
 import type { IncidentRecord } from '../db/schema';
 import type { AssignmentFilter } from './task.repository';
-import { matchesActorInProperties } from './assignment';
+import { matchesActorInProperties, parseProperties } from './assignment';
 
 export class IncidentRepository {
   constructor(private db: FieldDatabase) {}
@@ -46,22 +46,27 @@ export class IncidentRepository {
 
     return allIncidents
       .filter((inc) => {
-        // Fallback: If no actor filter is provided (e.g. admin or unlinked user), show all tenant incidents
+        // Sin actor no hay jornada. El backend devuelve el conjunto vacío en el mismo
+        // caso; mostrar "todo el tenant" por no saber quién está logueado sería una fuga.
         if (!empId && !userId && teamSet.size === 0) {
-          return true;
+          return false;
         }
 
-        // Si la incidencia no tiene asignado explícito, es visible para los técnicos del tenant
-        if (!inc.assignedEmployeeId && !inc.assignedTeamId && !inc.reportedByUserId) {
-          return true;
-        }
-
-        // En campo, los técnicos ven los incidentes del tenant para atenderlos o los que ellos reportaron
-        if (userId && inc.reportedByUserId?.toLowerCase() === userId) return true;
-        if (empId && inc.assignedEmployeeId?.toLowerCase() === empId) return true;
-        if (inc.assignedTeamId && teamSet.has(inc.assignedTeamId.toLowerCase())) return true;
         // The properties are the source of truth for assignment (see repositories/assignment.ts).
         if (matchesActorInProperties(inc.propertiesJson, [empId, userId])) return true;
+
+        const teamId = inc.assignedTeamId?.toLowerCase();
+        if (teamId && teamSet.has(teamId)) return true;
+
+        if (userId && inc.reportedByUserId?.toLowerCase() === userId) return true;
+
+        // Legacy rows only: once a row carries dynamic properties, the properties decide
+        // who executes it and the column must not resurrect an old owner.
+        if (parseProperties(inc.propertiesJson) !== undefined) return false;
+
+        const incEmp = inc.assignedEmployeeId?.toLowerCase();
+        if (empId && incEmp === empId) return true;
+
         return false;
       })
       .sort((a, b) => b.createdAtLocalMs - a.createdAtLocalMs);

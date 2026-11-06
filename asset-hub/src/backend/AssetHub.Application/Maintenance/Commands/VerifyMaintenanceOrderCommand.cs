@@ -6,6 +6,7 @@ using AssetHub.Application.Maintenance.Events;
 using AssetHub.Application.Maintenance.Helpers;
 using AssetHub.Domain.Assets;
 using AssetHub.Domain.Maintenance;
+using AssetHub.Domain.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +40,11 @@ public class VerifyMaintenanceOrderCommandHandler : IRequestHandler<VerifyMainte
 
         if (!MaintenanceOrderStateTransitionValidator.IsValidTransition(order.State, MaintenanceOrderStates.Verified))
             throw new InvalidOperationException(MaintenanceOrderStateTransitionValidator.GetErrorMessage(order.State, MaintenanceOrderStates.Verified));
+
+        var incompleteTasks = await _db.WorkTasks
+            .AnyAsync(t => t.MaintenanceOrderId == order.Id && !t.IsDeleted && t.State != WorkTaskStates.Done && t.State != WorkTaskStates.Cancelled, cancellationToken);
+        if (incompleteTasks)
+            throw new InvalidOperationException("No se puede verificar la orden porque aún contiene tareas pendientes.");
 
         order.State = MaintenanceOrderStates.Verified;
         order.CompletedAt = DateTime.UtcNow;

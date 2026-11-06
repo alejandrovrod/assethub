@@ -41,11 +41,15 @@ public class ChangePageDto
     public List<ChangeItemDto> Items { get; set; } = new();
 
     /// <summary>
-    /// Cursor de la última fila entregada, incluso cuando <see cref="HasMore"/> es
+    /// Cursor de la última fila escaneada, incluso cuando <see cref="HasMore"/> es
     /// <c>false</c>. Si sólo se devolviera al haber más páginas, el cliente que termina el
     /// sync no tendría desde dónde reanudar y el pull siguiente volvería a ser completo.
-    /// Es <c>null</c> únicamente cuando la página vino vacía: en ese caso el cliente
-    /// conserva el cursor que había mandado.
+    ///
+    /// Puede venir con <see cref="Items"/> vacío: en los deltas filtrados por asignación la
+    /// página puede estar compuesta sólo por filas de otros técnicos. El cursor tiene que
+    /// avanzar igual, o el cliente re-escanearía la misma ventana para siempre. Es
+    /// <c>null</c> únicamente cuando no se escaneó ninguna fila: ahí el cliente conserva el
+    /// cursor que había mandado.
     /// </summary>
     public string? NextCursor { get; set; }
 

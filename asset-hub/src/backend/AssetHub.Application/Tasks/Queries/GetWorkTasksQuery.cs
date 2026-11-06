@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AssetHub.Application.Common.Workflow;
 using AssetHub.Application.Interfaces;
 using AssetHub.Application.Tasks.Dtos;
 using AssetHub.Domain.Concurrency;
@@ -64,10 +65,42 @@ public class GetWorkTasksQueryHandler : IRequestHandler<GetWorkTasksQuery, GetWo
             query = query.Where(t => t.State == request.State);
         }
 
-        if (request.AssignedToMe == true && _currentUser.Id.HasValue)
+        if (request.AssignedToMe == true)
         {
-            var userId = _currentUser.Id.Value;
-            query = query.Where(t => t.AssignedEmployee != null && t.AssignedEmployee.UserId == userId);
+            // La asignación vive en `PropertiesJson` (asignar_a / asignado_a); la columna
+            // `AssignedEmployeeId` sólo cubre filas legacy o creadas por integraciones.
+            var employeeId = await AssignedWork.ResolveEmployeeIdAsync(_db, _currentUser, cancellationToken);
+
+            if (employeeId is null)
+            {
+                return new GetWorkTasksResult
+                {
+                    Items = [],
+                    TotalCount = 0,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
+            }
+
+            var teamIds = await AssignedWork.ResolveTeamIdsAsync(_db, employeeId.Value, cancellationToken);
+            var assignedIds = await AssignedWork.ExactTaskIdsAsync(
+                query.WhereAssignedCandidates(employeeId.Value, teamIds),
+                employeeId.Value,
+                teamIds,
+                cancellationToken);
+
+            if (assignedIds.Count == 0)
+            {
+                return new GetWorkTasksResult
+                {
+                    Items = [],
+                    TotalCount = 0,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
+            }
+
+            query = query.Where(t => assignedIds.Contains(t.Id));
         }
 
         if (request.AssetId.HasValue)

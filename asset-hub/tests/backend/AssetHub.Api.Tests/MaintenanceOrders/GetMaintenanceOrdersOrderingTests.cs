@@ -1,4 +1,5 @@
 using System;
+using AssetHub.Api.Tests.WorkTasks;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,7 +59,7 @@ public class GetMaintenanceOrdersOrderingTests
             CreateOrder(tenantId, assetId, new DateTime(2026, 8, 20, 12, 0, 0, DateTimeKind.Utc), "Middle"));
         await db.SaveChangesAsync();
 
-        var handler = new GetMaintenanceOrdersQueryHandler(db);
+        var handler = new GetMaintenanceOrdersQueryHandler(db, new WorkTaskTestHelper.FakeCurrentUser(null));
 
         var result = await handler.Handle(new GetMaintenanceOrdersQuery(), CancellationToken.None);
 
@@ -85,7 +86,7 @@ public class GetMaintenanceOrdersOrderingTests
         }
         await db.SaveChangesAsync();
 
-        var handler = new GetMaintenanceOrdersQueryHandler(db);
+        var handler = new GetMaintenanceOrdersQueryHandler(db, new WorkTaskTestHelper.FakeCurrentUser(null));
 
         var page1 = await handler.Handle(new GetMaintenanceOrdersQuery { Page = 1, PageSize = 2 }, CancellationToken.None);
         var page2 = await handler.Handle(new GetMaintenanceOrdersQuery { Page = 2, PageSize = 2 }, CancellationToken.None);

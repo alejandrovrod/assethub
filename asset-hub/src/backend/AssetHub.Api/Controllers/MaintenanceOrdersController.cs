@@ -32,6 +32,7 @@ public class MaintenanceOrdersController : ControllerBase
         [FromQuery] Guid? preventivePlanId,
         [FromQuery] Guid? incidentId,
         [FromQuery] string? search,
+        [FromQuery] bool assignedToMe = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -43,6 +44,7 @@ public class MaintenanceOrdersController : ControllerBase
             PreventivePlanId = preventivePlanId,
             IncidentId = incidentId,
             Search = search,
+            AssignedToMe = assignedToMe,
             Page = page,
             PageSize = pageSize
         });
@@ -108,6 +110,20 @@ public class MaintenanceOrdersController : ControllerBase
     public async Task<IActionResult> RecordCosts(Guid id, [FromBody] RecordMaintenanceCostsCommand command)
     {
         command.MaintenanceOrderId = id;
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+    public record UpdateOrderPropertiesRequest(string PropertiesJson);
+
+    [HttpPut("{id}/properties")]
+    public async Task<IActionResult> UpdateProperties(Guid id, [FromBody] UpdateOrderPropertiesRequest request)
+    {
+        var command = new UpdateMaintenanceOrderPropertiesCommand
+        {
+            MaintenanceOrderId = id,
+            PropertiesJson = request.PropertiesJson,
+        };
         await _mediator.Send(command);
         return NoContent();
     }

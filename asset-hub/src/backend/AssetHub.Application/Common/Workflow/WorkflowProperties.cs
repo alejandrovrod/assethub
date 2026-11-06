@@ -69,6 +69,66 @@ public static class WorkflowProperties
     }
 
     /// <summary>
+    /// Whether <paramref name="employeeId"/> is declared as the executor by any executor key.
+    ///
+    /// Unlike <see cref="TryGetExecutorId(string?, out Guid)"/> this checks every executor key
+    /// and accepts arrays of ids, mirroring <c>matchesActorInProperties</c> in
+    /// core-offline/src/repositories/assignment.ts. Templates that allow several assignees
+    /// store them as an array, and a single-assignee read would hide that work from everyone.
+    /// </summary>
+    public static bool MatchesExecutor(string? propertiesJson, Guid employeeId)
+    {
+        if (string.IsNullOrWhiteSpace(propertiesJson)) return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(propertiesJson);
+            return MatchesExecutor(doc.RootElement, employeeId);
+        }
+        catch (JsonException)
+        {
+            // Tenant data contains malformed JSON; a bad row is simply not assigned.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="employeeId"/> is declared as the executor by any executor key.
+    /// </summary>
+    public static bool MatchesExecutor(JsonElement properties, Guid employeeId)
+    {
+        if (properties.ValueKind != JsonValueKind.Object) return false;
+
+        foreach (var key in ExecutorKeys)
+        {
+            if (!properties.TryGetProperty(key, out var value)) continue;
+            if (ContainsEmployeeId(value, employeeId)) return true;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsEmployeeId(JsonElement value, Guid employeeId)
+    {
+        switch (value.ValueKind)
+        {
+            case JsonValueKind.String:
+                return Guid.TryParse(value.GetString(), out var single) && single == employeeId;
+
+            case JsonValueKind.Array:
+                foreach (var item in value.EnumerateArray())
+                {
+                    if (item.ValueKind != JsonValueKind.String) continue;
+                    if (Guid.TryParse(item.GetString(), out var many) && many == employeeId) return true;
+                }
+                return false;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
     /// Reads the assignee id declared by the first assignee key present in the properties.
     /// Returns false when no key exists or its value is not a valid GUID.
     /// </summary>

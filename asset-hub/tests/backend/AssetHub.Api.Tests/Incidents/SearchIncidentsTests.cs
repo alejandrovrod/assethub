@@ -1,4 +1,5 @@
 using System;
+using AssetHub.Api.Tests.WorkTasks;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -77,7 +78,7 @@ public class SearchIncidentsTests
         db.Incidents.AddRange(older, newer);
         await db.SaveChangesAsync();
 
-        var handler = new SearchIncidentsQueryHandler(db, new FakeTenantResolver(tenantId));
+        var handler = new SearchIncidentsQueryHandler(db, new FakeTenantResolver(tenantId), new WorkTaskTestHelper.FakeCurrentUser(null));
 
         var result = await handler.Handle(new SearchIncidentsQuery(null, null), CancellationToken.None);
 
@@ -100,7 +101,7 @@ public class SearchIncidentsTests
         db.Incidents.AddRange(older, newer);
         await db.SaveChangesAsync();
 
-        var handler = new SearchIncidentsQueryHandler(db, new FakeTenantResolver(tenantId));
+        var handler = new SearchIncidentsQueryHandler(db, new FakeTenantResolver(tenantId), new WorkTaskTestHelper.FakeCurrentUser(null));
 
         var result = await handler.Handle(new SearchIncidentsQuery(null, null), CancellationToken.None);
 

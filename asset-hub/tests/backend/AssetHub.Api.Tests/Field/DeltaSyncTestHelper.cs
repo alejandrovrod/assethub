@@ -57,8 +57,8 @@ internal static class DeltaSyncTestHelper
         public GetWorkTaskChangesQueryHandler TaskChanges(Guid? userId = null)
             => new(Db, new WorkTaskTestHelper.FakeTenantResolver(TenantId), new WorkTaskTestHelper.FakeCurrentUser(userId));
 
-        public GetIncidentChangesQueryHandler IncidentChanges()
-            => new(Db, new WorkTaskTestHelper.FakeTenantResolver(TenantId));
+        public GetIncidentChangesQueryHandler IncidentChanges(Guid? userId = null)
+            => new(Db, new WorkTaskTestHelper.FakeTenantResolver(TenantId), new WorkTaskTestHelper.FakeCurrentUser(userId));
 
         public GetAssetChangesQueryHandler AssetChanges()
             => new(Db, new WorkTaskTestHelper.FakeTenantResolver(TenantId));

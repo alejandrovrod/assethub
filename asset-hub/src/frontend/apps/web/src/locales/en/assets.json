@@ -400,6 +400,8 @@
     "labelPlaceholder": "Visible label",
     "propagateToOrders": "Propagate to Orders",
     "propagateTooltip": "Copies this field's value to the Order or Task when it is created from the asset.",
+    "editableInField": "Editable in Field",
+    "editableInFieldTooltip": "Allows the field technician to edit this property from the Field PWA.",
     "requiredAbbrev": "Req.",
     "visibilityLogic": "Visibility Logic",
     "conditionalVisibility": "Conditional visibility",

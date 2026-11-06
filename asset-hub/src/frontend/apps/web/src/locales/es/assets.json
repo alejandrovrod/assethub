@@ -400,6 +400,8 @@
     "labelPlaceholder": "Etiqueta visible",
     "propagateToOrders": "Propagar a Órdenes",
     "propagateTooltip": "Copia el valor de este campo a la Orden o Tarea al crearse desde el activo.",
+    "editableInField": "Editable en Campo",
+    "editableInFieldTooltip": "Permite al técnico editar este campo desde la aplicación PWA de campo.",
     "requiredAbbrev": "Obl.",
     "visibilityLogic": "Lógica de Visibilidad",
     "conditionalVisibility": "Visibilidad condicional",

@@ -42,10 +42,9 @@ public class WorkTaskStateChangedEventHandler : INotificationHandler<WorkTaskSta
         var activeTasks = await _db.WorkTasks
             .Where(t => t.MaintenanceOrderId == orderId && t.TenantId == notification.TenantId && !t.IsDeleted)
             .ToListAsync(cancellationToken);
-        var allTerminal = activeTasks.All(t => WorkTaskStates.TerminalStates.Contains(t.State));
-        var anyDone = activeTasks.Any(t => t.State == WorkTaskStates.Done);
+        var allDone = activeTasks.Count > 0 && activeTasks.All(t => t.State == WorkTaskStates.Done);
 
-        if (allTerminal && anyDone)
+        if (allDone)
         {
             order.State = MaintenanceOrderStates.Done;
             order.CompletedAt = DateTime.UtcNow;

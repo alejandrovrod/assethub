@@ -37,6 +37,7 @@ interface ResolvedDisplayValue {
   kind: 'image' | 'file' | 'employee' | 'team' | 'catalog' | 'date' | 'boolean' | 'text';
   urls?: string[];
   fieldSchema?: any;
+  isFieldEditable?: boolean;
 }
 
 const KNOWN_CATALOGS: Record<string, string> = {
@@ -251,6 +252,15 @@ export function PropagatedPropertiesDisplay({
         displayLabel = rawValue ? 'Sí' : 'No';
       }
 
+      // Determine if this property is editable in field execution:
+      // 1. Asset properties (_source === 'asset') are NEVER editable in field tasks/orders.
+      // 2. Dispatch/ownership fields (asignar_a, reportar_a) are NEVER editable in field tasks/orders.
+      // 3. WorkflowTemplate properties are editable ONLY if explicitly marked with `editableInField: true`.
+      const isAssetSource = prop._source === 'asset';
+      const isDispatchField = key === 'asignar_a' || key === 'reportar_a';
+      const isExplicitlyEditable = Boolean(prop.editableInField);
+      const isFieldEditable = !isAssetSource && !isDispatchField && isExplicitlyEditable;
+
       return {
         key,
         title,
@@ -259,6 +269,7 @@ export function PropagatedPropertiesDisplay({
         kind,
         urls,
         fieldSchema: prop,
+        isFieldEditable,
       };
     });
 
@@ -277,22 +288,15 @@ export function PropagatedPropertiesDisplay({
     });
   }, [resolved, formData, directoryMap, catalogMap, catalogMetaMap]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
-        Cargando propiedades dinámicas…
-      </div>
-    );
-  }
+  // Check if at least one field is allowed to be edited in field mode
+  // (Always call hooks unconditionally before early returns to satisfy React Rules of Hooks)
+  const hasEditableFields = useMemo(() => {
+    return displayItems.some((item) => item.isFieldEditable);
+  }, [displayItems]);
 
-  if (!resolved || displayItems.length === 0) {
-    return (
-      <div className="py-3 text-center text-xs text-muted-foreground">
-        No hay propiedades dinámicas registradas.
-      </div>
-    );
-  }
+  const editableDisplayItems = useMemo(() => {
+    return displayItems.filter((item) => item.isFieldEditable);
+  }, [displayItems]);
 
   const handleInputChange = (key: string, value: unknown) => {
     setFormData((prev) => ({
@@ -320,6 +324,23 @@ export function PropagatedPropertiesDisplay({
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
+        Cargando propiedades dinámicas…
+      </div>
+    );
+  }
+
+  if (!resolved || displayItems.length === 0) {
+    return (
+      <div className="py-3 text-center text-xs text-muted-foreground">
+        No hay propiedades dinámicas registradas.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {/* Header with edit toggle */}
@@ -328,7 +349,7 @@ export function PropagatedPropertiesDisplay({
           {displayItems.length} {displayItems.length === 1 ? 'campo registrado' : 'campos registrados'}
         </span>
 
-        {!isReadOnly && onSave && (
+        {!isReadOnly && onSave && hasEditableFields && (
           <button
             type="button"
             onClick={() => {
@@ -467,7 +488,7 @@ export function PropagatedPropertiesDisplay({
       {/* EDIT MODE: Styled, accessible form inputs */}
       {isEditing && (
         <form onSubmit={handleSave} className="space-y-3.5 pt-1">
-          {displayItems.map((item) => {
+          {editableDisplayItems.map((item) => {
             const schema = item.fieldSchema || {};
             const val = formData[item.key] ?? '';
 

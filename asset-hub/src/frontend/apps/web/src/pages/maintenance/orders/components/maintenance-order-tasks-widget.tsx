@@ -95,7 +95,7 @@ export function MaintenanceOrderTasksWidget({ orderId, assetId, workflowTemplate
               key={task.id}
               className="flex items-center gap-3 p-2 rounded border bg-muted/20 hover:bg-muted/40 transition-colors"
             >
-              {validationMode ? (
+              {validationMode && task.state === 'done' ? (
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer shrink-0"

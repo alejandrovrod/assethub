@@ -40,7 +40,13 @@ export async function pullDelta(
   const cursorKey = `pull:cursor:${resource}`;
   const cursor = await syncMeta.get(cursorKey);
 
-  const query: Record<string, string> = { limit: '100', ...(extraQuery ?? {}) };
+  const query: Record<string, string> = {
+    limit: '100',
+    // Incidents are filtered server-side by the assignment declared in the template
+    // properties: the field device never needs the rest of the tenant's incidents.
+    ...(resource === 'incidents' ? { assignedToMe: 'true' } : {}),
+    ...(extraQuery ?? {}),
+  };
   if (cursor) {
     query['after'] = cursor;
   }
@@ -174,23 +180,36 @@ export async function pullOrders(
   tenantId: string,
 ): Promise<{ fetched: number }> {
   try {
-    const response = await http.get('/api/v1/maintenance-orders', { pageSize: '100' });
+    const response = await http.get('/api/v1/maintenance-orders', { pageSize: '100', assignedToMe: 'true' });
     const body = response.body as { items?: any[] };
     const items = Array.isArray(body?.items) ? body.items : [];
 
-    const records = items.map((raw) => ({
-      id: raw.id,
-      tenantId,
-      title: raw.title ?? 'Orden de Mantenimiento',
-      state: (raw.state ?? 'in_progress').toLowerCase(),
-      kind: raw.kind ?? 'corrective',
-      assetId: raw.assetId,
-      incidentId: raw.incidentId,
-      workflowTemplateId: raw.workflowTemplateId,
-      propertiesJson: raw.propertiesJson,
-      syncState: 'synced',
-      cachedAtMs: Date.now(),
-    }));
+    const serverIds = new Set(items.map((raw) => String(raw.id).toLowerCase()));
+    const staleIds = (await db.maintenance_orders.where('tenantId').equals(tenantId).toArray())
+      .filter((o) => o.syncState === 'synced' && !serverIds.has(o.id.toLowerCase()))
+      .map((o) => o.id);
+    if (staleIds.length > 0) {
+      await db.maintenance_orders.bulkDelete(staleIds);
+    }
+
+    const records = items.map((raw) => {
+      const propertiesJson = raw.propertiesJson ?? undefined;
+      const assigneeId = resolveAssigneeId(propertiesJson);
+      return {
+        id: raw.id,
+        tenantId,
+        title: raw.title ?? 'Orden de Mantenimiento',
+        state: (raw.state ?? 'in_progress').toLowerCase(),
+        kind: raw.kind ?? 'corrective',
+        assetId: raw.assetId,
+        incidentId: raw.incidentId,
+        workflowTemplateId: raw.workflowTemplateId,
+        assignedEmployeeId: assigneeId ?? raw.assignedEmployeeId,
+        propertiesJson,
+        syncState: 'synced',
+        cachedAtMs: Date.now(),
+      };
+    });
 
     if (records.length > 0) {
       await db.maintenance_orders.bulkPut(records as any);
@@ -454,16 +473,56 @@ async function runWithConcurrency<T>(
   await Promise.all(runners);
 }
 
+const INCIDENT_PAGE_SIZE = 100;
+const INCIDENT_MAX_PAGES = 50;
+
 export async function pullIncidents(
   db: FieldDatabase,
   http: HttpClient,
   tenantId: string,
 ): Promise<{ fetched: number }> {
   try {
-    const response = await http.get('/api/v1/incidents', { pageSize: '100' });
-    const body = response.body as { items?: any[] };
-    const items = Array.isArray(body?.items) ? body.items : [];
+    const items: any[] = [];
+    let complete = false;
+
+    for (let page = 1; page <= INCIDENT_MAX_PAGES; page++) {
+      // Field devices only carry the technician's own incidents: the server resolves
+      // "me" from the assignment declared in the template properties (asignar_a /
+      // asignado_a), with the fallback of an assigned corrective order.
+      const response = await http.get('/api/v1/incidents', {
+        pageSize: String(INCIDENT_PAGE_SIZE),
+        page: String(page),
+        assignedToMe: 'true',
+      });
+      const body = response.body as { items?: any[]; totalCount?: number };
+      const pageItems = Array.isArray(body?.items) ? body.items : [];
+      items.push(...pageItems);
+
+      if (pageItems.length < INCIDENT_PAGE_SIZE) {
+        complete = true;
+        break;
+      }
+      if (typeof body?.totalCount === 'number' && items.length >= body.totalCount) {
+        complete = true;
+        break;
+      }
+    }
+
     const repo = new IncidentRepository(db);
+
+    // Drop synced incidents the server no longer returns for this user (reassigned to
+    // someone else, or cached by an older build that pulled the whole tenant). Pending
+    // and draft rows are kept: they are the technician's own unsynced work.
+    // Only prune after a complete read; a truncated pull would delete valid rows.
+    if (complete) {
+      const serverIds = new Set(items.map((raw) => String(raw.id).toLowerCase()));
+      const staleIds = (await db.incidents.where('tenantId').equals(tenantId).toArray())
+        .filter((i) => i.syncState === 'synced' && !serverIds.has(i.id.toLowerCase()))
+        .map((i) => i.id);
+      if (staleIds.length > 0) {
+        await db.incidents.bulkDelete(staleIds);
+      }
+    }
 
     const records: IncidentRecord[] = [];
     for (const raw of items) {
@@ -614,6 +673,7 @@ export async function pullTasks(
           title: raw.maintenanceOrderTitle ?? 'Orden de Mantenimiento',
           state: (raw.maintenanceOrderState ?? 'in_progress').toLowerCase(),
           workflowTemplateId: raw.workflowTemplateId,
+          assignedEmployeeId: assigneeId,
           assetId: raw.assetId,
           incidentId: raw.incidentId,
           syncState: 'synced',

@@ -51,6 +51,7 @@ interface SchemaField {
   enumOptions?: string;
   catalogCode?: string;
   propagateToWork?: boolean;
+  editableInField?: boolean;
   tab?: string; // Tab assignment for visual grouping
   section?: string; // Section within tab for sub-grouping
   isSectionDivider?: boolean; // Marks this entry as a section divider (not a real field)
@@ -75,6 +76,7 @@ interface SchemaSection {
 interface SchemaBuilderProps {
   value: string;
   onChange: (value: string) => void;
+  allowEditableInField?: boolean;
 }
 
 const FIELD_TYPE_OPTIONS = [
@@ -201,6 +203,7 @@ const SortableField = memo(function SortableField({
   activeTabId,
   sectionsForActiveTab,
   allFields,
+  allowEditableInField,
 }: {
   field: SchemaField;
   onUpdate: (id: string, updates: Partial<SchemaField>) => void;
@@ -212,6 +215,7 @@ const SortableField = memo(function SortableField({
   activeTabId: string;
   sectionsForActiveTab: SchemaSection[];
   allFields: SchemaField[];
+  allowEditableInField?: boolean;
 }) {
   const { t } = useTranslation('assets');
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: field.id });
@@ -272,91 +276,110 @@ const SortableField = memo(function SortableField({
           : ''
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <div
           {...attributes}
           {...listeners}
           tabIndex={-1}
-          className="cursor-grab text-muted-foreground hover:text-foreground"
+          className="cursor-grab text-muted-foreground hover:text-foreground pt-2"
         >
           <GripVertical className="h-5 w-5" />
         </div>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          <div className="md:col-span-3">
-            <Input
-              value={field.keyName}
-              onChange={(e) => onUpdate(field.id, { keyName: e.target.value })}
-              placeholder={t('schema.keyPlaceholder')}
-              className={`font-mono text-sm ${validation.emptyKey || validation.duplicateKey ? 'border-destructive' : ''}`}
-            />
-          </div>
-          <div className="md:col-span-4">
-            <Input
-              value={field.title}
-              onChange={(e) => onUpdate(field.id, { title: e.target.value })}
-              placeholder={t('schema.labelPlaceholder')}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Select value={field.type} onValueChange={(val) => onUpdate(field.id, { type: val })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FIELD_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{t(opt.labelKey)}</span>
-                      <span className="text-[10px] text-muted-foreground">{t(opt.helpKey)}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="md:col-span-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={field.propagateToWork}
-                onCheckedChange={(c) => onUpdate(field.id, { propagateToWork: !!c })}
-                id={`prop-${field.id}`}
+        <div className="flex-1 space-y-2.5">
+          {/* Fila 1: Clave, Etiqueta, Tipo y Acciones */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex-1 min-w-[130px]">
+              <Input
+                value={field.keyName}
+                onChange={(e) => onUpdate(field.id, { keyName: e.target.value })}
+                placeholder={t('schema.keyPlaceholder')}
+                className={`font-mono text-xs h-9 ${validation.emptyKey || validation.duplicateKey ? 'border-destructive' : ''}`}
               />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label htmlFor={`prop-${field.id}`} className="text-[10px] font-medium cursor-pointer leading-tight max-w-[60px] text-center">
-                      {t('schema.propagateToOrders')}
-                    </Label>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t('schema.propagateTooltip')}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={field.required}
-                onCheckedChange={(c) => onUpdate(field.id, { required: !!c })}
-                id={`req-${field.id}`}
+            <div className="flex-1 min-w-[150px]">
+              <Input
+                value={field.title}
+                onChange={(e) => onUpdate(field.id, { title: e.target.value })}
+                placeholder={t('schema.labelPlaceholder')}
+                className="text-xs h-9"
               />
-              <Label htmlFor={`req-${field.id}`} className="text-sm font-medium cursor-pointer">
-                {t('schema.requiredAbbrev')}
-              </Label>
             </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={field.visibleIf?.fieldId ? "default" : "ghost"} 
-                  size="icon" 
-                  className={`h-8 w-8 ${!field.visibleIf?.fieldId ? 'text-muted-foreground' : ''}`}
-                  title={t('schema.visibilityLogic')}
+            <div className="w-full sm:w-[170px] shrink-0">
+              <Select value={field.type} onValueChange={(val) => onUpdate(field.id, { type: val })}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FIELD_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{t(opt.labelKey)}</span>
+                        <span className="text-[10px] text-muted-foreground">{t(opt.helpKey)}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Pestaña */}
+            <div className="w-full sm:w-[130px] shrink-0">
+              {(() => {
+                const fallbackTab = availableTabs[0]?.id || DEFAULT_TAB_LABEL;
+                const currentTab = (field.tab || '').trim() || fallbackTab;
+                const selectValue = availableTabs.some((t) => t.id === currentTab) ? currentTab : fallbackTab;
+                return (
+                  <Select value={selectValue} onValueChange={(val) => onUpdate(field.id, { tab: val })}>
+                    <SelectTrigger className="h-9 text-xs" title={t('schema.tabLabel')}>
+                      <LayoutPanelTop className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTabs.map((tab) => (
+                        <SelectItem key={tab.id} value={tab.id}>
+                          {tab.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })()}
+            </div>
+
+            {/* Sección (si existen secciones para la pestaña activa) */}
+            {sectionsForActiveTab.length > 0 && ((field.tab || availableTabs[0]?.id || DEFAULT_TAB_LABEL) === activeTabId) && (
+              <div className="w-full sm:w-[140px] shrink-0">
+                <Select
+                  value={field.section || NO_SECTION_VALUE}
+                  onValueChange={(val) => onUpdate(field.id, val === NO_SECTION_VALUE ? { section: undefined } : { section: val })}
                 >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
+                  <SelectTrigger className="h-9 text-xs" title={t('schema.sectionLabel')}>
+                    <PanelLeft className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                    <SelectValue placeholder={t('schema.noSection')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SECTION_VALUE}>{t('schema.noSection')}</SelectItem>
+                    {sectionsForActiveTab.map((section) => (
+                      <SelectItem key={section.id} value={section.id}>
+                        {section.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex items-center gap-1 shrink-0 justify-end">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant={field.visibleIf?.fieldId ? "default" : "ghost"} 
+                    size="icon" 
+                    className={`h-8 w-8 ${!field.visibleIf?.fieldId ? 'text-muted-foreground' : ''}`}
+                    title={t('schema.visibilityLogic')}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
               <PopoverContent className="w-80" side="left">
                 <div className="space-y-4">
                   <div>
@@ -845,15 +868,71 @@ const SortableField = memo(function SortableField({
                 </PopoverContent>
               </Popover>
             )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                onClick={() => onDelete(field.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-              onClick={() => onDelete(field.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          {/* Fila 2: Configuración de propagación, permisos de campo y obligatoriedad */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded bg-muted/40 px-3 py-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={field.propagateToWork}
+                onCheckedChange={(c) => onUpdate(field.id, { propagateToWork: !!c })}
+                id={`prop-${field.id}`}
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label htmlFor={`prop-${field.id}`} className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
+                      {t('schema.propagateToOrders')}
+                    </Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t('schema.propagateTooltip')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            {allowEditableInField && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={field.editableInField}
+                  onCheckedChange={(c) => onUpdate(field.id, { editableInField: !!c })}
+                  id={`field-edit-${field.id}`}
+                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor={`field-edit-${field.id}`} className="cursor-pointer font-medium text-primary">
+                        {t('schema.editableInField')}
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {t('schema.editableInFieldTooltip')}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={field.required}
+                onCheckedChange={(c) => onUpdate(field.id, { required: !!c })}
+                id={`req-${field.id}`}
+              />
+              <Label htmlFor={`req-${field.id}`} className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
+                {t('schema.requiredAbbrev')} (Obligatorio)
+              </Label>
+            </div>
           </div>
         </div>
       </div>
@@ -902,61 +981,7 @@ const SortableField = memo(function SortableField({
         </div>
       )}
 
-      {/* Tab Assignment */}
-      <div className="pl-8 pr-12 pt-2">
-        <div className="flex items-center gap-3">
-          <LayoutPanelTop className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-20">{t('schema.tabLabel')}</span>
-          {(() => {
-            const fallbackTab = availableTabs[0]?.id || DEFAULT_TAB_LABEL;
-            const currentTab = (field.tab || '').trim() || fallbackTab;
-            const selectValue = availableTabs.some((t) => t.id === currentTab) ? currentTab : fallbackTab;
-            return (
-              <Select value={selectValue} onValueChange={(val) => onUpdate(field.id, { tab: val })}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTabs.map((tab) => (
-                    <SelectItem key={tab.id} value={tab.id}>
-                      {tab.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Section Assignment (only for active tab) */}
-      {sectionsForActiveTab.length > 0 &&
-        ((field.tab || availableTabs[0]?.id || DEFAULT_TAB_LABEL) === activeTabId) && (
-        <div className="pl-8 pr-12 pt-2">
-          <div className="flex items-center gap-3">
-            <PanelLeft className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-20">{t('schema.sectionLabel')}</span>
-            <Select
-              value={field.section || NO_SECTION_VALUE}
-              onValueChange={(val) => onUpdate(field.id, val === NO_SECTION_VALUE ? { section: undefined } : { section: val })}
-            >
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder={t('schema.noSection')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_SECTION_VALUE}>{t('schema.noSection')}</SelectItem>
-                {sectionsForActiveTab.map((section) => (
-                  <SelectItem key={section.id} value={section.id}>
-                    {section.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      )}
-
-      {showPreview && (
+{showPreview && (
         <div className="pl-8 pr-12">
           <SchemaFieldPreview
             field={{
@@ -983,6 +1008,7 @@ const SortableField = memo(function SortableField({
     prev.activeTabId === next.activeTabId &&
     prev.sectionsForActiveTab === next.sectionsForActiveTab &&
     prev.allFields === next.allFields &&
+    prev.allowEditableInField === next.allowEditableInField &&
     prev.validation.emptyKey === next.validation.emptyKey &&
     prev.validation.duplicateKey === next.validation.duplicateKey &&
     prev.validation.missingConfig === next.validation.missingConfig &&
@@ -990,7 +1016,7 @@ const SortableField = memo(function SortableField({
   );
 });
 
-export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
+export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange, allowEditableInField }: SchemaBuilderProps) {
   const { t } = useTranslation('assets');
   const [fields, setFields] = useState<SchemaField[]>([]);
   const [tabs, setTabs] = useState<SchemaTab[]>(DEFAULT_TABS);
@@ -1159,6 +1185,7 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
           enumOptions,
           catalogCode,
           propagateToWork: prop.propagateToWork || false,
+          editableInField: prop.editableInField || false,
           tab,
           section,
           visibleIf: prop._visibleIf,
@@ -1251,6 +1278,10 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
 
         if (f.propagateToWork) {
           propConfig.propagateToWork = true;
+        }
+
+        if (f.editableInField) {
+          propConfig.editableInField = true;
         }
 
         if (f.type === 'enum') {
@@ -1913,6 +1944,7 @@ export const SchemaBuilder = memo(function SchemaBuilder({ value, onChange }: Sc
                   availableTabs={tabs}
                   activeTabId={activeTabId}
                   sectionsForActiveTab={sectionsForActiveTab}
+                  allowEditableInField={allowEditableInField}
                 />
               ))}
               {visibleFields.length === 0 && (
