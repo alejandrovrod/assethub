@@ -5,7 +5,7 @@ import { createSyncEngine } from '@asset-hub/core-offline';
 import { createDrainer } from '@asset-hub/core-offline';
 import { createLeader } from '@asset-hub/core-offline';
 import { HttpClient } from '@asset-hub/core-offline';
-import { pullAssets, needsAssetCatalogRefresh, pullDelta, pullOrders, pullIncidents, pullTasks, pullMetadata } from '@asset-hub/core-offline';
+import { pullAssets, needsAssetCatalogRefresh, pullDelta, pullOrders, pullIncidents, pullTasks, pullMetadata, reconcileIncidentCreates } from '@asset-hub/core-offline';
 import { loadSession } from '../../auth/session-store';
 import { saveSession } from '../../auth/session-store';
 import { uploadMedia } from '../../media/uploader';
@@ -102,6 +102,9 @@ export function useSync() {
       } catch { /* continue */ }
       // Incidents
       try {
+        // Repair rows created before the client id reached the server, then pull. Order
+        // matters: the repair must run before the prune decides what is stale.
+        await reconcileIncidentCreates(db, tenantId);
         const incidentResult = await pullIncidents(db, http, tenantId);
         pulled += incidentResult.fetched;
       } catch { /* continue */ }
@@ -279,6 +282,9 @@ export function useSync() {
                   'Idempotency-Key': uuidv7(),
                 },
                 body: JSON.stringify({
+                  // Same id as the local row: otherwise the retry creates a second incident
+                  // on the server and the local copy is pruned on the next pull.
+                  id: inc.id,
                   title: inc.title,
                   description: inc.description,
                   assetId: inc.assetId,
@@ -286,7 +292,9 @@ export function useSync() {
                 }),
               });
               if (res.ok || res.status === 409) {
-                await db.incidents.update(inc.id, { syncState: 'synced' });
+                // Recovered from the outbox: the row lives only on this device, so the
+                // pull must not treat it as stale.
+                await db.incidents.update(inc.id, { syncState: 'synced', origin: 'local' });
                 reconciledAny = true;
               }
             } catch {
@@ -325,19 +333,47 @@ export function useSync() {
                   API_BASE,
                   session.accessToken
                 );
-                if (item.ownerType === 'task_evidence' && uploadRes.remoteUrl) {
-                  await fetch(`${API_BASE}/api/v1/work-tasks/${item.ownerId}/evidences`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${session.accessToken}`,
-                      ...(session.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
-                    },
-                    body: JSON.stringify({
-                      type: 'photo',
-                      blobUri: uploadRes.remoteUrl,
-                    }),
-                  });
+
+                if (uploadRes.remoteUrl) {
+                  // Si el medio pertenece a una incidencia, actualizar su propertiesJson y la mutación pendiente en el outbox
+                  if (item.ownerType === 'incident') {
+                    const mediaToken = `media://${item.id}`;
+                    // 1. Reemplazar en db.incidents
+                    const incs = await db.incidents.toArray();
+                    for (const inc of incs) {
+                      if (inc.propertiesJson && (inc.propertiesJson.includes(mediaToken) || (item.sha256 && inc.propertiesJson.includes(item.id)))) {
+                        const updatedProps = inc.propertiesJson
+                          .replaceAll(mediaToken, uploadRes.remoteUrl)
+                          .replaceAll(item.id, uploadRes.remoteUrl);
+                        await db.incidents.update(inc.id, { propertiesJson: updatedProps });
+                      }
+                    }
+                    // 2. Reemplazar en db.outbox_mutations para que la mutación viaje con la ruta relativa del servidor
+                    const mutations = await db.outbox_mutations.toArray();
+                    for (const m of mutations) {
+                      if (m.bodyJson && (m.bodyJson.includes(mediaToken) || (item.id && m.bodyJson.includes(item.id)))) {
+                        const updatedBody = m.bodyJson
+                          .replaceAll(mediaToken, uploadRes.remoteUrl)
+                          .replaceAll(item.id, uploadRes.remoteUrl);
+                        await db.outbox_mutations.update(m.id, { bodyJson: updatedBody });
+                      }
+                    }
+                  }
+
+                  if (item.ownerType === 'task_evidence') {
+                    await fetch(`${API_BASE}/api/v1/work-tasks/${item.ownerId}/evidences`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.accessToken}`,
+                        ...(session.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
+                      },
+                      body: JSON.stringify({
+                        type: 'photo',
+                        blobUri: uploadRes.remoteUrl,
+                      }),
+                    });
+                  }
                 }
               } catch (mediaErr) {
                 console.warn('Sync drain media error:', mediaErr);

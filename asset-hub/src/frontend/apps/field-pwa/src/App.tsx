@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@asset-hub/core-offline';
 import { useState, useEffect } from 'react';
+import { User } from 'lucide-react';
 import { useSession } from './features/auth/hooks/useSession';
 import { LoginPage } from './routes/login';
 import { LockScreen } from './shared/components/LockScreen';
@@ -39,6 +40,11 @@ export function App() {
       dead: deadMut + failedMedia,
     };
   }) ?? { pending: 0, dead: 0 };
+
+  const employee = useLiveQuery(
+    () => (session?.employeeId ? db.directory_entries.get(session.employeeId) : undefined),
+    [session?.employeeId]
+  );
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -142,29 +148,66 @@ export function App() {
     );
   }
 
+  const displayName =
+    employee?.name ||
+    session?.employeeName ||
+    session?.userName ||
+    session?.userEmail ||
+    'Usuario';
+
+  const roleBadge = session?.roleLabel || (session?.roles && session.roles[0]) || '';
+
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0].toUpperCase())
+    .join('');
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <OfflineBanner isOnline={isOnline} />
       <header className="border-b px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">AssetHub Campo</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{session.tenantName}</span>
-            <HighContrastToggle />
-            <button
-              onClick={() => {
-                logout();
-              }}
-              className="rounded-md border px-2 py-1 text-xs"
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* User Avatar & Info */}
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary border border-primary/20"
+              title={`${displayName}${roleBadge ? ` (${roleBadge})` : ''}`}
             >
-              Salir
-            </button>
+              {initials || <User className="h-4 w-4" />}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-xs font-bold text-foreground truncate">{displayName}</span>
+                {roleBadge && (
+                  <span className="rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {roleBadge}
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {session.tenantName ?? 'AssetHub Campo'}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <HighContrastToggle />
             <SyncChip
               isSyncing={false}
               pendingCount={navCounts.pending}
               deadCount={navCounts.dead}
               isOnline={isOnline}
             />
+            <button
+              onClick={() => {
+                logout();
+              }}
+              className="rounded-lg border px-2 py-1 text-xs font-medium hover:bg-muted active:scale-95 transition-transform"
+            >
+              Salir
+            </button>
           </div>
         </div>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
@@ -254,6 +297,14 @@ export function App() {
             employeeId={session.employeeId}
             userId={session.userId}
             teamIds={session.teamIds}
+            onNavigateOrder={(orderId) => {
+              setSelectedOrderId(orderId);
+              setView('orders');
+            }}
+            onNavigateTask={(taskId) => {
+              setSelectedTaskId(taskId);
+              setView('tasks');
+            }}
           />
         ) : view === 'assets' ? (
           <AssetsPage

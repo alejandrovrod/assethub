@@ -130,14 +130,17 @@ public class GetWorkTaskChangesQueryHandler : IRequestHandler<GetWorkTaskChanges
             .ToListAsync(cancellationToken);
 
         // El prefilter de SQL es deliberadamente ancho, así que la decisión final se toma en
-        // memoria. El cursor avanza sobre TODO lo escaneado, no sobre lo entregado: si
-        // avanzara sólo con lo entregado, una página entera de filas ajenas dejaría al
-        // cliente atascado en el mismo cursor.
+        // memoria con las mismas tres fuentes: columna del empleado, equipo del empleado y
+        // propiedades del template. El cursor avanza sobre TODO lo escaneado, no sobre lo
+        // entregado: si avanzara sólo con lo entregado, una página entera de filas ajenas
+        // dejaría al cliente atascado en el mismo cursor.
         var scanned = rows.Take(limit).ToList();
         var hasMore = rows.Count > limit;
 
         var items = scanned
             .Where(t => employeeId is not { } emp
+                || t.AssignedEmployeeId == emp
+                || (t.AssignedTeamId is { } teamId && teamIds.Contains(teamId))
                 || WorkflowProperties.MatchesExecutor(t.PropertiesJson, emp))
             .Select(t => new ChangeItemDto
             {

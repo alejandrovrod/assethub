@@ -238,6 +238,12 @@ export interface IncidentRecord {
   geoStatus: GeoStamp['status'];
   photoIds: string[]; // references to media_queue.id
   reportedByUserId: string;
+  /**
+   * `local` marks a row this device created. Field devices only download the incidents
+   * they execute, so a row the technician reported is never in the server feed: the pull
+   * must not prune it or it disappears from the asset inspector right after syncing.
+   */
+  origin?: 'local';
   createdAtLocalIso: string;
   createdAtLocalMs: number;
   createdAtServerIso?: string;

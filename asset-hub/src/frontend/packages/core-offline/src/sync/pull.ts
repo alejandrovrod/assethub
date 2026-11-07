@@ -475,6 +475,102 @@ async function runWithConcurrency<T>(
 
 const INCIDENT_PAGE_SIZE = 100;
 const INCIDENT_MAX_PAGES = 50;
+const INCIDENT_ID_REPAIR_KEY = 'incidents.idRepair:v1';
+
+/**
+ * Adopt the server id of incidents created on this device before the client id was sent.
+ *
+ * `ReportIncidentCommand` used to generate its own Guid: the local row kept the uuidv7 and
+ * the server row was unreachable, so the next pull pruned the local one and the incident
+ * vanished from the device. The drainer stored the server response (`{ id }`), which is the
+ * only surviving link between both ids. Runs once per device.
+ */
+export async function reconcileIncidentCreates(
+  db: FieldDatabase,
+  tenantId: string,
+): Promise<number> {
+  const meta = new SyncMetaRepository(db);
+  if (await meta.get(INCIDENT_ID_REPAIR_KEY)) return 0;
+
+  const mutations = await db.outbox_mutations
+    .filter(
+      (m) =>
+        m.tenantId === tenantId &&
+        m.operation === 'incident.create' &&
+        m.status === 'done' &&
+        !!m.responseJson,
+    )
+    .toArray();
+
+  let repaired = 0;
+  for (const mutation of mutations) {
+    let serverId: string | undefined;
+    try {
+      const response = JSON.parse(mutation.responseJson ?? '{}') as Record<string, unknown>;
+      serverId = typeof response['id'] === 'string' ? (response['id'] as string) : undefined;
+    } catch {
+      continue;
+    }
+    if (!serverId || serverId.toLowerCase() === mutation.aggregateId.toLowerCase()) continue;
+
+    const local = await db.incidents.get(mutation.aggregateId);
+    if (local) {
+      const serverRow = await db.incidents.get(serverId);
+      if (serverRow) {
+        // The pull already materialised the server copy: keep its data, drop the duplicate.
+        await db.incidents.update(serverId, { origin: 'local' });
+        await db.incidents.delete(mutation.aggregateId);
+      } else {
+        await db.incidents.put({ ...local, id: serverId, origin: 'local', cachedAtMs: Date.now() });
+        await db.incidents.delete(mutation.aggregateId);
+      }
+    } else {
+      // The pull already pruned it: rebuild what the outbox still remembers.
+      let payload: Record<string, unknown> = {};
+      try {
+        payload = JSON.parse(mutation.bodyJson ?? '{}') as Record<string, unknown>;
+      } catch {
+        // Malformed payload: keep the empty object.
+      }
+      await db.incidents.put({
+        id: serverId,
+        tenantId,
+        title: typeof payload['title'] === 'string' ? payload['title'] : 'Incidencia',
+        description: typeof payload['description'] === 'string' ? payload['description'] : '',
+        assetId: typeof payload['assetId'] === 'string' ? payload['assetId'] : undefined,
+        state: 'reported',
+        severity: 'medium',
+        affectsOperation: false,
+        geoStatus: 'unavailable',
+        photoIds: Array.isArray(payload['photoIds']) ? (payload['photoIds'] as string[]) : [],
+        reportedByUserId: '',
+        origin: 'local',
+        createdAtLocalIso: new Date(mutation.createdAtMs).toISOString(),
+        createdAtLocalMs: mutation.createdAtMs,
+        syncState: 'synced',
+        cachedAtMs: Date.now(),
+      } as IncidentRecord);
+    }
+
+    // Any mutation still queued for the old id must follow the row to the server id.
+    const queued = await db.outbox_mutations
+      .where('aggregateId')
+      .equals(mutation.aggregateId)
+      .filter((m) => m.status !== 'done' && m.status !== 'discarded')
+      .toArray();
+    for (const pending of queued) {
+      await db.outbox_mutations.update(pending.id, {
+        aggregateId: serverId,
+        path: pending.path.replace(new RegExp(mutation.aggregateId, 'ig'), serverId),
+      });
+    }
+
+    repaired++;
+  }
+
+  await meta.set(INCIDENT_ID_REPAIR_KEY, 'done');
+  return repaired;
+}
 
 export async function pullIncidents(
   db: FieldDatabase,
@@ -517,7 +613,9 @@ export async function pullIncidents(
     if (complete) {
       const serverIds = new Set(items.map((raw) => String(raw.id).toLowerCase()));
       const staleIds = (await db.incidents.where('tenantId').equals(tenantId).toArray())
-        .filter((i) => i.syncState === 'synced' && !serverIds.has(i.id.toLowerCase()))
+        // Rows created on this device are never in the "assigned to me" feed: they are
+        // the technician's own reports and must stay visible in the asset inspector.
+        .filter((i) => i.syncState === 'synced' && i.origin !== 'local' && !serverIds.has(i.id.toLowerCase()))
         .map((i) => i.id);
       if (staleIds.length > 0) {
         await db.incidents.bulkDelete(staleIds);
@@ -532,6 +630,7 @@ export async function pullIncidents(
       records.push({
         id: raw.id,
         tenantId,
+        ...(existing?.origin === 'local' ? { origin: 'local' as const } : {}),
         title: raw.title ?? 'Incidencia',
         description: raw.description ?? '',
         state: (raw.state ?? 'reported').toLowerCase() as any,

@@ -38,15 +38,7 @@ public class LocalDiskFileStorageService : IFileStorageService
             await content.CopyToAsync(fileStream);
         }
 
-        // Generate the URL to access the file
-        var request = _httpContextAccessor.HttpContext?.Request;
-        if (request != null)
-        {
-            var baseUrl = $"{request.Scheme}://{request.Host}{request.PathBase}";
-            return $"{baseUrl}/uploads/{uniqueFileName}";
-        }
-
-        // Fallback relative url if no http context
+        // Return relative URL so frontend clients can resolve it consistently across domains/ports
         return $"/uploads/{uniqueFileName}";
     }
 }

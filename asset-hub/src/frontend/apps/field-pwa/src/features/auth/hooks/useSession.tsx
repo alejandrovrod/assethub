@@ -29,15 +29,23 @@ const SessionContext = createContext<UseSessionReturn | null>(null);
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5168';
 
+interface MeProfile {
+  employeeId?: string;
+  employeeName?: string;
+  userName?: string;
+  userEmail?: string;
+  roleLabel?: string;
+}
+
 /**
- * Resolve the employee linked to this user.
+ * Resolve the user profile and employee linked to this user.
  *
  * The field assignment filter matches on `assignedEmployeeId`, so without this id the
  * technician sees an empty "Mi Jornada" even though the tasks are already downloaded.
  * The stored access token is usually expired by the time the app boots, so a 401 must
  * refresh once and retry instead of silently leaving `employeeId` undefined.
  */
-async function hydrateEmployeeId(session: SessionData): Promise<string | undefined> {
+async function hydrateUserProfile(session: SessionData): Promise<MeProfile | undefined> {
   const callMe = (token: string) =>
     fetch(`${API_BASE}/api/v1/auth/me`, {
       headers: {
@@ -68,7 +76,15 @@ async function hydrateEmployeeId(session: SessionData): Promise<string | undefin
 
     if (!res.ok) return undefined;
     const me = await res.json();
-    return me?.linkedEmployee?.employeeId ?? undefined;
+    const emp = me?.linkedEmployee;
+    const fullName = emp ? `${emp.firstName || ''} ${emp.lastName || ''}`.trim() : undefined;
+    return {
+      employeeId: emp?.employeeId ?? undefined,
+      employeeName: fullName || undefined,
+      userName: me?.fullName || me?.email || undefined,
+      userEmail: me?.email || undefined,
+      roleLabel: emp?.roleLabel || (me?.roles && me.roles[0]) || undefined,
+    };
   } catch {
     return undefined;
   }
@@ -93,10 +109,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (stored && !cancelled) {
           // The assignment filter matches on employeeId: without it Mi Jornada is empty.
           // Re-hydrate when it is missing or when the stored token already expired.
-          if (navigator.onLine && (!stored.employeeId || !stored.expiresAt || stored.expiresAt <= Date.now())) {
-            const employeeId = await hydrateEmployeeId(stored);
-            if (employeeId && employeeId !== stored.employeeId) {
-              stored.employeeId = employeeId;
+          if (navigator.onLine && (!stored.employeeId || !stored.userName || !stored.expiresAt || stored.expiresAt <= Date.now())) {
+            const profile = await hydrateUserProfile(stored);
+            if (profile) {
+              if (profile.employeeId) stored.employeeId = profile.employeeId;
+              if (profile.employeeName) stored.employeeName = profile.employeeName;
+              if (profile.userName) stored.userName = profile.userName;
+              if (profile.userEmail) stored.userEmail = profile.userEmail;
+              if (profile.roleLabel) stored.roleLabel = profile.roleLabel;
               await saveSession(stored);
             }
           }
@@ -222,6 +242,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         }
 
         let employeeId: string | undefined;
+        let employeeName: string | undefined;
+        let userName: string | undefined;
+        let userEmail: string | undefined;
+        let roleLabel: string | undefined;
+
         try {
           const meRes = await fetch(`${API_BASE}/api/v1/auth/me`, {
             headers: {
@@ -231,8 +256,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           });
           if (meRes.ok) {
             const meData = await meRes.json();
-            if (meData.linkedEmployee?.employeeId) {
+            userName = meData.fullName || meData.email;
+            userEmail = meData.email;
+            if (meData.linkedEmployee) {
               employeeId = meData.linkedEmployee.employeeId;
+              const f = meData.linkedEmployee.firstName || '';
+              const l = meData.linkedEmployee.lastName || '';
+              employeeName = `${f} ${l}`.trim() || undefined;
+              roleLabel = meData.linkedEmployee.roleLabel;
+            }
+            if (!roleLabel && data.roles && data.roles.length > 0) {
+              roleLabel = data.roles[0];
             }
           }
         } catch {
@@ -247,7 +281,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           roles: data.roles,
           permissions: data.permissions,
           userId,
+          userName,
+          userEmail,
           employeeId,
+          employeeName,
+          roleLabel,
           expiresAt: Date.now() + (data.expiresIn ?? 3600) * 1000,
         };
 

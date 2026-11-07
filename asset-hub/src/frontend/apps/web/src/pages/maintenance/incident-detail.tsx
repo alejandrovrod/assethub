@@ -410,11 +410,17 @@ export default function IncidentDetailPage() {
                                   <p className="font-semibold mb-1 border-b pb-1">{t('detail.enteredData')}</p>
                                   <div className="grid grid-cols-1 gap-2 mt-2">
                                     {Object.keys(parsedProps).map(key => {
-                                      const { title, value } = formatDynamicField(key, parsedProps[key])
+                                      const { title, value, isDataUrl, valuesArray } = formatDynamicField(key, parsedProps[key])
                                       return (
-                                        <div key={key} className="flex justify-between gap-4">
+                                        <div key={key} className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
                                           <span className="text-muted-foreground truncate">{title}:</span>
-                                          <span className="font-medium text-right break-all">{String(value)}</span>
+                                          {isDataUrl && valuesArray.length > 0 ? (
+                                            <div className="mt-1">
+                                              <ImageLightbox urls={valuesArray as string[]} />
+                                            </div>
+                                          ) : (
+                                            <span className="font-medium text-left sm:text-right break-all">{String(value)}</span>
+                                          )}
                                         </div>
                                       )
                                     })}

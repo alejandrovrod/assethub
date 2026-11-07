@@ -65,3 +65,39 @@ export async function updateOrderProperties(
   return mutationId;
 }
 
+export async function updateIncidentProperties(
+  db: FieldDatabase,
+  incidentId: string,
+  propertiesJson: string,
+): Promise<string> {
+  let mutationId = '';
+  await db.transaction('rw', [db.incidents, db.outbox_mutations], async (tx) => {
+    const incident = await db.incidents.get(incidentId);
+    if (!incident) throw new Error(`Incident ${incidentId} not found`);
+
+    await db.incidents.update(incidentId, {
+      propertiesJson,
+      syncState: 'pending',
+      cachedAtMs: Date.now(),
+    });
+
+    mutationId = await enqueueOrCoalesce(tx, {
+      aggregateType: 'incident',
+      aggregateId: incidentId,
+      tenantId: incident.tenantId,
+      operation: 'incident.update',
+      path: `/api/v1/incidents/${incidentId}/state`,
+      method: 'PATCH',
+      bodyJson: JSON.stringify({
+        targetState: incident.state ?? 'reported',
+        propertiesJson,
+      }),
+      headersJson: JSON.stringify({ 'If-Match': incident.version ?? '' }),
+      status: 'pending',
+      priority: 100,
+    });
+  });
+  return mutationId;
+}
+
+

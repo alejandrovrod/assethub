@@ -13,7 +13,11 @@ export interface SessionData {
   roles: string[];
   permissions: string[];
   userId: string;
+  userName?: string;
+  userEmail?: string;
   employeeId?: string;
+  employeeName?: string;
+  roleLabel?: string;
   teamIds?: string[];
   expiresAt: number;
 }

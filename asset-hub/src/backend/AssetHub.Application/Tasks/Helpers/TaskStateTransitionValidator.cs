@@ -10,7 +10,6 @@ public static class TaskStateTransitionValidator
     private static readonly HashSet<(string From, string To)> AllowedTransitions = new()
     {
         (WorkTaskStates.Todo, WorkTaskStates.InProgress),
-        (WorkTaskStates.Todo, WorkTaskStates.Done),
         (WorkTaskStates.Todo, WorkTaskStates.Cancelled),
         (WorkTaskStates.Rework, WorkTaskStates.InProgress),
         (WorkTaskStates.Rework, WorkTaskStates.Done),

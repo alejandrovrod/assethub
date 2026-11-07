@@ -226,4 +226,73 @@ public class ReportIncidentTests
             TargetAssetState = "Activo"
         }, CancellationToken.None));
     }
+
+    [Fact]
+    public async Task ReportIncident_UsesClientGeneratedId()
+    {
+        var tenantId = Guid.NewGuid();
+        await using var db = CreateDbContext(tenantId);
+
+        var template = CreateTemplate(tenantId);
+        var asset = CreateAsset(tenantId, template);
+        var type = CreateCatalogItem(tenantId, "mechanical");
+
+        db.AssetTemplates.Add(template);
+        db.Assets.Add(asset);
+        db.CatalogItems.Add(type);
+        await db.SaveChangesAsync();
+
+        var mediator = new LocalMediator(db);
+        var handler = new ReportIncidentCommandHandler(db, new FakeTenantResolver(tenantId), mediator, NullLogger<ReportIncidentCommandHandler>.Instance);
+
+        // The field device creates the row offline with a UUIDv7 and expects the server to
+        // keep that identity; otherwise the local row is pruned on the next pull.
+        var clientId = Guid.NewGuid();
+        var incidentId = await handler.Handle(new ReportIncidentCommand
+        {
+            Id = clientId,
+            Title = "Test incident",
+            AssetId = asset.Id,
+            TypeId = type.Id
+        }, CancellationToken.None);
+
+        Assert.Equal(clientId, incidentId);
+        Assert.NotNull(await db.Incidents.FindAsync(clientId));
+    }
+
+    [Fact]
+    public async Task ReportIncident_RetriedWithSameId_DoesNotCreateADuplicate()
+    {
+        var tenantId = Guid.NewGuid();
+        await using var db = CreateDbContext(tenantId);
+
+        var template = CreateTemplate(tenantId);
+        var asset = CreateAsset(tenantId, template);
+        var type = CreateCatalogItem(tenantId, "mechanical");
+
+        db.AssetTemplates.Add(template);
+        db.Assets.Add(asset);
+        db.CatalogItems.Add(type);
+        await db.SaveChangesAsync();
+
+        var mediator = new LocalMediator(db);
+        var handler = new ReportIncidentCommandHandler(db, new FakeTenantResolver(tenantId), mediator, NullLogger<ReportIncidentCommandHandler>.Instance);
+
+        var clientId = Guid.NewGuid();
+        var command = new ReportIncidentCommand
+        {
+            Id = clientId,
+            Title = "Test incident",
+            AssetId = asset.Id,
+            TypeId = type.Id
+        };
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        // A drained mutation can be replayed after a lost response.
+        var second = await handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(first, second);
+        Assert.Equal(1, await db.Incidents.CountAsync(i => i.Id == clientId));
+        Assert.Equal(1, await db.IncidentLifecycleEvents.CountAsync(e => e.IncidentId == clientId));
+    }
 }

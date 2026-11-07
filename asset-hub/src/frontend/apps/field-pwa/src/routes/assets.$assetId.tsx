@@ -20,6 +20,8 @@ import {
   type TaskRecord,
 } from '@asset-hub/core-offline';
 import { PropagatedPropertiesDisplay } from '../shared/components/PropagatedPropertiesDisplay';
+import { DynamicTemplateForm } from '../shared/components/DynamicTemplateForm';
+import { SearchableSelect } from '../shared/components/SearchableSelect';
 import { reportIncident } from '../commands/report-incident';
 import {
   ASSET_CRITICALITY_CONFIG,
@@ -621,8 +623,39 @@ function ReportIncidentSheet({
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [workflowTemplateId, setWorkflowTemplateId] = useState<string>('');
+  const [formProperties, setFormProperties] = useState<Record<string, any>>({});
+  const [extraPhotoIds, setExtraPhotoIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Obtener plantillas de incidencia guardadas en IndexedDB
+  const incidentTemplates = useLiveQuery(
+    async () => {
+      const all = await db.workflow_templates.toArray();
+      // Filtrar plantillas que correspondan a incidencias
+      return all.filter((t) => !t.entityType || t.entityType === 'incident' || t.entityType === 'incidents');
+    },
+    [],
+  ) ?? [];
+
+  // Seleccionar la primera plantilla automáticamente si hay disponibles
+  useEffect(() => {
+    if (incidentTemplates.length > 0 && !workflowTemplateId) {
+      setWorkflowTemplateId(incidentTemplates[0].id);
+    }
+  }, [incidentTemplates, workflowTemplateId]);
+
+  const selectedTemplate = useMemo(() => {
+    return incidentTemplates.find((t) => t.id === workflowTemplateId) || null;
+  }, [incidentTemplates, workflowTemplateId]);
+
+  const handleFormFieldChange = (key: string, value: any) => {
+    setFormProperties((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -638,7 +671,9 @@ function ReportIncidentSheet({
         assetId: asset.id,
         assetCode: asset.code,
         assetName: asset.name,
-        photoIds: [],
+        workflowTemplateId: workflowTemplateId || undefined,
+        propertiesJson: JSON.stringify(formProperties),
+        photoIds: extraPhotoIds,
         tenantId,
         latitude: coords?.latitude,
         longitude: coords?.longitude,
@@ -678,7 +713,36 @@ function ReportIncidentSheet({
           <p className="mt-3 rounded-lg bg-destructive/10 p-2.5 text-xs text-destructive">{error}</p>
         )}
 
+        {/* Selector de Plantilla de Incidencia */}
         <div className="mt-4 space-y-1.5">
+          <label htmlFor="incident-template" className="text-xs font-semibold">
+            Plantilla de Incidencia
+          </label>
+          <SearchableSelect
+            id="incident-template"
+            value={workflowTemplateId}
+            onChange={(next) => {
+              setWorkflowTemplateId(next);
+              setFormProperties({});
+              setExtraPhotoIds([]);
+            }}
+            options={incidentTemplates.map((tpl) => ({ value: tpl.id, label: tpl.name }))}
+            placeholder="(Sin plantilla específica)"
+            searchPlaceholder="Buscar plantilla..."
+            icon={<ClipboardList className="h-3.5 w-3.5" />}
+          />
+        </div>
+
+        {/* Campos dinámicos de la plantilla (Reportar a, Imágenes, etc.) */}
+        <DynamicTemplateForm
+          template={selectedTemplate}
+          values={formProperties}
+          onChange={handleFormFieldChange}
+          onPhotosChange={(ids) => setExtraPhotoIds((prev) => [...prev, ...ids])}
+          disabled={isSubmitting}
+        />
+
+        <div className="mt-3 space-y-1.5">
           <label htmlFor="incident-title" className="text-xs font-semibold">
             Título
           </label>

@@ -14,15 +14,16 @@ namespace AssetHub.Application.Common.Workflow;
 /// <summary>
 /// Resolves "my work" for the authenticated user.
 ///
-/// Two sources can declare the executor of a work item:
+/// Two sources can declare the executor of a work item, and either one grants the work:
 ///
 ///   1. <c>PropertiesJson</c> — the dynamic form template (<c>asignar_a</c> / <c>asignado_a</c>).
-///      This is the source of truth in the current data model.
-///   2. <c>AssignedEmployeeId</c> — the relational column. Legacy rows and rows created by
-///      integrations may only have this.
+///   2. <c>AssignedEmployeeId</c> / <c>AssignedTeamId</c> — the relational columns, written by
+///      the backoffice assignment flow, preventive plans and integrations.
 ///
-/// Follow-up keys (<c>reportar_a</c>, <c>reportado_a</c>, <c>recibe_a</c>) are never an
-/// assignment: a technician who only watches a case must not receive it in the field app.
+/// In tenant data both sources agree whenever both are present, so the filter uses an OR and
+/// never hides work that either source assigns. Follow-up keys (<c>reportar_a</c>,
+/// <c>reportado_a</c>, <c>recibe_a</c>) are never an assignment: a technician who only watches
+/// a case must not receive it in the field app.
 ///
 /// SQL Server cannot evaluate <c>PropertiesJson</c> predicates reliably (the column is
 /// <c>nvarchar(max)</c> and some rows hold malformed JSON, which makes <c>JSON_VALUE</c>
@@ -78,8 +79,8 @@ public static class AssignedWork
 
     /// <summary>
     /// Incidents are never assigned through a column: they have no <c>AssignedEmployeeId</c>.
-    /// The only assignment is the template property, plus the fallback of a corrective order
-    /// that already carries the employee.
+    /// The assignment is the template property, plus the fallback of a corrective order that
+    /// already carries the employee — either in its own properties or in the relational column.
     /// </summary>
     public static IQueryable<Incident> WhereAssignedCandidates(
         this IQueryable<Incident> query,
@@ -93,26 +94,41 @@ public static class AssignedWork
             db.MaintenanceOrders.Any(o =>
                 o.IncidentId == i.Id &&
                 !o.IsDeleted &&
-                (o.PropertiesJson != null && o.PropertiesJson.Contains(marker))));
+                (o.AssignedEmployeeId == employeeId ||
+                 (o.PropertiesJson != null && o.PropertiesJson.Contains(marker)))));
     }
 
+    /// <summary>
+    /// Orders can be assigned through the relational column (backoffice, preventive plans,
+    /// integrations) or through the template properties. Both sources are honored.
+    /// </summary>
     public static IQueryable<MaintenanceOrder> WhereAssignedCandidates(
         this IQueryable<MaintenanceOrder> query,
         Guid employeeId)
     {
         var marker = Marker(employeeId);
 
-        return query.Where(o => o.PropertiesJson != null && o.PropertiesJson.Contains(marker));
+        return query.Where(o =>
+            o.AssignedEmployeeId == employeeId ||
+            (o.PropertiesJson != null && o.PropertiesJson.Contains(marker)));
     }
 
+    /// <summary>
+    /// Tasks can be assigned to the employee (column), to one of their teams (column), or
+    /// through the template properties.
+    /// </summary>
     public static IQueryable<WorkTask> WhereAssignedCandidates(
         this IQueryable<WorkTask> query,
         Guid employeeId,
         IReadOnlyCollection<Guid> teamIds)
     {
         var marker = Marker(employeeId);
+        var teams = teamIds.ToList();
 
-        return query.Where(t => t.PropertiesJson != null && t.PropertiesJson.Contains(marker));
+        return query.Where(t =>
+            t.AssignedEmployeeId == employeeId ||
+            (t.AssignedTeamId != null && teams.Contains(t.AssignedTeamId.Value)) ||
+            (t.PropertiesJson != null && t.PropertiesJson.Contains(marker)));
     }
 
     // ── Exact checks (in memory) ────────────────────────────────────────────────────────
@@ -142,13 +158,14 @@ public static class AssignedWork
         var orderRows = await db.MaintenanceOrders
             .AsNoTracking()
             .Where(o => o.IncidentId != null && incidentIds.Contains(o.IncidentId.Value) && !o.IsDeleted)
-            .Select(o => new { o.IncidentId, o.PropertiesJson })
+            .Select(o => new { o.IncidentId, o.AssignedEmployeeId, o.PropertiesJson })
             .ToListAsync(cancellationToken);
 
         var viaOrder = new HashSet<Guid>();
         foreach (var order in orderRows)
         {
-            if (WorkflowProperties.MatchesExecutor(order.PropertiesJson, employeeId))
+            if (order.AssignedEmployeeId == employeeId ||
+                WorkflowProperties.MatchesExecutor(order.PropertiesJson, employeeId))
             {
                 viaOrder.Add(order.IncidentId!.Value);
             }
@@ -167,11 +184,12 @@ public static class AssignedWork
         CancellationToken cancellationToken)
     {
         var rows = await candidates
-            .Select(o => new { o.Id, o.PropertiesJson })
+            .Select(o => new { o.Id, o.AssignedEmployeeId, o.PropertiesJson })
             .ToListAsync(cancellationToken);
 
         return rows
-            .Where(r => WorkflowProperties.MatchesExecutor(r.PropertiesJson, employeeId))
+            .Where(r => r.AssignedEmployeeId == employeeId ||
+                        WorkflowProperties.MatchesExecutor(r.PropertiesJson, employeeId))
             .Select(r => r.Id)
             .ToList();
     }
@@ -182,12 +200,16 @@ public static class AssignedWork
         IReadOnlyCollection<Guid> teamIds,
         CancellationToken cancellationToken)
     {
+        var teams = teamIds.ToHashSet();
+
         var rows = await candidates
-            .Select(t => new { t.Id, t.PropertiesJson })
+            .Select(t => new { t.Id, t.AssignedEmployeeId, t.AssignedTeamId, t.PropertiesJson })
             .ToListAsync(cancellationToken);
 
         return rows
-            .Where(r => WorkflowProperties.MatchesExecutor(r.PropertiesJson, employeeId))
+            .Where(r => r.AssignedEmployeeId == employeeId ||
+                        (r.AssignedTeamId is { } teamId && teams.Contains(teamId)) ||
+                        WorkflowProperties.MatchesExecutor(r.PropertiesJson, employeeId))
             .Select(r => r.Id)
             .ToList();
     }

@@ -3,12 +3,16 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { ChevronLeft, ChevronRight, X, FileIcon, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
+import { getMediaUrl } from '@/lib/api-client'
 
 interface ImageLightboxProps {
   urls: string[]
 }
 
-const isImage = (val: string) => val && (val.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null)
+const isImage = (val: string) => {
+  if (!val || typeof val !== 'string') return false
+  return val.startsWith('data:image/') || val.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null
+}
 
 export function LightboxModal({ 
   isOpen, 
@@ -108,9 +112,14 @@ export function ImageLightbox({ urls }: ImageLightboxProps) {
   const [clickedIndex, setClickedIndex] = useState(0)
   const { t } = useTranslation('common')
 
+  // Resolver URLs relativas (/uploads/...) a URLs completas hacia el backend
+  const resolvedList = urls
+    .filter(u => typeof u === 'string' && u.trim().length > 0)
+    .map(u => (u.startsWith('/') ? getMediaUrl(u) : u))
+
   // Separar imágenes de otros tipos de archivos
-  const imageList = urls.filter(u => typeof u === 'string' && u.startsWith('http') && isImage(u))
-  const otherFiles = urls.filter(u => typeof u === 'string' && u.startsWith('http') && !isImage(u))
+  const imageList = resolvedList.filter(u => isImage(u))
+  const otherFiles = resolvedList.filter(u => !isImage(u))
 
   const openLightbox = (index: number) => {
     setClickedIndex(index)

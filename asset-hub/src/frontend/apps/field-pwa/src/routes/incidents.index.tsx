@@ -1,17 +1,29 @@
 // incidents.index.tsx — List of incidents
 import { useLiveQuery } from 'dexie-react-hooks';
+import { FileText } from 'lucide-react';
 import { db, IncidentRepository } from '@asset-hub/core-offline';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { IncidentDetail } from '../features/incidents/IncidentDetail';
+import { DynamicTemplateForm } from '../shared/components/DynamicTemplateForm';
+import { SearchableSelect } from '../shared/components/SearchableSelect';
 
 interface IncidentsPageProps {
   tenantId?: string;
   employeeId?: string;
   userId?: string;
   teamIds?: string[];
+  onNavigateOrder?: (orderId: string) => void;
+  onNavigateTask?: (taskId: string) => void;
 }
 
-export function IncidentsPage({ tenantId, employeeId, userId, teamIds }: IncidentsPageProps) {
+export function IncidentsPage({
+  tenantId,
+  employeeId,
+  userId,
+  teamIds,
+  onNavigateOrder,
+  onNavigateTask,
+}: IncidentsPageProps) {
   const incidents = useLiveQuery(async () => {
     if (!tenantId) return db.incidents.toArray();
     const repo = new IncidentRepository(db);
@@ -21,7 +33,14 @@ export function IncidentsPage({ tenantId, employeeId, userId, teamIds }: Inciden
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   if (selectedId) {
-    return <IncidentDetail incidentId={selectedId} onClose={() => setSelectedId(null)} />;
+    return (
+      <IncidentDetail
+        incidentId={selectedId}
+        onClose={() => setSelectedId(null)}
+        onNavigateOrder={onNavigateOrder}
+        onNavigateTask={onNavigateTask}
+      />
+    );
   }
 
   if (showNew) {
@@ -71,8 +90,36 @@ export function IncidentsPage({ tenantId, employeeId, userId, teamIds }: Inciden
 function NewIncidentForm({ onDone }: { onDone: () => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [workflowTemplateId, setWorkflowTemplateId] = useState('');
+  const [formProperties, setFormProperties] = useState<Record<string, any>>({});
+  const [extraPhotoIds, setExtraPhotoIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const incidentTemplates = useLiveQuery(
+    async () => {
+      const all = await db.workflow_templates.toArray();
+      return all.filter((t) => !t.entityType || t.entityType === 'incident' || t.entityType === 'incidents');
+    },
+    [],
+  ) ?? [];
+
+  useEffect(() => {
+    if (incidentTemplates.length > 0 && !workflowTemplateId) {
+      setWorkflowTemplateId(incidentTemplates[0].id);
+    }
+  }, [incidentTemplates, workflowTemplateId]);
+
+  const selectedTemplate = useMemo(() => {
+    return incidentTemplates.find((t) => t.id === workflowTemplateId) || null;
+  }, [incidentTemplates, workflowTemplateId]);
+
+  const handleFormFieldChange = (key: string, value: any) => {
+    setFormProperties((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +131,9 @@ function NewIncidentForm({ onDone }: { onDone: () => void }) {
       await reportIncident(db, {
         title: title.trim(),
         description: description.trim(),
-        photoIds: [],
+        workflowTemplateId: workflowTemplateId || undefined,
+        propertiesJson: JSON.stringify(formProperties),
+        photoIds: extraPhotoIds,
         tenantId: '',
       });
       onDone();
@@ -107,6 +156,33 @@ function NewIncidentForm({ onDone }: { onDone: () => void }) {
       {error && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
+
+      {incidentTemplates.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Plantilla de Incidencia</label>
+          <SearchableSelect
+            value={workflowTemplateId}
+            onChange={(next) => {
+              setWorkflowTemplateId(next);
+              setFormProperties({});
+              setExtraPhotoIds([]);
+            }}
+            options={incidentTemplates.map((tpl) => ({ value: tpl.id, label: tpl.name }))}
+            placeholder="(Sin plantilla específica)"
+            searchPlaceholder="Buscar plantilla..."
+            icon={<FileText className="h-3.5 w-3.5" />}
+          />
+        </div>
+      )}
+
+      {/* Dynamic Fields of the Template */}
+      <DynamicTemplateForm
+        template={selectedTemplate}
+        values={formProperties}
+        onChange={handleFormFieldChange}
+        onPhotosChange={(ids) => setExtraPhotoIds((prev) => [...prev, ...ids])}
+        disabled={isSubmitting}
+      />
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Título</label>

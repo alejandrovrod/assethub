@@ -10,6 +10,8 @@ export interface ReportIncidentParams {
   assetCode?: string;
   assetName?: string;
   taskId?: string;
+  workflowTemplateId?: string;
+  propertiesJson?: string;
   latitude?: number;
   longitude?: number;
   photoIds: string[];
@@ -38,7 +40,11 @@ export async function reportIncident(
       assetId: params.assetId,
       assetCode: params.assetCode,
       assetName: params.assetName,
+      taskId: params.taskId,
+      workflowTemplateId: params.workflowTemplateId,
+      propertiesJson: params.propertiesJson ?? '{}',
       reportedByUserId: '',
+      origin: 'local',
       createdAtLocalIso: now,
       createdAtLocalMs: Date.now(),
       syncState: 'pending',
@@ -54,10 +60,13 @@ export async function reportIncident(
       method: 'POST',
       path: '/api/v1/incidents',
       bodyJson: JSON.stringify({
+        id: incidentId,
         title: params.title,
         description: params.description,
         assetId: params.assetId,
         taskId: params.taskId,
+        workflowTemplateId: params.workflowTemplateId,
+        propertiesJson: params.propertiesJson ?? '{}',
         latitude: params.latitude,
         longitude: params.longitude,
         photoIds: params.photoIds,

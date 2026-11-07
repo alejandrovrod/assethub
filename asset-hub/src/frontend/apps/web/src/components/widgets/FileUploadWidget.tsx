@@ -65,7 +65,19 @@ export const FileUploadWidget = (props: WidgetProps) => {
     }
   }
 
-  const isImage = (val: string) => val && (val.match(/\.(jpeg|jpg|gif|png)$/i) != null)
+  const isImage = (val: string) => {
+    if (!val || typeof val !== 'string') return false
+    return val.startsWith('data:image/') || val.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null
+  }
+
+  const resolveUrl = (url: string) => {
+    if (!url) return ''
+    if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url
+    }
+    const rootUrl = apiClient.defaults.baseURL?.replace('/api/v1', '') || ''
+    return `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`
+  }
 
   const isMultiple = props.multiple || schema.type === 'array';
   const valuesArray: string[] = Array.isArray(value) ? value : (value ? [value] : []);
@@ -128,7 +140,7 @@ export const FileUploadWidget = (props: WidgetProps) => {
                 title={url.split('/').pop() || t('upload.attachmentFallback')}
               >
                 {isImage(url) ? (
-                  <img src={url} alt="Preview" className="h-full w-full object-cover" />
+                  <img src={resolveUrl(url)} alt="Preview" className="h-full w-full object-cover" />
                 ) : (
                   <FileIcon className="h-5 w-5 text-muted-foreground" />
                 )}
@@ -157,7 +169,7 @@ export const FileUploadWidget = (props: WidgetProps) => {
         <LightboxModal 
           isOpen={isLightboxOpen} 
           setIsOpen={setIsLightboxOpen} 
-          images={valuesArray.filter(isImage)} 
+          images={valuesArray.filter(isImage).map(resolveUrl)} 
           initialIndex={lightboxIndex} 
         />
       )}
