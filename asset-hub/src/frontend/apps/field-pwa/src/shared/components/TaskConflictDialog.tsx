@@ -1,8 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, RefreshCw, X, ShieldAlert, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import type { TaskRecord, FieldDatabase } from '@asset-hub/core-offline';
 import { HttpClient, pullTasks, pullOrders } from '@asset-hub/core-offline';
 import { loadSession } from '../../auth/session-store';
+import { apiFetch } from '../../lib/http';
+import { useLanguageStore } from '../../store/language.store';
+import { formatTime } from '../../lib/format';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5168';
 
@@ -19,6 +23,7 @@ export function TaskConflictDialog({
   onClose,
   onResolved,
 }: TaskConflictDialogProps) {
+  const { t } = useTranslation(['sync', 'common']);
   const [isResolving, setIsResolving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +46,14 @@ export function TaskConflictDialog({
         baseUrl: API_BASE,
         getAccessToken: async () => session?.accessToken ?? '',
         getTenantSlug: async () => session?.tenantSlug ?? undefined,
+        getLocale: () => useLanguageStore.getState().lang,
       });
       await pullTasks(db, http, tenantId);
       await pullOrders(db, http, tenantId);
 
       onResolved();
     } catch (err: any) {
-      setError(err?.message || 'Error al obtener la versión del servidor');
+      setError(err?.message || t('taskConflict.errors.fetchServerVersion'));
     } finally {
       setIsResolving(false);
     }
@@ -61,12 +67,12 @@ export function TaskConflictDialog({
     try {
       const session = await loadSession();
       if (!session?.accessToken) {
-        throw new Error('No hay sesión activa para forzar la sincronización.');
+        throw new Error(t('taskConflict.errors.noSession'));
       }
 
       const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5168';
       // Obtener el estado y ETag vigentes del servidor
-      const res = await fetch(`${API_BASE}/api/v1/work-tasks/${task.id}`, {
+      const res = await apiFetch(`${API_BASE}/api/v1/work-tasks/${task.id}`, {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
           ...(session.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
@@ -74,7 +80,7 @@ export function TaskConflictDialog({
       });
 
       if (!res.ok) {
-        throw new Error('No se pudo verificar el ETag actual del servidor.');
+        throw new Error(t('taskConflict.errors.etagCheck'));
       }
 
       const serverTask = await res.json();
@@ -102,7 +108,7 @@ export function TaskConflictDialog({
 
       onResolved();
     } catch (err: any) {
-      setError(err?.message || 'Error al preparar la versión local para reintento');
+      setError(err?.message || t('taskConflict.errors.prepareLocal'));
     } finally {
       setIsResolving(false);
     }
@@ -118,13 +124,15 @@ export function TaskConflictDialog({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-foreground">Conflicto de Sincronización</h3>
+              <h3 className="font-bold text-foreground">{t('taskConflict.title')}</h3>
               <p className="text-xs text-muted-foreground">{task.title}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={isResolving}
+            aria-label={t('common:actions.close')}
+            title={t('common:actions.close')}
             className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
           >
             <X className="h-5 w-5" />
@@ -135,10 +143,9 @@ export function TaskConflictDialog({
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-400">
           <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p className="font-semibold">Atención con tus datos locales:</p>
+            <p className="font-semibold">{t('taskConflict.warningTitle')}</p>
             <p className="text-[11px] leading-relaxed">
-              La tarea fue modificada en el servidor (por ejemplo, enviada a re-trabajo por el supervisor).
-              Elegí qué versión querés mantener.
+              {t('taskConflict.warningBody')}
             </p>
           </div>
         </div>
@@ -148,14 +155,14 @@ export function TaskConflictDialog({
           <div className="rounded-xl border bg-muted/40 p-3 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-primary">
               <ArrowUpCircle className="h-4 w-4" />
-              <span>Tu Dispositivo</span>
+              <span>{t('taskConflict.device')}</span>
             </div>
             <p className="text-muted-foreground text-[11px]">
-              Estado local: <strong className="text-foreground uppercase">{task.state}</strong>
+              {t('labels.localState')} <strong className="text-foreground uppercase">{task.state}</strong>
             </p>
             {task.updatedAtLocalMs && (
               <p className="text-[10px] text-muted-foreground">
-                Guardado: {new Date(task.updatedAtLocalMs).toLocaleTimeString()}
+                {t('taskConflict.savedAt', { time: formatTime(task.updatedAtLocalMs) })}
               </p>
             )}
           </div>
@@ -163,14 +170,14 @@ export function TaskConflictDialog({
           <div className="rounded-xl border bg-muted/40 p-3 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
               <ArrowDownCircle className="h-4 w-4" />
-              <span>Servidor / Web</span>
+              <span>{t('taskConflict.server')}</span>
             </div>
             <p className="text-muted-foreground text-[11px]">
-              Estado: <strong className="text-foreground uppercase">{task.serverState || 'REWORK'}</strong>
+              {t('taskConflict.state')} <strong className="text-foreground uppercase">{task.serverState || 'REWORK'}</strong>
             </p>
             {task.reworkReason && (
               <p className="text-[10px] text-destructive truncate">
-                Motivo: {task.reworkReason}
+                {t('taskConflict.reason', { reason: task.reworkReason })}
               </p>
             )}
           </div>
@@ -194,7 +201,7 @@ export function TaskConflictDialog({
             ) : (
               <Check className="h-4 w-4" />
             )}
-            Aceptar versión del servidor (Re-trabajo)
+            {t('taskConflict.acceptServer')}
           </button>
 
           <button
@@ -202,7 +209,7 @@ export function TaskConflictDialog({
             disabled={isResolving}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-input bg-background px-4 py-2.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
           >
-            Conservar y forzar versión local
+            {t('taskConflict.forceLocal')}
           </button>
         </div>
       </div>

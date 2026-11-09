@@ -1,5 +1,6 @@
 // PropagatedPropertiesDisplay.tsx — Sleek mobile-first dynamic properties display and editor
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FileText,
   Pencil,
@@ -21,6 +22,7 @@ import {
   type PropagatedContextIds,
   type ResolvedSchemaResult,
 } from '@asset-hub/core-offline';
+import { formatDate } from '../../lib/format';
 
 interface PropagatedPropertiesDisplayProps {
   ctx: PropagatedContextIds;
@@ -40,26 +42,46 @@ interface ResolvedDisplayValue {
   isFieldEditable?: boolean;
 }
 
-const KNOWN_CATALOGS: Record<string, string> = {
-  '009': 'Proyecto',
-  '001': 'Tipo de Activo',
-  '002': 'Nivel',
-  '003': 'Tipo de Incidencia',
-  '004': 'Tipo de Actividad',
-  '005': 'Tipo de Bitácora',
-  '015': 'Categoría 1',
-  '016': 'Categoría 2',
-  '017': 'Categoría 3',
-  '018': 'Categoría 4',
-  '019': 'Categoría 5',
-  '020': 'Prioridad',
-  priority: 'Prioridad',
-  BIO_RISK_LEVEL: 'Nivel de Riesgo',
-  CLEANING_FREQUENCY: 'Frecuencia de Limpieza',
-  CLEANING_SUPPLIES: 'Insumos de Limpieza',
-  'SYS-CAT-MARCAS': 'Marca',
-  'SYS-CAT-REFACCIONES': 'Tipo de Refacción',
-  'SYS-CAT-ESPECIALIDADES': 'Especialidad',
+type CatalogLabelKey =
+  | 'propagated.catalogs.project'
+  | 'propagated.catalogs.assetType'
+  | 'propagated.catalogs.level'
+  | 'propagated.catalogs.incidentType'
+  | 'propagated.catalogs.activityType'
+  | 'propagated.catalogs.logbookType'
+  | 'propagated.catalogs.category1'
+  | 'propagated.catalogs.category2'
+  | 'propagated.catalogs.category3'
+  | 'propagated.catalogs.category4'
+  | 'propagated.catalogs.category5'
+  | 'propagated.catalogs.priority'
+  | 'propagated.catalogs.bioRiskLevel'
+  | 'propagated.catalogs.cleaningFrequency'
+  | 'propagated.catalogs.cleaningSupplies'
+  | 'propagated.catalogs.brand'
+  | 'propagated.catalogs.sparePartType'
+  | 'propagated.catalogs.specialty';
+
+const KNOWN_CATALOGS: Record<string, CatalogLabelKey> = {
+  '009': 'propagated.catalogs.project',
+  '001': 'propagated.catalogs.assetType',
+  '002': 'propagated.catalogs.level',
+  '003': 'propagated.catalogs.incidentType',
+  '004': 'propagated.catalogs.activityType',
+  '005': 'propagated.catalogs.logbookType',
+  '015': 'propagated.catalogs.category1',
+  '016': 'propagated.catalogs.category2',
+  '017': 'propagated.catalogs.category3',
+  '018': 'propagated.catalogs.category4',
+  '019': 'propagated.catalogs.category5',
+  '020': 'propagated.catalogs.priority',
+  priority: 'propagated.catalogs.priority',
+  BIO_RISK_LEVEL: 'propagated.catalogs.bioRiskLevel',
+  CLEANING_FREQUENCY: 'propagated.catalogs.cleaningFrequency',
+  CLEANING_SUPPLIES: 'propagated.catalogs.cleaningSupplies',
+  'SYS-CAT-MARCAS': 'propagated.catalogs.brand',
+  'SYS-CAT-REFACCIONES': 'propagated.catalogs.sparePartType',
+  'SYS-CAT-ESPECIALIDADES': 'propagated.catalogs.specialty',
 };
 
 export function PropagatedPropertiesDisplay({
@@ -68,6 +90,7 @@ export function PropagatedPropertiesDisplay({
   isReadOnly = false,
   onSave,
 }: PropagatedPropertiesDisplayProps) {
+  const { t } = useTranslation(['forms', 'common']);
   const [resolved, setResolved] = useState<ResolvedSchemaResult | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -202,20 +225,20 @@ export function PropagatedPropertiesDisplay({
       if (isGenericOrNumeric) {
         const catCode = prop.catalogCode || matchedCatalogItem?.catalogCode;
         if (catCode && KNOWN_CATALOGS[catCode]) {
-          title = KNOWN_CATALOGS[catCode];
+          title = t(KNOWN_CATALOGS[catCode]);
         } else if (catCode) {
-          title = `Catálogo ${catCode}`;
+          title = t('propagated.catalogFallback', { code: catCode });
         } else if (kind === 'employee') {
-          title = 'Reportar a';
+          title = t('propagated.reportTo');
         } else if (kind === 'team') {
-          title = 'Equipo Asignado';
+          title = t('propagated.assignedTeam');
         } else if (kind === 'image') {
-          title = 'Imágenes';
+          title = t('propagated.images');
         } else if (kind === 'date') {
-          title = 'Fecha';
+          title = t('common:fields.date');
         } else {
           const stripped = key.replace(/^field_/i, '').replace(/_/g, ' ');
-          title = /^\d+$/.test(stripped) ? 'Campo Adicional' : stripped;
+          title = /^\d+$/.test(stripped) ? t('propagated.additionalField') : stripped;
         }
       }
 
@@ -243,13 +266,13 @@ export function PropagatedPropertiesDisplay({
         try {
           const d = new Date(strRaw);
           if (!isNaN(d.getTime())) {
-            displayLabel = d.toLocaleDateString();
+            displayLabel = formatDate(d);
           }
         } catch {
           // Keep raw
         }
       } else if (kind === 'boolean') {
-        displayLabel = rawValue ? 'Sí' : 'No';
+        displayLabel = rawValue ? t('common:state.yes') : t('common:state.no');
       }
 
       // Determine if this property is editable in field execution:
@@ -286,7 +309,7 @@ export function PropagatedPropertiesDisplay({
       }
       return item;
     });
-  }, [resolved, formData, directoryMap, catalogMap, catalogMetaMap]);
+  }, [resolved, formData, directoryMap, catalogMap, catalogMetaMap, t]);
 
   // Check if at least one field is allowed to be edited in field mode
   // (Always call hooks unconditionally before early returns to satisfy React Rules of Hooks)
@@ -312,12 +335,12 @@ export function PropagatedPropertiesDisplay({
     setStatusMessage(null);
     try {
       await onSave(JSON.stringify(formData));
-      setStatusMessage({ type: 'success', text: 'Propiedades guardadas correctamente' });
+      setStatusMessage({ type: 'success', text: t('propagated.saveSuccess') });
       setIsEditing(false);
     } catch (err) {
       setStatusMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : 'Error al guardar los cambios',
+        text: err instanceof Error ? err.message : t('propagated.saveError'),
       });
     } finally {
       setIsSaving(false);
@@ -328,7 +351,7 @@ export function PropagatedPropertiesDisplay({
     return (
       <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
-        Cargando propiedades dinámicas…
+        {t('propagated.loading')}
       </div>
     );
   }
@@ -336,7 +359,7 @@ export function PropagatedPropertiesDisplay({
   if (!resolved || displayItems.length === 0) {
     return (
       <div className="py-3 text-center text-xs text-muted-foreground">
-        No hay propiedades dinámicas registradas.
+        {t('propagated.empty')}
       </div>
     );
   }
@@ -346,7 +369,7 @@ export function PropagatedPropertiesDisplay({
       {/* Header with edit toggle */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {displayItems.length} {displayItems.length === 1 ? 'campo registrado' : 'campos registrados'}
+          {t('propagated.fieldCount', { count: displayItems.length })}
         </span>
 
         {!isReadOnly && onSave && hasEditableFields && (
@@ -361,12 +384,12 @@ export function PropagatedPropertiesDisplay({
             {isEditing ? (
               <>
                 <X className="h-3.5 w-3.5 text-muted-foreground" />
-                Cancelar
+                {t('common:actions.cancel')}
               </>
             ) : (
               <>
                 <Pencil className="h-3.5 w-3.5 text-primary" />
-                Editar campos
+                {t('propagated.editFields')}
               </>
             )}
           </button>

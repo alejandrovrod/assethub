@@ -23,6 +23,7 @@ import { PropagatedPropertiesDisplay } from '../shared/components/PropagatedProp
 import { DynamicTemplateForm } from '../shared/components/DynamicTemplateForm';
 import { SearchableSelect } from '../shared/components/SearchableSelect';
 import { reportIncident } from '../commands/report-incident';
+import { useTranslation } from 'react-i18next';
 import {
   ASSET_CRITICALITY_CONFIG,
   formatLocationPath,
@@ -136,6 +137,7 @@ export function AssetDetailPage({
   onNavigateOrder,
   onNavigateTask,
 }: Props) {
+  const { t } = useTranslation('assets');
   const asset = useLiveQuery(() => db.assets.get(assetId), [assetId]);
   const [tab, setTab] = useState<Tab>('details');
   const [isReportOpen, setIsReportOpen] = useState(false);
@@ -275,7 +277,7 @@ export function AssetDetailPage({
                   <span
                     className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${criticality.className}`}
                   >
-                    {criticality.label}
+                    {t(criticality.labelKey)}
                   </span>
                 )}
               </div>
@@ -339,7 +341,7 @@ export function AssetDetailPage({
           <>
             <section className="grid grid-cols-2 gap-2">
               <InfoTile label="Estado" value={asset.state?.replace(/_/g, ' ') || '—'} />
-              <InfoTile label="Criticidad" value={criticality?.label ?? '—'} />
+              <InfoTile label="Criticidad" value={criticality ? t(criticality.labelKey) : '—'} />
               <InfoTile label="Plantilla" value={asset.templateName || '—'} />
               <InfoTile label="Serie" value={asset.serial || '—'} />
               <InfoTile label="Ubicación" value={location || 'Sin ubicación'} className="col-span-2" />

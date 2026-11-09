@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Lock } from 'lucide-react';
 
 interface LockScreenProps {
@@ -7,6 +8,7 @@ interface LockScreenProps {
 }
 
 export function LockScreen({ onUnlock, requireDeviceLock }: LockScreenProps) {
+  const { t } = useTranslation('auth');
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -18,11 +20,11 @@ export function LockScreen({ onUnlock, requireDeviceLock }: LockScreenProps) {
     try {
       const success = await onUnlock(pin);
       if (!success) {
-        setError('PIN incorrecto');
+        setError(t('lock.invalidPin'));
         setPin('');
       }
     } catch {
-      setError('Error al desbloquear');
+      setError(t('lock.unlockFailed'));
     } finally {
       setIsUnlocking(false);
     }
@@ -36,11 +38,9 @@ export function LockScreen({ onUnlock, requireDeviceLock }: LockScreenProps) {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold">Dispositivo bloqueado</h2>
+          <h2 className="text-lg font-semibold">{t('lock.title')}</h2>
           <p className="text-sm text-muted-foreground">
-            {requireDeviceLock
-              ? 'Ingresá tu PIN para continuar'
-              : 'Ingresá tu PIN para desbloquear'}
+            {requireDeviceLock ? t('lock.subtitle') : t('lock.subtitleUnlock')}
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export function LockScreen({ onUnlock, requireDeviceLock }: LockScreenProps) {
             pattern="[0-9]*"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            placeholder="PIN"
+            placeholder={t('lock.pinPlaceholder')}
             maxLength={6}
             className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-center text-2xl tracking-widest"
             autoFocus
@@ -68,7 +68,7 @@ export function LockScreen({ onUnlock, requireDeviceLock }: LockScreenProps) {
             disabled={isUnlocking || pin.length < 4}
             className="flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {isUnlocking ? 'Desbloqueando…' : 'Desbloquear'}
+            {isUnlocking ? t('lock.unlocking') : t('lock.submit')}
           </button>
         </form>
       </div>

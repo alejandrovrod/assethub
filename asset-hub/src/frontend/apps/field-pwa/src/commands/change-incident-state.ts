@@ -1,5 +1,6 @@
 // change-incident-state.ts — Command to change incident state (offline-capable)
 import type { FieldDatabase } from '@asset-hub/core-offline';
+import i18n from '../i18n';
 
 export interface ChangeIncidentStateInput {
   incidentId: string;
@@ -13,7 +14,7 @@ export async function changeIncidentState(
 ): Promise<void> {
   await db.transaction('rw', db.incidents, db.outbox_mutations, async (tx) => {
     const incident = await tx.incidents.get(input.incidentId);
-    if (!incident) throw new Error('Incidente no encontrado');
+    if (!incident) throw new Error(i18n.t('incidents:errors.notFound'));
 
     await tx.incidents.update(input.incidentId, {
       syncState: 'pending',

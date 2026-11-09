@@ -1,0 +1,129 @@
+﻿{
+  "journey": {
+    "title": "Mi Jornada",
+    "pending_one": "{{count}} tarea pendiente",
+    "pending_other": "{{count}} tareas pendientes",
+    "completed_one": "{{count}} terminada",
+    "completed_other": "{{count}} terminadas",
+    "refresh": "Refrescar jornada",
+    "missingActorTitle": "No pudimos identificar tu perfil de empleado",
+    "missingActorHint": "Cierra sesión y vuelve a entrar para vincular tu usuario con un empleado.",
+    "emptyTitle": "No tienes tareas asignadas",
+    "emptyHint": "Disfruta tu jornada o refresca para sincronizar."
+  },
+  "sections": {
+    "conflicts": "Conflictos por resolver ({{count}})",
+    "rework": "Tareas devueltas ({{count}})",
+    "overdue": "Vencidas ({{count}})",
+    "today": "Para hoy ({{count}})",
+    "upcoming": "Próximas ({{count}})",
+    "completed": "Terminadas ({{count}})"
+  },
+  "card": {
+    "resolveConflict": "Resolver conflicto con servidor",
+    "reworkReason": "Motivo de devolución:",
+    "due": "Vence: {{date}}",
+    "order": "OT: {{title}}"
+  },
+  "states": {
+    "draft": "Borrador",
+    "todo": "Por hacer",
+    "inProgress": "En progreso",
+    "paused": "Pausada",
+    "done": "Completada",
+    "verified": "Verificada",
+    "cancelled": "Cancelada",
+    "rework": "Re-trabajo"
+  },
+  "orderStates": {
+    "draft": "Borrador",
+    "approved": "Aprobada",
+    "scheduled": "Programada",
+    "inProgress": "En progreso",
+    "done": "Completada",
+    "rescheduled": "Reprogramada",
+    "verified": "Verificada",
+    "cancelled": "Cancelada"
+  },
+  "syncStates": {
+    "synced": "Sincronizado",
+    "pending": "Pendiente",
+    "conflict": "Conflicto",
+    "blocked": "Bloqueado",
+    "dead": "Error fatal"
+  },
+  "priority": {
+    "low": "Baja",
+    "medium": "Media",
+    "high": "Alta",
+    "critical": "Crítica"
+  },
+  "detail": {
+    "notFound": "Tarea no encontrada en la base local",
+    "reworkTitle": "Tarea devuelta para corrección:",
+    "reworkHint": "Revisa el trabajo realizado",
+    "asset": "Activo: {{name}}",
+    "linkedIncident": "Incidencia vinculada",
+    "orderLock": "Orden de trabajo en \"{{state}}\". Inicia la OT para habilitar transiciones.",
+    "due": "Vencimiento",
+    "started": "Iniciada",
+    "completed": "Completada",
+    "propagatedProperties": "Propiedades dinámicas propagadas",
+    "checklistTitle": "Formulario de verificación",
+    "transitionBlocked": "Transición bloqueada por OT",
+    "noTransitions": "Sin transiciones disponibles",
+    "changeState": "Cambiar estado de tarea",
+    "tabs": {
+      "details": "Detalles",
+      "checklist": "Checklist",
+      "history": "Historial",
+      "comments": "Comentarios"
+    },
+    "evidence": {
+      "deleteConfirm": "¿Eliminar esta evidencia? Esta acción no se puede deshacer.",
+      "delete": "Eliminar evidencia",
+      "alt": "Evidencia {{index}}",
+      "empty": "No hay fotos de evidencia registradas."
+    },
+    "history": {
+      "title": "Historial de estados",
+      "loading": "Cargando historial…",
+      "empty": "No hay transiciones registradas aún.",
+      "local": "Local (sin conexión)",
+      "reason": "Motivo: {{reason}}",
+      "geo": "Lat: {{lat}}, Lon: {{lon}} ({{status}})"
+    },
+    "comments": {
+      "title": "Agregar comentario",
+      "placeholder": "Escribe una observación o comentario técnico...",
+      "sending": "Enviando…",
+      "submit": "Publicar comentario",
+      "loading": "Cargando comentarios…",
+      "empty": "No hay comentarios registrados para esta tarea.",
+      "technician": "Técnico"
+    }
+  },
+  "checklist": {
+    "draftSaved": "Borrador guardado localmente",
+    "saved": "Checklist guardado y encolado para sincronización",
+    "saveError": "Error al guardar checklist",
+    "submit": "Guardar y confirmar checklist"
+  },
+  "transition": {
+    "title": "Cambiar estado de la tarea",
+    "currentState": "Estado actual: {{state}}",
+    "orderLocked": "La orden de trabajo está en estado \"{{state}}\". Debe iniciarse primero para poder operar sobre esta tarea.",
+    "confirm": "¿Confirmas cambiar la tarea a <bold>{{state}}</bold>?",
+    "pauseReason": "Motivo de la pausa (opcional):",
+    "pausePlaceholder": "Ej. Esperando repuestos, lluvia...",
+    "processing": "Procesando…",
+    "error": "Error al cambiar de estado",
+    "noTransitions": "No hay transiciones válidas disponibles para el estado \"{{state}}\".",
+    "start": "Iniciar tarea",
+    "startAction": "Iniciar",
+    "pause": "Pausar tarea",
+    "pauseAction": "Pausar",
+    "complete": "Completar tarea",
+    "completeAction": "Completar"
+  }
+}

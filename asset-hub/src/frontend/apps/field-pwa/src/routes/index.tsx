@@ -1,10 +1,12 @@
 // routes/index.tsx — "Mi Jornada" (Work tasks grouped by urgency)
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw, AlertTriangle, Clock, Calendar, CheckCircle, AlertCircle, ShieldAlert } from 'lucide-react';
-import { useTasks } from '../features/tasks/hooks/useTasks';
+import { STATE_LABELS, SYNC_STATE_LABELS, useTasks } from '../features/tasks/hooks/useTasks';
 import type { TaskRecord, SyncState } from '@asset-hub/core-offline';
 import { db } from '@asset-hub/core-offline';
 import { TaskConflictDialog } from '../shared/components/TaskConflictDialog';
+import { formatDate } from '../lib/format';
 
 interface MiJornadaPageProps {
   userId: string;
@@ -15,15 +17,12 @@ interface MiJornadaPageProps {
   onRefresh?: () => Promise<void>;
 }
 
-const SYNC_BADGE_CONFIG: Record<
-  SyncState,
-  { label: string; className: string }
-> = {
-  synced: { label: 'Sincronizado', className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' },
-  pending: { label: 'Pendiente', className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' },
-  conflict: { label: 'Conflicto', className: 'bg-destructive/10 text-destructive' },
-  blocked: { label: 'Bloqueado', className: 'bg-orange-500/10 text-orange-700' },
-  dead: { label: 'Error fatal', className: 'bg-red-500/20 text-red-800' },
+const SYNC_BADGE_CLASS: Record<SyncState, string> = {
+  synced: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  pending: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  conflict: 'bg-destructive/10 text-destructive',
+  blocked: 'bg-orange-500/10 text-orange-700',
+  dead: 'bg-red-500/20 text-red-800',
 };
 
 export function MiJornadaPage({
@@ -34,6 +33,7 @@ export function MiJornadaPage({
   onSelectTask,
   onRefresh,
 }: MiJornadaPageProps) {
+  const { t } = useTranslation('tasks');
   const { groups, isLoading } = useTasks({ tenantId, userId, employeeId, teamIds });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [conflictTask, setConflictTask] = useState<TaskRecord | null>(null);
@@ -71,10 +71,11 @@ export function MiJornadaPage({
       {/* Header bar with pull-to-refresh button */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Mi Jornada</h2>
+          <h2 className="text-xl font-bold tracking-tight">{t('journey.title')}</h2>
           <p className="text-xs text-muted-foreground">
-            {activeTasks} {activeTasks === 1 ? 'tarea pendiente' : 'tareas pendientes'}
-            {groups.completed.length > 0 && ` · ${groups.completed.length} terminadas`}
+            {t('journey.pending', { count: activeTasks })}
+            {groups.completed.length > 0 &&
+              ` · ${t('journey.completed', { count: groups.completed.length })}`}
           </p>
         </div>
         {onRefresh && (
@@ -82,7 +83,7 @@ export function MiJornadaPage({
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex h-10 w-10 items-center justify-center rounded-full border hover:bg-muted active:scale-95 disabled:opacity-50"
-            aria-label="Refrescar jornada"
+            aria-label={t('journey.refresh')}
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
@@ -92,16 +93,14 @@ export function MiJornadaPage({
       {!hasActor ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
           <AlertCircle className="mx-auto mb-2 h-8 w-8 text-amber-500" />
-          <p className="font-medium">No pudimos identificar tu perfil de empleado</p>
-          <p className="text-xs">
-            Cierra sesión y vuelve a entrar para vincular tu usuario con un empleado.
-          </p>
+          <p className="font-medium">{t('journey.missingActorTitle')}</p>
+          <p className="text-xs">{t('journey.missingActorHint')}</p>
         </div>
       ) : totalTasks === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
           <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground/60" />
-          <p className="font-medium">No tienes tareas asignadas</p>
-          <p className="text-xs">Disfruta tu jornada o refresca para sincronizar.</p>
+          <p className="font-medium">{t('journey.emptyTitle')}</p>
+          <p className="text-xs">{t('journey.emptyHint')}</p>
         </div>
       ) : null}
 
@@ -110,7 +109,7 @@ export function MiJornadaPage({
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-destructive">
             <ShieldAlert className="h-5 w-5" />
-            <h3 className="font-bold">Conflictos por Resolver ({groups.conflicts.length})</h3>
+            <h3 className="font-bold">{t('sections.conflicts', { count: groups.conflicts.length })}</h3>
           </div>
           <div className="space-y-2">
             {groups.conflicts.map((task) => (
@@ -121,7 +120,7 @@ export function MiJornadaPage({
                   className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg bg-destructive/15 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/25 transition-colors"
                 >
                   <ShieldAlert className="h-3.5 w-3.5" />
-                  Resolver Conflicto con Servidor
+                  {t('card.resolveConflict')}
                 </button>
               </div>
             ))}
@@ -134,7 +133,7 @@ export function MiJornadaPage({
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
-            <h3 className="font-bold">Tareas Devueltas ({groups.rework.length})</h3>
+            <h3 className="font-bold">{t('sections.rework', { count: groups.rework.length })}</h3>
           </div>
           <div className="space-y-2">
             {groups.rework.map((task) => (
@@ -149,7 +148,7 @@ export function MiJornadaPage({
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
             <AlertTriangle className="h-5 w-5" />
-            <h3 className="font-semibold">Vencidas ({groups.overdue.length})</h3>
+            <h3 className="font-semibold">{t('sections.overdue', { count: groups.overdue.length })}</h3>
           </div>
           <div className="space-y-2">
             {groups.overdue.map((task) => (
@@ -164,7 +163,7 @@ export function MiJornadaPage({
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-primary">
             <Clock className="h-5 w-5" />
-            <h3 className="font-semibold">Para Hoy ({groups.today.length})</h3>
+            <h3 className="font-semibold">{t('sections.today', { count: groups.today.length })}</h3>
           </div>
           <div className="space-y-2">
             {groups.today.map((task) => (
@@ -179,7 +178,7 @@ export function MiJornadaPage({
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-5 w-5" />
-            <h3 className="font-semibold">Próximas ({groups.upcoming.length})</h3>
+            <h3 className="font-semibold">{t('sections.upcoming', { count: groups.upcoming.length })}</h3>
           </div>
           <div className="space-y-2">
             {groups.upcoming.map((task) => (
@@ -194,7 +193,7 @@ export function MiJornadaPage({
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-500">
             <CheckCircle className="h-5 w-5" />
-            <h3 className="font-semibold">Terminadas ({groups.completed.length})</h3>
+            <h3 className="font-semibold">{t('sections.completed', { count: groups.completed.length })}</h3>
           </div>
           <div className="space-y-2">
             {groups.completed.map((task) => (
@@ -228,7 +227,10 @@ function TaskCard({
   onSelect: (taskId: string) => void;
   isRework?: boolean;
 }) {
-  const syncBadge = SYNC_BADGE_CONFIG[task.syncState] ?? SYNC_BADGE_CONFIG.synced;
+  const { t } = useTranslation('tasks');
+  const syncBadgeClass = SYNC_BADGE_CLASS[task.syncState] ?? SYNC_BADGE_CLASS.synced;
+  const stateKey = STATE_LABELS[task.state];
+  const stateLabel = stateKey ? t(stateKey) : task.state;
 
   return (
     <div
@@ -245,7 +247,7 @@ function TaskCard({
       {/* Rework banner if applicable */}
       {isRework && task.reworkReason && (
         <div className="mb-2 rounded-md bg-destructive/15 p-2 text-xs font-medium text-destructive">
-          <strong>Motivo de devolución:</strong> {task.reworkReason}
+          <strong>{t('card.reworkReason')}</strong> {task.reworkReason}
         </div>
       )}
 
@@ -259,7 +261,7 @@ function TaskCard({
           )}
         </div>
         <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {task.state}
+          {stateLabel}
         </span>
       </div>
 
@@ -267,18 +269,18 @@ function TaskCard({
         <div className="flex items-center gap-2">
           {task.dueAtMs > 0 && (
             <span className="text-muted-foreground">
-              Vence: {new Date(task.dueAtMs).toLocaleDateString()}
+              {t('card.due', { date: formatDate(task.dueAtMs) })}
             </span>
           )}
           {task.maintenanceOrderTitle && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-              OT: {task.maintenanceOrderTitle}
+              {t('card.order', { title: task.maintenanceOrderTitle })}
             </span>
           )}
         </div>
 
-        <span className={`rounded-full px-2 py-0.5 font-medium ${syncBadge.className}`}>
-          {syncBadge.label}
+        <span className={`rounded-full px-2 py-0.5 font-medium ${syncBadgeClass}`}>
+          {t(SYNC_STATE_LABELS[task.syncState])}
         </span>
       </div>
     </div>

@@ -1,0 +1,94 @@
+﻿{
+  "title": "Work Orders",
+  "list": {
+    "count_one": "{{count}} assigned order",
+    "count_other": "{{count}} assigned orders",
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "empty": "No orders to show",
+    "pendingSync": "Pending sync",
+    "tasks_one": "{{count}} task",
+    "tasks_other": "{{count}} tasks",
+    "openOrder": "Open order {{title}}"
+  },
+  "states": {
+    "draft": "Draft",
+    "approved": "Approved",
+    "scheduled": "Scheduled",
+    "inProgress": "In progress",
+    "rescheduled": "Rescheduled",
+    "done": "Done",
+    "verified": "Verified",
+    "cancelled": "Cancelled"
+  },
+  "taskStates": {
+    "todo": "To do",
+    "rework": "Rework",
+    "inProgress": "In progress",
+    "paused": "Paused",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "kinds": {
+    "corrective": "Corrective",
+    "preventive": "Preventive"
+  },
+  "fields": {
+    "type": "Type",
+    "priority": "Priority",
+    "scheduledStart": "Scheduled start",
+    "scheduledEnd": "Scheduled end",
+    "asset": "Asset",
+    "location": "Location",
+    "responsible": "Assignee",
+    "description": "Description",
+    "state": "Status",
+    "notScheduled": "Not scheduled"
+  },
+  "detail": {
+    "notFound": "Work order not found",
+    "startOrder": "Start Order (Unlocks tasks)",
+    "starting": "Starting…",
+    "completeOrder": "Complete Order",
+    "completing": "Completing…",
+    "incompleteTasks": "Tasks still pending ({{completed}}/{{total}} completed)",
+    "tabs": {
+      "tasks": "Tasks ({{count}})",
+      "details": "Details",
+      "parts": "Parts ({{count}})"
+    },
+    "tasksTitle": "Order Tasks",
+    "tasksEmpty": "No tasks linked to this order.",
+    "taskState": "Status: {{state}}",
+    "openTask": "Open task {{title}}",
+    "infoTitle": "Order information",
+    "openAsset": "View asset {{name}}",
+    "descriptionTitle": "Description",
+    "propertiesTitle": "Propagated Dynamic Properties",
+    "partsTitle": "Parts and Materials",
+    "partsEmpty": "No parts recorded for this order.",
+    "quantity": "Qty: {{quantity}}",
+    "source": "Source: {{source}}"
+  },
+  "partSources": {
+    "none": "None",
+    "internal": "Internal",
+    "external": "External"
+  },
+  "remote": {
+    "loading": "Loading…",
+    "empty": "No work orders assigned",
+    "loadFailed": "Failed to load work orders",
+    "networkError": "Network error",
+    "priority": "Priority: {{priority}}",
+    "stateFallback": "Pending"
+  },
+  "errors": {
+    "startFailed": "Could not start the order",
+    "completeFailed": "Could not complete the order",
+    "loadFailed": "Could not load the order"
+  }
+}

@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '../features/auth/hooks/useSession';
 
 export function LoginPage() {
+  const { t } = useTranslation(['auth', 'common']);
   const { login, isLoading } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,10 +17,10 @@ export function LoginPage() {
     try {
       await login(email, password, showMfa ? mfaCode : undefined);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
+      const msg = err instanceof Error ? err.message : t('auth:errors.loginFailed');
       if (msg === 'MFA_REQUIRED') {
         setShowMfa(true);
-        setError('Se requiere código MFA');
+        setError(t('auth:errors.mfaRequired'));
       } else {
         setError(msg);
       }
@@ -29,8 +31,8 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">AssetHub Campo</h1>
-          <p className="text-sm text-muted-foreground">Iniciá sesión para continuar</p>
+          <h1 className="text-2xl font-bold">{t('common:app.name')}</h1>
+          <p className="text-sm text-muted-foreground">{t('auth:login.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -42,7 +44,7 @@ export function LoginPage() {
 
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              {t('auth:login.email')}
             </label>
             <input
               id="email"
@@ -51,13 +53,13 @@ export function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="tu@email.com"
+              placeholder={t('auth:login.emailPlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
-              Contraseña
+              {t('auth:login.password')}
             </label>
             <input
               id="password"
@@ -66,14 +68,14 @@ export function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="••••••••"
+              placeholder={t('auth:login.passwordPlaceholder')}
             />
           </div>
 
           {showMfa && (
             <div className="space-y-2">
               <label htmlFor="mfa" className="text-sm font-medium">
-                Código MFA
+                {t('auth:login.mfa')}
               </label>
               <input
                 id="mfa"
@@ -83,7 +85,7 @@ export function LoginPage() {
                 maxLength={6}
                 autoComplete="one-time-code"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="123456"
+                placeholder={t('auth:login.mfaPlaceholder')}
               />
             </div>
           )}
@@ -93,7 +95,7 @@ export function LoginPage() {
             disabled={isLoading}
             className="flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {isLoading ? 'Iniciando sesión…' : 'Iniciar sesión'}
+            {isLoading ? t('auth:login.submitting') : t('auth:login.submit')}
           </button>
         </form>
       </div>

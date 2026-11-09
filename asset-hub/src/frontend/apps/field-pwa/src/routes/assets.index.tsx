@@ -1,5 +1,6 @@
 // assets.index.tsx — Field asset finder: local search, QR/barcode scan and quick filters
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { AlertTriangle, ChevronRight, Loader2, MapPin, QrCode, Search, X } from 'lucide-react';
 import { db } from '@asset-hub/core-offline';
 import {
@@ -26,6 +27,7 @@ interface AssetsPageProps {
 }
 
 export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
+  const { t } = useTranslation('assets');
   const [query, setQuery] = useState('');
   const [bucket, setBucket] = useState<AssetStateBucket>('all');
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -61,11 +63,9 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
     <div className="space-y-4 pb-8">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Activos</h2>
+          <h2 className="text-xl font-bold tracking-tight">{t('list.title')}</h2>
           <p className="text-xs text-muted-foreground">
-            {isLoading
-              ? 'Leyendo el catálogo local…'
-              : `${counts.all} ${counts.all === 1 ? 'activo' : 'activos'} en este dispositivo`}
+            {isLoading ? t('list.loading') : t('list.count', { count: counts.all })}
           </p>
         </div>
       </div>
@@ -79,8 +79,8 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
               setQuery(event.target.value);
               setUnmatchedScan(null);
             }}
-            placeholder="Código, nombre o serie…"
-            aria-label="Buscar activo"
+            placeholder={t('list.searchPlaceholder')}
+            aria-label={t('list.searchAria')}
             className="h-11 w-full rounded-xl border border-input bg-background pl-9 pr-9 text-sm shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
           {query && (
@@ -90,7 +90,7 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
                 setQuery('');
                 setUnmatchedScan(null);
               }}
-              aria-label="Limpiar búsqueda"
+              aria-label={t('list.clearSearch')}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:bg-muted"
             >
               <X className="h-4 w-4" />
@@ -100,11 +100,11 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
         <button
           type="button"
           onClick={() => setIsScannerOpen(true)}
-          aria-label="Escanear código QR o de barras"
+          aria-label={t('list.scanAria')}
           className="flex h-11 items-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-95"
         >
           <QrCode className="h-5 w-5" />
-          <span className="hidden sm:inline">Escanear</span>
+          <span className="hidden sm:inline">{t('list.scan')}</span>
         </button>
       </div>
 
@@ -112,15 +112,15 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
         <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="flex-1">
-            <p className="font-semibold">No se encontró un activo con el código «{unmatchedScan}»</p>
+            <p className="font-semibold">{t('list.unmatchedTitle', { code: unmatchedScan })}</p>
             <p className="mt-0.5 text-amber-700/80 dark:text-amber-300/80">
-              Verificá que el catálogo esté sincronizado o buscá por nombre.
+              {t('list.unmatchedHint')}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setUnmatchedScan(null)}
-            aria-label="Descartar aviso"
+            aria-label={t('list.dismissAlert')}
             className="rounded-full p-1 transition hover:bg-amber-500/20"
           >
             <X className="h-3.5 w-3.5" />
@@ -138,7 +138,7 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           }`}
         >
-          Todos
+          {t('list.filterAll')}
           <span className="ml-1.5 opacity-70">{counts.all}</span>
         </button>
         {filters.map((filter) => (
@@ -152,7 +152,7 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {filter.label}
+            {t(filter.labelKey)}
             <span className="ml-1.5 opacity-70">{counts[filter.key]}</span>
           </button>
         ))}
@@ -165,19 +165,20 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
       ) : counts.all === 0 ? (
         <div className="rounded-2xl border border-dashed p-8 text-center">
           <QrCode className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <p className="mt-3 text-sm font-semibold">Todavía no hay activos descargados</p>
+          <p className="mt-3 text-sm font-semibold">{t('list.emptyCatalog')}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Sincronizá desde la pestaña <span className="font-semibold">Sync</span> para bajar el
-            catálogo y poder buscarlo sin conexión.
+            <Trans
+              ns="assets"
+              i18nKey="list.emptyCatalogHint"
+              components={{ strong: <span className="font-semibold" /> }}
+            />
           </p>
         </div>
       ) : assets.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-8 text-center">
           <Search className="mx-auto h-9 w-9 text-muted-foreground/40" />
-          <p className="mt-3 text-sm font-semibold">No se encontraron activos</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Probá con otro código, nombre o quitá los filtros.
-          </p>
+          <p className="mt-3 text-sm font-semibold">{t('list.emptySearch')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('list.emptySearchHint')}</p>
         </div>
       ) : (
         <ul className="space-y-2.5">
@@ -205,10 +206,12 @@ export function AssetsPage({ tenantId, onSelectAsset }: AssetsPageProps) {
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${criticality.className}`}
                       >
-                        {criticality.label}
+                        {t(criticality.labelKey)}
                       </span>
                     </div>
-                    <p className="mt-1 truncate text-sm font-semibold">{asset.name || 'Sin nombre'}</p>
+                    <p className="mt-1 truncate text-sm font-semibold">
+                      {asset.name || t('fields.noName')}
+                    </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                       <span
                         className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-medium ${stateBucket.chipClassName}`}

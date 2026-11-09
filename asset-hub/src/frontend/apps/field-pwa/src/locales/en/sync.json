@@ -1,0 +1,148 @@
+﻿{
+  "title": "Sync Center",
+  "subtitle": "Transfer status between this device and the server",
+  "actions": {
+    "syncNow": "Sync now"
+  },
+  "hero": {
+    "errors_one": "{{count}} sync error",
+    "errors_other": "{{count}} sync errors",
+    "pending_one": "{{count}} item pending sync",
+    "pending_other": "{{count}} items pending sync",
+    "synced": "Everything is synced with the server",
+    "errorsHint": "Some items could not be sent. Check your connection and try again.",
+    "pendingHint": "There are evidences or changes saved on this device pending upload.",
+    "syncedHint": "No local changes pending. All evidences and tasks are up to date."
+  },
+  "lastSync": {
+    "label": "Last successful sync:"
+  },
+  "filters": {
+    "pending": "Pending",
+    "synced": "Synced"
+  },
+  "states": {
+    "synced": "Synced",
+    "pending": "Pending",
+    "draft": "Draft",
+    "conflict": "Conflict",
+    "blocked": "Blocked",
+    "dead": "Permanent error"
+  },
+  "taskStates": {
+    "todo": "To do",
+    "rework": "Rework",
+    "inProgress": "In progress",
+    "paused": "Paused",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "labels": {
+    "localState": "Local state:"
+  },
+  "conflicts": {
+    "title": "Conflicts to resolve ({{count}})",
+    "changedOnServer": "Modified on server · Local state:",
+    "resolve": "Resolve"
+  },
+  "pendingTasks": {
+    "title": "Tasks with pending changes ({{count}})"
+  },
+  "pendingIncidents": {
+    "title": "Pending incidents ({{count}})"
+  },
+  "media": {
+    "title": "Photos and media evidences ({{count}})",
+    "summary": "{{uploaded}} on server · {{pending}} pending",
+    "empty": "No photos or evidences recorded on this device.",
+    "targetTask": "Task: {{title}}",
+    "targetIncident": "Technical incident",
+    "targetMaintenance": "Maintenance evidence",
+    "alt": "Evidence",
+    "purposes": {
+      "taskPhoto": "Evidence photo",
+      "incidentPhoto": "Incident photo",
+      "signature": "Signature"
+    },
+    "status": {
+      "uploaded": "Synced",
+      "failed": "Error"
+    }
+  },
+  "outbox": {
+    "title": "Outbox operation queue ({{count}})",
+    "status": {
+      "pending": "Pending upload",
+      "done": "Completed",
+      "dead": "Permanent error"
+    }
+  },
+  "cache": {
+    "title": "Local data cache (offline mode)",
+    "subtitle": "Data downloaded to this device to work without internet",
+    "tasks": "Downloaded tasks",
+    "orders": "Downloaded orders",
+    "incidents": "Stored incidents",
+    "catalogs": "Cached catalogs"
+  },
+  "error": {
+    "label": "Sync error: {{error}}"
+  },
+  "banner": {
+    "offline": "Offline — changes will sync when you reconnect"
+  },
+  "chip": {
+    "pending_one": "{{count}} pending",
+    "pending_other": "{{count}} pending",
+    "errors_one": "{{count}} error",
+    "errors_other": "{{count}} errors",
+    "aria": "Sync status"
+  },
+  "conflictSheet": {
+    "title": "Sync conflict",
+    "description": "Local data differs from the server. Choose how to resolve it.",
+    "local": "Local",
+    "server": "Server",
+    "merge": "Merge",
+    "empty": "(empty)",
+    "resolve": "Resolve"
+  },
+  "deadLetter": {
+    "title": "Dead letter mutation",
+    "operation": "Operation:",
+    "error": "Error:",
+    "reason": "This mutation failed 8 times and was marked as dead letter. You can retry it or discard it."
+  },
+  "taskConflict": {
+    "title": "Sync conflict",
+    "warningTitle": "Watch out for your local data:",
+    "warningBody": "The task was modified on the server (for example, sent back to rework by the supervisor). Choose which version to keep.",
+    "device": "Your device",
+    "server": "Server / Web",
+    "state": "State:",
+    "reason": "Reason: {{reason}}",
+    "savedAt": "Saved: {{time}}",
+    "acceptServer": "Accept server version (rework)",
+    "forceLocal": "Keep and force local version",
+    "errors": {
+      "fetchServerVersion": "Could not fetch the server version",
+      "noSession": "There is no active session to force sync.",
+      "etagCheck": "Could not verify the current server ETag.",
+      "prepareLocal": "Could not prepare the local version for retry"
+    }
+  },
+  "stockConflict": {
+    "title": "Insufficient stock",
+    "availability": "Available: {{available}}, requested: {{requested}}",
+    "alternatives": "Alternative warehouses:",
+    "alternativeItem": "{{warehouseName}}: {{quantity}} available"
+  },
+  "update": {
+    "title": "New version available",
+    "applyNow": "It will be applied now (no pending changes).",
+    "apply": "Update",
+    "pendingTitle": "Update available",
+    "pendingBody_one": "It will be applied once there is no {{count}} pending change to sync.",
+    "pendingBody_other": "It will be applied once there are no {{count}} pending changes to sync."
+  }
+}

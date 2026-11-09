@@ -1,0 +1,148 @@
+﻿{
+  "title": "Centro de Sincronización",
+  "subtitle": "Estado de transmisión entre este dispositivo y el servidor",
+  "actions": {
+    "syncNow": "Sincronizar ahora"
+  },
+  "hero": {
+    "errors_one": "{{count}} error en sincronización",
+    "errors_other": "{{count}} errores en sincronización",
+    "pending_one": "{{count}} elemento pendiente de sincronizar",
+    "pending_other": "{{count}} elementos pendientes de sincronizar",
+    "synced": "Todo está sincronizado con el servidor",
+    "errorsHint": "Algunos elementos no pudieron enviarse. Verificá la conexión y volvé a intentar.",
+    "pendingHint": "Hay evidencias o cambios guardados en este dispositivo pendientes de enviarse.",
+    "syncedHint": "No hay cambios locales pendientes. Todas las evidencias y tareas están al día."
+  },
+  "lastSync": {
+    "label": "Última sincronización exitosa:"
+  },
+  "filters": {
+    "pending": "Pendientes",
+    "synced": "Sincronizados"
+  },
+  "states": {
+    "synced": "Sincronizado",
+    "pending": "Pendiente",
+    "draft": "Borrador",
+    "conflict": "Conflicto",
+    "blocked": "Bloqueado",
+    "dead": "Error permanente"
+  },
+  "taskStates": {
+    "todo": "Por hacer",
+    "rework": "Re-trabajo",
+    "inProgress": "En progreso",
+    "paused": "Pausada",
+    "done": "Completada",
+    "cancelled": "Cancelada"
+  },
+  "labels": {
+    "localState": "Estado local:"
+  },
+  "conflicts": {
+    "title": "Conflictos por resolver ({{count}})",
+    "changedOnServer": "Modificada en servidor · Estado local:",
+    "resolve": "Resolver"
+  },
+  "pendingTasks": {
+    "title": "Tareas con cambios pendientes ({{count}})"
+  },
+  "pendingIncidents": {
+    "title": "Incidencias pendientes ({{count}})"
+  },
+  "media": {
+    "title": "Fotos y evidencias multimedia ({{count}})",
+    "summary": "{{uploaded}} en servidor · {{pending}} pendientes",
+    "empty": "No hay fotos ni evidencias registradas en este dispositivo.",
+    "targetTask": "Tarea: {{title}}",
+    "targetIncident": "Incidente técnico",
+    "targetMaintenance": "Evidencia de mantenimiento",
+    "alt": "Evidencia",
+    "purposes": {
+      "taskPhoto": "Foto de evidencia",
+      "incidentPhoto": "Foto de incidencia",
+      "signature": "Firma"
+    },
+    "status": {
+      "uploaded": "Sincronizada",
+      "failed": "Error"
+    }
+  },
+  "outbox": {
+    "title": "Cola de operaciones outbox ({{count}})",
+    "status": {
+      "pending": "Pendiente de envío",
+      "done": "Completado",
+      "dead": "Error permanente"
+    }
+  },
+  "cache": {
+    "title": "Caché de datos locales (modo fuera de línea)",
+    "subtitle": "Datos descargados en este dispositivo para operar sin internet",
+    "tasks": "Tareas descargadas",
+    "orders": "Órdenes descargadas",
+    "incidents": "Incidentes guardados",
+    "catalogs": "Catálogos en caché"
+  },
+  "error": {
+    "label": "Error en sincronización: {{error}}"
+  },
+  "banner": {
+    "offline": "Sin conexión — los cambios se sincronizarán al reconectar"
+  },
+  "chip": {
+    "pending_one": "{{count}} pendiente",
+    "pending_other": "{{count}} pendientes",
+    "errors_one": "{{count}} error",
+    "errors_other": "{{count}} errores",
+    "aria": "Estado de sincronización"
+  },
+  "conflictSheet": {
+    "title": "Conflicto de sincronización",
+    "description": "Los datos locales difieren de los del servidor. Elegí cómo resolver.",
+    "local": "Local",
+    "server": "Servidor",
+    "merge": "Combinar",
+    "empty": "(vacío)",
+    "resolve": "Resolver"
+  },
+  "deadLetter": {
+    "title": "Mutación en dead letter",
+    "operation": "Operación:",
+    "error": "Error:",
+    "reason": "Esta mutación falló 8 veces y fue marcada como dead letter. Podés reintentarla o descartarla."
+  },
+  "taskConflict": {
+    "title": "Conflicto de sincronización",
+    "warningTitle": "Atención con tus datos locales:",
+    "warningBody": "La tarea fue modificada en el servidor (por ejemplo, enviada a re-trabajo por el supervisor). Elegí qué versión querés mantener.",
+    "device": "Tu dispositivo",
+    "server": "Servidor / Web",
+    "state": "Estado:",
+    "reason": "Motivo: {{reason}}",
+    "savedAt": "Guardado: {{time}}",
+    "acceptServer": "Aceptar versión del servidor (re-trabajo)",
+    "forceLocal": "Conservar y forzar versión local",
+    "errors": {
+      "fetchServerVersion": "Error al obtener la versión del servidor",
+      "noSession": "No hay sesión activa para forzar la sincronización.",
+      "etagCheck": "No se pudo verificar el ETag actual del servidor.",
+      "prepareLocal": "Error al preparar la versión local para reintento"
+    }
+  },
+  "stockConflict": {
+    "title": "Stock insuficiente",
+    "availability": "Disponible: {{available}}, solicitado: {{requested}}",
+    "alternatives": "Almacenes alternativos:",
+    "alternativeItem": "{{warehouseName}}: {{quantity}} disponibles"
+  },
+  "update": {
+    "title": "Nueva versión disponible",
+    "applyNow": "Se aplicará ahora (sin cambios pendientes).",
+    "apply": "Actualizar",
+    "pendingTitle": "Actualización disponible",
+    "pendingBody_one": "Se aplicará cuando no quede {{count}} cambio pendiente de sincronizar.",
+    "pendingBody_other": "Se aplicará cuando no queden {{count}} cambios pendientes de sincronizar."
+  }
+}

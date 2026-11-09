@@ -1,0 +1,129 @@
+﻿{
+  "journey": {
+    "title": "My Day",
+    "pending_one": "{{count}} pending task",
+    "pending_other": "{{count}} pending tasks",
+    "completed_one": "{{count}} completed",
+    "completed_other": "{{count}} completed",
+    "refresh": "Refresh my day",
+    "missingActorTitle": "We could not identify your employee profile",
+    "missingActorHint": "Sign out and sign in again to link your user to an employee.",
+    "emptyTitle": "You have no assigned tasks",
+    "emptyHint": "Enjoy your day or refresh to sync."
+  },
+  "sections": {
+    "conflicts": "Conflicts to resolve ({{count}})",
+    "rework": "Returned tasks ({{count}})",
+    "overdue": "Overdue ({{count}})",
+    "today": "Due today ({{count}})",
+    "upcoming": "Upcoming ({{count}})",
+    "completed": "Completed ({{count}})"
+  },
+  "card": {
+    "resolveConflict": "Resolve conflict with server",
+    "reworkReason": "Return reason:",
+    "due": "Due: {{date}}",
+    "order": "WO: {{title}}"
+  },
+  "states": {
+    "draft": "Draft",
+    "todo": "To do",
+    "inProgress": "In progress",
+    "paused": "Paused",
+    "done": "Completed",
+    "verified": "Verified",
+    "cancelled": "Cancelled",
+    "rework": "Rework"
+  },
+  "orderStates": {
+    "draft": "Draft",
+    "approved": "Approved",
+    "scheduled": "Scheduled",
+    "inProgress": "In progress",
+    "done": "Completed",
+    "rescheduled": "Rescheduled",
+    "verified": "Verified",
+    "cancelled": "Cancelled"
+  },
+  "syncStates": {
+    "synced": "Synced",
+    "pending": "Pending",
+    "conflict": "Conflict",
+    "blocked": "Blocked",
+    "dead": "Fatal error"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "detail": {
+    "notFound": "Task not found in the local database",
+    "reworkTitle": "Task returned for correction:",
+    "reworkHint": "Review the work performed",
+    "asset": "Asset: {{name}}",
+    "linkedIncident": "Linked incident",
+    "orderLock": "Work order is in state \"{{state}}\". Start the WO to enable transitions.",
+    "due": "Due date",
+    "started": "Started",
+    "completed": "Completed",
+    "propagatedProperties": "Propagated dynamic properties",
+    "checklistTitle": "Verification form",
+    "transitionBlocked": "Transition blocked by WO",
+    "noTransitions": "No transitions available",
+    "changeState": "Change task state",
+    "tabs": {
+      "details": "Details",
+      "checklist": "Checklist",
+      "history": "History",
+      "comments": "Comments"
+    },
+    "evidence": {
+      "deleteConfirm": "Delete this evidence? This action cannot be undone.",
+      "delete": "Delete evidence",
+      "alt": "Evidence {{index}}",
+      "empty": "No evidence photos recorded."
+    },
+    "history": {
+      "title": "State history",
+      "loading": "Loading history…",
+      "empty": "No transitions recorded yet.",
+      "local": "Local (offline)",
+      "reason": "Reason: {{reason}}",
+      "geo": "Lat: {{lat}}, Lon: {{lon}} ({{status}})"
+    },
+    "comments": {
+      "title": "Add comment",
+      "placeholder": "Write an observation or technical comment...",
+      "sending": "Sending…",
+      "submit": "Publish comment",
+      "loading": "Loading comments…",
+      "empty": "No comments recorded for this task.",
+      "technician": "Technician"
+    }
+  },
+  "checklist": {
+    "draftSaved": "Draft saved locally",
+    "saved": "Checklist saved and queued for sync",
+    "saveError": "Failed to save checklist",
+    "submit": "Save and confirm checklist"
+  },
+  "transition": {
+    "title": "Change task state",
+    "currentState": "Current state: {{state}}",
+    "orderLocked": "The work order is in state \"{{state}}\". It must be started first before operating on this task.",
+    "confirm": "Confirm changing the task to <bold>{{state}}</bold>?",
+    "pauseReason": "Pause reason (optional):",
+    "pausePlaceholder": "e.g. Waiting for parts, rain...",
+    "processing": "Processing…",
+    "error": "Failed to change state",
+    "noTransitions": "No valid transitions available for state \"{{state}}\".",
+    "start": "Start task",
+    "startAction": "Start",
+    "pause": "Pause task",
+    "pauseAction": "Pause",
+    "complete": "Complete task",
+    "completeAction": "Complete"
+  }
+}

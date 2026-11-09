@@ -5,6 +5,8 @@ export interface HttpClientConfig {
   getAccessToken(): Promise<string>;
   onUnauthorized?(): Promise<void>;
   getTenantSlug?(): Promise<string | undefined>;
+  /** Active UI language; sent as Accept-Language so the API localizes messages. */
+  getLocale?(): string;
 }
 
 interface HttpResponse {
@@ -85,6 +87,9 @@ export class HttpClient {
       const slug = await this.config.getTenantSlug();
       if (slug) headers['X-Tenant'] = slug;
     }
+    if (this.config.getLocale) {
+      headers['Accept-Language'] = this.config.getLocale();
+    }
     if (opts?.idempotencyKey) {
       headers['Idempotency-Key'] = opts.idempotencyKey;
     }
@@ -134,6 +139,9 @@ export class HttpClient {
       const slug = await this.config.getTenantSlug();
       if (slug) headers['X-Tenant'] = slug;
     }
+    if (this.config.getLocale) {
+      headers['Accept-Language'] = this.config.getLocale();
+    }
 
     let url = `${this.config.baseUrl}${path}`;
     if (query && Object.keys(query).length > 0) {
@@ -175,6 +183,9 @@ export class HttpClient {
     if (this.config.getTenantSlug) {
       const slug = await this.config.getTenantSlug();
       if (slug) headers['X-Tenant'] = slug;
+    }
+    if (this.config.getLocale) {
+      headers['Accept-Language'] = this.config.getLocale();
     }
     if (opts?.idempotencyKey) {
       headers['Idempotency-Key'] = opts.idempotencyKey;
@@ -227,6 +238,9 @@ export class HttpClient {
       const slug = await this.config.getTenantSlug();
       if (slug) headers['X-Tenant'] = slug;
     }
+    if (this.config.getLocale) {
+      headers['Accept-Language'] = this.config.getLocale();
+    }
     if (opts?.idempotencyKey) {
       headers['Idempotency-Key'] = opts.idempotencyKey;
     }
@@ -275,6 +289,9 @@ export class HttpClient {
     if (this.config.getTenantSlug) {
       const slug = await this.config.getTenantSlug();
       if (slug) headers['X-Tenant'] = slug;
+    }
+    if (this.config.getLocale) {
+      headers['Accept-Language'] = this.config.getLocale();
     }
     if (opts?.idempotencyKey) {
       headers['Idempotency-Key'] = opts.idempotencyKey;

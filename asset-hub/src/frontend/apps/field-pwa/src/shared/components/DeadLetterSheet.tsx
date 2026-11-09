@@ -1,5 +1,6 @@
 // DeadLetterSheet.tsx — Dead letter resolution UI
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
 import { db } from '@asset-hub/core-offline';
 
@@ -12,6 +13,7 @@ interface DeadLetterSheetProps {
 }
 
 export function DeadLetterSheet({ mutationId, operation, lastError, onClose, onResolved }: DeadLetterSheetProps) {
+  const { t } = useTranslation(['sync', 'common']);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleRetry = async () => {
@@ -47,19 +49,18 @@ export function DeadLetterSheet({ mutationId, operation, lastError, onClose, onR
       <div className="w-full max-w-lg rounded-t-2xl bg-background p-4">
         <div className="mb-4 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-500" />
-          <h3 className="text-lg font-semibold">Mutación en dead letter</h3>
+          <h3 className="text-lg font-semibold">{t('deadLetter.title')}</h3>
         </div>
 
         <div className="mb-4 space-y-2">
           <p className="text-sm">
-            <span className="font-medium">Operación:</span> {operation}
+            <span className="font-medium">{t('deadLetter.operation')}</span> {operation}
           </p>
           <p className="text-sm">
-            <span className="font-medium">Error:</span> {lastError}
+            <span className="font-medium">{t('deadLetter.error')}</span> {lastError}
           </p>
           <p className="text-xs text-muted-foreground">
-            Esta mutación falló 8 veces y fue marcada como dead letter.
-            Podés reintentarla o descartarla.
+            {t('deadLetter.reason')}
           </p>
         </div>
 
@@ -70,7 +71,7 @@ export function DeadLetterSheet({ mutationId, operation, lastError, onClose, onR
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
             <RefreshCw className="h-4 w-4" />
-            Reintentar
+            {t('common:actions.retry')}
           </button>
           <button
             onClick={handleDiscard}
@@ -78,7 +79,7 @@ export function DeadLetterSheet({ mutationId, operation, lastError, onClose, onR
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-destructive px-3 py-2 text-sm font-medium text-destructive disabled:opacity-50"
           >
             <Trash2 className="h-4 w-4" />
-            Descartar
+            {t('common:actions.discard')}
           </button>
         </div>
 
@@ -86,7 +87,7 @@ export function DeadLetterSheet({ mutationId, operation, lastError, onClose, onR
           onClick={onClose}
           className="mt-3 w-full rounded-md py-2 text-sm text-muted-foreground"
         >
-          Cerrar
+          {t('common:actions.close')}
         </button>
       </div>
     </div>

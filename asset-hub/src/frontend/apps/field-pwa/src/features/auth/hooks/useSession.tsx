@@ -14,6 +14,9 @@ import {
 } from '@asset-hub/core-offline';
 import { HttpClient } from '@asset-hub/core-offline';
 import { db } from '@asset-hub/core-offline';
+import { apiFetch } from '../../../lib/http';
+import { STORAGE_KEY, normalizeLanguage, useLanguageStore } from '../../../store/language.store';
+import i18n from '../../../i18n';
 
 export interface UseSessionReturn {
   state: SessionState;
@@ -38,6 +41,16 @@ interface MeProfile {
 }
 
 /**
+ * Adopt the locale stored on the user profile only when this device has no
+ * explicit choice yet. Once the technician switches languages, their choice wins.
+ */
+function adoptPreferredLocale(preferredLocale?: string | null): void {
+  if (!preferredLocale) return;
+  if (localStorage.getItem(STORAGE_KEY)) return;
+  useLanguageStore.getState().setLang(normalizeLanguage(preferredLocale));
+}
+
+/**
  * Resolve the user profile and employee linked to this user.
  *
  * The field assignment filter matches on `assignedEmployeeId`, so without this id the
@@ -47,7 +60,7 @@ interface MeProfile {
  */
 async function hydrateUserProfile(session: SessionData): Promise<MeProfile | undefined> {
   const callMe = (token: string) =>
-    fetch(`${API_BASE}/api/v1/auth/me`, {
+    apiFetch(`${API_BASE}/api/v1/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         ...(session.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
@@ -58,7 +71,7 @@ async function hydrateUserProfile(session: SessionData): Promise<MeProfile | und
     let res = await callMe(session.accessToken);
 
     if (res.status === 401 && session.refreshToken) {
-      const refresh = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+      const refresh = await apiFetch(`${API_BASE}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: session.refreshToken }),
@@ -76,6 +89,7 @@ async function hydrateUserProfile(session: SessionData): Promise<MeProfile | und
 
     if (!res.ok) return undefined;
     const me = await res.json();
+    adoptPreferredLocale(me?.preferredLocale);
     const emp = me?.linkedEmployee;
     const fullName = emp ? `${emp.firstName || ''} ${emp.lastName || ''}`.trim() : undefined;
     return {
@@ -141,13 +155,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                   return s?.accessToken ?? stored.accessToken;
                 },
                 getTenantSlug: async () => stored.tenantSlug ?? undefined,
+                getLocale: () => useLanguageStore.getState().lang,
                 onUnauthorized: async () => {
                   if (!stored.refreshToken) {
                     window.dispatchEvent(new CustomEvent('session:expired'));
                     return;
                   }
                   try {
-                    const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+                    const res = await apiFetch(`${API_BASE}/api/v1/auth/refresh`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ refreshToken: stored.refreshToken }),
@@ -219,7 +234,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     async (email: string, password: string, mfaCode?: string) => {
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+        const res = await apiFetch(`${API_BASE}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, mfaCode }),
@@ -227,7 +242,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail ?? err.title ?? 'Login failed');
+          throw new Error(err.detail ?? err.title ?? i18n.t('auth:errors.loginFailed'));
         }
 
         const data = await res.json();
@@ -248,7 +263,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         let roleLabel: string | undefined;
 
         try {
-          const meRes = await fetch(`${API_BASE}/api/v1/auth/me`, {
+          const meRes = await apiFetch(`${API_BASE}/api/v1/auth/me`, {
             headers: {
               Authorization: `Bearer ${data.accessToken}`,
               ...(data.tenantSlug ? { 'X-Tenant': data.tenantSlug } : {}),
@@ -256,6 +271,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           });
           if (meRes.ok) {
             const meData = await meRes.json();
+            adoptPreferredLocale(meData.preferredLocale);
             userName = meData.fullName || meData.email;
             userEmail = meData.email;
             if (meData.linkedEmployee) {
@@ -291,7 +307,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         // Request offline lease
         try {
-          const leaseRes = await fetch(`${API_BASE}/api/v1/auth/offline-lease`, {
+          const leaseRes = await apiFetch(`${API_BASE}/api/v1/auth/offline-lease`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -316,6 +332,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             baseUrl: API_BASE,
             getAccessToken: async () => sessionData.accessToken,
             getTenantSlug: async () => sessionData.tenantSlug ?? undefined,
+            getLocale: () => useLanguageStore.getState().lang,
           });
           // Pull tasks and metadata first so the technician has their immediate work ready
           await pullTasks(db, http, sessionData.tenantSlug ?? 'default');

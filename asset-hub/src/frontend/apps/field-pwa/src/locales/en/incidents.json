@@ -1,0 +1,103 @@
+{
+  "list": {
+    "title": "Incidents",
+    "new": "New",
+    "reportOnAsset": "Report on an asset",
+    "empty": "No incidents reported",
+    "count_one": "{{count}} incident",
+    "count_other": "{{count}} incidents"
+  },
+  "form": {
+    "title": "New incident",
+    "templateLabel": "Incident template",
+    "templatePlaceholder": "(No specific template)",
+    "templateSearchPlaceholder": "Search template...",
+    "templateEmpty": "No templates found",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Brief description of the problem",
+    "titleRequired": "Enter a title for the incident",
+    "descriptionPlaceholder": "Additional details...",
+    "submit": "Report incident",
+    "submitting": "Reporting…",
+    "reportFailed": "Failed to report the incident",
+    "reported": "Incident reported. It will sync when a connection is available."
+  },
+  "detail": {
+    "notFound": "Incident not found",
+    "closeAria": "Close details",
+    "state": "Status",
+    "descriptionTitle": "General Description",
+    "noDescription": "No description",
+    "assetTitle": "Affected Asset",
+    "unassigned": "Not assigned",
+    "code": "Code",
+    "severityAndDate": "Severity and Date",
+    "infoTitle": "Incident Information",
+    "templateAttributes": "Specific attributes ({{name}})",
+    "orderTitle": "Work Order",
+    "viewOrder": "View WO",
+    "orderKind": "Type: {{kind}}",
+    "noOrder": "No work order is linked to this incident yet.",
+    "tasksTitle": "Assigned Tasks",
+    "tasksTitleWithCount": "Assigned Tasks ({{count}})",
+    "noTasks": "No derived tasks have been recorded for this incident.",
+    "priority": "Priority: {{priority}}",
+    "pendingSync": "This incident has local changes pending sync with the server.",
+    "changeTo": "Change to {{state}}"
+  },
+  "severity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical",
+    "unknown": "Normal"
+  },
+  "states": {
+    "reported": "Reported",
+    "open": "Open",
+    "triaged": "Triaged",
+    "assigned": "Assigned",
+    "inProgress": "In progress",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "cancelled": "Cancelled",
+    "reopened": "Reopened"
+  },
+  "orderStates": {
+    "draft": "Draft",
+    "approved": "Approved",
+    "scheduled": "Scheduled",
+    "inProgress": "In progress",
+    "done": "Done",
+    "rescheduled": "Rescheduled",
+    "verified": "Verified",
+    "cancelled": "Cancelled"
+  },
+  "orderKinds": {
+    "corrective": "Corrective",
+    "preventive": "Preventive"
+  },
+  "taskStates": {
+    "todo": "To do",
+    "ready": "To do",
+    "inProgress": "In progress",
+    "paused": "Paused",
+    "done": "Done",
+    "verified": "Verified",
+    "cancelled": "Cancelled",
+    "rework": "Rework"
+  },
+  "syncStates": {
+    "draft": "Draft",
+    "pending": "Pending",
+    "synced": "Synced",
+    "conflict": "Conflict",
+    "blocked": "Blocked",
+    "dead": "Failed"
+  },
+  "errors": {
+    "notFound": "Incident not found",
+    "transition": "State transition failed",
+    "saveProperties": "Failed to save properties"
+  }
+}

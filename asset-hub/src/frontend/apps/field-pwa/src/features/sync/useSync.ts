@@ -9,6 +9,8 @@ import { pullAssets, needsAssetCatalogRefresh, pullDelta, pullOrders, pullIncide
 import { loadSession } from '../../auth/session-store';
 import { saveSession } from '../../auth/session-store';
 import { uploadMedia } from '../../media/uploader';
+import { apiFetch } from '../../lib/http';
+import { useLanguageStore } from '../../store/language.store';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5168';
 
@@ -48,6 +50,7 @@ export function useSync() {
         const session = await loadSession();
         return session?.tenantSlug ?? undefined;
       },
+      getLocale: () => useLanguageStore.getState().lang,
       onUnauthorized: async () => {
         const session = await loadSession();
         if (!session?.refreshToken) {
@@ -55,7 +58,7 @@ export function useSync() {
           return;
         }
         try {
-          const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+          const res = await apiFetch(`${API_BASE}/api/v1/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken: session.refreshToken }),
@@ -124,7 +127,9 @@ export function useSync() {
         }
       } catch { /* continue */ }
       // Other resources without filter
-      for (const resource of ['stock'] as const) {
+      // (Stock is loaded via pullMetadata as full payload with SKU and catalog names,
+      // delta stream only carries Guid IDs and would overwrite full records with empty names).
+      for (const resource of [] as const) {
         try {
           const result = await pullDelta(resource, db, http);
           pulled += result.fetched;
@@ -191,7 +196,23 @@ export function useSync() {
   const drainNow = useCallback(async () => {
     setState((prev) => ({ ...prev, isSyncing: true, lastError: null }));
     try {
-      // 1. Reset any pending/blocked/dead outbox mutations so manual sync retries immediately without waiting for backoff
+      // 1. Purge invalid orphan consumptions without workTaskId (they fail backend validation with 400)
+      const orphanConsumptions = await db.outbox_mutations
+        .filter((m) => {
+          if (m.operation !== 'material.consume') return false;
+          try {
+            const body = JSON.parse(m.bodyJson ?? '{}');
+            return !body.workTaskId;
+          } catch {
+            return false;
+          }
+        })
+        .toArray();
+      for (const oc of orphanConsumptions) {
+        await db.outbox_mutations.delete(oc.id);
+      }
+
+      // 2. Reset any pending/blocked/dead outbox mutations so manual sync retries immediately without waiting for backoff
       const allMutations = await db.outbox_mutations.toArray();
       for (const m of allMutations) {
         if (m.status === 'pending' || m.status === 'blocked' || m.status === 'dead') {
@@ -239,7 +260,7 @@ export function useSync() {
           for (const task of pendingTasks) {
             if (activeAggIds.has(task.id)) continue;
             try {
-              const res = await fetch(`${API_BASE}/api/v1/work-tasks/${task.id}/state`, {
+              const res = await apiFetch(`${API_BASE}/api/v1/work-tasks/${task.id}/state`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
@@ -273,7 +294,7 @@ export function useSync() {
           for (const inc of pendingIncidents) {
             if (activeAggIds.has(inc.id)) continue;
             try {
-              const res = await fetch(`${API_BASE}/api/v1/incidents`, {
+              const res = await apiFetch(`${API_BASE}/api/v1/incidents`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -361,7 +382,7 @@ export function useSync() {
                   }
 
                   if (item.ownerType === 'task_evidence') {
-                    await fetch(`${API_BASE}/api/v1/work-tasks/${item.ownerId}/evidences`, {
+                    await apiFetch(`${API_BASE}/api/v1/work-tasks/${item.ownerId}/evidences`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',

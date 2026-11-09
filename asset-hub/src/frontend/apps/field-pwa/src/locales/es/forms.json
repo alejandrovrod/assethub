@@ -1,0 +1,76 @@
+﻿{
+  "propagated": {
+    "catalogs": {
+      "project": "Proyecto",
+      "assetType": "Tipo de Activo",
+      "level": "Nivel",
+      "incidentType": "Tipo de Incidencia",
+      "activityType": "Tipo de Actividad",
+      "logbookType": "Tipo de Bitácora",
+      "category1": "Categoría 1",
+      "category2": "Categoría 2",
+      "category3": "Categoría 3",
+      "category4": "Categoría 4",
+      "category5": "Categoría 5",
+      "priority": "Prioridad",
+      "bioRiskLevel": "Nivel de Riesgo",
+      "cleaningFrequency": "Frecuencia de Limpieza",
+      "cleaningSupplies": "Insumos de Limpieza",
+      "brand": "Marca",
+      "sparePartType": "Tipo de Refacción",
+      "specialty": "Especialidad"
+    },
+    "catalogFallback": "Catálogo {{code}}",
+    "reportTo": "Reportar a",
+    "assignedTeam": "Equipo asignado",
+    "images": "Imágenes",
+    "additionalField": "Campo adicional",
+    "loading": "Cargando propiedades dinámicas…",
+    "empty": "No hay propiedades dinámicas registradas.",
+    "fieldCount_one": "{{count}} campo registrado",
+    "fieldCount_other": "{{count}} campos registrados",
+    "editFields": "Editar campos",
+    "saveSuccess": "Propiedades guardadas correctamente",
+    "saveError": "Error al guardar los cambios",
+    "saveChanges": "Guardar cambios"
+  },
+  "template": {
+    "sectionTitle": "Campos de la plantilla",
+    "required": "* Requerido",
+    "evidenceAlt": "Evidencia {{index}}",
+    "removePhoto": "Quitar foto",
+    "takePhoto": "Tomar foto o subir evidencia"
+  },
+  "select": {
+    "placeholder": "Seleccione una opción…",
+    "search": "Buscar...",
+    "empty": "No se encontraron resultados",
+    "clear": "Limpiar selección",
+    "employee": "Seleccione un empleado…",
+    "searchEmployee": "Buscar empleado...",
+    "team": "Seleccione un equipo…",
+    "searchTeam": "Buscar equipo...",
+    "searchOption": "Buscar opción...",
+    "results_one": "{{count}} opción disponible",
+    "results_other": "{{count}} opciones disponibles"
+  },
+  "enterValue": "Ingrese {{field}}…",
+  "evidence": {
+    "title": "Evidencias ({{current}}/{{max}})",
+    "uploading": "Subiendo…",
+    "capture": "Capturar",
+    "captureAria": "Capturar evidencia"
+  },
+  "contrast": {
+    "enable": "Activar alto contraste",
+    "disable": "Desactivar alto contraste"
+  },
+  "dynamicFields": {
+    "fallbackLabel": "Campo"
+  },
+  "states": {
+    "empty": "No hay datos",
+    "error": "Error al cargar",
+    "stale": "Datos desactualizados"
+  }
+}

@@ -1,0 +1,76 @@
+﻿{
+  "propagated": {
+    "catalogs": {
+      "project": "Project",
+      "assetType": "Asset type",
+      "level": "Level",
+      "incidentType": "Incident type",
+      "activityType": "Activity type",
+      "logbookType": "Logbook type",
+      "category1": "Category 1",
+      "category2": "Category 2",
+      "category3": "Category 3",
+      "category4": "Category 4",
+      "category5": "Category 5",
+      "priority": "Priority",
+      "bioRiskLevel": "Risk level",
+      "cleaningFrequency": "Cleaning frequency",
+      "cleaningSupplies": "Cleaning supplies",
+      "brand": "Brand",
+      "sparePartType": "Spare part type",
+      "specialty": "Specialty"
+    },
+    "catalogFallback": "Catalog {{code}}",
+    "reportTo": "Report to",
+    "assignedTeam": "Assigned team",
+    "images": "Images",
+    "additionalField": "Additional field",
+    "loading": "Loading dynamic properties…",
+    "empty": "No dynamic properties recorded.",
+    "fieldCount_one": "{{count}} field recorded",
+    "fieldCount_other": "{{count}} fields recorded",
+    "editFields": "Edit fields",
+    "saveSuccess": "Properties saved successfully",
+    "saveError": "Error saving changes",
+    "saveChanges": "Save changes"
+  },
+  "template": {
+    "sectionTitle": "Template fields",
+    "required": "* Required",
+    "evidenceAlt": "Evidence {{index}}",
+    "removePhoto": "Remove photo",
+    "takePhoto": "Take photo or upload evidence"
+  },
+  "select": {
+    "placeholder": "Select an option…",
+    "search": "Search...",
+    "empty": "No results found",
+    "clear": "Clear selection",
+    "employee": "Select an employee…",
+    "searchEmployee": "Search employee...",
+    "team": "Select a team…",
+    "searchTeam": "Search team...",
+    "searchOption": "Search option...",
+    "results_one": "{{count}} option available",
+    "results_other": "{{count}} options available"
+  },
+  "enterValue": "Enter {{field}}…",
+  "evidence": {
+    "title": "Evidence ({{current}}/{{max}})",
+    "uploading": "Uploading…",
+    "capture": "Capture",
+    "captureAria": "Capture evidence"
+  },
+  "contrast": {
+    "enable": "Enable high contrast",
+    "disable": "Disable high contrast"
+  },
+  "dynamicFields": {
+    "fallbackLabel": "Field"
+  },
+  "states": {
+    "empty": "No data",
+    "error": "Could not load",
+    "stale": "Outdated data"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "list": {
+    "title": "Incidencias",
+    "new": "Nueva",
+    "reportOnAsset": "Reportar sobre un activo",
+    "empty": "No hay incidencias registradas",
+    "count_one": "{{count}} incidencia",
+    "count_other": "{{count}} incidencias"
+  },
+  "form": {
+    "title": "Nueva incidencia",
+    "templateLabel": "Plantilla de Incidencia",
+    "templatePlaceholder": "(Sin plantilla específica)",
+    "templateSearchPlaceholder": "Buscar plantilla...",
+    "templateEmpty": "No se encontraron plantillas",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Descripción breve del problema",
+    "titleRequired": "Ingresá un título para la incidencia",
+    "descriptionPlaceholder": "Detalles adicionales...",
+    "submit": "Reportar incidencia",
+    "submitting": "Reportando…",
+    "reportFailed": "Error al reportar incidencia",
+    "reported": "Incidencia reportada. Se sincronizará cuando haya conexión."
+  },
+  "detail": {
+    "notFound": "Incidencia no encontrada",
+    "closeAria": "Cerrar detalle",
+    "state": "Estado",
+    "descriptionTitle": "Descripción General",
+    "noDescription": "Sin descripción",
+    "assetTitle": "Activo Afectado",
+    "unassigned": "No asignado",
+    "code": "Código",
+    "severityAndDate": "Severidad y Fecha",
+    "infoTitle": "Información de la Incidencia",
+    "templateAttributes": "Atributos específicos ({{name}})",
+    "orderTitle": "Orden de Trabajo",
+    "viewOrder": "Ver OT",
+    "orderKind": "Tipo: {{kind}}",
+    "noOrder": "No hay orden de trabajo asociada a esta incidencia todavía.",
+    "tasksTitle": "Tareas Asignadas",
+    "tasksTitleWithCount": "Tareas Asignadas ({{count}})",
+    "noTasks": "No hay tareas derivadas registradas para esta incidencia.",
+    "priority": "Prioridad: {{priority}}",
+    "pendingSync": "Esta incidencia tiene cambios locales pendientes de sincronizar con el servidor.",
+    "changeTo": "Cambiar a {{state}}"
+  },
+  "severity": {
+    "low": "Baja",
+    "medium": "Media",
+    "high": "Alta",
+    "critical": "Crítica",
+    "unknown": "Normal"
+  },
+  "states": {
+    "reported": "Reportada",
+    "open": "Abierta",
+    "triaged": "Triada",
+    "assigned": "Asignada",
+    "inProgress": "En progreso",
+    "resolved": "Resuelta",
+    "closed": "Cerrada",
+    "cancelled": "Cancelada",
+    "reopened": "Reabierta"
+  },
+  "orderStates": {
+    "draft": "Borrador",
+    "approved": "Aprobada",
+    "scheduled": "Programada",
+    "inProgress": "En progreso",
+    "done": "Completada",
+    "rescheduled": "Reprogramada",
+    "verified": "Verificada",
+    "cancelled": "Cancelada"
+  },
+  "orderKinds": {
+    "corrective": "Correctiva",
+    "preventive": "Preventiva"
+  },
+  "taskStates": {
+    "todo": "Por hacer",
+    "ready": "Por hacer",
+    "inProgress": "En progreso",
+    "paused": "Pausada",
+    "done": "Completada",
+    "verified": "Verificada",
+    "cancelled": "Cancelada",
+    "rework": "Re-trabajo"
+  },
+  "syncStates": {
+    "draft": "Borrador",
+    "pending": "Pendiente",
+    "synced": "Sincronizada",
+    "conflict": "Conflicto",
+    "blocked": "Bloqueada",
+    "dead": "Fallida"
+  },
+  "errors": {
+    "notFound": "Incidente no encontrado",
+    "transition": "Error en la transición",
+    "saveProperties": "Error al guardar propiedades"
+  }
+}

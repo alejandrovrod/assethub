@@ -970,5 +970,51 @@ export async function pullMetadata(
     catalogs = await db.catalog_items.count();
   }
 
+  // 5. Inventory Stock (Materials & spare parts in warehouses)
+  try {
+    const res = await http.get('/api/v1/inventory/stock');
+    const items = Array.isArray(res.body)
+      ? res.body
+      : Array.isArray((res.body as any)?.data)
+        ? (res.body as any).data
+        : [];
+
+    if (items.length > 0) {
+      // Clear legacy/corrupted stock entries with NaN or missing materialId
+      await db.materials_stock.filter((s) => !s.name || !s.materialId || isNaN(s.qtyAvailableServer)).delete();
+
+      const stockRecords: MaterialStockRecord[] = items.map((s: any) => ({
+        id: `${s.warehouseId}:${s.catalogItemId}`,
+        tenantId,
+        warehouseId: s.warehouseId,
+        warehouseName: s.warehouseName ?? '',
+        materialId: s.catalogItemId,
+        sku: s.catalogItemCode ?? '',
+        name: s.catalogItemName ?? s.catalogItemCode ?? 'Material',
+        unit: s.unit ?? 'u',
+        qtyAvailableServer: Number(s.quantityOnHand ?? 0),
+        qtyReservedLocal: 0,
+        qtyConsumedLocal: 0,
+        allowNegativeStock: false,
+        rowVersion: s.etag ?? '',
+        cachedAtMs: Date.now(),
+      }));
+
+      // Preserve local reservations if any
+      for (const record of stockRecords) {
+        const local = await db.materials_stock.get(record.id);
+        if (local) {
+          record.qtyReservedLocal = local.qtyReservedLocal ?? 0;
+          record.qtyConsumedLocal = local.qtyConsumedLocal ?? 0;
+        }
+      }
+
+      await db.materials_stock.bulkPut(stockRecords);
+    }
+  } catch (err) {
+    console.warn('Failed to pull inventory stock:', err);
+  }
+
   return { templates, directory, catalogs };
 }
+

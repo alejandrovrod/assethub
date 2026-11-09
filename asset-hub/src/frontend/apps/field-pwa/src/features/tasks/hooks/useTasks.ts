@@ -1,6 +1,79 @@
 // useTasks.ts — React hook for task list with live query and urgency grouping
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, TaskRepository, type TaskRecord } from '@asset-hub/core-offline';
+import { db, TaskRepository, type SyncState, type TaskRecord } from '@asset-hub/core-offline';
+
+/**
+ * Literal translation keys for the task domain. Technical values coming from the
+ * API/Dexie ('in_progress', 'pending', …) are never translated: they are mapped
+ * to these keys so the UI can render a localized label.
+ */
+export type TaskStateKey =
+  | 'states.draft'
+  | 'states.todo'
+  | 'states.inProgress'
+  | 'states.paused'
+  | 'states.done'
+  | 'states.verified'
+  | 'states.cancelled'
+  | 'states.rework';
+
+export const STATE_LABELS: Record<string, TaskStateKey> = {
+  draft: 'states.draft',
+  todo: 'states.todo',
+  ready: 'states.todo',
+  in_progress: 'states.inProgress',
+  paused: 'states.paused',
+  done: 'states.done',
+  verified: 'states.verified',
+  cancelled: 'states.cancelled',
+  rework: 'states.rework',
+};
+
+export type OrderStateKey =
+  | 'orderStates.draft'
+  | 'orderStates.approved'
+  | 'orderStates.scheduled'
+  | 'orderStates.inProgress'
+  | 'orderStates.done'
+  | 'orderStates.rescheduled'
+  | 'orderStates.verified'
+  | 'orderStates.cancelled';
+
+export const ORDER_STATE_LABELS: Record<string, OrderStateKey> = {
+  draft: 'orderStates.draft',
+  approved: 'orderStates.approved',
+  scheduled: 'orderStates.scheduled',
+  in_progress: 'orderStates.inProgress',
+  done: 'orderStates.done',
+  rescheduled: 'orderStates.rescheduled',
+  verified: 'orderStates.verified',
+  cancelled: 'orderStates.cancelled',
+};
+
+export type SyncStateKey =
+  | 'syncStates.synced'
+  | 'syncStates.pending'
+  | 'syncStates.conflict'
+  | 'syncStates.blocked'
+  | 'syncStates.dead';
+
+export const SYNC_STATE_LABELS: Record<SyncState, SyncStateKey> = {
+  synced: 'syncStates.synced',
+  pending: 'syncStates.pending',
+  conflict: 'syncStates.conflict',
+  blocked: 'syncStates.blocked',
+  dead: 'syncStates.dead',
+};
+
+export type PriorityKey = 'priority.low' | 'priority.medium' | 'priority.high' | 'priority.critical';
+
+/** Priority arrives as a free-form label from the catalog; unknown values render as-is. */
+export const PRIORITY_LABELS: Record<string, PriorityKey> = {
+  low: 'priority.low',
+  medium: 'priority.medium',
+  high: 'priority.high',
+  critical: 'priority.critical',
+};
 
 export interface UrgencyGroups {
   conflicts: TaskRecord[];

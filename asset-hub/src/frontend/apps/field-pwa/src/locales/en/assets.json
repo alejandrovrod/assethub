@@ -1,0 +1,139 @@
+{
+  "list": {
+    "title": "Assets",
+    "filterAll": "All",
+    "count_one": "{{count}} asset on this device",
+    "count_other": "{{count}} assets on this device",
+    "loading": "Reading the local catalog…",
+    "searchPlaceholder": "Code, name or serial…",
+    "searchAria": "Search asset",
+    "clearSearch": "Clear search",
+    "scanAria": "Scan QR or barcode",
+    "scan": "Scan",
+    "unmatchedTitle": "No asset found with code “{{code}}”",
+    "unmatchedHint": "Check that the catalog is synced or search by name.",
+    "dismissAlert": "Dismiss alert",
+    "emptyCatalog": "No assets downloaded yet",
+    "emptyCatalogHint": "Sync from the <strong>Sync</strong> tab to download the catalog and search it offline.",
+    "emptySearch": "No assets found",
+    "emptySearchHint": "Try another code or name, or clear the filters.",
+    "loadingScanner": "Loading scanner…"
+  },
+  "fields": {
+    "serial": "Serial",
+    "criticality": "Criticality",
+    "template": "Template",
+    "noName": "No name",
+    "noState": "No state",
+    "noLocation": "No location",
+    "noDate": "No date"
+  },
+  "buckets": {
+    "operational": "Operational",
+    "maintenance": "Under maintenance",
+    "failure": "Failure",
+    "other": "Unclassified"
+  },
+  "criticality": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "taskStates": {
+    "todo": "Pending",
+    "rework": "Rework",
+    "inProgress": "In progress",
+    "paused": "Paused",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "orderStates": {
+    "draft": "Draft",
+    "approved": "Approved",
+    "scheduled": "Scheduled",
+    "inProgress": "In progress",
+    "rescheduled": "Rescheduled",
+    "done": "Completed",
+    "verified": "Verified",
+    "cancelled": "Cancelled"
+  },
+  "syncStates": {
+    "draft": "Draft",
+    "pending": "Pending",
+    "synced": "Synced",
+    "conflict": "Conflict",
+    "blocked": "Blocked",
+    "dead": "Failed"
+  },
+  "tabs": {
+    "details": "Details",
+    "work": "Orders and tasks",
+    "incidents": "Incidents"
+  },
+  "detail": {
+    "notFoundTitle": "Asset not found",
+    "notFoundHint": "It may no longer be in the local catalog. Sync to update it.",
+    "backToAssets": "Back to assets",
+    "closeAlert": "Close alert",
+    "qrAria": "QR code for asset {{code}}",
+    "propertiesTitle": "Technical properties",
+    "geoTitle": "Georeference",
+    "geoEmpty": "No GPS location recorded",
+    "geoCapture": "Capture GPS",
+    "geoCapturing": "Capturing…",
+    "geoFailed": "Could not get the location",
+    "geoHint": "The capture is stored on the device.",
+    "bomTitle": "Spare parts (BOM)",
+    "pendingSync": "This asset has local changes pending sync.",
+    "workEmptyTitle": "No orders or tasks",
+    "workEmptyHint": "This asset has no work assigned on the device.",
+    "looseTasks": "Loose tasks",
+    "due": "Due {{date}}",
+    "incidentsEmptyTitle": "No incidents recorded",
+    "incidentsEmptyHint": "When you report a failure on this asset it will show up here.",
+    "reportIncident": "Report incident"
+  },
+  "report": {
+    "title": "Report incident",
+    "close": "Close",
+    "templateLabel": "Incident template",
+    "templatePlaceholder": "(No specific template)",
+    "templateSearch": "Search template...",
+    "templateEmpty": "No templates found",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Failure in {{asset}}",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "What failed, when it started, what you observe…",
+    "offlineHint": "Saved on the device and sent when syncing. No connection needed.",
+    "submit": "Report incident",
+    "submitting": "Saving…",
+    "failed": "Could not report the incident",
+    "reported": "Incident reported. It will sync when there is a connection."
+  },
+  "scanner": {
+    "title": "Scan",
+    "close": "Close",
+    "instruction": "Point the camera at the QR or barcode",
+    "errors": {
+      "unavailable": "Could not access the camera. Check the permissions and try again."
+    }
+  },
+  "scannerModal": {
+    "title": "Scan asset",
+    "close": "Close scanner",
+    "aim": "Point at the asset's QR or barcode",
+    "starting": "Starting camera…",
+    "deniedTitle": "Camera permission denied",
+    "errorTitle": "Could not open the camera",
+    "retry": "Retry",
+    "hint": "You can also search for the asset by its code in the search bar.",
+    "errors": {
+      "blocked": "The browser blocked the camera. Allow it in the site permissions and try again.",
+      "notFound": "No camera was found on this device.",
+      "inUse": "The camera is being used by another application.",
+      "rearUnavailable": "The rear camera is not available. Try another device.",
+      "startFailed": "Could not start the camera. Check the permissions and try again."
+    }
+  }
+}

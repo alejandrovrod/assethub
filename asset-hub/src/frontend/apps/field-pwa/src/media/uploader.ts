@@ -1,6 +1,7 @@
 // uploader.ts — Media upload with dedup by sha256
 import { sha256 } from '@asset-hub/core-offline';
 import type { FieldDatabase } from '@asset-hub/core-offline';
+import { apiFetch } from '../lib/http';
 
 export interface UploadResult {
   mediaId: string;
@@ -84,7 +85,7 @@ export async function uploadMedia(
   const formData = new FormData();
   formData.append('file', file, `${mediaId}.jpg`);
 
-  let res = await fetch(`${apiBase}/api/v1/files/upload`, {
+  let res = await apiFetch(`${apiBase}/api/v1/files/upload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -93,7 +94,7 @@ export async function uploadMedia(
   });
 
   if (!res.ok) {
-    res = await fetch(`${apiBase}/api/v1/media/upload`, {
+    res = await apiFetch(`${apiBase}/api/v1/media/upload`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,

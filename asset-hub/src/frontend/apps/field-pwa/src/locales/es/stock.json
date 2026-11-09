@@ -1,0 +1,24 @@
+{
+  "search": {
+    "placeholder": "Buscar por SKU o nombre...",
+    "label": "Buscar materiales"
+  },
+  "list": {
+    "sku": "SKU: {{sku}}",
+    "empty": "No se encontraron materiales",
+    "emptyHint": "Probá con otro SKU o nombre."
+  },
+  "units": {
+    "default": "uds"
+  },
+  "consume": {
+    "quantityLabel": "Cantidad:",
+    "quantityAria": "Cantidad a consumir",
+    "submit": "Consumir",
+    "submitting": "Consumiendo…",
+    "reason": "Consumo de campo"
+  },
+  "errors": {
+    "consumeFailed": "No se pudo registrar el consumo. Reintentá."
+  }
+}

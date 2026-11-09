@@ -10,9 +10,22 @@ import {
 
 export type AssetStateBucket = 'all' | 'operational' | 'maintenance' | 'failure' | 'other';
 
+/** Translation keys for the `assets` namespace; the component resolves them with `t()`. */
+export type AssetBucketLabelKey =
+  | 'buckets.operational'
+  | 'buckets.maintenance'
+  | 'buckets.failure'
+  | 'buckets.other';
+
+export type AssetCriticalityLabelKey =
+  | 'criticality.critical'
+  | 'criticality.high'
+  | 'criticality.medium'
+  | 'criticality.low';
+
 export interface AssetStateBucketConfig {
   key: AssetStateBucket;
-  label: string;
+  labelKey: AssetBucketLabelKey;
   /** Tailwind classes for the state chip on a card. */
   chipClassName: string;
   /** Tailwind class for the accent bar on the left edge of a card. */
@@ -22,25 +35,25 @@ export interface AssetStateBucketConfig {
 export const ASSET_STATE_BUCKETS: AssetStateBucketConfig[] = [
   {
     key: 'operational',
-    label: 'Operativo',
+    labelKey: 'buckets.operational',
     chipClassName: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
     accentClassName: 'bg-emerald-500',
   },
   {
     key: 'maintenance',
-    label: 'En mantenimiento',
+    labelKey: 'buckets.maintenance',
     chipClassName: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
     accentClassName: 'bg-amber-500',
   },
   {
     key: 'failure',
-    label: 'Falla',
+    labelKey: 'buckets.failure',
     chipClassName: 'bg-red-500/10 text-red-600 dark:text-red-400',
     accentClassName: 'bg-red-500',
   },
   {
     key: 'other',
-    label: 'Sin clasificar',
+    labelKey: 'buckets.other',
     chipClassName: 'bg-muted text-muted-foreground',
     accentClassName: 'bg-muted-foreground/40',
   },
@@ -48,12 +61,12 @@ export const ASSET_STATE_BUCKETS: AssetStateBucketConfig[] = [
 
 export const ASSET_CRITICALITY_CONFIG: Record<
   AssetRecord['criticality'],
-  { label: string; className: string }
+  { labelKey: AssetCriticalityLabelKey; className: string }
 > = {
-  critical: { label: 'Crítica', className: 'bg-red-500/15 text-red-700 dark:text-red-400' },
-  high: { label: 'Alta', className: 'bg-orange-500/15 text-orange-700 dark:text-orange-400' },
-  medium: { label: 'Media', className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' },
-  low: { label: 'Baja', className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' },
+  critical: { labelKey: 'criticality.critical', className: 'bg-red-500/15 text-red-700 dark:text-red-400' },
+  high: { labelKey: 'criticality.high', className: 'bg-orange-500/15 text-orange-700 dark:text-orange-400' },
+  medium: { labelKey: 'criticality.medium', className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' },
+  low: { labelKey: 'criticality.low', className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' },
 };
 
 /**

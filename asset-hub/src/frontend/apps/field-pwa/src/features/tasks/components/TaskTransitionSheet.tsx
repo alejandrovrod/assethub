@@ -1,7 +1,9 @@
 // TaskTransitionSheet.tsx — Bottom sheet for task state transitions with confirmation
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Play, Pause, CheckCircle, X, AlertTriangle } from 'lucide-react';
 import { useTaskActions } from '../hooks/useTaskActions';
+import { ORDER_STATE_LABELS, STATE_LABELS } from '../hooks/useTasks';
 import type { TaskState } from '@asset-hub/core-offline';
 
 interface TaskTransitionSheetProps {
@@ -13,29 +15,41 @@ interface TaskTransitionSheetProps {
   onTransitioned: () => void;
 }
 
+type TransitionKey = 'in_progress' | 'paused' | 'done';
+
+type TransitionLabelKey =
+  | 'transition.start'
+  | 'transition.startAction'
+  | 'transition.pause'
+  | 'transition.pauseAction'
+  | 'transition.complete'
+  | 'transition.completeAction';
+
 const TRANSITION_LABELS: Record<
-  string,
-  { label: string; actionLabel: string; icon: React.ReactNode; color: string }
+  TransitionKey,
+  { label: TransitionLabelKey; actionLabel: TransitionLabelKey; icon: React.ReactNode; color: string }
 > = {
   in_progress: {
-    label: 'Iniciar tarea',
-    actionLabel: 'Iniciar',
+    label: 'transition.start',
+    actionLabel: 'transition.startAction',
     icon: <Play className="h-5 w-5" />,
     color: 'bg-blue-600 hover:bg-blue-700 text-white',
   },
   paused: {
-    label: 'Pausar tarea',
-    actionLabel: 'Pausar',
+    label: 'transition.pause',
+    actionLabel: 'transition.pauseAction',
     icon: <Pause className="h-5 w-5" />,
     color: 'bg-amber-600 hover:bg-amber-700 text-white',
   },
   done: {
-    label: 'Completar tarea',
-    actionLabel: 'Completar',
+    label: 'transition.complete',
+    actionLabel: 'transition.completeAction',
     icon: <CheckCircle className="h-5 w-5" />,
     color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
   },
 };
+
+const isTransitionKey = (value: string): value is TransitionKey => value in TRANSITION_LABELS;
 
 export function TaskTransitionSheet({
   taskId,
@@ -45,8 +59,9 @@ export function TaskTransitionSheet({
   onClose,
   onTransitioned,
 }: TaskTransitionSheetProps) {
+  const { t } = useTranslation(['tasks', 'common']);
   const { start, pause, complete } = useTaskActions();
-  const [targetState, setTargetState] = useState<string | null>(null);
+  const [targetState, setTargetState] = useState<TransitionKey | null>(null);
   const [reason, setReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +69,17 @@ export function TaskTransitionSheet({
   const isOrderLocked =
     maintenanceOrderState && maintenanceOrderState !== 'in_progress';
 
-  const handleExecuteTransition = async (stateToApply: string) => {
+  /** Order and task states are technical values: only their label is localized. */
+  const orderStateLabel = (state: string): string => {
+    const key = ORDER_STATE_LABELS[state];
+    return key ? t(key) : state;
+  };
+  const taskStateLabel = (state: string): string => {
+    const key = STATE_LABELS[state];
+    return key ? t(key) : state;
+  };
+
+  const handleExecuteTransition = async (stateToApply: TransitionKey) => {
     setIsProcessing(true);
     setError(null);
     try {
@@ -68,15 +93,15 @@ export function TaskTransitionSheet({
       onTransitioned();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cambiar de estado');
+      setError(err instanceof Error ? err.message : t('transition.error'));
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const availableTransitions = isOrderLocked
+  const availableTransitions: TransitionKey[] = isOrderLocked
     ? []
-    : allowedTransitions.filter((t) => TRANSITION_LABELS[t]);
+    : allowedTransitions.filter(isTransitionKey);
 
   return (
     <div
@@ -89,13 +114,15 @@ export function TaskTransitionSheet({
       >
         <div className="mb-4 flex items-center justify-between border-b pb-3">
           <div>
-            <h3 className="text-base font-bold">Cambiar estado de la tarea</h3>
-            <p className="text-xs text-muted-foreground">Estado actual: {currentState}</p>
+            <h3 className="text-base font-bold">{t('transition.title')}</h3>
+            <p className="text-xs text-muted-foreground">
+              {t('transition.currentState', { state: taskStateLabel(currentState) })}
+            </p>
           </div>
           <button
             onClick={onClose}
             className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-muted"
-            aria-label="Cerrar"
+            aria-label={t('common:actions.close')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -111,8 +138,9 @@ export function TaskTransitionSheet({
           <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-500/15 p-3 text-xs text-amber-800 dark:text-amber-400">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>
-              La orden de trabajo está en estado "{maintenanceOrderState}". Debe iniciarse primero
-              para poder operar sobre esta tarea.
+              {t('transition.orderLocked', {
+                state: orderStateLabel(maintenanceOrderState ?? ''),
+              })}
             </span>
           </div>
         )}
@@ -122,24 +150,24 @@ export function TaskTransitionSheet({
           <div className="space-y-4">
             <div className="rounded-lg bg-muted/60 p-4 text-center">
               <p className="text-sm font-medium">
-                ¿Confirmas cambiar la tarea a{' '}
-                <span className="font-bold text-foreground">
-                  {TRANSITION_LABELS[targetState]?.actionLabel.toUpperCase()}
-                </span>
-                ?
+                <Trans
+                  i18nKey="transition.confirm"
+                  values={{ state: t(TRANSITION_LABELS[targetState].actionLabel).toUpperCase() }}
+                  components={{ bold: <span className="font-bold text-foreground" /> }}
+                />
               </p>
             </div>
 
             {targetState === 'paused' && (
               <div>
                 <label className="text-xs font-medium text-muted-foreground">
-                  Motivo de la pausa (opcional):
+                  {t('transition.pauseReason')}
                 </label>
                 <input
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Ej. Esperando repuestos, lluvia..."
+                  placeholder={t('transition.pausePlaceholder')}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                 />
               </div>
@@ -152,15 +180,15 @@ export function TaskTransitionSheet({
                 disabled={isProcessing}
                 className="flex h-12 flex-1 items-center justify-center rounded-lg border text-sm font-medium"
               >
-                Volver
+                {t('common:actions.back')}
               </button>
               <button
                 type="button"
                 onClick={() => handleExecuteTransition(targetState)}
                 disabled={isProcessing}
-                className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-lg text-sm font-bold ${TRANSITION_LABELS[targetState]?.color} disabled:opacity-50`}
+                className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-lg text-sm font-bold ${TRANSITION_LABELS[targetState].color} disabled:opacity-50`}
               >
-                {isProcessing ? 'Procesando…' : 'Confirmar'}
+                {isProcessing ? t('transition.processing') : t('common:actions.confirm')}
               </button>
             </div>
           </div>
@@ -177,14 +205,14 @@ export function TaskTransitionSheet({
                   className={`flex h-14 w-full items-center gap-3 rounded-xl px-4 text-left font-semibold transition-transform active:scale-98 ${config.color} disabled:opacity-50`}
                 >
                   {config.icon}
-                  <span>{config.label}</span>
+                  <span>{t(config.label)}</span>
                 </button>
               );
             })}
 
             {availableTransitions.length === 0 && !isOrderLocked && (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                No hay transiciones válidas disponibles para el estado "{currentState}".
+                {t('transition.noTransitions', { state: taskStateLabel(currentState) })}
               </p>
             )}
           </div>

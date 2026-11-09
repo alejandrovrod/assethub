@@ -1,6 +1,7 @@
 // orders.$orderId.tsx — Maintenance Order Detail with offline tasks widget, parts editor & dynamic properties
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useTranslation } from 'react-i18next';
 import {
   Play,
   CheckCircle,
@@ -16,8 +17,13 @@ import {
   startOrder,
   completeOrder,
   updateOrderProperties,
+  type MaintenanceOrderKind,
+  type MaintenanceOrderState,
+  type OrderPartSourceType,
+  type TaskState,
 } from '@asset-hub/core-offline';
 import { PropagatedPropertiesDisplay } from '../shared/components/PropagatedPropertiesDisplay';
+import { formatDateTime } from '../lib/format';
 
 interface OrderDetailPageProps {
   orderId: string;
@@ -25,11 +31,64 @@ interface OrderDetailPageProps {
   onNavigateAsset?: (assetId: string) => void;
 }
 
+type OrderStateKey =
+  | 'states.draft'
+  | 'states.approved'
+  | 'states.scheduled'
+  | 'states.inProgress'
+  | 'states.rescheduled'
+  | 'states.done'
+  | 'states.verified'
+  | 'states.cancelled';
+
+type TaskStateKey =
+  | 'taskStates.todo'
+  | 'taskStates.rework'
+  | 'taskStates.inProgress'
+  | 'taskStates.paused'
+  | 'taskStates.done'
+  | 'taskStates.cancelled';
+
+const STATE_LABELS: Record<MaintenanceOrderState, OrderStateKey> = {
+  draft: 'states.draft',
+  approved: 'states.approved',
+  scheduled: 'states.scheduled',
+  in_progress: 'states.inProgress',
+  rescheduled: 'states.rescheduled',
+  done: 'states.done',
+  verified: 'states.verified',
+  cancelled: 'states.cancelled',
+};
+
+const TASK_STATE_LABELS: Record<TaskState, TaskStateKey> = {
+  todo: 'taskStates.todo',
+  rework: 'taskStates.rework',
+  in_progress: 'taskStates.inProgress',
+  paused: 'taskStates.paused',
+  done: 'taskStates.done',
+  cancelled: 'taskStates.cancelled',
+};
+
+const KIND_LABELS: Record<MaintenanceOrderKind, 'kinds.corrective' | 'kinds.preventive'> = {
+  corrective: 'kinds.corrective',
+  preventive: 'kinds.preventive',
+};
+
+const PART_SOURCE_LABELS: Record<
+  OrderPartSourceType,
+  'partSources.none' | 'partSources.internal' | 'partSources.external'
+> = {
+  None: 'partSources.none',
+  Internal: 'partSources.internal',
+  External: 'partSources.external',
+};
+
 export function OrderDetailPage({
   orderId,
   onNavigateTask,
   onNavigateAsset,
 }: OrderDetailPageProps) {
+  const { t } = useTranslation(['orders', 'common']);
   const [tab, setTab] = useState<'tasks' | 'details' | 'parts'>('tasks');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,8 +107,21 @@ export function OrderDetailPage({
     return orderRepo.getParts(order.tenantId, orderId);
   }, [order?.tenantId, orderId]);
 
+  const assignee = useLiveQuery(async () => {
+    const id = order?.assignedEmployeeId ?? order?.assignedTeamId;
+    if (!id) return undefined;
+    return db.directory_entries.get(id);
+  }, [order?.assignedEmployeeId, order?.assignedTeamId]);
+
+  const assetLocation = useLiveQuery(async () => {
+    if (!order?.assetId) return undefined;
+    const asset = await db.assets.get(order.assetId);
+    return asset?.locationPath;
+  }, [order?.assetId]);
+
   const totalTasks = tasks?.length ?? 0;
-  const completedTasks = tasks?.filter((t) => t.state === 'done' || t.state === 'cancelled').length ?? 0;
+  const completedTasks =
+    tasks?.filter((task) => task.state === 'done' || task.state === 'cancelled').length ?? 0;
   const isReadyToComplete = totalTasks === 0 || completedTasks === totalTasks;
 
   if (order === undefined) {
@@ -63,7 +135,7 @@ export function OrderDetailPage({
   if (!order) {
     return (
       <div className="flex h-screen items-center justify-center p-4">
-        <p className="text-muted-foreground">Orden de trabajo no encontrada</p>
+        <p className="text-muted-foreground">{t('detail.notFound')}</p>
       </div>
     );
   }
@@ -74,7 +146,7 @@ export function OrderDetailPage({
     try {
       await startOrder(db, orderId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar la orden');
+      setError(err instanceof Error ? err.message : t('errors.startFailed'));
     } finally {
       setIsProcessing(false);
     }
@@ -86,7 +158,7 @@ export function OrderDetailPage({
     try {
       await completeOrder(db, orderId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al completar la orden');
+      setError(err instanceof Error ? err.message : t('errors.completeFailed'));
     } finally {
       setIsProcessing(false);
     }
@@ -99,20 +171,22 @@ export function OrderDetailPage({
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className="text-xs font-bold text-muted-foreground uppercase">
-              {order.code ? `[${order.code}] ` : ''}Tipo: {order.kind}
+              {order.code ? `[${order.code}] ` : ''}
+              {t('fields.type')}: {t(KIND_LABELS[order.kind])}
             </span>
             <h1 className="text-lg font-bold text-foreground">{order.title}</h1>
             {order.assetName && (
               <button
                 onClick={() => order.assetId && onNavigateAsset && onNavigateAsset(order.assetId)}
+                aria-label={t('detail.openAsset', { name: order.assetName })}
                 className="mt-0.5 text-xs font-medium text-primary hover:underline"
               >
-                Activo: {order.assetName} {order.assetCode ? `(${order.assetCode})` : ''}
+                {t('fields.asset')}: {order.assetName} {order.assetCode ? `(${order.assetCode})` : ''}
               </button>
             )}
           </div>
           <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold uppercase text-foreground">
-            {order.state}
+            {t(STATE_LABELS[order.state])}
           </span>
         </div>
 
@@ -131,7 +205,7 @@ export function OrderDetailPage({
               className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-98 disabled:opacity-50"
             >
               <Play className="h-4 w-4" />
-              {isProcessing ? 'Iniciando…' : 'Iniciar Orden (Desbloquea tareas)'}
+              {isProcessing ? t('detail.starting') : t('detail.startOrder')}
             </button>
           )}
 
@@ -143,11 +217,11 @@ export function OrderDetailPage({
                 className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-98 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60"
               >
                 <CheckCircle className="h-4 w-4" />
-                {isProcessing ? 'Completando…' : 'Completar Orden'}
+                {isProcessing ? t('detail.completing') : t('detail.completeOrder')}
               </button>
               {!isReadyToComplete && (
                 <span className="text-center text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                  Faltan tareas por finalizar ({completedTasks}/{totalTasks} completadas)
+                  {t('detail.incompleteTasks', { completed: completedTasks, total: totalTasks })}
                 </span>
               )}
             </div>
@@ -166,7 +240,7 @@ export function OrderDetailPage({
           }`}
         >
           <ListTodo className="h-4 w-4" />
-          Tareas ({tasks?.length ?? 0})
+          {t('detail.tabs.tasks', { count: tasks?.length ?? 0 })}
         </button>
 
         <button
@@ -178,7 +252,7 @@ export function OrderDetailPage({
           }`}
         >
           <FileText className="h-4 w-4" />
-          Detalles
+          {t('detail.tabs.details')}
         </button>
 
         <button
@@ -190,7 +264,7 @@ export function OrderDetailPage({
           }`}
         >
           <Package className="h-4 w-4" />
-          Repuestos ({parts?.length ?? 0})
+          {t('detail.tabs.parts', { count: parts?.length ?? 0 })}
         </button>
       </nav>
 
@@ -199,25 +273,35 @@ export function OrderDetailPage({
         {tab === 'tasks' && (
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Tareas de la Orden (MaintenanceOrderTasksWidget)
+              {t('detail.tasksTitle')}
             </h3>
             {tasks && tasks.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground">
-                No hay tareas vinculadas a esta orden.
+                {t('detail.tasksEmpty')}
               </p>
             ) : (
               <div className="space-y-2">
-                {tasks?.map((t) => (
+                {tasks?.map((task) => (
                   <div
-                    key={t.id}
-                    onClick={() => onNavigateTask && onNavigateTask(t.id)}
+                    key={task.id}
+                    onClick={() => onNavigateTask && onNavigateTask(task.id)}
                     role="button"
                     tabIndex={0}
+                    aria-label={t('detail.openTask', { title: task.title })}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && onNavigateTask) {
+                        onNavigateTask(task.id);
+                      }
+                    }}
                     className="flex cursor-pointer items-center justify-between rounded-xl border bg-card p-3 transition-colors hover:bg-muted/50 active:bg-muted"
                   >
                     <div>
-                      <span className="font-semibold text-sm">{t.title}</span>
-                      <p className="text-xs text-muted-foreground">Estado: {t.state}</p>
+                      <span className="font-semibold text-sm">{task.title}</span>
+                      <p className="text-xs text-muted-foreground">
+                        {t('detail.taskState', {
+                          state: t(TASK_STATE_LABELS[task.state] ?? TASK_STATE_LABELS.todo),
+                        })}
+                      </p>
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   </div>
@@ -229,10 +313,56 @@ export function OrderDetailPage({
 
         {tab === 'details' && (
           <div className="space-y-4">
+            <div className="rounded-xl border bg-card p-4">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t('detail.infoTitle')}
+              </h3>
+              <dl className="space-y-1.5 text-xs">
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground">{t('fields.state')}</dt>
+                  <dd className="text-right font-medium">{t(STATE_LABELS[order.state])}</dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground">{t('fields.type')}</dt>
+                  <dd className="text-right font-medium">{t(KIND_LABELS[order.kind])}</dd>
+                </div>
+                {(order.scheduledStartMs > 0 || order.scheduledEndMs > 0) && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-muted-foreground">{t('fields.scheduledStart')}</dt>
+                    <dd className="text-right font-medium">
+                      {order.scheduledStartMs > 0
+                        ? formatDateTime(order.scheduledStartMs)
+                        : t('fields.notScheduled')}
+                    </dd>
+                  </div>
+                )}
+                {order.scheduledEndMs > 0 && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-muted-foreground">{t('fields.scheduledEnd')}</dt>
+                    <dd className="text-right font-medium">
+                      {formatDateTime(order.scheduledEndMs)}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground">{t('fields.responsible')}</dt>
+                  <dd className="text-right font-medium">
+                    {assignee?.name ?? t('common:state.none')}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground">{t('fields.location')}</dt>
+                  <dd className="text-right font-medium">
+                    {assetLocation ?? t('common:state.none')}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
             {order.description && (
               <div className="rounded-xl border bg-card p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Descripción
+                  {t('detail.descriptionTitle')}
                 </h3>
                 <p className="mt-1.5 text-sm">{order.description}</p>
               </div>
@@ -241,7 +371,7 @@ export function OrderDetailPage({
             {/* Propagated Dynamic Properties */}
             <div className="rounded-xl border bg-card p-4">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Propiedades Dinámicas Propagadas
+                {t('detail.propertiesTitle')}
               </h3>
               <PropagatedPropertiesDisplay
                 ctx={{
@@ -264,11 +394,11 @@ export function OrderDetailPage({
         {tab === 'parts' && (
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Repuestos y Materiales (MaintenanceOrderPartsEditor)
+              {t('detail.partsTitle')}
             </h3>
             {parts && parts.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground">
-                No hay repuestos registrados para esta orden.
+                {t('detail.partsEmpty')}
               </p>
             ) : (
               <div className="space-y-2">
@@ -277,11 +407,13 @@ export function OrderDetailPage({
                     <div className="flex items-center justify-between font-semibold">
                       <span>{p.catalogItemLabel || p.catalogItemId}</span>
                       <span className="rounded bg-muted px-2 py-0.5">
-                        Cant: {p.quantity}
+                        {t('detail.quantity', { quantity: p.quantity })}
                       </span>
                     </div>
-                    {p.sourceType && (
-                      <p className="mt-1 text-muted-foreground">Origen: {p.sourceType}</p>
+                    {p.sourceType !== 'None' && (
+                      <p className="mt-1 text-muted-foreground">
+                        {t('detail.source', { source: t(PART_SOURCE_LABELS[p.sourceType]) })}
+                      </p>
                     )}
                   </div>
                 ))}

@@ -1,7 +1,13 @@
 // incident-detail.tsx — Incident detail with dynamic template properties, asset card, maintenance order, tasks & state transitions
 import { useState, useMemo } from 'react';
-import { db, evaluateWorkflowLifecycle, updateIncidentProperties } from '@asset-hub/core-offline';
+import {
+  db,
+  evaluateWorkflowLifecycle,
+  updateIncidentProperties,
+  type IncidentSyncState,
+} from '@asset-hub/core-offline';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Building2,
@@ -14,6 +20,7 @@ import {
 } from 'lucide-react';
 import { changeIncidentState } from '../../commands/change-incident-state';
 import { PropagatedPropertiesDisplay } from '../../shared/components/PropagatedPropertiesDisplay';
+import { formatDate } from '../../lib/format';
 
 interface Props {
   incidentId: string;
@@ -22,48 +29,105 @@ interface Props {
   onNavigateTask?: (taskId: string) => void;
 }
 
-const STATE_LABELS: Record<string, string> = {
-  reported: 'Reportada',
-  open: 'Abierta',
-  triaged: 'Triada',
-  assigned: 'Asignada',
-  in_progress: 'En progreso',
-  resolved: 'Resuelta',
-  closed: 'Cerrada',
-  cancelled: 'Cancelada',
-  reopened: 'Reabierta',
+type Severity = 'low' | 'medium' | 'high' | 'critical';
+type SeverityKey =
+  | 'severity.low'
+  | 'severity.medium'
+  | 'severity.high'
+  | 'severity.critical'
+  | 'severity.unknown';
+
+type StateKey =
+  | 'states.reported'
+  | 'states.open'
+  | 'states.triaged'
+  | 'states.assigned'
+  | 'states.inProgress'
+  | 'states.resolved'
+  | 'states.closed'
+  | 'states.cancelled'
+  | 'states.reopened';
+
+type OrderStateKey =
+  | 'orderStates.draft'
+  | 'orderStates.approved'
+  | 'orderStates.scheduled'
+  | 'orderStates.inProgress'
+  | 'orderStates.done'
+  | 'orderStates.rescheduled'
+  | 'orderStates.verified'
+  | 'orderStates.cancelled';
+
+type TaskStateKey =
+  | 'taskStates.todo'
+  | 'taskStates.ready'
+  | 'taskStates.inProgress'
+  | 'taskStates.paused'
+  | 'taskStates.done'
+  | 'taskStates.verified'
+  | 'taskStates.cancelled'
+  | 'taskStates.rework';
+
+type SyncStateKey =
+  | 'syncStates.draft'
+  | 'syncStates.pending'
+  | 'syncStates.synced'
+  | 'syncStates.conflict'
+  | 'syncStates.blocked'
+  | 'syncStates.dead';
+
+const STATE_LABELS: Partial<Record<string, StateKey>> = {
+  reported: 'states.reported',
+  open: 'states.open',
+  triaged: 'states.triaged',
+  assigned: 'states.assigned',
+  in_progress: 'states.inProgress',
+  resolved: 'states.resolved',
+  closed: 'states.closed',
+  cancelled: 'states.cancelled',
+  reopened: 'states.reopened',
 };
 
-const ORDER_STATE_LABELS: Record<string, string> = {
-  draft: 'Borrador',
-  approved: 'Aprobada',
-  scheduled: 'Programada',
-  in_progress: 'En progreso',
-  done: 'Completada',
-  rescheduled: 'Reprogramada',
-  verified: 'Verificada',
-  cancelled: 'Cancelada',
+const ORDER_STATE_LABELS: Partial<Record<string, OrderStateKey>> = {
+  draft: 'orderStates.draft',
+  approved: 'orderStates.approved',
+  scheduled: 'orderStates.scheduled',
+  in_progress: 'orderStates.inProgress',
+  done: 'orderStates.done',
+  rescheduled: 'orderStates.rescheduled',
+  verified: 'orderStates.verified',
+  cancelled: 'orderStates.cancelled',
 };
 
-const TASK_STATE_LABELS: Record<string, string> = {
-  todo: 'Por hacer',
-  ready: 'Por hacer',
-  in_progress: 'En progreso',
-  paused: 'Pausada',
-  done: 'Completada',
-  verified: 'Verificada',
-  cancelled: 'Cancelada',
-  rework: 'Re-trabajo',
+const TASK_STATE_LABELS: Partial<Record<string, TaskStateKey>> = {
+  todo: 'taskStates.todo',
+  ready: 'taskStates.ready',
+  in_progress: 'taskStates.inProgress',
+  paused: 'taskStates.paused',
+  done: 'taskStates.done',
+  verified: 'taskStates.verified',
+  cancelled: 'taskStates.cancelled',
+  rework: 'taskStates.rework',
 };
 
-const SEVERITY_BADGES: Record<string, { label: string; bg: string; text: string }> = {
-  low: { label: 'Baja', bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-300' },
-  medium: { label: 'Media', bg: 'bg-amber-500/10', text: 'text-amber-700 dark:text-amber-300' },
-  high: { label: 'Alta', bg: 'bg-orange-500/10', text: 'text-orange-700 dark:text-orange-300' },
-  critical: { label: 'Crítica', bg: 'bg-red-500/10', text: 'text-red-700 dark:text-red-300' },
-};
+const SEVERITY_BADGES = {
+  low: { key: 'severity.low', bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-300' },
+  medium: { key: 'severity.medium', bg: 'bg-amber-500/10', text: 'text-amber-700 dark:text-amber-300' },
+  high: { key: 'severity.high', bg: 'bg-orange-500/10', text: 'text-orange-700 dark:text-orange-300' },
+  critical: { key: 'severity.critical', bg: 'bg-red-500/10', text: 'text-red-700 dark:text-red-300' },
+} as const satisfies Record<Severity, { key: SeverityKey; bg: string; text: string }>;
+
+const SYNC_STATE_LABELS = {
+  draft: 'syncStates.draft',
+  pending: 'syncStates.pending',
+  synced: 'syncStates.synced',
+  conflict: 'syncStates.conflict',
+  blocked: 'syncStates.blocked',
+  dead: 'syncStates.dead',
+} as const satisfies Record<IncidentSyncState, SyncStateKey>;
 
 export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigateTask }: Props) {
+  const { t } = useTranslation(['incidents', 'common']);
   const incident = useLiveQuery(() => db.incidents.get(incidentId), [incidentId]);
 
   const asset = useLiveQuery(
@@ -100,9 +164,9 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
     const orderId = maintenanceOrder?.id?.toLowerCase() || incident.maintenanceOrderId?.toLowerCase();
 
     const allTasks = await db.tasks.toArray();
-    return allTasks.filter((t) => {
-      const matchInc = t.incidentId && t.incidentId.toLowerCase() === targetIncidentId;
-      const matchOrd = orderId && t.maintenanceOrderId && t.maintenanceOrderId.toLowerCase() === orderId;
+    return allTasks.filter((task) => {
+      const matchInc = task.incidentId && task.incidentId.toLowerCase() === targetIncidentId;
+      const matchOrd = orderId && task.maintenanceOrderId && task.maintenanceOrderId.toLowerCase() === orderId;
       return matchInc || matchOrd;
     });
   }, [incident?.id, incident?.serverId, incident?.maintenanceOrderId, maintenanceOrder?.id]);
@@ -129,10 +193,25 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
     return [];
   }, [incident?.state, workflowTemplate?.lifecycleStatesJson]);
 
+  const stateLabel = (state?: string): string => {
+    const key = state ? STATE_LABELS[state] : undefined;
+    return key ? t(key) : state ?? '';
+  };
+
+  const orderStateLabel = (state: string): string => {
+    const key = ORDER_STATE_LABELS[state];
+    return key ? t(key) : state;
+  };
+
+  const taskStateLabel = (state: string): string => {
+    const key = TASK_STATE_LABELS[state];
+    return key ? t(key) : state;
+  };
+
   if (!incident) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Incidencia no encontrada</p>
+        <p className="text-muted-foreground">{t('detail.notFound')}</p>
       </div>
     );
   }
@@ -147,7 +226,7 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
         propertiesJson: incident.propertiesJson,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error en la transición');
+      setError(err instanceof Error ? err.message : t('errors.transition'));
     } finally {
       setIsProcessing(false);
     }
@@ -157,17 +236,18 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
     try {
       await updateIncidentProperties(db, incident.id, newPropertiesJson);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al guardar propiedades');
+      setError(err instanceof Error ? err.message : t('errors.saveProperties'));
     }
   };
 
-  const severityBadge = SEVERITY_BADGES[incident.severity] ?? {
-    label: incident.severity || 'Normal',
-    bg: 'bg-muted',
-    text: 'text-muted-foreground',
-  };
+  const severityBadge: { key: SeverityKey; bg: string; text: string } =
+    SEVERITY_BADGES[incident.severity] ?? {
+      key: 'severity.unknown',
+      bg: 'bg-muted',
+      text: 'text-muted-foreground',
+    };
 
-  const currentStateLabel = STATE_LABELS[incident.state || 'reported'] ?? incident.state ?? 'Reportada';
+  const currentStateLabel = stateLabel(incident.state) || t('states.reported');
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
@@ -185,7 +265,7 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="font-medium text-foreground">
-                Estado: <span className="font-semibold text-primary">{currentStateLabel}</span>
+                {t('detail.state')}: <span className="font-semibold text-primary">{currentStateLabel}</span>
               </span>
               <span>•</span>
               <span
@@ -197,14 +277,14 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
                     : 'bg-red-500/10 text-red-700 dark:text-red-300'
                 }`}
               >
-                {incident.syncState}
+                {t(SYNC_STATE_LABELS[incident.syncState])}
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
             className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-transform"
-            aria-label="Cerrar detalle"
+            aria-label={t('detail.closeAria')}
           >
             ✕
           </button>
@@ -222,10 +302,10 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
         {/* General Description Card */}
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Descripción General
+            {t('detail.descriptionTitle')}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-            {incident.description || 'Sin descripción'}
+            {incident.description || t('detail.noDescription')}
           </p>
         </div>
 
@@ -235,15 +315,15 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
           <div className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Building2 className="h-4 w-4 text-primary" />
-              <span>Activo Afectado</span>
+              <span>{t('detail.assetTitle')}</span>
             </div>
             <div className="mt-2">
               <div className="text-sm font-semibold text-foreground">
-                {asset?.name || incident.assetName || incident.assetCode || 'No asignado'}
+                {asset?.name || incident.assetName || incident.assetCode || t('detail.unassigned')}
               </div>
               {(asset?.code || incident.assetCode) && (
                 <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                  Código: {asset?.code || incident.assetCode}
+                  {t('detail.code')}: {asset?.code || incident.assetCode}
                 </div>
               )}
             </div>
@@ -253,17 +333,17 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
           <div className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <ShieldAlert className="h-4 w-4 text-primary" />
-              <span>Severidad y Fecha</span>
+              <span>{t('detail.severityAndDate')}</span>
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${severityBadge.bg} ${severityBadge.text}`}
               >
-                {severityBadge.label}
+                {t(severityBadge.key)}
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                {new Date(incident.createdAtLocalIso).toLocaleDateString()}
+                {formatDate(incident.createdAtLocalIso)}
               </span>
             </div>
           </div>
@@ -274,11 +354,11 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Información de la Incidencia
+                {t('detail.infoTitle')}
               </h2>
               {workflowTemplate?.name && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Atributos específicos ({workflowTemplate.name})
+                  {t('detail.templateAttributes', { name: workflowTemplate.name })}
                 </p>
               )}
             </div>
@@ -303,7 +383,7 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
             <div className="flex items-center gap-2">
               <Wrench className="h-4 w-4 text-primary" />
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Orden de Trabajo
+                {t('detail.orderTitle')}
               </h2>
             </div>
           </div>
@@ -325,22 +405,29 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
-                    {ORDER_STATE_LABELS[maintenanceOrder.state] ?? maintenanceOrder.state}
+                    {orderStateLabel(maintenanceOrder.state)}
                   </span>
                   <span>•</span>
-                  <span>Tipo: {maintenanceOrder.kind === 'corrective' ? 'Correctiva' : 'Preventiva'}</span>
+                  <span>
+                    {t('detail.orderKind', {
+                      kind:
+                        maintenanceOrder.kind === 'corrective'
+                          ? t('orderKinds.corrective')
+                          : t('orderKinds.preventive'),
+                    })}
+                  </span>
                 </div>
               </div>
               {onNavigateOrder && (
                 <div className="flex items-center gap-1 text-xs font-medium text-primary pl-2">
-                  <span>Ver OT</span>
+                  <span>{t('detail.viewOrder')}</span>
                   <ArrowRight className="h-4 w-4" />
                 </div>
               )}
             </div>
           ) : (
             <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
-              No hay orden de trabajo asociada a esta incidencia todavía.
+              {t('detail.noOrder')}
             </div>
           )}
         </div>
@@ -351,14 +438,16 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
             <div className="flex items-center gap-2">
               <CheckSquare className="h-4 w-4 text-primary" />
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Tareas Asignadas {tasks && tasks.length > 0 ? `(${tasks.length})` : ''}
+                {tasks && tasks.length > 0
+                  ? t('detail.tasksTitleWithCount', { count: tasks.length })
+                  : t('detail.tasksTitle')}
               </h2>
             </div>
           </div>
 
           {!tasks || tasks.length === 0 ? (
             <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
-              No hay tareas derivadas registradas para esta incidencia.
+              {t('detail.noTasks')}
             </div>
           ) : (
             <div className="space-y-2">
@@ -378,10 +467,10 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                        {TASK_STATE_LABELS[task.state] ?? task.state}
+                        {taskStateLabel(task.state)}
                       </span>
                       {task.priority && (
-                        <span>• Prioridad: {task.priority}</span>
+                        <span>• {t('detail.priority', { priority: task.priority })}</span>
                       )}
                     </div>
                   </div>
@@ -396,7 +485,7 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
 
         {incident.syncState !== 'synced' && (
           <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 dark:text-amber-300">
-            Esta incidencia tiene cambios locales pendientes de sincronizar con el servidor.
+            {t('detail.pendingSync')}
           </div>
         )}
       </main>
@@ -416,7 +505,7 @@ export function IncidentDetail({ incidentId, onClose, onNavigateOrder, onNavigat
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    <span>Cambiar a {STATE_LABELS[target] ?? target}</span>
+                    <span>{t('detail.changeTo', { state: stateLabel(target) || target })}</span>
                     <ArrowRight className="h-3.5 w-3.5 opacity-80" />
                   </>
                 )}

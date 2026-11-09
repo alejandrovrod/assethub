@@ -1,12 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@asset-hub/core-offline';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User } from 'lucide-react';
 import { useSession } from './features/auth/hooks/useSession';
 import { LoginPage } from './routes/login';
 import { LockScreen } from './shared/components/LockScreen';
 import { OfflineBanner } from './shared/components/OfflineBanner';
 import { HighContrastToggle } from './shared/components/HighContrastToggle';
+import { LanguageSwitcher } from './shared/components/LanguageSwitcher';
 import { SyncChip } from './shared/components/SyncChip';
 import { MiJornadaPage } from './routes/index';
 import { TaskDetailPage } from './routes/tasks.$taskId';
@@ -15,13 +17,13 @@ import { OrderDetailPage } from './routes/orders.$orderId';
 import { IncidentsPage } from './routes/incidents.index';
 import { AssetsPage } from './routes/assets.index';
 import { AssetDetailPage } from './routes/assets.$assetId';
-import { StockPage } from './routes/stock';
 import { SyncPage } from './routes/sync';
 
 export function App() {
+  const { t } = useTranslation();
   const { state, session, isLoading, logout } = useSession();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [view, setView] = useState<'tasks' | 'incidents' | 'assets' | 'stock' | 'sync' | 'orders'>('tasks');
+  const [view, setView] = useState<'tasks' | 'incidents' | 'assets' | 'sync' | 'orders'>('tasks');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export function App() {
           onClick={() => setSelectedTaskId(null)}
           className="p-4 text-sm font-semibold text-primary"
         >
-          ← Volver a Mi Jornada
+          ← {t('actions.backTo', { target: t('nav.tasks') })}
         </button>
         <TaskDetailPage
           key={selectedTaskId}
@@ -107,7 +109,7 @@ export function App() {
           onClick={() => setSelectedOrderId(null)}
           className="p-4 text-sm font-semibold text-primary"
         >
-          ← Volver a Órdenes
+          ← {t('actions.backTo', { target: t('nav.ordersFull') })}
         </button>
         <OrderDetailPage
           key={selectedOrderId}
@@ -153,7 +155,7 @@ export function App() {
     session?.employeeName ||
     session?.userName ||
     session?.userEmail ||
-    'Usuario';
+    t('app.userFallback');
 
   const roleBadge = session?.roleLabel || (session?.roles && session.roles[0]) || '';
 
@@ -187,12 +189,13 @@ export function App() {
                 )}
               </div>
               <div className="text-[11px] text-muted-foreground truncate">
-                {session.tenantName ?? 'AssetHub Campo'}
+                {session.tenantName ?? t('app.name')}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <LanguageSwitcher />
             <HighContrastToggle />
             <SyncChip
               isSyncing={false}
@@ -206,7 +209,7 @@ export function App() {
               }}
               className="rounded-lg border px-2 py-1 text-xs font-medium hover:bg-muted active:scale-95 transition-transform"
             >
-              Salir
+              {t('actions.exit')}
             </button>
           </div>
         </div>
@@ -221,7 +224,7 @@ export function App() {
               view === 'tasks' ? 'bg-primary text-primary-foreground' : 'bg-muted'
             }`}
           >
-            Mi Jornada
+            {t('nav.tasks')}
           </button>
           <button
             onClick={() => {
@@ -233,7 +236,7 @@ export function App() {
               view === 'orders' ? 'bg-primary text-primary-foreground' : 'bg-muted'
             }`}
           >
-            OT
+            {t('nav.orders')}
           </button>
           <button
             onClick={() => setView('incidents')}
@@ -241,7 +244,7 @@ export function App() {
               view === 'incidents' ? 'bg-primary text-primary-foreground' : 'bg-muted'
             }`}
           >
-            Incidencias
+            {t('nav.incidents')}
           </button>
           <button
             onClick={() => setView('assets')}
@@ -249,15 +252,7 @@ export function App() {
               view === 'assets' ? 'bg-primary text-primary-foreground' : 'bg-muted'
             }`}
           >
-            Activos
-          </button>
-          <button
-            onClick={() => setView('stock')}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              view === 'stock' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-            }`}
-          >
-            Stock
+            {t('nav.assets')}
           </button>
           <button
             onClick={() => setView('sync')}
@@ -265,7 +260,7 @@ export function App() {
               view === 'sync' ? 'bg-primary text-primary-foreground' : 'bg-muted'
             }`}
           >
-            Sync
+            {t('nav.sync')}
           </button>
         </div>
       </header>
@@ -297,6 +292,7 @@ export function App() {
             employeeId={session.employeeId}
             userId={session.userId}
             teamIds={session.teamIds}
+            onNavigateAssets={() => setView('assets')}
             onNavigateOrder={(orderId) => {
               setSelectedOrderId(orderId);
               setView('orders');
@@ -311,8 +307,6 @@ export function App() {
             tenantId={session.tenantSlug ?? 'default'}
             onSelectAsset={setSelectedAssetId}
           />
-        ) : view === 'stock' ? (
-          <StockPage />
         ) : (
           <SyncPage />
         )}

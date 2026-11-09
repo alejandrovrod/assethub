@@ -1,0 +1,94 @@
+﻿{
+  "title": "Órdenes de Trabajo",
+  "list": {
+    "count_one": "{{count}} orden asignada",
+    "count_other": "{{count}} órdenes asignadas",
+    "filters": {
+      "all": "Todas",
+      "active": "Activas",
+      "completed": "Completadas"
+    },
+    "empty": "No hay órdenes para mostrar",
+    "pendingSync": "Pendiente de sincronización",
+    "tasks_one": "{{count}} tarea",
+    "tasks_other": "{{count}} tareas",
+    "openOrder": "Abrir orden {{title}}"
+  },
+  "states": {
+    "draft": "Borrador",
+    "approved": "Aprobada",
+    "scheduled": "Programada",
+    "inProgress": "En progreso",
+    "rescheduled": "Reprogramada",
+    "done": "Terminada",
+    "verified": "Verificada",
+    "cancelled": "Cancelada"
+  },
+  "taskStates": {
+    "todo": "Pendiente",
+    "rework": "Retrabajo",
+    "inProgress": "En curso",
+    "paused": "Pausada",
+    "done": "Hecha",
+    "cancelled": "Cancelada"
+  },
+  "kinds": {
+    "corrective": "Correctiva",
+    "preventive": "Preventiva"
+  },
+  "fields": {
+    "type": "Tipo",
+    "priority": "Prioridad",
+    "scheduledStart": "Inicio programado",
+    "scheduledEnd": "Fin programado",
+    "asset": "Activo",
+    "location": "Ubicación",
+    "responsible": "Responsable",
+    "description": "Descripción",
+    "state": "Estado",
+    "notScheduled": "Sin programar"
+  },
+  "detail": {
+    "notFound": "Orden de trabajo no encontrada",
+    "startOrder": "Iniciar Orden (Desbloquea tareas)",
+    "starting": "Iniciando…",
+    "completeOrder": "Completar Orden",
+    "completing": "Completando…",
+    "incompleteTasks": "Faltan tareas por finalizar ({{completed}}/{{total}} completadas)",
+    "tabs": {
+      "tasks": "Tareas ({{count}})",
+      "details": "Detalles",
+      "parts": "Repuestos ({{count}})"
+    },
+    "tasksTitle": "Tareas de la Orden",
+    "tasksEmpty": "No hay tareas vinculadas a esta orden.",
+    "taskState": "Estado: {{state}}",
+    "openTask": "Abrir tarea {{title}}",
+    "infoTitle": "Información de la orden",
+    "openAsset": "Ver activo {{name}}",
+    "descriptionTitle": "Descripción",
+    "propertiesTitle": "Propiedades Dinámicas Propagadas",
+    "partsTitle": "Repuestos y Materiales",
+    "partsEmpty": "No hay repuestos registrados para esta orden.",
+    "quantity": "Cant: {{quantity}}",
+    "source": "Origen: {{source}}"
+  },
+  "partSources": {
+    "none": "Ninguno",
+    "internal": "Interno",
+    "external": "Externo"
+  },
+  "remote": {
+    "loading": "Cargando…",
+    "empty": "No hay órdenes de trabajo asignadas",
+    "loadFailed": "Error al cargar órdenes de trabajo",
+    "networkError": "Error de red",
+    "priority": "Prioridad: {{priority}}",
+    "stateFallback": "Pendiente"
+  },
+  "errors": {
+    "startFailed": "Error al iniciar la orden",
+    "completeFailed": "Error al completar la orden",
+    "loadFailed": "No se pudo cargar la orden"
+  }
+}

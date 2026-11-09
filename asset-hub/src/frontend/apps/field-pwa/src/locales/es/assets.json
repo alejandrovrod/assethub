@@ -1,0 +1,139 @@
+{
+  "list": {
+    "title": "Activos",
+    "filterAll": "Todos",
+    "count_one": "{{count}} activo en este dispositivo",
+    "count_other": "{{count}} activos en este dispositivo",
+    "loading": "Leyendo el catálogo local…",
+    "searchPlaceholder": "Código, nombre o serie…",
+    "searchAria": "Buscar activo",
+    "clearSearch": "Limpiar búsqueda",
+    "scanAria": "Escanear código QR o de barras",
+    "scan": "Escanear",
+    "unmatchedTitle": "No se encontró un activo con el código «{{code}}»",
+    "unmatchedHint": "Verificá que el catálogo esté sincronizado o buscá por nombre.",
+    "dismissAlert": "Descartar aviso",
+    "emptyCatalog": "Todavía no hay activos descargados",
+    "emptyCatalogHint": "Sincronizá desde la pestaña <strong>Sync</strong> para bajar el catálogo y poder buscarlo sin conexión.",
+    "emptySearch": "No se encontraron activos",
+    "emptySearchHint": "Probá con otro código, nombre o quitá los filtros.",
+    "loadingScanner": "Cargando escáner…"
+  },
+  "fields": {
+    "serial": "Serie",
+    "criticality": "Criticidad",
+    "template": "Plantilla",
+    "noName": "Sin nombre",
+    "noState": "Sin estado",
+    "noLocation": "Sin ubicación",
+    "noDate": "Sin fecha"
+  },
+  "buckets": {
+    "operational": "Operativo",
+    "maintenance": "En mantenimiento",
+    "failure": "Falla",
+    "other": "Sin clasificar"
+  },
+  "criticality": {
+    "critical": "Crítica",
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Baja"
+  },
+  "taskStates": {
+    "todo": "Pendiente",
+    "rework": "Retrabajo",
+    "inProgress": "En curso",
+    "paused": "Pausada",
+    "done": "Hecha",
+    "cancelled": "Cancelada"
+  },
+  "orderStates": {
+    "draft": "Borrador",
+    "approved": "Aprobada",
+    "scheduled": "Programada",
+    "inProgress": "En progreso",
+    "rescheduled": "Reprogramada",
+    "done": "Terminada",
+    "verified": "Verificada",
+    "cancelled": "Cancelada"
+  },
+  "syncStates": {
+    "draft": "Borrador",
+    "pending": "Pendiente",
+    "synced": "Sincronizada",
+    "conflict": "Conflicto",
+    "blocked": "Bloqueada",
+    "dead": "Fallida"
+  },
+  "tabs": {
+    "details": "Detalles",
+    "work": "Órdenes y tareas",
+    "incidents": "Incidencias"
+  },
+  "detail": {
+    "notFoundTitle": "Activo no encontrado",
+    "notFoundHint": "Puede que ya no esté en el catálogo local. Sincronizá para actualizarlo.",
+    "backToAssets": "Volver a activos",
+    "closeAlert": "Cerrar aviso",
+    "qrAria": "Código QR del activo {{code}}",
+    "propertiesTitle": "Propiedades técnicas",
+    "geoTitle": "Georreferencia",
+    "geoEmpty": "Sin ubicación GPS registrada",
+    "geoCapture": "Capturar GPS",
+    "geoCapturing": "Capturando…",
+    "geoFailed": "No se pudo obtener la ubicación",
+    "geoHint": "La captura se guarda en el dispositivo.",
+    "bomTitle": "Repuestos (BOM)",
+    "pendingSync": "Hay cambios locales pendientes de sincronización en este activo.",
+    "workEmptyTitle": "Sin órdenes ni tareas",
+    "workEmptyHint": "Este activo no tiene trabajo asignado en el dispositivo.",
+    "looseTasks": "Tareas sueltas",
+    "due": "Vence {{date}}",
+    "incidentsEmptyTitle": "Sin incidencias registradas",
+    "incidentsEmptyHint": "Cuando reportes una falla sobre este activo va a aparecer acá.",
+    "reportIncident": "Reportar incidencia"
+  },
+  "report": {
+    "title": "Reportar incidencia",
+    "close": "Cerrar",
+    "templateLabel": "Plantilla de Incidencia",
+    "templatePlaceholder": "(Sin plantilla específica)",
+    "templateSearch": "Buscar plantilla...",
+    "templateEmpty": "No se encontraron plantillas",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Falla en {{asset}}",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Qué falla, cuándo empezó, qué se observa…",
+    "offlineHint": "Se guarda en el dispositivo y se envía al sincronizar. No hace falta conexión.",
+    "submit": "Reportar incidencia",
+    "submitting": "Guardando…",
+    "failed": "No se pudo reportar la incidencia",
+    "reported": "Incidencia reportada. Se sincronizará cuando haya conexión."
+  },
+  "scanner": {
+    "title": "Escanear",
+    "close": "Cerrar",
+    "instruction": "Apuntá la cámara al código QR o de barras",
+    "errors": {
+      "unavailable": "No se pudo acceder a la cámara. Revisá los permisos e intentá de nuevo."
+    }
+  },
+  "scannerModal": {
+    "title": "Escanear activo",
+    "close": "Cerrar escáner",
+    "aim": "Apuntá al código QR o de barras del activo",
+    "starting": "Iniciando cámara…",
+    "deniedTitle": "Permiso de cámara denegado",
+    "errorTitle": "No se pudo abrir la cámara",
+    "retry": "Reintentar",
+    "hint": "También podés buscar el activo por su código en la barra de búsqueda.",
+    "errors": {
+      "blocked": "El navegador bloqueó la cámara. Habilitala en los permisos del sitio y volvé a intentar.",
+      "notFound": "No se encontró ninguna cámara en este dispositivo.",
+      "inUse": "La cámara está siendo usada por otra aplicación.",
+      "rearUnavailable": "La cámara trasera no está disponible. Probá con otro dispositivo.",
+      "startFailed": "No se pudo iniciar la cámara. Revisá los permisos e intentá de nuevo."
+    }
+  }
+}

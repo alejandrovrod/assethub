@@ -1,5 +1,6 @@
 // tasks.$taskId.tsx — Work Task Detail screen with tabs, lock checks, evidences, comments and offline propagation
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Clock,
   MapPin,
@@ -14,13 +15,15 @@ import {
   ArrowRight,
   Trash2,
 } from 'lucide-react';
-import { useTask } from '../features/tasks/hooks/useTasks';
+import { useTask, STATE_LABELS, ORDER_STATE_LABELS, PRIORITY_LABELS } from '../features/tasks/hooks/useTasks';
 import { TaskTransitionSheet } from '../features/tasks/components/TaskTransitionSheet';
 import { ChecklistForm } from '../features/tasks/components/ChecklistForm';
 import { PropagatedPropertiesDisplay } from '../shared/components/PropagatedPropertiesDisplay';
 import { EvidenceCapture } from '../shared/components/EvidenceCapture';
 import { uploadMedia } from '../media/uploader';
 import { loadSession } from '../auth/session-store';
+import { apiFetch } from '../lib/http';
+import { formatDate, formatDateTime, formatTime } from '../lib/format';
 import {
   db,
   TaskRepository,
@@ -41,18 +44,6 @@ interface EvidenceItem {
   isLocal?: boolean;
   sha256?: string;
 }
-
-export const STATE_LABELS: Record<string, string> = {
-  draft: 'Borrador',
-  todo: 'Por hacer',
-  ready: 'Por hacer',
-  in_progress: 'En progreso',
-  paused: 'Pausada',
-  done: 'Completada',
-  verified: 'Verificada',
-  cancelled: 'Cancelada',
-  rework: 'Re-trabajo',
-};
 
 export interface HistoryEntry {
   id: string;
@@ -79,6 +70,7 @@ export function TaskDetailPage({
   onNavigateIncident,
   onNavigateAsset,
 }: TaskDetailPageProps) {
+  const { t } = useTranslation(['tasks', 'common']);
   const { task, isLoading } = useTask(taskId);
   const [tab, setTab] = useState<'details' | 'checklist' | 'history' | 'comments'>('details');
   const [showTransition, setShowTransition] = useState(false);
@@ -120,7 +112,7 @@ export function TaskDetailPage({
       (async () => {
         try {
           const session = await loadSession();
-          const res = await fetch(`${API_BASE}/api/v1/work-tasks/${taskId}/comments`, {
+          const res = await apiFetch(`${API_BASE}/api/v1/work-tasks/${taskId}/comments`, {
             headers: {
               ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
               ...(session?.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
@@ -208,7 +200,7 @@ export function TaskDetailPage({
         try {
           const session = await loadSession();
           let serverItems: any[] = [];
-          const res = await fetch(`${API_BASE}/api/v1/work-tasks/${taskId}/evidences`, {
+          const res = await apiFetch(`${API_BASE}/api/v1/work-tasks/${taskId}/evidences`, {
             headers: {
               ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
               ...(session?.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
@@ -290,7 +282,7 @@ export function TaskDetailPage({
                 inFlightUploadsRef.current.add(remoteUrl);
 
                 try {
-                  const postRes = await fetch(`${API_BASE}/api/v1/work-tasks/${taskId}/evidences`, {
+                  const postRes = await apiFetch(`${API_BASE}/api/v1/work-tasks/${taskId}/evidences`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -379,7 +371,7 @@ export function TaskDetailPage({
         setIsLoadingHistory(true);
         try {
           const session = await loadSession();
-          const res = await fetch(`${API_BASE}/api/v1/work-tasks/${taskId}/history`, {
+          const res = await apiFetch(`${API_BASE}/api/v1/work-tasks/${taskId}/history`, {
             headers: {
               ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
               ...(session?.tenantSlug ? { 'X-Tenant': session.tenantSlug } : {}),
@@ -449,7 +441,7 @@ export function TaskDetailPage({
       id: crypto.randomUUID(),
       text: trimmed,
       createdAt: new Date().toISOString(),
-      createdByName: session?.tenantName ?? 'Técnico',
+      createdByName: session?.tenantName ?? undefined,
     };
 
     const nextComments = [optimisticComment, ...comments];
@@ -459,7 +451,7 @@ export function TaskDetailPage({
     try {
       await db.tasks.update(taskId, { commentsJson: JSON.stringify(nextComments) });
       if (navigator.onLine && session?.accessToken) {
-        await fetch(`${API_BASE}/api/v1/work-tasks/${taskId}/comments`, {
+        await apiFetch(`${API_BASE}/api/v1/work-tasks/${taskId}/comments`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -568,7 +560,7 @@ export function TaskDetailPage({
           inFlightUploadsRef.current.add(remoteUrl);
 
           try {
-            const postRes = await fetch(`${API_BASE}/api/v1/work-tasks/${taskId}/evidences`, {
+            const postRes = await apiFetch(`${API_BASE}/api/v1/work-tasks/${taskId}/evidences`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -619,7 +611,7 @@ export function TaskDetailPage({
   if (!task) {
     return (
       <div className="flex h-screen items-center justify-center p-4">
-        <p className="text-muted-foreground">Tarea no encontrada en la base local</p>
+        <p className="text-muted-foreground">{t('detail.notFound')}</p>
       </div>
     );
   }
@@ -629,6 +621,20 @@ export function TaskDetailPage({
   const isStateBlocked = repo.isStateChangeBlocked(task);
   const isEditBlocked = repo.isEditBlocked(task);
 
+  /** Technical states travel untranslated; only the displayed label is localized. */
+  const stateLabel = (state: string): string => {
+    const key = STATE_LABELS[state];
+    return key ? t(key) : state;
+  };
+  const orderStateLabel = (state: string): string => {
+    const key = ORDER_STATE_LABELS[state];
+    return key ? t(key) : state;
+  };
+  const priorityLabel = (priority: string): string => {
+    const key = PRIORITY_LABELS[priority];
+    return key ? t(key) : priority;
+  };
+
   /**
    * Delete an evidence. Local-first: the technician may be offline and must see the photo
    * disappear immediately. The server copy (if any) is removed online, or queued in the
@@ -636,7 +642,7 @@ export function TaskDetailPage({
    */
   const handleDeleteEvidence = async (evidence: EvidenceItem) => {
     if (isEditBlocked) return;
-    if (!window.confirm('¿Eliminar esta evidencia? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm(t('detail.evidence.deleteConfirm'))) return;
 
     try {
       // 1. Drop it from the local snapshot so the UI reacts immediately.
@@ -676,7 +682,7 @@ export function TaskDetailPage({
 
       if (navigator.onLine && session?.accessToken) {
         try {
-          const res = await fetch(`${API_BASE}${path}`, {
+          const res = await apiFetch(`${API_BASE}${path}`, {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${session.accessToken}`,
@@ -720,8 +726,8 @@ export function TaskDetailPage({
       <header className="border-b bg-card px-4 py-3">
         {task.state === 'rework' && (
           <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-            <span className="font-bold">Tarea Devuelta para Corrección:</span>{' '}
-            {task.reworkReason || 'Verifique el trabajo realizado'}
+            <span className="font-bold">{t('detail.reworkTitle')}</span>{' '}
+            {task.reworkReason || t('detail.reworkHint')}
           </div>
         )}
 
@@ -733,12 +739,13 @@ export function TaskDetailPage({
                 onClick={() => task.assetId && onNavigateAsset && onNavigateAsset(task.assetId)}
                 className="mt-0.5 text-xs font-medium text-primary hover:underline"
               >
-                Activo: {task.assetName} {task.assetCode ? `(${task.assetCode})` : ''}
+                {t('detail.asset', { name: task.assetName })}
+                {task.assetCode ? ` (${task.assetCode})` : ''}
               </button>
             )}
           </div>
           <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold uppercase text-foreground">
-            {task.state}
+            {stateLabel(task.state)}
           </span>
         </div>
 
@@ -749,8 +756,10 @@ export function TaskDetailPage({
               onClick={() => onNavigateOrder && onNavigateOrder(task.maintenanceOrderId!)}
               className="rounded-md border bg-muted/50 px-2 py-1 text-muted-foreground hover:text-foreground"
             >
-              OT: {task.maintenanceOrderTitle || task.maintenanceOrderId.slice(0, 8)}
-              {task.maintenanceOrderState ? ` (${task.maintenanceOrderState})` : ''}
+              {t('card.order', {
+                title: task.maintenanceOrderTitle || task.maintenanceOrderId.slice(0, 8),
+              })}
+              {task.maintenanceOrderState ? ` (${orderStateLabel(task.maintenanceOrderState)})` : ''}
             </button>
           )}
 
@@ -759,7 +768,7 @@ export function TaskDetailPage({
               onClick={() => onNavigateIncident && onNavigateIncident(task.incidentId!)}
               className="rounded-md border bg-destructive/10 px-2 py-1 text-destructive hover:bg-destructive/20"
             >
-              Incidencia vinculada
+              {t('detail.linkedIncident')}
             </button>
           )}
         </div>
@@ -769,8 +778,9 @@ export function TaskDetailPage({
           <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-500/15 p-2.5 text-xs text-amber-800 dark:text-amber-400">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>
-              Orden de trabajo en "{task.maintenanceOrderState}". Inicie la OT para habilitar
-              transiciones.
+              {t('detail.orderLock', {
+                state: orderStateLabel(task.maintenanceOrderState ?? ''),
+              })}
             </span>
           </div>
         )}
@@ -787,7 +797,7 @@ export function TaskDetailPage({
           }`}
         >
           <FileText className="h-4 w-4" />
-          Detalles
+          {t('detail.tabs.details')}
         </button>
 
         {task.checklistSchemaJson && (
@@ -800,7 +810,7 @@ export function TaskDetailPage({
             }`}
           >
             <ClipboardCheck className="h-4 w-4" />
-            Checklist
+            {t('detail.tabs.checklist')}
           </button>
         )}
 
@@ -813,7 +823,7 @@ export function TaskDetailPage({
           }`}
         >
           <History className="h-4 w-4" />
-          Historial
+          {t('detail.tabs.history')}
         </button>
 
         <button
@@ -825,7 +835,7 @@ export function TaskDetailPage({
           }`}
         >
           <MessageSquare className="h-4 w-4" />
-          Comentarios
+          {t('detail.tabs.comments')}
         </button>
       </nav>
 
@@ -836,7 +846,7 @@ export function TaskDetailPage({
             {task.description && (
               <div className="rounded-xl border bg-card p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Descripción
+                  {t('common:fields.description')}
                 </h3>
                 <p className="mt-1.5 text-sm">{task.description}</p>
               </div>
@@ -844,36 +854,36 @@ export function TaskDetailPage({
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-xl border bg-card p-3">
-                <span className="text-muted-foreground">Prioridad</span>
-                <p className="mt-1 font-bold capitalize">{task.priority}</p>
+                <span className="text-muted-foreground">{t('common:fields.priority')}</span>
+                <p className="mt-1 font-bold capitalize">{priorityLabel(task.priority)}</p>
               </div>
 
               {task.dueAtMs > 0 && (
                 <div className="rounded-xl border bg-card p-3">
-                  <span className="text-muted-foreground">Vencimiento</span>
+                  <span className="text-muted-foreground">{t('detail.due')}</span>
                   <p className="mt-1 flex items-center gap-1 font-semibold">
                     <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    {new Date(task.dueAtMs).toLocaleDateString()}
+                    {formatDate(task.dueAtMs)}
                   </p>
                 </div>
               )}
 
               {task.startedAtLocalIso && (
                 <div className="rounded-xl border bg-card p-3">
-                  <span className="text-muted-foreground">Iniciada</span>
+                  <span className="text-muted-foreground">{t('detail.started')}</span>
                   <p className="mt-1 flex items-center gap-1 font-semibold">
                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    {new Date(task.startedAtLocalIso).toLocaleTimeString()}
+                    {formatTime(task.startedAtLocalIso)}
                   </p>
                 </div>
               )}
 
               {task.completedAtLocalIso && (
                 <div className="rounded-xl border bg-card p-3">
-                  <span className="text-muted-foreground">Completada</span>
+                  <span className="text-muted-foreground">{t('detail.completed')}</span>
                   <p className="mt-1 flex items-center gap-1 font-semibold">
                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    {new Date(task.completedAtLocalIso).toLocaleTimeString()}
+                    {formatTime(task.completedAtLocalIso)}
                   </p>
                 </div>
               )}
@@ -882,7 +892,7 @@ export function TaskDetailPage({
             {/* Propagated Dynamic Properties */}
             <div className="rounded-xl border bg-card p-4">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Propiedades Dinámicas Propagadas
+                {t('detail.propagatedProperties')}
               </h3>
               <PropagatedPropertiesDisplay
                 key={task.id}
@@ -926,7 +936,7 @@ export function TaskDetailPage({
                       >
                         <img
                           src={ev.blobUri}
-                          alt={`Evidencia ${idx + 1}`}
+                          alt={t('detail.evidence.alt', { index: idx + 1 })}
                           onError={async (e) => {
                             const target = e.currentTarget;
                             try {
@@ -952,8 +962,8 @@ export function TaskDetailPage({
                           type="button"
                           onClick={() => void handleDeleteEvidence(ev)}
                           className="absolute right-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white shadow-sm transition-colors hover:bg-destructive"
-                          title="Eliminar evidencia"
-                          aria-label="Eliminar evidencia"
+                          title={t('detail.evidence.delete')}
+                          aria-label={t('detail.evidence.delete')}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -963,7 +973,7 @@ export function TaskDetailPage({
                 </div>
               ) : (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  No hay fotos de evidencia registradas.
+                  {t('detail.evidence.empty')}
                 </p>
               )}
             </div>
@@ -973,7 +983,7 @@ export function TaskDetailPage({
         {tab === 'checklist' && task.checklistSchemaJson && (
           <div className="rounded-xl border bg-card p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Formulario de Verificación
+              {t('detail.checklistTitle')}
             </h3>
             <ChecklistForm
               taskId={task.id}
@@ -989,17 +999,17 @@ export function TaskDetailPage({
         {tab === 'history' && (
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Historial de Estados
+              {t('detail.history.title')}
             </h3>
             {isLoadingHistory ? (
               <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
                 <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-                Cargando historial…
+                {t('detail.history.loading')}
               </div>
             ) : history.length === 0 ? (
               <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
                 <History className="mx-auto mb-2 h-6 w-6 opacity-40" />
-                No hay transiciones registradas aún.
+                {t('detail.history.empty')}
               </div>
             ) : (
               <div className="relative space-y-4 pl-2 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-px before:bg-border">
@@ -1012,37 +1022,37 @@ export function TaskDetailPage({
                       <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
                         {item.fromState && (
                           <span className="inline-flex items-center rounded-md border bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                            {STATE_LABELS[item.fromState] || item.fromState}
+                            {stateLabel(item.fromState)}
                           </span>
                         )}
                         <ArrowRight className="h-3 w-3 text-muted-foreground" />
                         <span className="inline-flex items-center rounded-md bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-                          {STATE_LABELS[item.toState] || item.toState}
+                          {stateLabel(item.toState)}
                         </span>
                         {item.isLocal && (
                           <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
-                            Local (offline)
+                            {t('detail.history.local')}
                           </span>
                         )}
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        {new Date(item.changedAt).toLocaleString('es-ES', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatDateTime(item.changedAt)}
                         {item.changedByName && ` · ${item.changedByName}`}
                       </div>
                       {item.reason && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">Motivo: {item.reason}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {t('detail.history.reason', { reason: item.reason })}
+                        </p>
                       )}
                       {item.geo && (
                         <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span>
-                            Lat: {item.geo.latitude.toFixed(4)}, Lon: {item.geo.longitude.toFixed(4)} ({item.geo.status})
+                            {t('detail.history.geo', {
+                              lat: item.geo.latitude.toFixed(4),
+                              lon: item.geo.longitude.toFixed(4),
+                              status: item.geo.status,
+                            })}
                           </span>
                         </div>
                       )}
@@ -1059,13 +1069,13 @@ export function TaskDetailPage({
             {/* New Comment Input */}
             <div className="rounded-xl border bg-card p-4">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Agregar Comentario
+                {t('detail.comments.title')}
               </h3>
               <form onSubmit={handleSendComment} className="space-y-2">
                 <textarea
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
-                  placeholder="Escriba una observación o comentario técnico..."
+                  placeholder={t('detail.comments.placeholder')}
                   rows={3}
                   className="w-full rounded-lg border border-input bg-background p-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -1075,7 +1085,7 @@ export function TaskDetailPage({
                   className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-xs font-bold text-primary-foreground disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
-                  {isSendingComment ? 'Enviando…' : 'Publicar Comentario'}
+                  {isSendingComment ? t('detail.comments.sending') : t('detail.comments.submit')}
                 </button>
               </form>
             </div>
@@ -1085,22 +1095,22 @@ export function TaskDetailPage({
               {isLoadingComments ? (
                 <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
                   <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-                  Cargando comentarios…
+                  {t('detail.comments.loading')}
                 </div>
               ) : comments.length === 0 ? (
                 <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
                   <MessageSquare className="mx-auto mb-2 h-6 w-6 opacity-40" />
-                  No hay comentarios registrados para esta tarea.
+                  {t('detail.comments.empty')}
                 </div>
               ) : (
                 comments.map((comment) => (
                   <div key={comment.id} className="rounded-xl border bg-card p-3.5 text-xs shadow-xs">
                     <div className="mb-1 flex items-center justify-between text-muted-foreground">
                       <span className="font-semibold text-foreground">
-                        {comment.createdByName || 'Técnico'}
+                        {comment.createdByName || t('detail.comments.technician')}
                       </span>
                       <span>
-                        {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}
+                        {comment.createdAt ? formatDateTime(comment.createdAt) : ''}
                       </span>
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{comment.text}</p>
@@ -1120,10 +1130,10 @@ export function TaskDetailPage({
           className="flex h-14 w-full items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-md transition-transform active:scale-98 disabled:opacity-50"
         >
           {isStateBlocked
-            ? 'Transición Bloqueada por OT'
+            ? t('detail.transitionBlocked')
             : allowedTransitions.length === 0
-            ? 'Sin transiciones disponibles'
-            : 'Cambiar Estado de Tarea'}
+            ? t('detail.noTransitions')
+            : t('detail.changeState')}
         </button>
       </footer>
 

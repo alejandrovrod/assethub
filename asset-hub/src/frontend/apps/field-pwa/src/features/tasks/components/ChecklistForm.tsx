@@ -1,5 +1,6 @@
 // ChecklistForm.tsx — RJSF-based checklist form with draft autosave and error scroll
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import Form from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
 import type { RJSFValidationError } from '@rjsf/utils';
@@ -25,6 +26,7 @@ export function ChecklistForm({
   isReadOnly = false,
   onSave,
 }: ChecklistFormProps) {
+  const { t } = useTranslation(['tasks', 'common']);
   const [formData, setFormData] = useState<Record<string, unknown>>(() => {
     try {
       if (draftJson) return JSON.parse(draftJson);
@@ -36,7 +38,9 @@ export function ChecklistForm({
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<
+    'checklist.draftSaved' | 'checklist.saved' | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const formContainerRef = useRef<HTMLDivElement>(null);
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,7 +60,7 @@ export function ChecklistForm({
     autosaveTimeoutRef.current = setTimeout(async () => {
       try {
         await saveChecklistDraft(db, taskId, JSON.stringify(formData));
-        setSaveStatus('Borrador guardado localmente');
+        setSaveStatus('checklist.draftSaved');
       } catch (err) {
         console.error('Failed to autosave checklist draft:', err);
       }
@@ -74,10 +78,10 @@ export function ChecklistForm({
     setError(null);
     try {
       await saveChecklist(db, taskId, JSON.stringify(data ?? {}));
-      setSaveStatus('Checklist guardado y encolado para sincronización');
+      setSaveStatus('checklist.saved');
       if (onSave) onSave();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al guardar checklist');
+      setError(err instanceof Error ? err.message : t('checklist.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -98,7 +102,7 @@ export function ChecklistForm({
     <div ref={formContainerRef} className="space-y-4">
       {saveStatus && (
         <div className="rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-          {saveStatus}
+          {t(saveStatus)}
         </div>
       )}
 
@@ -126,7 +130,7 @@ export function ChecklistForm({
             disabled={isSaving}
             className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-sm active:scale-98 disabled:opacity-50"
           >
-            {isSaving ? 'Guardando…' : 'Guardar y confirmar checklist'}
+            {isSaving ? t('common:loading.saving') : t('checklist.submit')}
           </button>
         )}
       </Form>

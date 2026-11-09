@@ -1,5 +1,6 @@
 // ConflictReconciliationSheet.tsx — Conflict resolution UI
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, X } from 'lucide-react';
 
 interface ConflictField {
@@ -19,6 +20,7 @@ export function ConflictReconciliationSheet({
   onResolve,
   onClose,
 }: ConflictReconciliationSheetProps) {
+  const { t } = useTranslation(['sync', 'common']);
   const [selectedResolution, setSelectedResolution] = useState<'local' | 'server' | 'merge'>('server');
   const [mergedValues, setMergedValues] = useState<Record<string, string>>(
     Object.fromEntries(fields.map((f) => [f.field, f.serverValue])),
@@ -30,15 +32,20 @@ export function ConflictReconciliationSheet({
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            <h3 className="text-lg font-semibold">Conflicto de sincronización</h3>
+            <h3 className="text-lg font-semibold">{t('conflictSheet.title')}</h3>
           </div>
-          <button onClick={onClose} className="rounded-full p-1 hover:bg-muted">
+          <button
+            onClick={onClose}
+            aria-label={t('common:actions.close')}
+            title={t('common:actions.close')}
+            className="rounded-full p-1 hover:bg-muted"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <p className="mb-4 text-sm text-muted-foreground">
-          Los datos locales difieren de los del servidor. Elegí cómo resolver.
+          {t('conflictSheet.description')}
         </p>
 
         <div className="mb-4 space-y-3">
@@ -47,12 +54,12 @@ export function ConflictReconciliationSheet({
               <p className="text-sm font-medium">{field.field}</p>
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded bg-blue-500/10 p-2">
-                  <p className="font-medium text-blue-600">Local</p>
-                  <p>{field.localValue || '(vacío)'}</p>
+                  <p className="font-medium text-blue-600">{t('conflictSheet.local')}</p>
+                  <p>{field.localValue || t('conflictSheet.empty')}</p>
                 </div>
                 <div className="rounded bg-green-500/10 p-2">
-                  <p className="font-medium text-green-600">Servidor</p>
-                  <p>{field.serverValue || '(vacío)'}</p>
+                  <p className="font-medium text-green-600">{t('conflictSheet.server')}</p>
+                  <p>{field.serverValue || t('conflictSheet.empty')}</p>
                 </div>
               </div>
               {selectedResolution === 'merge' && (
@@ -80,7 +87,11 @@ export function ConflictReconciliationSheet({
                   : 'border-input hover:bg-muted'
               }`}
             >
-              {res === 'server' ? 'Servidor' : res === 'local' ? 'Local' : 'Combinar'}
+              {res === 'server'
+                ? t('conflictSheet.server')
+                : res === 'local'
+                ? t('conflictSheet.local')
+                : t('conflictSheet.merge')}
             </button>
           ))}
         </div>
@@ -90,7 +101,7 @@ export function ConflictReconciliationSheet({
           className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground"
         >
           <Check className="h-4 w-4" />
-          Resolver
+          {t('conflictSheet.resolve')}
         </button>
       </div>
     </div>

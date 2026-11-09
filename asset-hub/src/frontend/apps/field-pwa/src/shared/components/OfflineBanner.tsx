@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +8,8 @@ interface OfflineBannerProps {
 }
 
 export function OfflineBanner({ isOnline, className }: OfflineBannerProps) {
+  const { t } = useTranslation('sync');
+
   if (isOnline) return null;
 
   return (
@@ -17,7 +20,7 @@ export function OfflineBanner({ isOnline, className }: OfflineBannerProps) {
       )}
     >
       <WifiOff className="h-4 w-4 shrink-0" />
-      <span>Sin conexión — los cambios se sincronizarán al reconectar</span>
+      <span>{t('banner.offline')}</span>
     </div>
   );
 }
