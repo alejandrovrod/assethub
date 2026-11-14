@@ -10,8 +10,13 @@ import {
   SkipForward,
   AlertCircle,
   Sparkles,
+  BookOpen,
+  Video as VideoIcon,
+  Check,
+  Lightbulb,
 } from 'lucide-react'
-import { ALL_LESSONS, LEARNING_MODULES, videoUrl, type Lesson } from '@/data/catalog'
+import { ALL_LESSONS, LEARNING_MODULES, thumbnailUrl, videoUrl, type Lesson } from '@/data/catalog'
+import { LESSON_GUIDES } from '@/data/guides'
 import { useLearningStore } from '@/store/learning.store'
 
 interface VideoWatchViewProps {
@@ -35,6 +40,7 @@ export function VideoWatchView({ lesson, onSelectLesson, onBack }: VideoWatchVie
     toggleAutoplayNext,
   } = useLearningStore()
 
+  const [activeTab, setActiveTab] = useState<'video' | 'guide'>('video')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [showAutoPlayToast, setShowAutoPlayToast] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
@@ -44,6 +50,8 @@ export function VideoWatchView({ lesson, onSelectLesson, onBack }: VideoWatchVie
   const currentIdx = ALL_LESSONS.findIndex((l) => l.id === lesson.id)
   const nextLesson = currentIdx >= 0 && currentIdx < ALL_LESSONS.length - 1 ? ALL_LESSONS[currentIdx + 1] : null
   const isCompleted = completedIds.includes(lesson.id)
+  const guide = LESSON_GUIDES[lesson.id]
+  const thumbUrl = thumbnailUrl(lesson.videoPath[lang])
 
   const prerequisites = (lesson.prerequisiteIds ?? [])
     .map((id) => ALL_LESSONS.find((l) => l.id === id))
@@ -59,7 +67,6 @@ export function VideoWatchView({ lesson, onSelectLesson, onBack }: VideoWatchVie
   // Keyboard shortcuts (Space = play/pause, ArrowLeft/Right = -5s/+5s, f = fullscreen, n = next)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if typing in an input
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
         return
@@ -159,8 +166,9 @@ export function VideoWatchView({ lesson, onSelectLesson, onBack }: VideoWatchVie
       </div>
 
       <div className={`grid gap-6 ${theaterMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[1fr_380px]'}`}>
-        {/* Main Player Column */}
+        {/* Main Content Column */}
         <div className="flex flex-col gap-4">
+          {/* Main Video Screen */}
           <div className="relative overflow-hidden rounded-xl border border-border bg-black shadow-2xl">
             <video
               ref={videoRef}
@@ -331,36 +339,156 @@ export function VideoWatchView({ lesson, onSelectLesson, onBack }: VideoWatchVie
             )}
           </div>
 
-          {/* Lesson Details */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {lesson.title[lang]}
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {lesson.description[lang]}
-            </p>
+          {/* Tabs: Video Overview vs Step-by-Step Screenshot Guide */}
+          <div className="flex items-center gap-2 border-b border-border pt-2">
+            <button
+              onClick={() => setActiveTab('video')}
+              className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+                activeTab === 'video'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <VideoIcon className="h-4 w-4" />
+              {lang === 'es' ? 'Descripción del Tutorial' : 'Lesson Overview'}
+            </button>
+            <button
+              onClick={() => setActiveTab('guide')}
+              className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+                activeTab === 'guide'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <BookOpen className="h-4 w-4" />
+              {lang === 'es' ? 'Guía Paso a Paso' : 'Step-by-Step Guide'}
+              {guide && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                  {guide.steps.length} {lang === 'es' ? 'pasos' : 'steps'}
+                </span>
+              )}
+            </button>
+          </div>
 
-            {prerequisites.length > 0 && (
-              <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
-                  <AlertCircle className="h-4 w-4" />
-                  {lang === 'es' ? 'Precondiciones recomendadas:' : 'Recommended prerequisites:'}
+          {/* Tab 1: Overview */}
+          {activeTab === 'video' && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                {lesson.title[lang]}
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {lesson.description[lang]}
+              </p>
+
+              {/* Key Takeaways */}
+              {guide && guide.keyTakeaways[lang].length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
+                    {lang === 'es' ? 'Lo que aprenderás en esta lección:' : 'What you will learn in this lesson:'}
+                  </h3>
+                  <ul className="mt-3 space-y-2">
+                    {guide.keyTakeaways[lang].map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5 text-sm text-foreground">
+                        <Check className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {prerequisites.map((pre) => (
-                    <button
-                      key={pre.id}
-                      onClick={() => onSelectLesson(pre)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-background/60 px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+              )}
+
+              {/* Prerequisites */}
+              {prerequisites.length > 0 && (
+                <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+                    <AlertCircle className="h-4 w-4" />
+                    {lang === 'es' ? 'Precondiciones recomendadas:' : 'Recommended prerequisites:'}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {prerequisites.map((pre) => (
+                      <button
+                        key={pre.id}
+                        onClick={() => onSelectLesson(pre)}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-background/60 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-background"
+                      >
+                        <Play className="h-3 w-3 text-amber-400" />
+                        {pre.title[lang]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 2: Step-by-Step Screenshot Guide */}
+          {activeTab === 'guide' && (
+            <div className="rounded-xl border border-border bg-card p-6 space-y-8">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-foreground">
+                  {lang === 'es' ? 'Guía Visual Paso a Paso' : 'Step-by-Step Visual Guide'}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {guide?.overview[lang] || lesson.description[lang]}
+                </p>
+              </div>
+
+              {/* Featured Screenshot of this Tutorial */}
+              <div className="overflow-hidden rounded-xl border border-border bg-slate-950 shadow-md">
+                <div className="flex items-center justify-between border-b border-border/40 bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground">
+                  <span>{lang === 'es' ? 'Captura de pantalla de referencia' : 'Reference screenshot'}</span>
+                  <span className="font-mono text-[10px]">{lesson.duration}</span>
+                </div>
+                <img
+                  src={thumbUrl}
+                  alt={lesson.title[lang]}
+                  className="w-full object-cover aspect-video"
+                  onError={(e) => {
+                    ;(e.target as HTMLElement).style.display = 'none'
+                  }}
+                />
+              </div>
+
+              {/* Numbered Steps */}
+              {guide && guide.steps.length > 0 ? (
+                <div className="space-y-6">
+                  {guide.steps.map((st) => (
+                    <div
+                      key={st.number}
+                      className="flex items-start gap-4 rounded-xl border border-border bg-muted/20 p-4 transition hover:bg-muted/30"
                     >
-                      <Play className="h-3 w-3 text-amber-400" />
-                      {pre.title[lang]}
-                    </button>
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-sm text-primary-foreground">
+                        {st.number}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-semibold text-foreground">
+                          {st.title[lang]}
+                        </h3>
+                        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                          {st.description[lang]}
+                        </p>
+                        {st.tip && (
+                          <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs text-foreground">
+                            <Lightbulb className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                            <div>
+                              <strong className="text-primary">{lang === 'es' ? 'Tip: ' : 'Tip: '}</strong>
+                              <span>{st.tip[lang]}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="rounded-lg border border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                  {lang === 'es'
+                    ? 'Los pasos detallados para esta lección están siendo documentados.'
+                    : 'Detailed steps for this lesson are currently being documented.'}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Side Playlist Column */}
