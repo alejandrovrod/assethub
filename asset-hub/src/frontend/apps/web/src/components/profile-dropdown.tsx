@@ -16,6 +16,8 @@ import { SignOutDialog } from '@/components/sign-out-dialog'
 import { useAuthStore } from '@/store/auth.store'
 import { getMediaUrl } from '@/lib/api-client'
 import { useTranslation } from 'react-i18next'
+import { GraduationCap, ExternalLink } from 'lucide-react'
+import { getLearningHubUrl } from '@/components/learning-hub-trigger'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
@@ -71,6 +73,20 @@ export function ProfileDropdown() {
                 {t('nav.notifications')}
                 <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={getLearningHubUrl(undefined, (t as any).i18n?.language?.startsWith('en') ? 'en' : 'es')}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='flex items-center justify-between cursor-pointer'
+              >
+                <span className='flex items-center gap-2'>
+                  <GraduationCap className='h-4 w-4 text-primary' />
+                  <span>Asset Hub Academy</span>
+                </span>
+                <ExternalLink className='h-3 w-3 opacity-60' />
+              </a>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

@@ -7,8 +7,10 @@ import {
   Settings,
   Command,
   Package,
+  GraduationCap,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
+import { getLearningHubUrl } from '@/components/learning-hub-trigger'
 
 /**
  * Titles are i18n keys resolved in the render layer (nav-group.tsx,
@@ -127,6 +129,12 @@ export const sidebarData: SidebarData = {
           title: 'sidebar.items.catalogs',
           url: '/catalogs',
           icon: BookOpen,
+        },
+        {
+          title: 'sidebar.items.academy',
+          url: getLearningHubUrl(),
+          icon: GraduationCap,
+          isExternal: true,
         },
         {
           title: 'sidebar.items.settings',

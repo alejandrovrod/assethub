@@ -4,6 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
+  server: {
+    watch: {
+      ignored: ['**/tutorials-videos/**', '**/test-results/**', '**/tutorials/**'],
+    },
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

@@ -547,7 +547,13 @@
       "red": "Rojo (Problema / Cancelado)",
       "yellow": "Amarillo (Espera / Pausado)",
       "purple": "Morado (Especial / Externo)"
-    }
+    },
+    "connectStates": "Conectar Estados",
+    "sourceState": "Estado Origen",
+    "targetState": "Estado Destino",
+    "addTransition": "Crear Transición",
+    "selectOrigin": "Seleccionar origen...",
+    "selectDestination": "Seleccionar destino..."
   },
   "timeline": {
     "loadError": "Error al cargar la bitácora",

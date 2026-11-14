@@ -13,6 +13,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { AssetHubBrandLogo } from "@/components/brand/asset-hub-logo";
+import { GraduationCap } from "lucide-react";
+import { getLearningHubUrl } from "@/components/learning-hub-trigger";
 
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -67,6 +69,15 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">
               {t('nav.features')}
+            </a>
+            <a
+              href={getLearningHubUrl(undefined, (t as any).i18n?.language?.startsWith('en') ? 'en' : 'es')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-primary font-semibold hover:text-primary/80 transition-colors"
+            >
+              <GraduationCap className="size-4" />
+              <span>{t('nav.academy', 'Academy')}</span>
             </a>
             <a href="#multitenant" className="hover:text-foreground transition-colors">
               {t('nav.multitenant')}
@@ -134,19 +145,28 @@ export default function LandingPage() {
           </p>
 
           {/* Action CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-xl mx-auto mb-16">
             <Link
               to="/login"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-5 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-95"
             >
               <span>{t('hero.cta')}</span>
-              <ChevronRight className="size-4" />
+              <ChevronRight className="size-3.5" />
             </Link>
             <a
               href="#features"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur-xs px-6 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card/80 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-accent transition-colors"
             >
               <span>{t('hero.demo')}</span>
+            </a>
+            <a
+              href={getLearningHubUrl(undefined, (t as any).i18n?.language?.startsWith('en') ? 'en' : 'es')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card/80 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:border-primary/50 hover:text-primary transition-colors"
+            >
+              <GraduationCap className="size-3.5 text-primary" />
+              <span>Asset Hub Academy</span>
             </a>
           </div>
 
@@ -702,6 +722,14 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">{t('nav.features')}</a>
+            <a
+              href={getLearningHubUrl(undefined, (t as any).i18n?.language?.startsWith('en') ? 'en' : 'es')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors font-medium text-primary"
+            >
+              Asset Hub Academy
+            </a>
             <a href="#multitenant" className="hover:text-foreground transition-colors">{t('nav.multitenant')}</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('nav.pricing')}</a>
             <Link to="/login" className="hover:text-foreground transition-colors">{t('nav.login')}</Link>

@@ -158,21 +158,21 @@ export default function MaintenanceIncidents() {
   return (
     <div className="flex flex-col gap-4 p-4 pt-0">
       <Card className="flex flex-1 flex-col">
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-          <div>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 border-b pb-4 sm:items-center">
+          <div className="min-w-0">
             <CardTitle>{t('list.incidents')}</CardTitle>
             <CardDescription>
               {t('incidents.description')}
             </CardDescription>
           </div>
           {canCreate && (
-            <Button size="icon" onClick={handleCreate}>
+            <Button size="icon" className="shrink-0" onClick={handleCreate}>
               <Plus className="h-4 w-4" />
             </Button>
           )}
         </CardHeader>
         <CardContent className="flex-1 p-0 flex flex-col">
-          <div className="flex flex-col lg:flex-row flex-1 gap-6 mt-4 p-4 pt-0 overflow-hidden">
+          <div className="flex flex-col lg:flex-row flex-1 gap-4 sm:gap-6 mt-4 p-3 sm:p-4 pt-0 overflow-hidden">
             {/* Filtros Mobile */}
             <div className="lg:hidden shrink-0">
               <Sheet>
@@ -199,7 +199,7 @@ export default function MaintenanceIncidents() {
             </div>
 
             {/* Grilla de Incidencias */}
-            <div className="flex-1 rounded-lg border shadow-sm p-4">
+            <div className="flex-1 min-w-0 rounded-lg border shadow-sm p-3 sm:p-4">
                 {isLoading ? (
                   <div className="flex justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -209,51 +209,87 @@ export default function MaintenanceIncidents() {
                     <p className="text-muted-foreground mb-4">{t('empty.incidents')}</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('common:labels.title')}</TableHead>
-                        <TableHead>{t('fields.asset')}</TableHead>
-                        <TableHead>{t('common:labels.status')}</TableHead>
-                        <TableHead>{t('incidents.columns.reportedAt')}</TableHead>
-                        <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <>
+                    {/* Mobile: cards */}
+                    <ul className="flex flex-col gap-3 md:hidden">
                       {incidents?.map((incident) => (
-                        <TableRow key={incident.id}>
-                          <TableCell className="font-medium">{incident.title}</TableCell>
-                          <TableCell>{incident.assetName}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{incident.state}</Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {incident.reportedAt ? format(parseApiDate(incident.reportedAt), 'PPp', { locale: es }) : '—'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleView(incident.id)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                        <li key={incident.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleView(incident.id)}
+                            aria-label={`${t('common:actions.view')} ${incident.title}`}
+                            className="w-full rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="min-w-0 flex-1 text-sm font-medium line-clamp-2">
+                                {incident.title}
+                              </p>
+                              <Badge variant="outline" className="shrink-0">
+                                {incident.state}
+                              </Badge>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                              <span className="min-w-0 truncate">{incident.assetName || '—'}</span>
+                              <span className="shrink-0">
+                                {incident.reportedAt
+                                  ? format(parseApiDate(incident.reportedAt), 'PP', { locale: es })
+                                  : '—'}
+                              </span>
+                            </div>
+                          </button>
+                        </li>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </ul>
+
+                    {/* Desktop: table */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t('common:labels.title')}</TableHead>
+                            <TableHead>{t('fields.asset')}</TableHead>
+                            <TableHead>{t('common:labels.status')}</TableHead>
+                            <TableHead>{t('incidents.columns.reportedAt')}</TableHead>
+                            <TableHead className="text-right">{t('common:labels.actions')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {incidents?.map((incident) => (
+                            <TableRow key={incident.id}>
+                              <TableCell className="font-medium">{incident.title}</TableCell>
+                              <TableCell>{incident.assetName}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{incident.state}</Badge>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {incident.reportedAt ? format(parseApiDate(incident.reportedAt), 'PPp', { locale: es }) : '—'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleView(incident.id)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
                 )}
               
               {/* Pagination Controls */}
               {!isLoading && (
-                <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">
+                <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center justify-between gap-3 sm:justify-start">
+                    <span className="text-xs text-muted-foreground sm:text-sm">
                       {t('incidents.totalCount', { count: pagedResult?.totalCount || 0 })}
                     </span>
                     <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                      <SelectTrigger className="w-[100px] h-8 text-xs">
+                      <SelectTrigger className="h-8 w-[100px] text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -264,20 +300,20 @@ export default function MaintenanceIncidents() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                  <div className="flex items-center justify-between gap-2 sm:justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
                       {t('common:pagination.previous')}
                     </Button>
-                    <div className="flex items-center text-sm px-2">
+                    <div className="flex items-center px-1 text-xs text-muted-foreground sm:px-2 sm:text-sm">
                       {t('common:pagination.page', { page })} {t('common:pagination.of', { total: pagedResult?.totalPages || 1 })}
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setPage(p => p + 1)}
                       disabled={page >= (pagedResult?.totalPages || 1)}

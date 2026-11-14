@@ -42,7 +42,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
-import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag, Palette, Maximize, Focus } from 'lucide-react';
+import { Plus, Trash2, Settings, Info, AlertCircle, Star, Flag, Palette, Maximize, Focus, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface LifecycleCanvasProps {
@@ -223,6 +223,8 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [newNodeName, setNewNodeName] = useState('');
+  const [transitionSource, setTransitionSource] = useState('');
+  const [transitionTarget, setTransitionTarget] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState('');
   const [showHelp, setShowHelp] = useState(true);
@@ -534,6 +536,22 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
     [nodes, notifyChange]
   );
 
+  const handleAddTransition = () => {
+    if (!transitionSource || !transitionTarget || transitionSource === transitionTarget) return;
+    const exists = edges.some((e) => e.source === transitionSource && e.target === transitionTarget);
+    if (exists) return;
+    const newEdge: Edge = {
+      id: `e-${transitionSource}-${transitionTarget}-${Date.now()}`,
+      source: transitionSource,
+      target: transitionTarget,
+      markerEnd: { type: MarkerType.ArrowClosed },
+    };
+    const newEdges = [...edges, newEdge];
+    setEdges(newEdges);
+    notifyChange(nodes, newEdges);
+    setTransitionTarget('');
+  };
+
   const handleAddNode = () => {
     if (!newNodeName.trim()) return;
     const name = newNodeName.trim();
@@ -557,7 +575,7 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
         },
         isInitial: nodes.length === 0,
       },
-      position: { x: 100 + nodes.length * 30, y: 100 + nodes.length * 30 },
+      position: { x: 80 + (nodes.length % 3) * 220, y: 80 + Math.floor(nodes.length / 3) * 140 },
       style: {
         backgroundColor: nodes.length === 0 ? '#dcfce7' : '#ffffff',
         border: `2px solid ${nodes.length === 0 ? '#16a34a' : '#94a3b8'}`,
@@ -786,6 +804,58 @@ export function LifecycleCanvas({ value, onChange, schemaJson }: LifecycleCanvas
                 {t('lifecycle.addState')}
               </Button>
             </div>
+
+            {nodes.length >= 2 && (
+              <div className="flex flex-wrap items-center gap-2 p-2.5 bg-muted/40 border rounded-md text-xs">
+                <span className="font-medium text-muted-foreground flex items-center gap-1.5">
+                  <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                  {t('lifecycle.connectStates')}:
+                </span>
+                <Select value={transitionSource} onValueChange={setTransitionSource}>
+                  <SelectTrigger className="h-8 text-xs min-w-[130px] flex-1 sm:flex-none">
+                    <SelectValue placeholder={t('lifecycle.selectOrigin')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nodes
+                      .filter((n) => !n.data?.stateConfig?.isTerminal)
+                      .map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          {n.id}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground hidden sm:inline-block" />
+
+                <Select value={transitionTarget} onValueChange={setTransitionTarget}>
+                  <SelectTrigger className="h-8 text-xs min-w-[130px] flex-1 sm:flex-none">
+                    <SelectValue placeholder={t('lifecycle.selectDestination')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nodes
+                      .filter((n) => n.id !== transitionSource)
+                      .map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          {n.id}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  disabled={!transitionSource || !transitionTarget || transitionSource === transitionTarget}
+                  onClick={handleAddTransition}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  {t('lifecycle.addTransition')}
+                </Button>
+              </div>
+            )}
             <div ref={wrapperRef} className="flex-1 border rounded bg-background overflow-hidden relative">
               <style>{`
                 .react-flow__node.selected {

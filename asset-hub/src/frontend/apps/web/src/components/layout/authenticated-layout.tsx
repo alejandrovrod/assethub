@@ -14,6 +14,7 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { CommandMenu } from '@/components/command-menu'
+import { LearningHubTrigger } from '@/components/learning-hub-trigger'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -52,6 +53,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             <Header>
               <div className="ml-auto flex items-center space-x-4">
                 <Search />
+                <LearningHubTrigger />
                 <ThemeSwitch />
                 <LanguageSwitcher />
                 <ProfileDropdown />

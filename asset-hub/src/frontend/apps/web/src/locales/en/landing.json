@@ -2,6 +2,7 @@
   "nav": {
     "platform": "Platform",
     "features": "Features",
+    "academy": "Academy",
     "multitenant": "Multi-tenant",
     "pricing": "Pricing",
     "faq": "FAQ",

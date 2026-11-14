@@ -68,6 +68,29 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
   const { t } = useTranslation()
   const label = t(item.title)
+
+  if (item.isExternal) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          tooltip={label}
+        >
+          <a
+            href={typeof item.url === 'string' ? item.url : '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpenMobile(false)}
+          >
+            {item.icon && <item.icon />}
+            <span>{label}</span>
+            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    )
+  }
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton

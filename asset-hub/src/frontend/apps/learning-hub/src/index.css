@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@asset-hub/ui/globals.css";
+
+@layer base {
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+}
+

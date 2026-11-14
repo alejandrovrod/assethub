@@ -34,3 +34,8 @@ Thumbs.db
 
 # Uploaded files
 asset-hub/src/backend/AssetHub.Api/wwwroot/uploads/
+
+# Playwright tutorial artifacts
+asset-hub/src/frontend/apps/web/tutorials/.auth/
+asset-hub/src/frontend/apps/web/test-results/
+asset-hub/src/frontend/apps/web/playwright-report/

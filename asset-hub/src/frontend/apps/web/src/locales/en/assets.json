@@ -547,7 +547,13 @@
       "red": "Red (Issue / Cancelled)",
       "yellow": "Yellow (Waiting / Paused)",
       "purple": "Purple (Special / External)"
-    }
+    },
+    "connectStates": "Connect States",
+    "sourceState": "Source State",
+    "targetState": "Target State",
+    "addTransition": "Create Transition",
+    "selectOrigin": "Select origin...",
+    "selectDestination": "Select destination..."
   },
   "timeline": {
     "loadError": "Error loading the activity log",
