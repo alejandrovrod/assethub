@@ -15,9 +15,25 @@ interface LearningHubTriggerProps {
 }
 
 export function getLearningHubUrl(lessonId?: string, lang?: string): string {
-  const base =
-    (import.meta.env.VITE_LEARNING_HUB_URL as string | undefined)?.replace(/\/$/, '') ||
-    'http://localhost:5174'
+  let base = (import.meta.env.VITE_LEARNING_HUB_URL as string | undefined)?.trim()?.replace(/\/$/, '')
+
+  // En producción (cuando no estamos en localhost), si la variable quedó vacía o con localhost,
+  // inferimos inteligentemente el subdominio o fallback de producción
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (!base || base.includes('localhost') || base.includes('127.0.0.1')) {
+      // Si estamos en netlify (ej: assethubweb.netlify.app -> assethubacademy.netlify.app o ruta relativa /academy)
+      if (window.location.hostname.endsWith('.netlify.app')) {
+        base = 'https://assethubacademy.netlify.app'
+      } else {
+        base = `${window.location.protocol}//academy.${window.location.host}`
+      }
+    }
+  }
+
+  if (!base) {
+    base = 'http://localhost:5174'
+  }
+
   const params = new URLSearchParams()
   if (lessonId) {
     params.set('v', lessonId)
