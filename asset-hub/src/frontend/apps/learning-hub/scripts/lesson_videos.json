@@ -1,0 +1,110 @@
+{
+  "01-registro": {
+    "es": "01-registro-empresa/registro-cuenta-empresa-es.webm",
+    "en": "01-registro-empresa/registro-cuenta-empresa-en.webm"
+  },
+  "02-catalogos": {
+    "es": "02-catalogos-y-plantillas/catalogos-y-plantillas-activos-es.webm",
+    "en": "02-catalogos-y-plantillas/catalogos-y-plantillas-activos-en.webm"
+  },
+  "02-esquemas": {
+    "es": "02-plantillas/esquemas-dinamicos-tabs-secciones-es.webm",
+    "en": "02-plantillas/esquemas-dinamicos-tabs-secciones-en.webm"
+  },
+  "03-estados": {
+    "es": "03-maquina-estados/maquina-estados-ciclo-vida-es.webm",
+    "en": "03-maquina-estados/maquina-estados-ciclo-vida-en.webm"
+  },
+  "03-01-alta": {
+    "es": "03-activos/01-alta-ficha-activos/alta-ficha-activos-es.webm",
+    "en": "03-activos/01-alta-ficha-activos/alta-ficha-activos-en.webm"
+  },
+  "03-02-bom": {
+    "es": "03-activos/02-bom-materiales/bom-materiales-es.webm",
+    "en": "03-activos/02-bom-materiales/bom-materiales-en.webm"
+  },
+  "03-03-jerarquia": {
+    "es": "03-activos/03-jerarquia-planta/jerarquia-activos-es.webm",
+    "en": "03-activos/03-jerarquia-planta/jerarquia-activos-en.webm"
+  },
+  "03-04-mapas": {
+    "es": "03-activos/04-ubicaciones-mapas/ubicaciones-mapas-es.webm",
+    "en": "03-activos/04-ubicaciones-mapas/ubicaciones-mapas-en.webm"
+  },
+  "03-05-bitacora": {
+    "es": "03-activos/05-bitacora-trazabilidad/bitacora-trazabilidad-es.webm",
+    "en": "03-activos/05-bitacora-trazabilidad/bitacora-trazabilidad-en.webm"
+  },
+  "03-06-finanzas": {
+    "es": "03-activos/06-finanzas-depreciacion/finanzas-activos-es.webm",
+    "en": "03-activos/06-finanzas-depreciacion/finanzas-activos-en.webm"
+  },
+  "04-00-plantillas": {
+    "es": "04-mantenimiento/00-plantillas-incidencias/plantillas-incidencias-es.webm",
+    "en": "04-mantenimiento/00-plantillas-incidencias/plantillas-incidencias-en.webm"
+  },
+  "04-01-transicion": {
+    "es": "04-mantenimiento/01-transicion-estado-incidencia/transicion-estado-incidencia-es.webm",
+    "en": "04-mantenimiento/01-transicion-estado-incidencia/transicion-estado-incidencia-en.webm"
+  },
+  "04-02-incidencias": {
+    "es": "04-mantenimiento/02-gestion-incidencias/gestion-incidencias-es.webm",
+    "en": "04-mantenimiento/02-gestion-incidencias/gestion-incidencias-en.webm"
+  },
+  "04-03-ordenes": {
+    "es": "04-mantenimiento/03-ordenes-trabajo/ordenes-trabajo-es.webm",
+    "en": "04-mantenimiento/03-ordenes-trabajo/ordenes-trabajo-en.webm"
+  },
+  "04-04-tareas": {
+    "es": "04-mantenimiento/04-tareas-ejecucion/tareas-ejecucion-es.webm",
+    "en": "04-mantenimiento/04-tareas-ejecucion/tareas-ejecucion-en.webm"
+  },
+  "04-05-preventivos": {
+    "es": "04-mantenimiento/05-planes-preventivos/planes-preventivos-es.webm",
+    "en": "04-mantenimiento/05-planes-preventivos/planes-preventivos-en.webm"
+  },
+  "05-01-almacenes": {
+    "es": "05-inventario/01-almacenes-bodegas/almacenes-bodegas-es.webm",
+    "en": "05-inventario/01-almacenes-bodegas/almacenes-bodegas-en.webm"
+  },
+  "05-02-stock": {
+    "es": "05-inventario/02-saldos-stock/saldos-stock-es.webm",
+    "en": "05-inventario/02-saldos-stock/saldos-stock-en.webm"
+  },
+  "05-03-config": {
+    "es": "05-inventario/03-configuracion-inventario/configuracion-inventario-es.webm",
+    "en": "05-inventario/03-configuracion-inventario/configuracion-inventario-en.webm"
+  },
+  "06-01-empleados": {
+    "es": "06-personal/01-empleados-puestos/empleados-puestos-es.webm",
+    "en": "06-personal/01-empleados-puestos/empleados-puestos-en.webm"
+  },
+  "06-02-equipos": {
+    "es": "06-personal/02-equipos-cuadrillas/equipos-cuadrillas-es.webm",
+    "en": "06-personal/02-equipos-cuadrillas/equipos-cuadrillas-en.webm"
+  },
+  "07-01-plantillas": {
+    "es": "07-plantillas-comunicacion/01-gestion-plantillas/plantillas-comunicacion-es.webm",
+    "en": "07-plantillas-comunicacion/01-gestion-plantillas/plantillas-comunicacion-en.webm"
+  },
+  "08-01-tenant": {
+    "es": "08-configuracion-corporativa/01-parametros-tenant/parametros-tenant-es.webm",
+    "en": "08-configuracion-corporativa/01-parametros-tenant/parametros-tenant-en.webm"
+  },
+  "08-02-roles": {
+    "es": "08-configuracion-corporativa/02-roles-permisos/roles-permisos-es.webm",
+    "en": "08-configuracion-corporativa/02-roles-permisos/roles-permisos-en.webm"
+  },
+  "08-03-usuarios": {
+    "es": "08-configuracion-corporativa/03-gestion-usuarios/gestion-usuarios-es.webm",
+    "en": "08-configuracion-corporativa/03-gestion-usuarios/gestion-usuarios-en.webm"
+  },
+  "08-04-cuenta": {
+    "es": "08-configuracion-corporativa/04-cuenta-seguridad-mfa/cuenta-seguridad-mfa-es.webm",
+    "en": "08-configuracion-corporativa/04-cuenta-seguridad-mfa/cuenta-seguridad-mfa-en.webm"
+  },
+  "09-01-kpis": {
+    "es": "09-dashboard-analitico/01-kpis-confiabilidad-tco/dashboard-kpis-confiabilidad-es.webm",
+    "en": "09-dashboard-analitico/01-kpis-confiabilidad-tco/dashboard-kpis-confiabilidad-en.webm"
+  }
+}
