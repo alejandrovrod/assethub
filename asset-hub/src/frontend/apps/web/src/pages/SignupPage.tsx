@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Check, X, Loader2, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { getTenantAuthRedirectUrl } from '../lib/tenant'
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -78,17 +79,16 @@ export default function SignupPage() {
       setAuth(loginRes.accessToken, loginRes.refreshToken, loginRes.tenantSlug, loginRes.tenantName, loginRes.roles)
       
       const currentHost = window.location.hostname;
-      if (loginRes.tenantSlug && currentHost === "localhost") {
-        const syncData = encodeURIComponent(JSON.stringify({
-          accessToken: loginRes.accessToken,
-          refreshToken: loginRes.refreshToken,
-          tenantSlug: loginRes.tenantSlug,
-          tenantName: loginRes.tenantName,
-          roles: loginRes.roles
-        }));
-        window.location.href = `http://${loginRes.tenantSlug}.localhost:${window.location.port}/auth-sync?data=${syncData}`;
+      const redirectUrl = getTenantAuthRedirectUrl(
+        loginRes,
+        currentHost,
+        window.location.port
+      );
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       } else {
-        navigate('/')
+        navigate('/dashboard');
       }
     } catch (err: any) {
       console.error(err)

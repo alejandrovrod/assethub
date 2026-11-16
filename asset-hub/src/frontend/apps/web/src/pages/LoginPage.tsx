@@ -21,6 +21,7 @@ import { authService } from "../services/auth.service";
 import { useAuthStore } from "../store/auth.store";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { getTenantAuthRedirectUrl } from "../lib/tenant";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -68,18 +69,16 @@ export default function LoginPage() {
       toast.success(t('login.welcomeToast'));
 
       const currentHost = window.location.hostname;
-      if (data.tenantSlug && currentHost === "localhost") {
-        const syncData = encodeURIComponent(JSON.stringify({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          tenantSlug: data.tenantSlug,
-          tenantName: data.tenantName,
-          roles: data.roles,
-          permissions: data.permissions
-        }));
-        window.location.href = `http://${data.tenantSlug}.localhost:${window.location.port}/auth-sync?data=${syncData}`;
+      const redirectUrl = getTenantAuthRedirectUrl(
+        data,
+        currentHost,
+        window.location.port
+      );
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       } else {
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (error: any) {
       if (error.response?.data?.detail === "MFA_REQUIRED" || error.response?.data?.title === "MFA_REQUIRED") {
