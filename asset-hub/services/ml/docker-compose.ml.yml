@@ -8,18 +8,18 @@ services:
     container_name: assethub-ml-service
     restart: unless-stopped
     environment:
-      - API_BASE_URL=http://host.docker.internal:5168
-      - DB_SERVER=db32354.public.databaseasp.net
-      - DB_NAME=db32354
-      - DB_USER=db32354
-      - DB_PASSWORD=9y-P!Bt8e6R@
-      - MODEL_PATH=models/xgboost_asset_health.json
-      - RUN_ONCE=false
-      - BATCH_CRON_HOUR=2
-      - BATCH_CRON_MINUTE=0
-      - TRAIN_CRON_DAYS=1,15
-      - TRAIN_CRON_HOUR=3
-      - TRAIN_CRON_MINUTE=0
+      - API_BASE_URL=${API_BASE_URL:-http://host.docker.internal:5168}
+      - DB_SERVER=${DB_SERVER:-localhost}
+      - DB_NAME=${DB_NAME:-AssetHub}
+      - DB_USER=${DB_USER:-sa}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MODEL_PATH=${MODEL_PATH:-models/xgboost_asset_health.json}
+      - RUN_ONCE=${RUN_ONCE:-false}
+      - BATCH_CRON_HOUR=${BATCH_CRON_HOUR:-2}
+      - BATCH_CRON_MINUTE=${BATCH_CRON_MINUTE:-0}
+      - TRAIN_CRON_DAYS=${TRAIN_CRON_DAYS:-1,15}
+      - TRAIN_CRON_HOUR=${TRAIN_CRON_HOUR:-3}
+      - TRAIN_CRON_MINUTE=${TRAIN_CRON_MINUTE:-0}
     volumes:
       - .:/app
       - ./models:/app/models

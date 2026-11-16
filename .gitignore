@@ -39,3 +39,12 @@ asset-hub/src/backend/AssetHub.Api/wwwroot/uploads/
 asset-hub/src/frontend/apps/web/tutorials/.auth/
 asset-hub/src/frontend/apps/web/test-results/
 asset-hub/src/frontend/apps/web/playwright-report/
+
+# Python / ML artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.env.*
+!.env.example
+secrets.json

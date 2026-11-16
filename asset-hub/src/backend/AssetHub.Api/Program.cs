@@ -366,6 +366,10 @@ public static class RolePermissionMatrixSeeder
                 .Where(rp => rp.TenantId == tenant.Id)
                 .ToListAsync();
 
+            var existingKeySet = existingAssignments
+                .Select(a => (a.RoleId, a.PermissionId))
+                .ToHashSet();
+
             var allCodes = allPermissions.Select(p => p.Code).ToList();
 
             void AddRole(string roleName, IEnumerable<string> codes)
@@ -375,8 +379,7 @@ public static class RolePermissionMatrixSeeder
                 {
                     if (permissionsByCode.TryGetValue(code, out var perm))
                     {
-                        var alreadyAssigned = existingAssignments.Any(a => a.RoleId == role.Id && a.PermissionId == perm.Id);
-                        if (!alreadyAssigned)
+                        if (existingKeySet.Add((role.Id, perm.Id)))
                         {
                             securityDb.RolePermissions.Add(new AssetHub.Domain.Security.RolePermission
                             {
