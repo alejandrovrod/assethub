@@ -381,19 +381,19 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
   "03-estados": {
     "lessonId": "03-estados",
     "overview": {
-      "es": "Aprende a configurar máquinas de estados finitos que gobiernan las transiciones operativas de los activos (Operativo, En Falla, En Reparación, En Desuso).",
-      "en": "Learn how to configure finite state machines that control asset operational transitions (Operational, Failed, Under Repair, Retired)."
+      "es": "Aprende a configurar máquinas de estados finitos que gobiernan las transiciones operativas de los activos (Operativo, En Mantenimiento, Baja Definitiva).",
+      "en": "Learn how to configure finite state machines that control asset operational transitions (Operative, Under Maintenance, Decommissioned)."
     },
     "keyTakeaways": {
       "es": [
-        "Transiciones con permisos estrictos por rol",
-        "Validación de precondiciones antes de cambiar de estado",
-        "Historial inmutable con auditoría de cambios"
+        "Transiciones y validación gráfica en canvas interactivo",
+        "Automatizaciones OnEnter para disparo automático de órdenes de trabajo",
+        "Estados iniciales y terminales con paleta semántica y control de flujo"
       ],
       "en": [
-        "Role-gated state transitions with strict permissions",
-        "Precondition validation before state updates",
-        "Immutable audit trail recording who, when, and why"
+        "Visual transitions and validation in interactive canvas",
+        "OnEnter automations triggering automated work orders",
+        "Initial and terminal states with semantic palettes and flow governance"
       ]
     },
     "steps": [
@@ -426,23 +426,12 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
           "en": "Template Definition"
         },
         "description": {
-          "es": "Definimos el código y datos generales de la prensa hidráulica industrial.",
-          "en": "Setting up code, title and industrial equipment specifications."
+          "es": "Definimos el código y nombre del equipo antes de pasar directamente al ciclo de vida.",
+          "en": "Setting up equipment code and name before jumping straight to the lifecycle canvas."
         }
       },
       {
         "number": 4,
-        "title": {
-          "es": "Definición de Atributos Clave",
-          "en": "Key Lifecycle Attributes"
-        },
-        "description": {
-          "es": "Agregamos el atributo numérico \"Horómetro de Operación\" para requerirlo en transiciones.",
-          "en": "Adding \"Operating Hours Counter\" to enforce data capture upon maintenance entry."
-        }
-      },
-      {
-        "number": 5,
         "title": {
           "es": "Editor Visual de Ciclo de Vida",
           "en": "Visual Lifecycle Editor"
@@ -453,7 +442,7 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
         }
       },
       {
-        "number": 6,
+        "number": 5,
         "title": {
           "es": "Creación de Estados de Operación",
           "en": "Adding State Nodes"
@@ -464,7 +453,7 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
         }
       },
       {
-        "number": 7,
+        "number": 6,
         "title": {
           "es": "Estado Inicial y Color Semántico",
           "en": "Initial State & Semantic Palette"
@@ -475,18 +464,18 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
         }
       },
       {
-        "number": 8,
+        "number": 7,
         "title": {
           "es": "Automatización & Reglas de Mantenimiento",
           "en": "Automations & Transition Rules"
         },
         "description": {
-          "es": "Al entrar en mantenimiento se crea automáticamente una Orden de Trabajo y se exige el Horómetro.",
-          "en": "Configuring auto Work Order creation and requiring operating hours input."
+          "es": "Al entrar en mantenimiento se dispara automáticamente una Orden de Trabajo.",
+          "en": "Configuring auto Work Order creation upon entering maintenance."
         }
       },
       {
-        "number": 9,
+        "number": 8,
         "title": {
           "es": "Estado Terminal de Baja",
           "en": "Terminal Decommission State"
@@ -497,7 +486,7 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
         }
       },
       {
-        "number": 10,
+        "number": 9,
         "title": {
           "es": "Interconexión de Flujos y Transiciones",
           "en": "State Flow Interconnections"
@@ -508,7 +497,7 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
         }
       },
       {
-        "number": 11,
+        "number": 10,
         "title": {
           "es": "Herramientas del Canvas",
           "en": "Canvas Navigation Controls"
@@ -519,7 +508,7 @@ export const LESSON_GUIDES: Record<string, LessonGuide> = {
         }
       },
       {
-        "number": 12,
+        "number": 11,
         "title": {
           "es": "Guardado y Persistencia",
           "en": "Persisting State Machine"

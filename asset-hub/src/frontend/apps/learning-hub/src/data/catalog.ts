@@ -123,12 +123,12 @@ export const LEARNING_MODULES: ModuleGroup[] = [
         order: 1,
         title: { es: 'Máquina de Estados y Ciclo de Vida', en: 'Lifecycle State Machine' },
         description: {
-          es: 'Modelado visual de estados operativos (Operativo, En Mantenimiento, Fuera de Servicio) y reglas de transición.',
-          en: 'Visual modeling of operational states (Operational, Under Maintenance, Out of Service) and transition rules.',
+          es: 'Modelado visual de estados operativos (Operativo, En Mantenimiento, Baja Definitiva), transiciones y disparadores de órdenes de trabajo.',
+          en: 'Visual modeling of operational states (Operative, Under Maintenance, Decommissioned), transitions, and work order automation triggers.',
         },
-        duration: '02:00',
+        duration: '02:09',
         role: 'admin',
-        prerequisiteIds: ['04-00-plantillas'],
+        prerequisiteIds: ['02-esquemas'],
         videoPath: {
           es: '03-maquina-estados/maquina-estados-ciclo-vida-es.webm',
           en: '03-maquina-estados/maquina-estados-ciclo-vida-en.webm',

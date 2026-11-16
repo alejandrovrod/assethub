@@ -42,8 +42,6 @@ interface TutorialData {
     code: string;
     name: string;
     description: string;
-    attrKey: string;
-    attrLabel: string;
   };
   states: StateConfigPlan[];
   copy: {
@@ -55,8 +53,6 @@ interface TutorialData {
     sIntroDesc: string;
     sCreateTplTitle: string;
     sCreateTplDesc: string;
-    sAttrTitle: string;
-    sAttrDesc: string;
     sOpenLifecycleTitle: string;
     sOpenLifecycleDesc: string;
     sAddStatesTitle: string;
@@ -82,8 +78,6 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
       code: 'PRENSA_HIDR',
       name: 'Prensa Hidráulica 200T',
       description: 'Prensa para estampado en frío con ciclo de vida industrial completo.',
-      attrKey: 'horas_operacion',
-      attrLabel: 'Horómetro de Operación',
     },
     states: [
       {
@@ -96,7 +90,6 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
         colorSwatchIndex: 4, // Yellow/Amber #f59e0b
         autoAction: 'CREATE_WORK_ORDER',
         associatedModule: 'work_orders',
-        requireFieldKey: 'horas_operacion',
       },
       {
         name: 'Baja Definitiva',
@@ -112,9 +105,7 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
       sIntroTitle: 'Gestión de Plantillas de Activos',
       sIntroDesc: 'Cada plantilla define los estados válidos, transiciones y automatizaciones de sus activos.',
       sCreateTplTitle: 'Creación de Plantilla',
-      sCreateTplDesc: 'Definimos el código y datos generales de la prensa hidráulica industrial.',
-      sAttrTitle: 'Definición de Atributos Clave',
-      sAttrDesc: 'Agregamos el atributo numérico "Horómetro de Operación" para requerirlo en transiciones.',
+      sCreateTplDesc: 'Definimos el código y nombre del equipo antes de pasar directamente al ciclo de vida.',
       sOpenLifecycleTitle: 'Editor Visual de Ciclo de Vida',
       sOpenLifecycleDesc: 'Canvas interactivo basado en nodos para modelar la máquina de estados finitos.',
       sAddStatesTitle: 'Creación de Estados de Operación',
@@ -122,7 +113,7 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
       sConfigInitialTitle: 'Estado Inicial y Color Semántico',
       sConfigInitialDesc: 'Marcamos "Operativo" como estado inicial y asignamos color verde esmeralda.',
       sConfigMaintenanceTitle: 'Automatización & Reglas de Mantenimiento',
-      sConfigMaintenanceDesc: 'Al entrar en mantenimiento se crea automáticamente una Orden de Trabajo y se exige el Horómetro.',
+      sConfigMaintenanceDesc: 'Al entrar en mantenimiento se dispara automáticamente una Orden de Trabajo.',
       sConfigDecommissionTitle: 'Estado Terminal de Baja',
       sConfigDecommissionDesc: 'Marcamos "Baja Definitiva" como terminal en rojo para cerrar el ciclo sin transiciones salientes.',
       sConnectTitle: 'Interconexión de Flujos y Transiciones',
@@ -138,8 +129,6 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
       code: 'HYDR_PRESS',
       name: '200T Hydraulic Press',
       description: 'Cold stamping heavy press with enterprise lifecycle governance.',
-      attrKey: 'operating_hours',
-      attrLabel: 'Operating Hours Counter',
     },
     states: [
       {
@@ -152,7 +141,6 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
         colorSwatchIndex: 4, // Yellow/Amber #f59e0b
         autoAction: 'CREATE_WORK_ORDER',
         associatedModule: 'work_orders',
-        requireFieldKey: 'operating_hours',
       },
       {
         name: 'Decommissioned',
@@ -168,9 +156,7 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
       sIntroTitle: 'Asset Templates Management',
       sIntroDesc: 'Each template defines state diagrams, transitions and automated event triggers.',
       sCreateTplTitle: 'Template Definition',
-      sCreateTplDesc: 'Setting up code, title and industrial equipment specifications.',
-      sAttrTitle: 'Key Lifecycle Attributes',
-      sAttrDesc: 'Adding "Operating Hours Counter" to enforce data capture upon maintenance entry.',
+      sCreateTplDesc: 'Setting up equipment code and name before jumping straight to the lifecycle canvas.',
       sOpenLifecycleTitle: 'Visual Lifecycle Editor',
       sOpenLifecycleDesc: 'Interactive node-based canvas for state machine modeling.',
       sAddStatesTitle: 'Adding State Nodes',
@@ -178,7 +164,7 @@ const DATA_BY_LANG: Record<Lang, TutorialData> = {
       sConfigInitialTitle: 'Initial State & Semantic Palette',
       sConfigInitialDesc: 'Confirming "Operative" as initial entry point with emerald green badge.',
       sConfigMaintenanceTitle: 'Automations & Transition Rules',
-      sConfigMaintenanceDesc: 'Configuring auto Work Order creation and requiring operating hours input.',
+      sConfigMaintenanceDesc: 'Configuring auto Work Order creation upon entering maintenance.',
       sConfigDecommissionTitle: 'Terminal Decommission State',
       sConfigDecommissionDesc: 'Setting red terminal badge to ensure no outgoing transitions once retired.',
       sConnectTitle: 'State Flow Interconnections',
@@ -294,35 +280,7 @@ async function runStateMachineTutorial(browser: Browser, lang: Lang): Promise<vo
       22,
     );
 
-    // --- Tab 2: Atributos ---
-    await moveAndClick(page, tabs.nth(1), 750);
-    await narrate(page, c.modTemplates, c.sAttrTitle, c.sAttrDesc, 2000);
-
-    const addAttrBtn = sheet.getByRole('button', {
-      name: /Agregar Atributo|Add Attribute/i,
-    });
-    await moveAndClick(page, addAttrBtn, 450);
-
-    const attrCard = sheet.locator('div.bg-card.border.rounded-md.mb-2.shadow-sm').last();
-    await moveAndType(page, attrCard.locator('input.font-mono').first(), pack.template.attrKey, 40);
-    await moveAndType(
-      page,
-      attrCard.locator('input:not(.font-mono)').first(),
-      pack.template.attrLabel,
-      32,
-    );
-    await moveAndClick(page, attrCard.locator('button[role="combobox"]').first(), 450);
-    await moveAndClick(
-      page,
-      page
-        .getByRole('option')
-        .filter({ has: page.locator('span.font-medium', { hasText: /^Número$|^Number$/i }) })
-        .first(),
-      450,
-    );
-    await page.waitForTimeout(400);
-
-    // --- Tab 3: Ciclo de Vida ---
+    // --- Tab 3: Ciclo de Vida (saltamos directo al canvas sin tocar campos ni esquemas) ---
     await moveAndClick(page, tabs.nth(2), 850);
     await narrate(page, c.modLifecycle, c.sOpenLifecycleTitle, c.sOpenLifecycleDesc, 2400);
 
@@ -385,13 +343,6 @@ async function runStateMachineTutorial(browser: Browser, lang: Lang): Promise<vo
       name: /Módulo de Órdenes de Trabajo|Work Orders Module/i,
     });
     await moveAndClick(page, moduleOption, 650);
-
-    // Requerir Campo: Horómetro
-    const requireSwitch = stateDialog.locator(`button[id*="${pack.template.attrKey}"]`).first();
-    if (await requireSwitch.isVisible().catch(() => false)) {
-      await highlightElement(page, requireSwitch, 600);
-      await moveAndClick(page, requireSwitch, 700);
-    }
 
     await page.keyboard.press('Escape');
     await stateDialog.waitFor({ state: 'hidden', timeout: 5000 });
