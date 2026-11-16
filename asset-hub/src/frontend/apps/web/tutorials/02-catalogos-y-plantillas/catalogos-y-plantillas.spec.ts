@@ -346,11 +346,13 @@ async function runCatalogsAndTemplatesTutorial(browser: Browser, lang: Lang): Pr
     // =========================================================================
     // PARTE 1: CATÁLOGOS MAESTROS (/catalogs)
     // =========================================================================
-    await page.goto(`${ATLAS_BASE_URL}/catalogs`, { waitUntil: 'load' });
-    await waitForPageReady(page, 1200);
+    await page.goto(`${ATLAS_BASE_URL}/catalogs`, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    await waitForPageReady(page, 2000);
 
     await narrate(page, c.modCatalogs, c.sLangTitle, c.sLangDesc, 1800);
     await selectLanguageInUI(page, lang);
+    await waitForPageReady(page, 1000);
 
     await narrate(page, c.modCatalogs, c.s1Title, c.s1Desc, 2400);
 
@@ -397,187 +399,7 @@ async function runCatalogsAndTemplatesTutorial(browser: Browser, lang: Lang): Pr
       await waitForPageReady(page, 500);
     }
 
-    await narrate(page, c.modCatalogs, c.sCatalogReadyTitle, c.sCatalogReadyDesc, 1900);
-
-    // =========================================================================
-    // PARTE 2: PLANTILLAS DE ACTIVOS — BIBLIOTECA GLOBAL (/assets/templates)
-    // =========================================================================
-    await page.goto(`${ATLAS_BASE_URL}/assets/templates`, { waitUntil: 'load' });
-    await waitForPageReady(page, 1200);
-
-    await narrate(page, c.modTemplates, c.s4Title, c.s4Desc, 2200);
-
-    const libraryBtn = page.getByRole('button', {
-      name: /Importar de Biblioteca|Import from Library/i,
-    });
-    await highlightElement(page, libraryBtn, 750);
-    await moveAndClick(page, libraryBtn, 950);
-
-    const libDialog = page.getByRole('dialog');
-    await libDialog.waitFor({ state: 'visible', timeout: 8000 });
-
-    const useTemplateBtn = libDialog
-      .getByRole('button', { name: /Usar esta plantilla|Use this template/i })
-      .first();
-    if (await tryMoveAndClick(page, useTemplateBtn, 1200, 3000)) {
-      await narrate(page, c.modTemplates, c.sImportedTitle, c.sImportedDesc, 1900);
-    } else {
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(500);
-    }
-
-    // =========================================================================
-    // PARTE 3: CREAR PLANTILLA DE ACTIVO DESDE CERO
-    // =========================================================================
-    await narrate(page, c.modTemplates, c.s5Title, c.s5Desc, 2300);
-
-    const createTemplateBtn = page
-      .locator('button[title*="plantilla" i], button[title*="template" i]')
-      .first();
-    await highlightElement(page, createTemplateBtn, 750);
-    await moveAndClick(page, createTemplateBtn, 850);
-
-    const sheet = page.getByRole('dialog');
-    await sheet.waitFor({ state: 'visible', timeout: 10_000 });
-    const tabs = sheet.locator('[role="tab"]');
-
-    // --- Tab 1: General ---
-    await narrate(page, c.modGeneral, c.s6Title, c.s6Desc, 1800);
-    await moveAndType(page, sheet.locator('input[name="code"]'), pack.template.code, 50);
-    await moveAndType(page, sheet.locator('input[name="name"]'), pack.template.name, 38);
-    await moveAndType(
-      page,
-      sheet.locator('textarea[name="description"]'),
-      pack.template.description,
-      24,
-    );
-
-    // --- Tab 2: Atributos ---
-    await moveAndClick(page, tabs.nth(1), 750);
-    await narrate(page, c.modAttributes, c.s7Title, c.s7Desc, 2100);
-
-    await moveAndClick(
-      page,
-      sheet.getByRole('button', { name: /Agregar Sección|Add Section/i }),
-      500,
-    );
-    const sectionInput = sheet.locator('div.border-dashed input').last();
-    await moveAndType(page, sectionInput, pack.template.sectionName, 38);
-
-    const addAttrBtn = sheet.getByRole('button', {
-      name: /Agregar Atributo|Add Attribute/i,
-    });
-    const attrCards = sheet.locator('div.bg-card.border.rounded-md.mb-2.shadow-sm');
-
-    // Atributo 1: Catálogo
-    await moveAndClick(page, addAttrBtn, 450);
-    const card1 = attrCards.last();
-    await moveAndType(page, card1.locator('input.font-mono').first(), pack.template.attr1Key, 42);
-    await moveAndType(
-      page,
-      card1.locator('input:not(.font-mono)').first(),
-      pack.template.attr1Label,
-      36,
-    );
-    await moveAndClick(page, card1.locator('button[role="combobox"]').first(), 450);
-    await moveAndClick(
-      page,
-      page
-        .getByRole('option')
-        .filter({ has: page.locator('span.font-medium', { hasText: /^Catálogo$|^Catalog$/i }) })
-        .first(),
-      550,
-    );
-
-    await moveAndClick(
-      page,
-      card1.getByRole('combobox').filter({ hasText: /Seleccionar catálogo|Select catalog/i }).first(),
-      450,
-    );
-    await moveAndClick(
-      page,
-      page.getByRole('option', { name: new RegExp(pack.catalog.label, 'i') }).first(),
-      500,
-    );
-    await moveAndClick(page, card1.locator('button[role="switch"]').last(), 450);
-
-    await narrate(page, c.modAttributes, c.sCatAttrTitle, c.sCatAttrDesc, 1800);
-
-    // Atributo 2: Número
-    await moveAndClick(page, addAttrBtn, 450);
-    const card2 = attrCards.last();
-    await moveAndType(page, card2.locator('input.font-mono').first(), pack.template.attr2Key, 42);
-    await moveAndType(
-      page,
-      card2.locator('input:not(.font-mono)').first(),
-      pack.template.attr2Label,
-      34,
-    );
-    await moveAndClick(page, card2.locator('button[role="combobox"]').first(), 450);
-    await moveAndClick(
-      page,
-      page
-        .getByRole('option')
-        .filter({ has: page.locator('span.font-medium', { hasText: /^Número$|^Number$/i }) })
-        .first(),
-      450,
-    );
-
-    // Atributo 3: Texto con Propagar a Órdenes + Obligatorio
-    await moveAndClick(page, addAttrBtn, 450);
-    const card3 = attrCards.last();
-    await moveAndType(page, card3.locator('input.font-mono').first(), pack.template.attr3Key, 42);
-    await moveAndType(
-      page,
-      card3.locator('input:not(.font-mono)').first(),
-      pack.template.attr3Label,
-      36,
-    );
-    await moveAndClick(page, card3.locator('button[role="switch"]').first(), 400);
-    await moveAndClick(page, card3.locator('button[role="switch"]').last(), 450);
-
-    await narrate(page, c.modAttributes, c.sPropTitle, c.sPropDesc, 2000);
-    await page.waitForTimeout(500);
-
-    // --- Tab 3: Ciclo de Vida ---
-    await moveAndClick(page, tabs.nth(2), 850);
-    await narrate(page, c.modLifecycle, c.s8Title, c.s8Desc, 2100);
-
-    const newStateInput = sheet.getByPlaceholder(/Nombre del nuevo estado|Name of the new state/i);
-    await moveAndType(page, newStateInput, pack.template.newState, 45);
-    await moveAndClick(
-      page,
-      sheet.getByRole('button', { name: /Agregar Estado|Add State/i }),
-      900,
-    );
-    await page.waitForTimeout(500);
-
-    // --- Tab 4: Checklist ---
-    await moveAndClick(page, tabs.nth(3), 750);
-    await narrate(page, c.modChecklist, c.s9Title, c.s9Desc, 2000);
-
-    for (const task of pack.template.tasks) {
-      await addChecklistTask(page, sheet, task);
-    }
-
-    // --- Tab 5: Vista Previa ---
-    await moveAndClick(page, tabs.nth(4), 900);
-    await narrate(page, c.modPreview, c.s10Title, c.s10Desc, 2400);
-
-    // Guardar Plantilla
-    const saveTemplateBtn = sheet.getByRole('button', { name: /Guardar Plantilla|Save Template/i }).first();
-    await highlightElement(page, saveTemplateBtn, 750);
-    await moveAndClick(page, saveTemplateBtn, 1200);
-    await sheet.waitFor({ state: 'hidden', timeout: 8000 });
-    await waitForPageReady(page, 900);
-
-    const templateRow = page.locator('tbody tr', { hasText: pack.template.name }).first();
-    if (await templateRow.isVisible().catch(() => false)) {
-      await highlightElement(page, templateRow, 1300);
-    }
-
-    await narrate(page, c.modTemplates, c.sDoneTitle, c.sDoneDesc, 2400);
-    await expect(page).toHaveURL(/\/assets\/templates/);
+    await narrate(page, c.modCatalogs, c.sCatalogReadyTitle, c.sCatalogReadyDesc, 2600);
   } finally {
     await saveNamedVideo(
       session,
@@ -586,7 +408,7 @@ async function runCatalogsAndTemplatesTutorial(browser: Browser, lang: Lang): Pr
   }
 }
 
-test.describe.serial('Tutorial 02 — Catálogos Maestros y Plantillas de Activos (ES / EN)', () => {
+test.describe.serial('Tutorial 02 — Catálogos Maestros (ES / EN)', () => {
   test('catalogos-y-plantillas-activos-es', async ({ browser }) => {
     await runCatalogsAndTemplatesTutorial(browser, 'es');
   });

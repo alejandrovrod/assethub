@@ -77,12 +77,12 @@ export const LEARNING_MODULES: ModuleGroup[] = [
         id: '02-catalogos',
         moduleId: 'm02',
         order: 1,
-        title: { es: 'Catálogos y Plantillas de Activos', en: 'Asset Catalogs & Templates' },
+        title: { es: 'Catálogos Maestros y Elementos', en: 'Master Catalogs & Items' },
         description: {
-          es: 'Configuración de catálogos maestros (fabricantes, criticidades, puestos) y creación de plantillas base para activos.',
-          en: 'Setting up master catalogs (manufacturers, criticalities, roles) and creating base asset templates.',
+          es: 'Configuración de listas maestras reutilizables (fabricantes, marcas, criticidades) y carga de elementos para activos.',
+          en: 'Setting up reusable master dropdowns (manufacturers, brands, criticalities) and populating catalog items for assets.',
         },
-        duration: '02:30',
+        duration: '01:05',
         role: 'admin',
         videoPath: {
           es: '02-catalogos-y-plantillas/catalogos-y-plantillas-activos-es.webm',
