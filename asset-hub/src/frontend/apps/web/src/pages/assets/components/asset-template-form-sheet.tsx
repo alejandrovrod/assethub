@@ -964,7 +964,7 @@ export function AssetTemplateFormSheet({ open, onOpenChange, template }: Props) 
   })
 
   const onSubmit = (data: FormValues) => {
-    if (template) {
+    if (template?.id) {
       updateMutation.mutate(data)
     } else {
       createMutation.mutate({

@@ -23,7 +23,8 @@ internal static class IncidentOrderTaskFactory
         IMediator mediator,
         MaintenanceOrder order,
         Incident incident,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? descriptionOverride = null)
     {
         var alreadyHasTask = await db.WorkTasks
             .AnyAsync(t => t.MaintenanceOrderId == order.Id && !t.IsDeleted, cancellationToken);
@@ -35,7 +36,7 @@ internal static class IncidentOrderTaskFactory
         await mediator.Send(new CreateWorkTaskCommand
         {
             Title = incident.Title,
-            Description = incident.Description,
+            Description = descriptionOverride ?? incident.Description,
             MaintenanceOrderId = order.Id,
             AssignedEmployeeId = order.AssignedEmployeeId,
             PropertiesJson = order.PropertiesJson

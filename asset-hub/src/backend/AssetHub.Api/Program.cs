@@ -146,6 +146,10 @@ builder.Services.AddScoped<AssetHub.Application.Interfaces.ITemplateRenderEngine
 builder.Services.AddScoped<AssetHub.Application.Interfaces.ICommunicationTemplateService, AssetHub.Application.CommunicationTemplates.Rendering.CommunicationTemplateService>();
 builder.Services.AddScoped<AssetHub.Application.CommunicationTemplates.Rendering.TemplateVariableBuilder>();
 builder.Services.AddScoped<AssetHub.Application.Field.FieldTaskAccess>();
+builder.Services.Configure<AssetHub.Infrastructure.AssetArchitect.GeminiOptions>(builder.Configuration.GetSection(AssetHub.Infrastructure.AssetArchitect.GeminiOptions.SectionName));
+builder.Services.AddScoped<AssetHub.Application.Interfaces.IAssetArchitectAgent, AssetHub.Infrastructure.AssetArchitect.GeminiAssetArchitectAgent>();
+builder.Services.AddScoped<AssetHub.Application.Interfaces.IIncidentMediaLoader, AssetHub.Infrastructure.IncidentTriage.LocalIncidentMediaLoader>();
+builder.Services.AddScoped<AssetHub.Application.Interfaces.IIncidentTriageAgent, AssetHub.Infrastructure.IncidentTriage.GeminiIncidentTriageAgent>();
 builder.Services.AddHostedService<AssetHub.Api.Workers.PreventivePlanSchedulerService>();
 builder.Services.AddHostedService<AssetHub.Api.Workers.IdempotencyCleanupWorker>();
 

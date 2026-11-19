@@ -4,6 +4,8 @@ using AssetHub.Api.Filters;
 using AssetHub.Api.Http;
 using AssetHub.Application.Incidents.Commands;
 using AssetHub.Application.Incidents.Queries;
+using AssetHub.Application.IncidentTriage.Commands;
+using AssetHub.Application.IncidentTriage.Queries;
 using AssetHub.Application.Sync.Dtos;
 using AssetHub.Application.Sync.Queries;
 using AssetHub.Infrastructure.Billing;
@@ -107,6 +109,51 @@ public class IncidentsController : ControllerBase
         command.IncidentId = id;
         await _mediator.Send(command);
         return NoContent();
+    }
+
+    public sealed record AnalyzeIncidentTriageBody(string? AdditionalNotes = null);
+
+    /// <summary>
+    /// Analyzes an incident with Gemini AI using its description, attached photos, asset
+    /// failure history, technician workload, and warehouse spare parts stock. Returns a
+    /// Human-in-the-Loop proposal without persisting changes.
+    /// </summary>
+    [HttpPost("{id}/ai-triage/analyze")]
+    [Authorize(Policy = "permission:incidents:triage")]
+    public async Task<IActionResult> AnalyzeAiTriage(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] AnalyzeIncidentTriageBody? body,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new AnalyzeIncidentTriageQuery(id, body?.AdditionalNotes),
+            cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Applies a human-reviewed AI triage proposal atomically (priority, assignee, state
+    /// transition, audit trail, corrective work order, and planned spare parts).
+    /// </summary>
+    [HttpPost("{id}/ai-triage/apply")]
+    [Authorize(Policy = "permission:incidents:triage")]
+    [RequireIfMatch]
+    public async Task<IActionResult> ApplyAiTriage(
+        Guid id,
+        [FromBody] ApplyIncidentTriageCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.IncidentId = id;
+        command.ExpectedRowVersion = RequireIfMatchAttribute.GetExpectedVersion(HttpContext);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        var etag = ETagHelper.ToHeader(result.ETag);
+        if (!string.IsNullOrEmpty(etag))
+        {
+            Response.Headers.ETag = etag;
+        }
+
+        return Ok(result);
     }
 
     [HttpPatch("{id}/state")]

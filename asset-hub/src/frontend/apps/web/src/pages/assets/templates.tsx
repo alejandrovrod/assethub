@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/select'
 import { AssetTemplateFormSheet } from './components/asset-template-form-sheet'
 import { SystemTemplateLibraryModal } from './components/system-template-library-modal'
+import { AssetArchitectModal } from './components/asset-architect-modal'
+import { type TemplateDraftResult } from '@/services/asset-architect.service'
 import { usePermissions } from '@/hooks/use-permissions'
 import { useTranslation } from 'react-i18next'
 
@@ -76,6 +78,40 @@ export default function AssetsTemplates() {
     setIsFormOpen(true)
   }
 
+  const handleApplyDraft = (draft: TemplateDraftResult) => {
+    setEditingTemplate({
+      code: draft.code,
+      name: draft.name,
+      description: draft.description,
+      schemaJson: draft.schemaJson,
+      lifecycleStates: draft.lifecycleStates ? {
+        initialState: draft.initialState,
+        transitions: draft.lifecycleStates.reduce((acc, s) => {
+          acc[s.name] = s.transitions
+          return acc
+        }, {} as Record<string, string[]>),
+        states: draft.lifecycleStates.reduce((acc, s) => {
+          acc[s.name] = {
+            color: s.color || undefined,
+            isTerminal: s.isTerminal,
+            maxHoursInState: s.maxHoursInState || undefined,
+            onEnterAction: s.onEnterAction || undefined,
+            notificationTargetFieldId: s.notificationTargetFieldId || undefined,
+            associatedModule: s.associatedModule || undefined,
+            requiresFields: s.requiresFields || [],
+            allowedRoles: s.allowedRoles || [],
+            childStateDependencies: s.childStateDependencies || [],
+          }
+          return acc
+        }, {} as Record<string, any>),
+      } : undefined,
+      maintenanceChecklist: draft.maintenanceChecklistJson,
+      version: 1,
+      isActive: true,
+    })
+    setIsFormOpen(true)
+  }
+
   const handleClone = (template: any) => {
     const newCode = window.prompt(t('dialog.promptNewCode'), `${template.code}_COPY`)
     if (!newCode) return
@@ -96,6 +132,7 @@ export default function AssetsTemplates() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            {canCreate && <AssetArchitectModal onApplyDraftToForm={handleApplyDraft} />}
             <SystemTemplateLibraryModal />
             {canCreate && (
               <Button size="icon" onClick={handleCreate} title={t('templates.createFromScratch')}>

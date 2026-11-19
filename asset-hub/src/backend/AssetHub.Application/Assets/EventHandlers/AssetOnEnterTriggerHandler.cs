@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AssetHub.Application.Assets.Events;
 using AssetHub.Application.CommunicationTemplates.Rendering;
 using AssetHub.Application.Interfaces;
+using AssetHub.Domain.Assets;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -133,17 +134,64 @@ public class AssetOnEnterTriggerHandler : INotificationHandler<AssetStateChanged
                                     }
                                     else
                                     {
-                                        _logger.LogWarning("=> No se encontró el empleado con ID {EmployeeId} o no tiene un email configurado.", targetEmployeeId);
+                                        var missingReason = employee == null 
+                                            ? $"Empleado con ID '{targetEmployeeId}' no existe en la base de datos"
+                                            : $"Empleado '{employee.FirstName} {employee.LastName}' no tiene configurado un correo electrónico";
+
+                                        _logger.LogWarning("⚠️ ALERTA DE NOTIFICACIÓN FALLIDA: Para el activo '{AssetCode}' ({AssetName}) en transición a '{State}', {Reason}.", 
+                                            asset.Code, asset.Name, notification.ToState, missingReason);
+
+                                        // Persistir alerta en el historial de eventos del ciclo de vida del activo para visibilidad y auditoría
+                                        _db.AssetLifecycleEvents.Add(new AssetLifecycleEvent
+                                        {
+                                            Id = Guid.NewGuid(),
+                                            AssetId = asset.Id,
+                                            EventType = "alerta_notificacion",
+                                            FromState = notification.FromState ?? string.Empty,
+                                            ToState = notification.ToState,
+                                            Notes = $"[ALERTA DE NOTIFICACIÓN] No se pudo enviar notificación de entrada a '{notification.ToState}': {missingReason}.",
+                                            At = DateTime.UtcNow,
+                                            UserId = Guid.Empty
+                                        });
+                                        await _db.SaveChangesAsync(cancellationToken);
                                     }
                                 }
                                 else
                                 {
-                                    _logger.LogWarning("=> El valor del campo destinatario {TargetFieldId} no es un GUID válido.", targetFieldId);
+                                    _logger.LogWarning("⚠️ ALERTA DE NOTIFICACIÓN FALLIDA: El valor del campo destinatario '{TargetFieldId}' ('{Value}') en el activo '{AssetCode}' no es un GUID válido o está vacío.", 
+                                        targetFieldId, targetValueStr, asset.Code);
+
+                                    _db.AssetLifecycleEvents.Add(new AssetLifecycleEvent
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        AssetId = asset.Id,
+                                        EventType = "alerta_notificacion",
+                                        FromState = notification.FromState ?? string.Empty,
+                                        ToState = notification.ToState,
+                                        Notes = $"[ALERTA DE NOTIFICACIÓN] Campo destinatario '{targetFieldId}' no tiene un responsable asignado válido.",
+                                        At = DateTime.UtcNow,
+                                        UserId = Guid.Empty
+                                    });
+                                    await _db.SaveChangesAsync(cancellationToken);
                                 }
                             }
                             else
                             {
-                                _logger.LogWarning("=> El campo destinatario {TargetFieldId} no existe en las propiedades del activo.", targetFieldId);
+                                _logger.LogWarning("⚠️ ALERTA DE NOTIFICACIÓN FALLIDA: El campo destinatario '{TargetFieldId}' no está asignado o no existe en el activo '{AssetCode}'.", 
+                                    targetFieldId, asset.Code);
+
+                                _db.AssetLifecycleEvents.Add(new AssetLifecycleEvent
+                                {
+                                    Id = Guid.NewGuid(),
+                                    AssetId = asset.Id,
+                                    EventType = "alerta_notificacion",
+                                    FromState = notification.FromState ?? string.Empty,
+                                    ToState = notification.ToState,
+                                    Notes = $"[ALERTA DE NOTIFICACIÓN] No se encontró la persona asignada en el campo '{targetFieldId}'.",
+                                    At = DateTime.UtcNow,
+                                    UserId = Guid.Empty
+                                });
+                                await _db.SaveChangesAsync(cancellationToken);
                             }
                         }
                         catch (Exception ex)

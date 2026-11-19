@@ -22,6 +22,7 @@ import { teamService } from '@/services/team.service'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store'
 import { IncidentTasksWidget } from './components/incident-tasks-widget'
+import { IncidentTriageModal } from './components/incident-triage-modal'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseApiDate } from '@/lib/utils'
@@ -40,6 +41,7 @@ export default function IncidentDetailPage() {
   const { can } = usePermissions()
   const canUpdate = can('incidents:update')
   const canChangeState = can('incidents:change-state')
+  const canTriage = can('incidents:triage')
 
   const [formData, setFormData] = useState<any>({})
   const [isEditingDynamic, setIsEditingDynamic] = useState(false)
@@ -112,6 +114,13 @@ export default function IncidentDetailPage() {
     const fromTransitionsMap = lifecycleConfig.transitions?.[incident.state]
     const fromStateNode = lifecycleConfig.states?.[incident.state]?.allowedTransitions
     return fromTransitionsMap || fromStateNode || []
+  }, [incident, lifecycleConfig])
+
+  const isIncidentTerminal = useMemo(() => {
+    if (!incident) return false
+    const fromTemplate = lifecycleConfig?.states?.[incident.state]?.isTerminal
+    if (typeof fromTemplate === 'boolean') return fromTemplate
+    return ['closed', 'cancelled'].includes(incident.state.toLowerCase())
   }, [incident, lifecycleConfig])
 
   const transitionSchema = useMemo(() => {
@@ -258,30 +267,48 @@ export default function IncidentDetailPage() {
           </div>
         </div>
 
-        {canChangeState && (
-          <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
-              {t('detail.changeStateTo')}
-            </span>
-            {availableTransitions.length === 0 ? (
-              <span className="text-sm text-muted-foreground italic px-2">{t('detail.noneAvailable')}</span>
-            ) : (
-              availableTransitions.map((targetState: string) => {
-                const blockReason = getTransitionBlockReason(targetState)
-                return (
-                  <Button 
-                    key={targetState} 
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => handleStateClick(targetState)}
-                    disabled={stateMutation.isPending || !!blockReason}
-                    title={blockReason || t('detail.changeTo', { state: targetState })}
-                  >
-                    {targetState}
-                  </Button>
-                )
-              })
+        {(canTriage || canChangeState) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {canTriage && !isIncidentTerminal && (
+              <IncidentTriageModal
+                incidentId={incident.id}
+                incidentTitle={incident.title}
+                assetName={incident.assetName}
+                etag={incident.etag || (incident as any)?.eTag}
+                onApplied={() => {
+                  queryClient.invalidateQueries({ queryKey: ['incident', id] })
+                  queryClient.invalidateQueries({ queryKey: ['incident-timeline', id] })
+                  queryClient.invalidateQueries({ queryKey: ['incidents'] })
+                }}
+              />
+            )}
+
+            {canChangeState && (
+              <div className="flex items-center gap-2 bg-card border rounded-lg p-1.5 shadow-sm">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-2">
+                  {t('detail.changeStateTo')}
+                </span>
+                {availableTransitions.length === 0 ? (
+                  <span className="text-sm text-muted-foreground italic px-2">{t('detail.noneAvailable')}</span>
+                ) : (
+                  availableTransitions.map((targetState: string) => {
+                    const blockReason = getTransitionBlockReason(targetState)
+                    return (
+                      <Button 
+                        key={targetState} 
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => handleStateClick(targetState)}
+                        disabled={stateMutation.isPending || !!blockReason}
+                        title={blockReason || t('detail.changeTo', { state: targetState })}
+                      >
+                        {targetState}
+                      </Button>
+                    )
+                  })
+                )}
+              </div>
             )}
           </div>
         )}
