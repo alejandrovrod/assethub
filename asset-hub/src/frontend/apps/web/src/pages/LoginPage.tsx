@@ -94,10 +94,10 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-[#fafafa] dark:bg-[#0a0a0a] px-4 py-12 selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
-      
+
       {/* Background Architectural Grid Pattern */}
-      <div 
-        aria-hidden="true" 
+      <div
+        aria-hidden="true"
         className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-70 dark:opacity-40"
         style={{
           backgroundImage: `
@@ -116,7 +116,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-[420px]">
         {/* Header Block: Isotipo y títulos */}
         <div className="flex flex-col items-center text-center mb-8">
-          
+
           <div className="mb-6 flex size-16 items-center justify-center rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-300 hover:scale-105 p-2">
             <AssetHubBrandLogo size={48} variant="accented" />
           </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
         <div className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/90 p-7 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              
+
               {!requiresMfa ? (
                 <>
                   <FormField
@@ -145,12 +145,12 @@ export default function LoginPage() {
                           {t('login.emailLabel')}
                         </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder={t('login.emailPlaceholder')} 
-                            type="email" 
+                          <Input
+                            placeholder={t('login.emailPlaceholder')}
+                            type="email"
                             autoComplete="email"
                             className="h-11 rounded-lg border-zinc-200 dark:border-zinc-800 bg-transparent px-3.5 text-sm transition-colors focus-visible:ring-1 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -167,12 +167,12 @@ export default function LoginPage() {
                           {t('login.passwordLabel')}
                         </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder={t('login.passwordPlaceholder')} 
-                            type="password" 
+                          <Input
+                            placeholder={t('login.passwordPlaceholder')}
+                            type="password"
                             autoComplete="current-password"
                             className="h-11 rounded-lg border-zinc-200 dark:border-zinc-800 bg-transparent px-3.5 text-sm transition-colors focus-visible:ring-1 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -201,8 +201,8 @@ export default function LoginPage() {
                       )}
                     />
 
-                    <Link 
-                      to="#" 
+                    <Link
+                      to="#"
                       onClick={(e) => {
                         e.preventDefault();
                         toast.info(t('login.forgotPasswordMsg'));
@@ -223,11 +223,11 @@ export default function LoginPage() {
                         {t('login.mfaLabel')}
                       </FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="123456" 
-                          autoComplete="one-time-code" 
+                        <Input
+                          placeholder="123456"
+                          autoComplete="one-time-code"
                           className="h-11 rounded-lg border-zinc-200 dark:border-zinc-800 tracking-widest text-center font-mono text-base"
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -238,8 +238,8 @@ export default function LoginPage() {
 
               {/* Main Submit Action Button */}
               <div className="pt-2">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isLoading}
                   className="w-full h-11 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 font-medium text-sm transition-all shadow-sm active:scale-[0.99]"
                 >
@@ -289,8 +289,8 @@ export default function LoginPage() {
 
         {/* Back to Home Link */}
         <div className="mt-8 text-center">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors inline-flex items-center gap-1"
           >
             {t('login.backHome')}

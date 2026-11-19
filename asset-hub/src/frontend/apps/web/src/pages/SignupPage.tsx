@@ -14,7 +14,7 @@ export default function SignupPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore(state => state.setAuth)
   const { t } = useTranslation('auth')
-  
+
   const [formData, setFormData] = useState<SignUpTenantRequest>({
     orgName: '',
     slug: '',
@@ -34,9 +34,9 @@ export default function SignupPage() {
 
     // Auto-generate slug from orgName if slug is empty
     if (name === 'orgName' && !formData.slug) {
-      setFormData(prev => ({ 
-        ...prev, 
-        slug: value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') 
+      setFormData(prev => ({
+        ...prev,
+        slug: value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
       }))
     }
   }
@@ -68,7 +68,7 @@ export default function SignupPage() {
     try {
       // 1. Sign up tenant
       await authService.signUpTenant(formData)
-      
+
       // 2. Automatically log in the user
       const loginRes = await authService.login({
         email: formData.email,
@@ -77,7 +77,7 @@ export default function SignupPage() {
 
       // 3. Update store and redirect
       setAuth(loginRes.accessToken, loginRes.refreshToken, loginRes.tenantSlug, loginRes.tenantName, loginRes.roles)
-      
+
       const currentHost = window.location.hostname;
       const redirectUrl = getTenantAuthRedirectUrl(
         loginRes,
@@ -100,10 +100,10 @@ export default function SignupPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-[#fafafa] dark:bg-[#0a0a0a] px-4 py-12 selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
-      
+
       {/* Background Architectural Grid Pattern */}
-      <div 
-        aria-hidden="true" 
+      <div
+        aria-hidden="true"
         className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_35%,#000_70%,transparent_100%)] opacity-70 dark:opacity-40"
         style={{
           backgroundImage: `
@@ -120,10 +120,10 @@ export default function SignupPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-[480px]">
-        
+
         {/* Header Block: Isotipo y títulos */}
         <div className="flex flex-col items-center text-center mb-8">
-          
+
           <div className="mb-5 flex size-14 items-center justify-center rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-300 hover:scale-105 p-2">
             <AssetHubBrandLogo size={42} variant="accented" />
           </div>
@@ -138,7 +138,7 @@ export default function SignupPage() {
 
         {/* Card Form */}
         <div className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/90 p-7 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md">
-          
+
           {error && (
             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-3.5 text-center text-sm font-medium text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
               {error}
@@ -146,7 +146,7 @@ export default function SignupPage() {
           )}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            
+
             {/* Nombre de la Organización */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -162,7 +162,7 @@ export default function SignupPage() {
                 onChange={handleChange}
               />
             </div>
-            
+
             {/* Subdominio (Slug) con input-group refinado */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -183,7 +183,7 @@ export default function SignupPage() {
                   .assethub.app
                 </span>
               </div>
-              
+
               {/* Feedback de disponibilidad del slug */}
               <div className="min-h-[20px] pt-0.5">
                 {isCheckingSlug && (
@@ -275,7 +275,7 @@ export default function SignupPage() {
                 )}
               </Button>
             </div>
-            
+
             {/* Redirección al Login */}
             <div className="mt-6 text-center text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
               {t('signup.haveAccount')}{" "}
@@ -289,8 +289,8 @@ export default function SignupPage() {
 
         {/* Volver a la página de inicio */}
         <div className="mt-8 text-center">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors inline-flex items-center gap-1"
           >
             {t('signup.backHome')}
