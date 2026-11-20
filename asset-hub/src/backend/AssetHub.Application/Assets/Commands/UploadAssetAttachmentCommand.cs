@@ -14,41 +14,46 @@ public record UploadAssetAttachmentCommand(Guid AssetId, string FileName, string
 public class UploadAssetAttachmentCommandHandler : IRequestHandler<UploadAssetAttachmentCommand, Guid>
 {
     private readonly ITenantDbContext _dbContext;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UploadAssetAttachmentCommandHandler(ITenantDbContext dbContext)
+    public UploadAssetAttachmentCommandHandler(
+        ITenantDbContext dbContext,
+        IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(UploadAssetAttachmentCommand request, CancellationToken cancellationToken)
     {
-        var asset = await _dbContext.Assets.FirstOrDefaultAsync(a => a.Id == request.AssetId, cancellationToken);
+        var asset = await _dbContext.Assets
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == request.AssetId, cancellationToken);
         if (asset == null) throw new InvalidOperationException("Asset not found");
 
-        // MVP local file storage
-        var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", request.AssetId.ToString());
-        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+        var rawName = Path.GetFileName((request.FileName ?? string.Empty).Replace('\\', '/'));
+        var safeFileName = string.IsNullOrWhiteSpace(rawName) ? "attachment" : rawName;
+        var contentType = string.IsNullOrWhiteSpace(request.ContentType)
+            ? "application/octet-stream"
+            : request.ContentType.Trim();
 
-        var safeFileName = Guid.NewGuid().ToString("N") + Path.GetExtension(request.FileName);
-        var filePath = Path.Combine(uploadDir, safeFileName);
-        
-        using (var fileStream = new FileStream(filePath, FileMode.Create))
-        {
-            await request.ContentStream.CopyToAsync(fileStream, cancellationToken);
-        }
+        var blobUri = await _fileStorageService.UploadFileAsync(request.ContentStream, safeFileName, contentType);
 
-        var blobUri = $"/uploads/{request.AssetId}/{safeFileName}";
-        
-        string kind = request.ContentType.StartsWith("image/") ? "photo" : "doc";
+        var kind = contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ? "photo" : "doc";
+        var now = DateTime.UtcNow;
 
         var attachment = new AssetAttachment
         {
+            Id = Guid.NewGuid(),
+            TenantId = asset.TenantId,
             AssetId = request.AssetId,
-            FileName = request.FileName,
-            ContentType = request.ContentType,
+            FileName = safeFileName,
+            ContentType = contentType,
             SizeBytes = request.SizeBytes,
             BlobUri = blobUri,
-            Kind = kind
+            Kind = kind,
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         _dbContext.AssetAttachments.Add(attachment);

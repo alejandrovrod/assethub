@@ -823,5 +823,50 @@
         "justification": "Justificación"
       }
     }
+  },
+  "copilot": {
+    "openButton": "Copiloto de Manuales",
+    "title": "Copiloto Técnico IA",
+    "subtitle": "Respuestas directas con citas exactas de los manuales del activo",
+    "loadingManuals": "Buscando manuales…",
+    "manualsCount": "{{indexed}}/{{total}} manuales indexados",
+    "uploadManual": "Subir manual PDF",
+    "syncIndex": "Sincronizar índice",
+    "indexedToast": "Manuales sincronizados ({{indexed}}/{{total}} indexados).",
+    "indexError": "No se pudieron indexar los manuales del activo.",
+    "manualUploaded": "Manual cargado correctamente.",
+    "uploadError": "No se pudo subir el archivo.",
+    "askError": "No se pudo consultar el copiloto.",
+    "statusIndexed": "Indexado",
+    "statusPending": "Pendiente",
+    "openDocument": "Abrir documento",
+    "emptyManualsTitle": "Sin manuales técnicos cargados",
+    "noManualsHint": "Adjunta manuales PDF, esquemas o fichas técnicas en el activo (o usa \"Subir manual PDF\") para habilitar consultas técnicas.",
+    "emptyChatTitle": "Consulta especificaciones y procedimientos al instante",
+    "emptyChatDescription": "Pregunta por texto o voz sobre torques de apriete, secuencias de purga, presiones, esquemas eléctricos o precauciones de seguridad.",
+    "quickPrompts": {
+      "torque": "¿Cuáles son los valores y secuencias de torque de apriete?",
+      "bleeding": "¿Cuál es el procedimiento de purga o puesta en marcha paso a paso?",
+      "safety": "¿Qué bloqueos LOTO y precauciones de seguridad exige el manual?"
+    },
+    "safetyBannerTitle": "Precaución de seguridad del manual",
+    "notFoundBadge": "No encontrado en los manuales cargados",
+    "citationsTitle": "Fuentes citadas",
+    "pageShort": "Pág. {{page}}",
+    "viewExcerpt": "Ver fragmento",
+    "hideExcerpt": "Ocultar fragmento",
+    "toggleExcerpt": "Mostrar u ocultar fragmento del manual",
+    "searchingManuals": "Consultando manuales técnicos…",
+    "listeningDictation": "Escuchando dictado por voz…",
+    "recordingAudio": "Grabando nota de voz…",
+    "stopVoice": "Detener",
+    "voiceMessageLabel": "Consulta por audio",
+    "inputPlaceholder": "Ej.: ¿Cuál es el torque de la tapa de cilindros? (Enter para enviar)",
+    "voiceTooltip": "Consultar o dictar por voz",
+    "sendTooltip": "Enviar consulta",
+    "micError": "No se pudo capturar el audio del micrófono.",
+    "micPermissionDenied": "Permiso de micrófono denegado.",
+    "micUnsupported": "Tu navegador no soporta captura de voz.",
+    "safetyDisclaimer": "Verifica siempre los parámetros críticos y aplica procedimientos LOTO antes de intervenir el equipo."
   }
 }

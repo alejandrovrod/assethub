@@ -135,5 +135,42 @@
       "rearUnavailable": "La cámara trasera no está disponible. Probá con otro dispositivo.",
       "startFailed": "No se pudo iniciar la cámara. Revisá los permisos e intentá de nuevo."
     }
+  },
+  "copilot": {
+    "openButton": "Copiloto IA",
+    "offlineShort": "Sin red",
+    "title": "Copiloto Técnico IA",
+    "close": "Cerrar copiloto",
+    "loadingManuals": "Verificando manuales…",
+    "manualsCount": "{{count}} manuales disponibles",
+    "noManualsHint": "Este activo aún no tiene manuales PDF adjuntos. Súbelos desde la aplicación web.",
+    "offlineTitle": "Requiere conexión a internet",
+    "offlineHint": "Para consultar el copiloto con manuales por texto o voz necesitas conexión. Las especificaciones descargadas y el reporte de incidencias siguen disponibles sin conexión.",
+    "emptyManualsTitle": "Sin manuales cargados",
+    "askError": "No se pudo consultar el copiloto.",
+    "emptyChatTitle": "Consulta manuales en campo",
+    "emptyChatDescription": "Pregunta por texto o micrófono sobre torques, procedimientos de desarme, purga o precauciones de seguridad.",
+    "quickPrompts": {
+      "torque": "¿Cuáles son los torques de apriete especificados?",
+      "bleeding": "¿Pasos para purga y puesta en marcha?",
+      "safety": "¿Qué precauciones de seguridad y LOTO aplican?"
+    },
+    "safetyBannerTitle": "Precaución de seguridad del manual",
+    "notFoundBadge": "No encontrado en los manuales",
+    "citationsTitle": "Fuentes citadas",
+    "pageShort": "Pág. {{page}}",
+    "viewExcerpt": "Ver cita",
+    "hideExcerpt": "Ocultar cita",
+    "searchingManuals": "Buscando en manuales técnicos…",
+    "listeningDictation": "Escuchando dictado por voz…",
+    "recordingAudio": "Grabando nota de voz…",
+    "stopVoice": "Detener",
+    "voiceMessageLabel": "Consulta por audio",
+    "inputPlaceholder": "Pregunta sobre el manual…",
+    "voiceTooltip": "Consultar por voz",
+    "sendTooltip": "Enviar consulta",
+    "micError": "No se pudo capturar el audio.",
+    "micPermissionDenied": "Permiso de micrófono denegado.",
+    "micUnsupported": "Tu navegador no soporta grabación de voz."
   }
 }

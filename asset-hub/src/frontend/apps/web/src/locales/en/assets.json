@@ -823,5 +823,50 @@
         "justification": "Justification"
       }
     }
+  },
+  "copilot": {
+    "openButton": "Manuals Copilot",
+    "title": "AI Field Copilot",
+    "subtitle": "Direct answers grounded in exact asset manual citations",
+    "loadingManuals": "Checking manuals…",
+    "manualsCount": "{{indexed}}/{{total}} manuals indexed",
+    "uploadManual": "Upload PDF manual",
+    "syncIndex": "Sync index",
+    "indexedToast": "Manuals synced ({{indexed}}/{{total}} indexed).",
+    "indexError": "Failed to index asset manuals.",
+    "manualUploaded": "Manual uploaded successfully.",
+    "uploadError": "Failed to upload manual.",
+    "askError": "Failed to query the copilot.",
+    "statusIndexed": "Indexed",
+    "statusPending": "Pending",
+    "openDocument": "Open document",
+    "emptyManualsTitle": "No technical manuals uploaded",
+    "noManualsHint": "Attach PDF manuals, schematics, or datasheets to this asset (or click \"Upload PDF manual\") to enable grounded technical Q&A.",
+    "emptyChatTitle": "Look up specs and procedures instantly",
+    "emptyChatDescription": "Ask by text or voice about tightening torques, bleeding steps, pressures, wiring schematics, or safety precautions.",
+    "quickPrompts": {
+      "torque": "What are the tightening torque values and bolt sequence?",
+      "bleeding": "What is the step-by-step bleeding or startup procedure?",
+      "safety": "What LOTO isolations and safety precautions does the manual require?"
+    },
+    "safetyBannerTitle": "Manual safety precaution",
+    "notFoundBadge": "Not found in uploaded manuals",
+    "citationsTitle": "Cited sources",
+    "pageShort": "p. {{page}}",
+    "viewExcerpt": "View excerpt",
+    "hideExcerpt": "Hide excerpt",
+    "toggleExcerpt": "Toggle manual excerpt",
+    "searchingManuals": "Searching technical manuals…",
+    "listeningDictation": "Listening for voice dictation…",
+    "recordingAudio": "Recording voice question…",
+    "stopVoice": "Stop",
+    "voiceMessageLabel": "Voice question",
+    "inputPlaceholder": "e.g. What is the cylinder head bolt torque? (Enter to send)",
+    "voiceTooltip": "Ask or dictate by voice",
+    "sendTooltip": "Send question",
+    "micError": "Could not capture microphone audio.",
+    "micPermissionDenied": "Microphone permission denied.",
+    "micUnsupported": "Voice capture is not supported in this browser.",
+    "safetyDisclaimer": "Always verify critical specs and follow LOTO isolation procedures before servicing equipment."
   }
 }

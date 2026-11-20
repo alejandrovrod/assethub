@@ -10,6 +10,7 @@ import {
   Loader2,
   MapPin,
   Navigation,
+  Sparkles,
   Wrench,
   X,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ import { PropagatedPropertiesDisplay } from '../shared/components/PropagatedProp
 import { DynamicTemplateForm } from '../shared/components/DynamicTemplateForm';
 import { SearchableSelect } from '../shared/components/SearchableSelect';
 import { reportIncident } from '../commands/report-incident';
+import { FieldCopilotSheet } from '../features/copilot/FieldCopilotSheet';
 import { useTranslation } from 'react-i18next';
 import {
   ASSET_CRITICALITY_CONFIG,
@@ -141,8 +143,21 @@ export function AssetDetailPage({
   const asset = useLiveQuery(() => db.assets.get(assetId), [assetId]);
   const [tab, setTab] = useState<Tab>('details');
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [flash, setFlash] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
 
   const work = useLiveQuery(async () => {
     const orders = await db.maintenance_orders.where('assetId').equals(assetId).toArray();
@@ -519,15 +534,43 @@ export function AssetDetailPage({
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
-        <button
-          type="button"
-          onClick={() => setIsReportOpen(true)}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-destructive text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          Reportar incidencia
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setIsCopilotOpen(true)}
+            className={`flex h-12 w-full items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-bold shadow-sm transition active:scale-[0.99] ${
+              isOnline
+                ? 'bg-primary text-primary-foreground'
+                : 'border bg-muted text-muted-foreground'
+            }`}
+          >
+            <Sparkles className="h-4 w-4 shrink-0" />
+            <span className="truncate">{t('copilot.openButton')}</span>
+            {!isOnline && (
+              <span className="rounded bg-background/80 px-1 py-0.5 text-[9px] font-semibold">
+                {t('copilot.offlineShort')}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsReportOpen(true)}
+            className="flex h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-destructive px-2 text-xs font-bold text-white shadow-sm transition active:scale-[0.99]"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="truncate">{t('detail.reportIncident')}</span>
+          </button>
+        </div>
       </div>
+
+      {isCopilotOpen && (
+        <FieldCopilotSheet
+          assetId={asset.id}
+          assetCode={asset.code}
+          assetName={asset.name}
+          onClose={() => setIsCopilotOpen(false)}
+        />
+      )}
 
       {isReportOpen && (
         <ReportIncidentSheet

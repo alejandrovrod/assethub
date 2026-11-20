@@ -135,5 +135,42 @@
       "rearUnavailable": "The rear camera is not available. Try another device.",
       "startFailed": "Could not start the camera. Check the permissions and try again."
     }
+  },
+  "copilot": {
+    "openButton": "AI Copilot",
+    "offlineShort": "Offline",
+    "title": "AI Field Copilot",
+    "close": "Close copilot",
+    "loadingManuals": "Checking manuals…",
+    "manualsCount": "{{count}} manuals available",
+    "noManualsHint": "This asset does not have PDF manuals attached yet. Upload them from the web app.",
+    "offlineTitle": "Internet connection required",
+    "offlineHint": "Querying manuals by text or voice requires an online connection. Cached asset specs and offline incident reporting remain available.",
+    "emptyManualsTitle": "No manuals uploaded",
+    "askError": "Could not query the copilot.",
+    "emptyChatTitle": "Query manuals in the field",
+    "emptyChatDescription": "Ask by text or voice about torque specs, disassembly steps, hydraulic bleeding, or safety precautions.",
+    "quickPrompts": {
+      "torque": "What are the specified tightening torques?",
+      "bleeding": "What are the bleeding and startup steps?",
+      "safety": "What LOTO and safety precautions apply?"
+    },
+    "safetyBannerTitle": "Manual safety precaution",
+    "notFoundBadge": "Not found in uploaded manuals",
+    "citationsTitle": "Cited sources",
+    "pageShort": "p. {{page}}",
+    "viewExcerpt": "View quote",
+    "hideExcerpt": "Hide quote",
+    "searchingManuals": "Searching technical manuals…",
+    "listeningDictation": "Listening for voice dictation…",
+    "recordingAudio": "Recording voice question…",
+    "stopVoice": "Stop",
+    "voiceMessageLabel": "Voice question",
+    "inputPlaceholder": "Ask about the manual…",
+    "voiceTooltip": "Ask by voice",
+    "sendTooltip": "Send question",
+    "micError": "Could not capture microphone audio.",
+    "micPermissionDenied": "Microphone permission denied.",
+    "micUnsupported": "Voice recording is not supported in this browser."
   }
 }

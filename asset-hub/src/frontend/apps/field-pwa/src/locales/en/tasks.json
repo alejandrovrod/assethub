@@ -1,4 +1,4 @@
-﻿{
+{
   "journey": {
     "title": "My Day",
     "pending_one": "{{count}} pending task",
@@ -63,6 +63,7 @@
     "reworkTitle": "Task returned for correction:",
     "reworkHint": "Review the work performed",
     "asset": "Asset: {{name}}",
+    "openCopilot": "AI Manuals",
     "linkedIncident": "Linked incident",
     "orderLock": "Work order is in state \"{{state}}\". Start the WO to enable transitions.",
     "due": "Due date",

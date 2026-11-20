@@ -150,6 +150,9 @@ builder.Services.Configure<AssetHub.Infrastructure.AssetArchitect.GeminiOptions>
 builder.Services.AddScoped<AssetHub.Application.Interfaces.IAssetArchitectAgent, AssetHub.Infrastructure.AssetArchitect.GeminiAssetArchitectAgent>();
 builder.Services.AddScoped<AssetHub.Application.Interfaces.IIncidentMediaLoader, AssetHub.Infrastructure.IncidentTriage.LocalIncidentMediaLoader>();
 builder.Services.AddScoped<AssetHub.Application.Interfaces.IIncidentTriageAgent, AssetHub.Infrastructure.IncidentTriage.GeminiIncidentTriageAgent>();
+builder.Services.AddScoped<AssetHub.Application.Interfaces.IAssetManualLoader, AssetHub.Infrastructure.FieldCopilot.LocalAssetManualLoader>();
+builder.Services.AddSingleton<AssetHub.Application.Interfaces.IFileSearchStoreClient, AssetHub.Infrastructure.FieldCopilot.GeminiFileSearchStoreClient>();
+builder.Services.AddScoped<AssetHub.Application.Interfaces.IFieldCopilotAgent, AssetHub.Infrastructure.FieldCopilot.GeminiFieldCopilotAgent>();
 builder.Services.AddHostedService<AssetHub.Api.Workers.PreventivePlanSchedulerService>();
 builder.Services.AddHostedService<AssetHub.Api.Workers.IdempotencyCleanupWorker>();
 

@@ -14,9 +14,11 @@ import {
   Loader2,
   ArrowRight,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { useTask, STATE_LABELS, ORDER_STATE_LABELS, PRIORITY_LABELS } from '../features/tasks/hooks/useTasks';
 import { TaskTransitionSheet } from '../features/tasks/components/TaskTransitionSheet';
+import { FieldCopilotSheet } from '../features/copilot/FieldCopilotSheet';
 import { ChecklistForm } from '../features/tasks/components/ChecklistForm';
 import { PropagatedPropertiesDisplay } from '../shared/components/PropagatedPropertiesDisplay';
 import { EvidenceCapture } from '../shared/components/EvidenceCapture';
@@ -74,6 +76,7 @@ export function TaskDetailPage({
   const { task, isLoading } = useTask(taskId);
   const [tab, setTab] = useState<'details' | 'checklist' | 'history' | 'comments'>('details');
   const [showTransition, setShowTransition] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   // Evidences (persisted in Dexie task.evidencesJson and db.media_queue)
   const [evidences, setEvidences] = useState<EvidenceItem[]>([]);
@@ -735,13 +738,37 @@ export function TaskDetailPage({
           <div>
             <h1 className="text-lg font-bold text-foreground">{task.title}</h1>
             {task.assetName && (
-              <button
-                onClick={() => task.assetId && onNavigateAsset && onNavigateAsset(task.assetId)}
-                className="mt-0.5 text-xs font-medium text-primary hover:underline"
-              >
-                {t('detail.asset', { name: task.assetName })}
-                {task.assetCode ? ` (${task.assetCode})` : ''}
-              </button>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => task.assetId && onNavigateAsset && onNavigateAsset(task.assetId)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {t('detail.asset', { name: task.assetName })}
+                  {task.assetCode ? ` (${task.assetCode})` : ''}
+                </button>
+                {task.assetId && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCopilotOpen(true)}
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    <span>{t('detail.openCopilot')}</span>
+                  </button>
+                )}
+              </div>
+            )}
+            {!task.assetName && task.assetId && (
+              <div className="mt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsCopilotOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  <span>{t('detail.openCopilot')}</span>
+                </button>
+              </div>
             )}
           </div>
           <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold uppercase text-foreground">
@@ -1147,6 +1174,15 @@ export function TaskDetailPage({
           onTransitioned={() => {
             setHistoryRefreshKey((k) => k + 1);
           }}
+        />
+      )}
+
+      {isCopilotOpen && task.assetId && (
+        <FieldCopilotSheet
+          assetId={task.assetId}
+          assetCode={task.assetCode || ''}
+          assetName={task.assetName || ''}
+          onClose={() => setIsCopilotOpen(false)}
         />
       )}
     </div>

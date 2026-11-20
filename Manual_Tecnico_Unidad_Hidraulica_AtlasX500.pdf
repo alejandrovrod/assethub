@@ -1,0 +1,359 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R ] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 4326 >>
+stream
+0.080 0.220 0.380 rg
+36.00 742.00 540.00 26.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 46.00 751.00 Tm (ATLAS INDUSTRIAL | MANUAL TECNICO DE SERVICIO - ATLAS-X500) Tj ET
+0.60 w 0.750 0.780 0.820 RG 36.00 48.00 m 576.00 48.00 l S
+BT /F1 8.0 Tf 0.400 0.450 0.500 rg 1 0 0 1 36.00 34.00 Tm (Doc. REF-X500-REV4 | Uso exclusivo de mantenimiento autorizado) Tj ET
+BT /F2 8.0 Tf 0.250 0.300 0.350 rg 1 0 0 1 500.00 34.00 Tm (Pagina 1 de 6) Tj ET
+0.940 0.960 0.990 rg
+1.00 w 0.750 0.820 0.900 RG
+36.00 595.00 540.00 125.00 re B
+BT /F2 15.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 52.00 686.00 Tm (MANUAL DE OPERACION, MANTENIMIENTO Y DESARME) Tj ET
+BT /F2 12.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 52.00 662.00 Tm (Unidad Hidraulica Compacta Modelo Atlas-X500 \(Serie Industrial\)) Tj ET
+BT /F1 9.5 Tf 0.350 0.400 0.450 rg 1 0 0 1 52.00 640.00 Tm (Codigo de documento: REF-X500-REV4  |  Edicion: Noviembre 2026) Tj ET
+BT /F1 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 52.00 616.00 Tm (Aplicable a sistemas de bombeo principal, cilindros de prensa y modulo de filtrado.) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 560.00 Tm (1. Especificaciones Tecnicas Nominales) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 555.00 m 576.00 555.00 l S
+0.970 0.980 0.990 rg
+36.00 530.00 540.00 22.00 re f
+0.40 w 0.820 0.850 0.880 RG 36.00 530.00 m 576.00 530.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 536.00 Tm (Modelo / Serie) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 536.00 Tm (Atlas-X500 Industrial Power Pack) Tj ET
+0.40 w 0.820 0.850 0.880 RG 36.00 508.00 m 576.00 508.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 514.00 Tm (Presion nominal de trabajo) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 514.00 Tm (210 bar \(3045 PSI\)) Tj ET
+0.970 0.980 0.990 rg
+36.00 486.00 540.00 22.00 re f
+0.40 w 0.820 0.850 0.880 RG 36.00 486.00 m 576.00 486.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 492.00 Tm (Presion maxima admisible \(pico\)) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 492.00 Tm (250 bar \(3625 PSI\)) Tj ET
+0.40 w 0.820 0.850 0.880 RG 36.00 464.00 m 576.00 464.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 470.00 Tm (Fluido hidraulico requerido) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 470.00 Tm (Aceite mineral antidesgaste ISO VG 46) Tj ET
+0.970 0.980 0.990 rg
+36.00 442.00 540.00 22.00 re f
+0.40 w 0.820 0.850 0.880 RG 36.00 442.00 m 576.00 442.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 448.00 Tm (Capacidad total del reservorio) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 448.00 Tm (65 Litros \(nivel minimo operativo: 80% / 52 Litros\)) Tj ET
+0.40 w 0.820 0.850 0.880 RG 36.00 420.00 m 576.00 420.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 426.00 Tm (Motor electrico principal) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 426.00 Tm (45 kW / 400 VAC trifasico / 50-60 Hz / 78 A nominal) Tj ET
+0.970 0.980 0.990 rg
+36.00 398.00 540.00 22.00 re f
+0.40 w 0.820 0.850 0.880 RG 36.00 398.00 m 576.00 398.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 404.00 Tm (Rango de temperatura operativa) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 404.00 Tm (15 C a 65 C \(alarma termica a los 75 C\)) Tj ET
+0.40 w 0.820 0.850 0.880 RG 36.00 376.00 m 576.00 376.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 382.00 Tm (Caudal nominal de bomba) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 382.00 Tm (110 L/min a 1480 RPM) Tj ET
+0.970 0.980 0.990 rg
+36.00 354.00 540.00 22.00 re f
+0.40 w 0.820 0.850 0.880 RG 36.00 354.00 m 576.00 354.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 360.00 Tm (Filtracion de linea de presion) Tj ET
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 260.00 360.00 Tm (Elemento micronico de 10 micras \(beta 10 >= 200\)) Tj ET
+0.980 0.960 0.900 rg
+1.00 w 0.850 0.650 0.200 RG
+36.00 252.00 540.00 68.00 re B
+BT /F2 10.5 Tf 0.600 0.350 0.000 rg 1 0 0 1 48.00 306.00 Tm (ALCANCE DEL MANUAL) Tj ET
+BT /F1 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 48.00 288.00 Tm (Utilice este manual exclusivamente para tareas de bloqueo LOTO, torques de montaje,) Tj ET
+BT /F1 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 48.00 272.00 Tm (purga del circuito hidraulico, desarme de bomba principal y diagnostico de fallas E-01 a E-09.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3064 >>
+stream
+0.080 0.220 0.380 rg
+36.00 742.00 540.00 26.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 46.00 751.00 Tm (ATLAS INDUSTRIAL | MANUAL TECNICO DE SERVICIO - ATLAS-X500) Tj ET
+0.60 w 0.750 0.780 0.820 RG 36.00 48.00 m 576.00 48.00 l S
+BT /F1 8.0 Tf 0.400 0.450 0.500 rg 1 0 0 1 36.00 34.00 Tm (Doc. REF-X500-REV4 | Uso exclusivo de mantenimiento autorizado) Tj ET
+BT /F2 8.0 Tf 0.250 0.300 0.350 rg 1 0 0 1 500.00 34.00 Tm (Pagina 2 de 6) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 706.00 Tm (2. Seguridad Industrial y Bloqueo LOTO \(Obligatorio\)) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 701.00 m 576.00 701.00 l S
+0.990 0.930 0.930 rg
+1.00 w 0.800 0.200 0.200 RG
+36.00 630.00 540.00 62.00 re B
+BT /F2 11.0 Tf 0.720 0.080 0.080 rg 1 0 0 1 48.00 674.00 Tm (ADVERTENCIA CRITICA DE SEGURIDAD) Tj ET
+BT /F1 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 48.00 656.00 Tm (El circuito acumula energia hidraulica hasta 250 bar incluso con el motor apagado.) Tj ET
+BT /F1 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 48.00 640.00 Tm (Nunca afloje tapones, bridas ni tapa de cilindros antes de verificar 0 bar en manometro M-01.) Tj ET
+BT /F2 11.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 596.00 Tm (Secuencia LOTO previa a cualquier intervencion:) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 576.00 Tm (- 1. Detenga la unidad desde el panel HMI y coloque el selector en modo OFF / SERVICIO.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 556.00 Tm (- 2. Aisle el seccionador electrico principal de 400 VAC en tablero MCC-04.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 536.00 Tm (- 3. Coloque candado personal y tarjeta LOTO numerada \(verificacion energia cero con multimetro\).) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 516.00 Tm (- 4. Abra lentamente la valvula de despresurizacion del acumulador V-104 \(giro completo\).) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 496.00 Tm (- 5. Confirme lectura de 0 bar \(0 PSI\) en el manometro principal M-01 y manometro M-02.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 476.00 Tm (- 6. Verifique que la temperatura del aceite ISO VG 46 sea inferior a 45 C para evitar quemaduras.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 456.00 Tm (- 7. Coloque bandeja de contencion minima de 20 L debajo de bridas o cuerpo de cilindros.) Tj ET
+BT /F2 11.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 416.00 Tm (Equipo de Proteccion Personal \(EPP\) obligatorio:) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 396.00 Tm (- Gafas de seguridad hermeticas contra salpicadura de aceite hidraulico a presion.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 378.00 Tm (- Guantes mecanicos resistentes a hidrocarburos \(nitrilo reforzado EN 388\).) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 360.00 Tm (- Calzado dielectrico con puntera de acero y ropa ignifuga sin partes sueltas.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 342.00 Tm (- Proteccion auditiva \(>= 85 dB durante pruebas operativas con bomba en marcha\).) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 5536 >>
+stream
+0.080 0.220 0.380 rg
+36.00 742.00 540.00 26.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 46.00 751.00 Tm (ATLAS INDUSTRIAL | MANUAL TECNICO DE SERVICIO - ATLAS-X500) Tj ET
+0.60 w 0.750 0.780 0.820 RG 36.00 48.00 m 576.00 48.00 l S
+BT /F1 8.0 Tf 0.400 0.450 0.500 rg 1 0 0 1 36.00 34.00 Tm (Doc. REF-X500-REV4 | Uso exclusivo de mantenimiento autorizado) Tj ET
+BT /F2 8.0 Tf 0.250 0.300 0.350 rg 1 0 0 1 500.00 34.00 Tm (Pagina 3 de 6) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 706.00 Tm (3. Especificaciones de Torque y Apriete - Diagrama FIG-3.2) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 701.00 m 576.00 701.00 l S
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 682.00 Tm (Limpie las roscas antes del montaje. Use torquimetro calibrado \(+/- 3% precision\).) Tj ET
+0.120 0.250 0.420 rg
+36.00 652.00 540.00 22.00 re f
+BT /F2 9.5 Tf 1.000 1.000 1.000 rg 1 0 0 1 40.00 658.00 Tm (Componente / Union) Tj ET
+BT /F2 9.5 Tf 1.000 1.000 1.000 rg 1 0 0 1 220.00 658.00 Tm (Perno / Rosca) Tj ET
+BT /F2 9.5 Tf 1.000 1.000 1.000 rg 1 0 0 1 325.00 658.00 Tm (Torque Final) Tj ET
+BT /F2 9.5 Tf 1.000 1.000 1.000 rg 1 0 0 1 425.00 658.00 Tm (Secuencia / Notas) Tj ET
+0.960 0.970 0.990 rg
+36.00 628.00 540.00 22.00 re f
+0.40 w 0.800 0.840 0.880 RG 36.00 628.00 m 576.00 628.00 l S
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 634.00 Tm (Tapa de cilindros \(6 pernos\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 220.00 634.00 Tm (M12 Clase 10.9) Tj ET
+BT /F2 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 325.00 634.00 Tm (85 Nm \(62.7 ft-lb\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 425.00 634.00 Tm (3 etapas: 30 -> 60 -> 85 Nm) Tj ET
+0.40 w 0.800 0.840 0.880 RG 36.00 604.00 m 576.00 604.00 l S
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 610.00 Tm (Brida de succion principal) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 220.00 610.00 Tm (M10 Clase 8.8) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 325.00 610.00 Tm (48 Nm \(35.4 ft-lb\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 425.00 610.00 Tm (Apriete cruzado con sello O-ring) Tj ET
+0.960 0.970 0.990 rg
+36.00 580.00 540.00 22.00 re f
+0.40 w 0.800 0.840 0.880 RG 36.00 580.00 m 576.00 580.00 l S
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 586.00 Tm (Brida de descarga alta presion) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 220.00 586.00 Tm (M12 Clase 10.9) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 325.00 586.00 Tm (95 Nm \(70.0 ft-lb\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 425.00 586.00 Tm (Verificar asiento SAE 6000) Tj ET
+0.40 w 0.800 0.840 0.880 RG 36.00 556.00 m 576.00 556.00 l S
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 562.00 Tm (Tapon de drenaje del carter) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 220.00 562.00 Tm (M18 x 1.5) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 325.00 562.00 Tm (55 Nm \(40.5 ft-lb\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 425.00 562.00 Tm (Arandela de cobre nueva obligatoria) Tj ET
+0.960 0.970 0.990 rg
+36.00 532.00 540.00 22.00 re f
+0.40 w 0.800 0.840 0.880 RG 36.00 532.00 m 576.00 532.00 l S
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 538.00 Tm (Pernos de anclaje base motor) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 220.00 538.00 Tm (M16 Clase 8.8) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 325.00 538.00 Tm (180 Nm \(132.8 ft-lb\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 425.00 538.00 Tm (Con fijador anaerobico medio) Tj ET
+0.40 w 0.800 0.840 0.880 RG 36.00 508.00 m 576.00 508.00 l S
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 514.00 Tm (Tuercas acople elastico bomba) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 220.00 514.00 Tm (M10 Clase 8.8) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 325.00 514.00 Tm (42 Nm \(31.0 ft-lb\)) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 425.00 514.00 Tm (Revisar alineacion <= 0.05 mm) Tj ET
+0.980 0.990 1.000 rg
+1.00 w 0.650 0.720 0.800 RG
+36.00 297.00 540.00 180.00 re B
+BT /F2 10.5 Tf 0.080 0.220 0.380 rg 1 0 0 1 48.00 454.00 Tm (DIAGRAMA FIG-3.2: Secuencia Cruzada Tapa de Cilindros \(Orden: 1 - 4 - 2 - 5 - 3 - 6\)) Tj ET
+0.930 0.950 0.970 rg
+1.40 w 0.300 0.350 0.400 RG
+120.00 322.00 250.00 105.00 re B
+BT /F2 9.5 Tf 0.250 0.300 0.350 rg 1 0 0 1 200.00 372.00 Tm (TAPA DE CILINDROS) Tj ET
+0.080 0.220 0.380 rg
+134.00 401.00 22.00 22.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 142.00 408.00 Tm (5) Tj ET
+0.080 0.220 0.380 rg
+234.00 401.00 22.00 22.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 242.00 408.00 Tm (1) Tj ET
+0.080 0.220 0.380 rg
+334.00 401.00 22.00 22.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 342.00 408.00 Tm (3) Tj ET
+0.080 0.220 0.380 rg
+134.00 326.00 22.00 22.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 142.00 333.00 Tm (6) Tj ET
+0.080 0.220 0.380 rg
+234.00 326.00 22.00 22.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 242.00 333.00 Tm (2) Tj ET
+0.080 0.220 0.380 rg
+334.00 326.00 22.00 22.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 342.00 333.00 Tm (4) Tj ET
+BT /F2 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 392.00 410.00 Tm (Etapa 1: Todos a 30 Nm) Tj ET
+BT /F2 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 392.00 390.00 Tm (Etapa 2: Todos a 60 Nm) Tj ET
+BT /F2 9.5 Tf 0.080 0.220 0.380 rg 1 0 0 1 392.00 370.00 Tm (Etapa 3: Torque final 85 Nm) Tj ET
+BT /F1 9.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 392.00 346.00 Tm (Orden obligatorio: 1 -> 2 -> 3 -> 4 -> 5 -> 6) Tj ET
+BT /F1 8.5 Tf 0.400 0.450 0.500 rg 1 0 0 1 392.00 328.00 Tm (\(cruzado del centro hacia los extremos\)) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 3662 >>
+stream
+0.080 0.220 0.380 rg
+36.00 742.00 540.00 26.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 46.00 751.00 Tm (ATLAS INDUSTRIAL | MANUAL TECNICO DE SERVICIO - ATLAS-X500) Tj ET
+0.60 w 0.750 0.780 0.820 RG 36.00 48.00 m 576.00 48.00 l S
+BT /F1 8.0 Tf 0.400 0.450 0.500 rg 1 0 0 1 36.00 34.00 Tm (Doc. REF-X500-REV4 | Uso exclusivo de mantenimiento autorizado) Tj ET
+BT /F2 8.0 Tf 0.250 0.300 0.350 rg 1 0 0 1 500.00 34.00 Tm (Pagina 4 de 6) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 706.00 Tm (4. Pasos de Purga del Circuito Hidraulico - Diagrama FIG-4.1) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 701.00 m 576.00 701.00 l S
+BT /F1 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 682.00 Tm (Ejecute este procedimiento luego de cambiar bomba, mangueras, cilindros o aceite ISO VG 46.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 658.00 Tm (- 1. Verifique que el nivel de aceite ISO VG 46 en el reservorio supere el 80% de la mirilla.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 637.00 Tm (- 2. Confirme que la valvula de aislacion de succion S-01 este 100% abierta antes de arrancar.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 616.00 Tm (- 3. Conecte una manguera transparente desde la valvula de purga PV-02 hacia un recipiente limpio.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 595.00 Tm (- 4. Afloje media vuelta \(180 grados\) la valvula de purga PV-02 ubicada en el colector superior.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 574.00 Tm (- 5. Realice 3 a 5 pulsos cortos de arranque electrico \(duracion maxima 3 segundos cada pulso\).) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 553.00 Tm (- 6. Observe el flujo en la manguera hasta obtener chorro continuo sin burbujas ni espuma.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 532.00 Tm (- 7. Cierre firmemente la valvula de purga PV-02 a 22 Nm mientras la bomba mantiene flujo lento.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 511.00 Tm (- 8. Encienda en vacio y presurice gradualmente hasta 50 bar durante 5 minutos para estabilizar.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 490.00 Tm (- 9. Realice 4 ciclos completos de carrera sin carga y controle caida de presion en filtro Delta P < 1.5 bar.) Tj ET
+BT /F1 9.8 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 469.00 Tm (- 10. Recheckee el nivel final en tanque y rellene si descendio bajo la marca nominal.) Tj ET
+0.970 0.980 0.990 rg
+1.00 w 0.650 0.720 0.800 RG
+36.00 290.00 540.00 150.00 re B
+BT /F2 10.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 48.00 422.00 Tm (DIAGRAMA FIG-4.1: Ruta de Purga de Aire \(Tanque -> S-01 -> Bomba P-01 -> Valvula PV-02\)) Tj ET
+1.000 1.000 1.000 rg
+1.20 w 0.080 0.220 0.380 RG
+52.00 348.00 105.00 36.00 re B
+BT /F2 8.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 60.00 362.00 Tm (TANQUE \(>=80%\)) Tj ET
+1.40 w 0.080 0.220 0.380 RG 157.00 366.00 m 175.00 366.00 l S
+1.000 1.000 1.000 rg
+1.20 w 0.080 0.220 0.380 RG
+175.00 348.00 105.00 36.00 re B
+BT /F2 8.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 183.00 362.00 Tm (VALVULA S-01) Tj ET
+1.40 w 0.080 0.220 0.380 RG 280.00 366.00 m 298.00 366.00 l S
+1.000 1.000 1.000 rg
+1.20 w 0.080 0.220 0.380 RG
+298.00 348.00 105.00 36.00 re B
+BT /F2 8.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 306.00 362.00 Tm (BOMBA P-01) Tj ET
+1.40 w 0.080 0.220 0.380 RG 403.00 366.00 m 425.00 366.00 l S
+1.000 1.000 1.000 rg
+1.20 w 0.080 0.220 0.380 RG
+425.00 348.00 105.00 36.00 re B
+BT /F2 8.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 433.00 362.00 Tm (COLECTOR PV-02) Tj ET
+BT /F2 9.0 Tf 0.700 0.150 0.150 rg 1 0 0 1 48.00 320.00 Tm (Nota FIG-4.1: Nunca opere la bomba en seco ni exceda pulsos de 3 s con PV-02 abierta.) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 3481 >>
+stream
+0.080 0.220 0.380 rg
+36.00 742.00 540.00 26.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 46.00 751.00 Tm (ATLAS INDUSTRIAL | MANUAL TECNICO DE SERVICIO - ATLAS-X500) Tj ET
+0.60 w 0.750 0.780 0.820 RG 36.00 48.00 m 576.00 48.00 l S
+BT /F1 8.0 Tf 0.400 0.450 0.500 rg 1 0 0 1 36.00 34.00 Tm (Doc. REF-X500-REV4 | Uso exclusivo de mantenimiento autorizado) Tj ET
+BT /F2 8.0 Tf 0.250 0.300 0.350 rg 1 0 0 1 500.00 34.00 Tm (Pagina 5 de 6) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 706.00 Tm (5. Desarme de Bomba Principal, Tolerancias y Repuestos) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 701.00 m 576.00 701.00 l S
+BT /F2 10.0 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 682.00 Tm (Antes de desarmar la bomba P-01 asegure cumplimiento integral de LOTO \(Pagina 2\).) Tj ET
+BT /F2 10.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 658.00 Tm (Secuencia de desarme controlado:) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 640.00 Tm (- Marque la posicion relativa entre carcasa delantera, cuerpo central y tapa trasera con punzon.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 621.00 Tm (- Retire el acople elastico y mida juego axial del eje antes de extraer retenes.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 602.00 Tm (- Desmonte los 4 pernos pasantes M12 y separe la tapa trasera evitando golpear placas de bronce.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 583.00 Tm (- Inspeccione visualmente placas de empuje, engranajes/pistones y superficie del sello mecanico.) Tj ET
+BT /F2 10.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 36.00 548.00 Tm (Tolerancias criticas de inspeccion:) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 530.00 Tm (- Juego axial maximo admisible del eje: 0.08 mm \(reemplazar arandelas si supera 0.10 mm\).) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 511.00 Tm (- Excentricidad maxima permitida del acople/eje: 0.05 mm medida con reloj comparador.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 492.00 Tm (- Holgura radial cuerpo-rotor maxima: 0.04 mm \(limite de descarte: 0.07 mm\).) Tj ET
+BT /F2 10.5 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 453.00 Tm (Catalogo de Repuestos Criticos \(Atlas-X500\):) Tj ET
+0.960 0.970 0.990 rg
+36.00 425.00 540.00 22.00 re f
+BT /F2 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 431.00 Tm (KIT-SEAL-X500) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 145.00 431.00 Tm (Kit completo de sellos mecanicos y O-rings Viton) Tj ET
+BT /F1 8.8 Tf 0.350 0.400 0.450 rg 1 0 0 1 405.00 431.00 Tm (Reemplazar en cada apertura) Tj ET
+BT /F2 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 407.00 Tm (SKF-6310-2RS) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 145.00 407.00 Tm (Rodamiento rigido de bolas eje principal bomba) Tj ET
+BT /F1 8.8 Tf 0.350 0.400 0.450 rg 1 0 0 1 405.00 407.00 Tm (Vida util nominal 8,000 h) Tj ET
+0.960 0.970 0.990 rg
+36.00 377.00 540.00 22.00 re f
+BT /F2 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 383.00 Tm (FIL-X500-10M) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 145.00 383.00 Tm (Cartucho filtrante linea alta presion 10 micras) Tj ET
+BT /F1 8.8 Tf 0.350 0.400 0.450 rg 1 0 0 1 405.00 383.00 Tm (Cambio cada 1,000 h o Delta P >= 1.5 bar) Tj ET
+BT /F2 9.5 Tf 0.100 0.120 0.150 rg 1 0 0 1 42.00 359.00 Tm (VAL-PV02-KIT) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 145.00 359.00 Tm (Valvula de purga PV-02 con asiento conico) Tj ET
+BT /F1 8.8 Tf 0.350 0.400 0.450 rg 1 0 0 1 405.00 359.00 Tm (Torque de cierre 22 Nm) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 2345 >>
+stream
+0.080 0.220 0.380 rg
+36.00 742.00 540.00 26.00 re f
+BT /F2 10.0 Tf 1.000 1.000 1.000 rg 1 0 0 1 46.00 751.00 Tm (ATLAS INDUSTRIAL | MANUAL TECNICO DE SERVICIO - ATLAS-X500) Tj ET
+0.60 w 0.750 0.780 0.820 RG 36.00 48.00 m 576.00 48.00 l S
+BT /F1 8.0 Tf 0.400 0.450 0.500 rg 1 0 0 1 36.00 34.00 Tm (Doc. REF-X500-REV4 | Uso exclusivo de mantenimiento autorizado) Tj ET
+BT /F2 8.0 Tf 0.250 0.300 0.350 rg 1 0 0 1 500.00 34.00 Tm (Pagina 6 de 6) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 706.00 Tm (6. Codigos de Falla HMI y Plan de Mantenimiento Preventivo) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 701.00 m 576.00 701.00 l S
+0.980 0.980 0.990 rg
+1.00 w 0.800 0.840 0.880 RG
+36.00 648.00 540.00 42.00 re B
+BT /F2 10.0 Tf 0.650 0.100 0.100 rg 1 0 0 1 44.00 678.00 Tm (E-01 Alta temperatura aceite  [Temp > 75 C]) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 660.00 Tm (Accion correctiva: Limpiar intercambiador aire/aceite, revisar ventilador y nivel ISO VG 46.) Tj ET
+0.980 0.980 0.990 rg
+1.00 w 0.800 0.840 0.880 RG
+36.00 594.00 540.00 42.00 re B
+BT /F2 10.0 Tf 0.650 0.100 0.100 rg 1 0 0 1 44.00 624.00 Tm (E-04 Baja presion de succion  [< 0.8 bar]) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 606.00 Tm (Accion correctiva: Verificar valvula S-01 abierta, filtro succion obstruido o aire en linea.) Tj ET
+0.980 0.980 0.990 rg
+1.00 w 0.800 0.840 0.880 RG
+36.00 540.00 540.00 42.00 re B
+BT /F2 10.0 Tf 0.650 0.100 0.100 rg 1 0 0 1 44.00 570.00 Tm (E-09 Sobrecarga motor  [> 82 A]) Tj ET
+BT /F1 9.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 44.00 552.00 Tm (Accion correctiva: Verificar valvula alivio atascada > 250 bar o agarrotamiento en bomba P-01.) Tj ET
+BT /F2 14.0 Tf 0.080 0.220 0.380 rg 1 0 0 1 36.00 506.00 Tm (Frecuencias de Mantenimiento Preventivo) Tj ET
+1.00 w 0.080 0.220 0.380 RG 36.00 501.00 m 576.00 501.00 l S
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 482.00 Tm (- Cada 250 horas: Inspeccion visual de fugas, nivel de tanque \(>= 80%\) y ruido anomalo.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 460.00 Tm (- Cada 1,000 horas: Reemplazo de filtro FIL-X500-10M, muestra de aceite ISO VG 46 y re-torque bridas.) Tj ET
+BT /F1 10.2 Tf 0.100 0.120 0.150 rg 1 0 0 1 40.00 438.00 Tm (- Cada 4,000 horas: Cambio total de 65 L de aceite, inspeccion de rodamientos SKF-6310-2RS y sellos.) Tj ET
+endstream
+endobj
+xref
+0 17
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000156 00000 n 
+0000000253 00000 n 
+0000000355 00000 n 
+0000000491 00000 n 
+0000004869 00000 n 
+0000005005 00000 n 
+0000008121 00000 n 
+0000008258 00000 n 
+0000013847 00000 n 
+0000013985 00000 n 
+0000017700 00000 n 
+0000017838 00000 n 
+0000021372 00000 n 
+0000021510 00000 n 
+trailer
+<< /Size 17 /Root 1 0 R >>
+startxref
+23908
+%%EOF

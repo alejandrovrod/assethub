@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using AssetHub.Api.Http;
 using AssetHub.Application.Assets.Commands;
 using AssetHub.Application.Assets.Queries;
+using AssetHub.Application.FieldCopilot;
+using AssetHub.Application.FieldCopilot.Commands;
+using AssetHub.Application.FieldCopilot.Queries;
 using AssetHub.Application.Sync.Dtos;
 using AssetHub.Application.Sync.Queries;
 using AssetHub.Infrastructure.Billing;
@@ -281,6 +285,83 @@ public class AssetsController : ControllerBase
         await _mediator.Send(new DeleteAssetMaterialCommand(materialId));
         return NoContent();
     }
+
+    /// <summary>
+    /// Lists technical manuals discovered on the asset and their indexing status in Gemini File Search.
+    /// </summary>
+    [HttpGet("{id}/copilot/manuals")]
+    [Authorize(Policy = "permission:assets:read")]
+    public async Task<IActionResult> GetCopilotManuals(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GetAssetCopilotManualsQuery(id), cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes and indexes an asset's uploaded technical manuals into the tenant's Gemini File Search Store.
+    /// </summary>
+    [HttpPost("{id}/copilot/index")]
+    [Authorize(Policy = "permission:assets:read")]
+    public async Task<IActionResult> IndexCopilotManuals(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] IndexAssetManualsBody? body,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _mediator.Send(
+                new IndexAssetManualsCommand(id, body?.ForceReindex ?? false),
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>
+    /// Answers a field technician's text or voice question strictly grounded in the asset's indexed manuals.
+    /// </summary>
+    [HttpPost("{id}/copilot/ask")]
+    [Authorize(Policy = "permission:assets:read")]
+    public async Task<IActionResult> AskCopilot(
+        Guid id,
+        [FromBody] AskFieldCopilotBody? body,
+        CancellationToken cancellationToken)
+    {
+        if (body is null)
+            return BadRequest(new { error = "Request body is required." });
+
+        try
+        {
+            var result = await _mediator.Send(
+                new AskFieldCopilotQuery(
+                    id,
+                    body.Question,
+                    body.AudioBase64,
+                    body.AudioMimeType,
+                    body.History,
+                    body.PreferredLanguage),
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
 
 public class AdvancedSearchRequest
@@ -352,4 +433,13 @@ public class UpdateMaterialRequest
     public bool IsCritical { get; set; }
     public string? Notes { get; set; }
 }
+
+public sealed record IndexAssetManualsBody(bool ForceReindex = false);
+
+public sealed record AskFieldCopilotBody(
+    string? Question = null,
+    string? AudioBase64 = null,
+    string? AudioMimeType = null,
+    List<CopilotConversationTurn>? History = null,
+    string? PreferredLanguage = null);
 

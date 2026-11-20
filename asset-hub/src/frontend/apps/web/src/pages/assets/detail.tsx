@@ -2,8 +2,9 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useResolvedSchema } from '@/hooks/use-resolved-schema'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Loader2, Save, GitBranch, Link as LinkIcon, Network } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, GitBranch, Link as LinkIcon, Network, Sparkles } from 'lucide-react'
 import { assetService } from '@/services/asset.service'
+import { FieldCopilotSheet } from './components/field-copilot-sheet'
 import { FileUploadWidget } from '@/components/widgets/FileUploadWidget'
 import { EmployeeSelectWidget } from '@/components/widgets/EmployeeSelectWidget'
 import { TeamSelectWidget } from '@/components/widgets/TeamSelectWidget'
@@ -82,6 +83,7 @@ export default function AssetDetailPage() {
   // Module Delegation
   const [moduleDelegationOpen, setModuleDelegationOpen] = useState(false)
   const [targetModule, setTargetModule] = useState<string | null>(null)
+  const [copilotOpen, setCopilotOpen] = useState(false)
 
   const { data: asset, isLoading } = useQuery({
     queryKey: ['asset', id],
@@ -427,8 +429,18 @@ export default function AssetDetailPage() {
           )}
         </div>
 
-        {/* Right side: Metadata & Transitions */}
-        <div className="flex items-center gap-4 shrink-0 flex-wrap justify-start xl:justify-end w-full xl:w-auto">
+        {/* Right side: Metadata, Copilot & Transitions */}
+        <div className="flex items-center gap-3 shrink-0 flex-wrap justify-start xl:justify-end w-full xl:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCopilotOpen(true)}
+            className="h-10 xl:h-12 gap-2 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 shadow-sm"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>{t('copilot.openButton')}</span>
+          </Button>
+
           {/* Center: Metadata */}
           <div className="flex flex-wrap items-center gap-4 border rounded-lg px-4 h-auto py-2 xl:h-12 bg-card shadow-sm w-full sm:w-auto">
             <div className="flex flex-col justify-center">
@@ -1094,6 +1106,14 @@ export default function AssetDetailPage() {
           </SheetContent>
         </Sheet>
       )}
+
+      <FieldCopilotSheet
+        open={copilotOpen}
+        onOpenChange={setCopilotOpen}
+        assetId={asset.id}
+        assetCode={asset.code}
+        assetName={asset.name}
+      />
     </div>
   )
 }

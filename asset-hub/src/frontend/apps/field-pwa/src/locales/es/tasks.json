@@ -1,4 +1,4 @@
-﻿{
+{
   "journey": {
     "title": "Mi Jornada",
     "pending_one": "{{count}} tarea pendiente",
@@ -63,6 +63,7 @@
     "reworkTitle": "Tarea devuelta para corrección:",
     "reworkHint": "Revisa el trabajo realizado",
     "asset": "Activo: {{name}}",
+    "openCopilot": "Manuales IA",
     "linkedIncident": "Incidencia vinculada",
     "orderLock": "Orden de trabajo en \"{{state}}\". Inicia la OT para habilitar transiciones.",
     "due": "Vencimiento",
