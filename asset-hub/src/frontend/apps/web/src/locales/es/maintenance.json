@@ -628,5 +628,123 @@
     "applySuccess": "Triaje aplicado correctamente.",
     "applySuccessWithOrder": "Triaje aplicado y orden correctiva actualizada ({{parts}} repuesto(s) agregado(s)).",
     "applyError": "No se pudo aplicar la decisión de triaje."
+  },
+  "predictivePlanner": {
+    "title": "Planificación Predictiva y Repuestos",
+    "description": "Proyecta servicios, quiebres de stock, saturación de taller y presupuesto a partir de los datos existentes, sin migraciones ni cambios automáticos.",
+    "filters": {
+      "horizon": "Horizonte",
+      "days30": "30 días",
+      "days60": "60 días",
+      "days90": "90 días",
+      "template": "Plantilla de activo",
+      "allTemplates": "Todas las plantillas",
+      "warehouse": "Almacén",
+      "allWarehouses": "Todos los almacenes",
+      "meterInterval": "Intervalo de medidor",
+      "meterIntervalPlaceholder": "Ej. 250 horas o km",
+      "refresh": "Actualizar"
+    },
+    "kpi": {
+      "projectedServices": "Servicios proyectados",
+      "projectedServicesHint": "Ocurrencias dentro de {{days}} días",
+      "stockoutRisks": "Repuestos en riesgo",
+      "stockoutRisksHint": "Artículos con quiebre antes del fin del horizonte",
+      "estimatedBudget": "Presupuesto estimado",
+      "estimatedBudgetHint": "Repuestos cubiertos, compra urgente y mano de obra",
+      "overloadedWeeks": "Semanas saturadas",
+      "overloadedWeeksHint": "Semanas con saturación de taller ≥ 90%"
+    },
+    "advisory": {
+      "earlyWarnings": "Alertas tempranas IA",
+      "earlyWarningsDescription": "Priorizadas sobre el pronóstico determinístico y validadas contra el inventario real.",
+      "unavailableTitle": "Análisis IA no disponible",
+      "unavailableBody": "Se muestra el pronóstico determinístico completo. El asesor de IA no pudo generar recomendaciones en este momento.",
+      "executiveSummary": "Diagnóstico ejecutivo",
+      "noWarnings": "No se detectaron alertas tempranas en el horizonte seleccionado.",
+      "scheduleRecommendations": "Rebalanceo de taller",
+      "scheduleRecommendationsDescription": "Acciones sugeridas para escalonar servicios y evitar picos de saturación.",
+      "noRecommendations": "No hay recomendaciones de rebalanceo para este horizonte.",
+      "suggestedDate": "Fecha sugerida",
+      "validationWarnings": "Referencias descartadas por el validador",
+      "inDays_one": "{{count}} día de anticipación",
+      "inDays_other": "{{count}} días de anticipación"
+    },
+    "severity": {
+      "critical": "Crítica",
+      "high": "Alta",
+      "medium": "Media"
+    },
+    "warningType": {
+      "Stockout": "Quiebre de stock",
+      "WorkshopOverload": "Saturación de taller",
+      "HealthRisk": "Riesgo de falla",
+      "BudgetSpike": "Pico de presupuesto"
+    },
+    "stockouts": {
+      "title": "Quiebre de repuestos y compras sugeridas",
+      "description": "Cruce cronológico entre servicios proyectados, stock disponible y comprometido en órdenes abiertas.",
+      "code": "Código",
+      "label": "Repuesto",
+      "daysUntilStockout": "Días al quiebre",
+      "stockCurrent": "Stock libre",
+      "required": "Requerido",
+      "shortfall": "Déficit",
+      "restockCost": "Costo de reposición",
+      "affectedAssets": "Activos afectados",
+      "exportCsv": "Exportar requisición CSV",
+      "empty": "No se proyectan quiebres de stock en el horizonte seleccionado."
+    },
+    "budget": {
+      "title": "Proyección presupuestaria",
+      "description": "Repuestos cubiertos por stock, compra urgente y costo histórico proyectado.",
+      "coveredParts": "Repuestos cubiertos por stock",
+      "urgentPurchase": "Compra urgente por déficit",
+      "labor": "Mano de obra estimada",
+      "historicalRunRate": "Referencia histórica del período",
+      "averagePerService": "Costo promedio por servicio",
+      "total": "Total estimado"
+    },
+    "workshop": {
+      "title": "Carga semanal de taller",
+      "description": "Servicios proyectados y backlog abierto contra las horas disponibles de los técnicos.",
+      "week": "Semana ISO {{year}}-W{{week}}",
+      "services": "Servicios",
+      "backlog": "Backlog",
+      "projectedHours": "Horas proyectadas",
+      "availableHours": "Horas disponibles",
+      "empty": "No hay carga de taller proyectada en el horizonte seleccionado."
+    },
+    "services": {
+      "title": "Servicios proyectados",
+      "description": "Planes preventivos expandidos por cron, proyección por horómetro/km y riesgos críticos de falla.",
+      "asset": "Activo",
+      "label": "Servicio",
+      "source": "Origen",
+      "dueDate": "Fecha objetivo",
+      "daysUntilDue": "Días",
+      "meter": "Medidor",
+      "empty": "No hay servicios proyectados en el horizonte seleccionado."
+    },
+    "source": {
+      "preventivePlan": "Plan preventivo",
+      "meterBurnRate": "Horómetro / km",
+      "healthRisk": "Riesgo de falla"
+    },
+    "daysCount_one": "{{count}} día",
+    "daysCount_other": "{{count}} días",
+    "csv": {
+      "code": "Código",
+      "label": "Repuesto",
+      "quantity": "Cantidad a comprar",
+      "cost": "Costo estimado",
+      "neededBy": "Requerido antes de",
+      "affectedAssets": "Activos afectados",
+      "rationale": "Justificación"
+    },
+    "errors": {
+      "title": "No se pudo generar el pronóstico",
+      "body": "Revisa la conexión con el servidor e intenta nuevamente."
+    }
   }
 }

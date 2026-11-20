@@ -181,7 +181,8 @@
       "myAccount": "My Account",
       "users": "Users",
       "roles": "Roles",
-      "audit": "Audit trail"
+      "audit": "Audit trail",
+      "predictivePlanner": "Predictive Planning"
     }
   },
   "breadcrumbs": {
@@ -194,6 +195,7 @@
     "tasks": "Tasks",
     "orders": "Orders",
     "preventive-plans": "Preventive plans",
+    "predictive-planner": "Predictive planning",
     "communication-templates": "Communication templates",
     "staff": "Staff",
     "employees": "Employees",

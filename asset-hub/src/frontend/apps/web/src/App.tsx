@@ -18,6 +18,7 @@ const IncidentDetailPage = lazy(() => import("./pages/maintenance/incident-detai
 const WorkflowTemplates = lazy(() => import("./pages/maintenance/workflow-templates/index"));
 const MaintenanceTasks = lazy(() => import("./pages/maintenance/tasks"));
 const PreventivePlansPage = lazy(() => import("./pages/maintenance/preventive-plans/index"));
+const PredictivePlannerPage = lazy(() => import("./pages/maintenance/predictive-planner/index"));
 const MaintenanceOrders = lazy(() => import("./pages/maintenance/orders/index"));
 const StaffEmployees = lazy(() => import("./pages/staff/employees"));
 const StaffTeams = lazy(() => import("./pages/staff/teams"));
@@ -65,6 +66,7 @@ export default function App() {
               <Route path="workflow-templates" element={<WorkflowTemplates />} />
               <Route path="tasks" element={<MaintenanceTasks />} />
               <Route path="preventive-plans" element={<PreventivePlansPage />} />
+              <Route path="predictive-planner" element={<PredictivePlannerPage />} />
               <Route path="orders" element={<MaintenanceOrders />} />
               <Route path="communication-templates" element={<CommunicationTemplates />} />
             </Route>

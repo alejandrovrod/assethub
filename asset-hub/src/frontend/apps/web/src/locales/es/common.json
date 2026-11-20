@@ -181,7 +181,8 @@
       "myAccount": "Mi Cuenta",
       "users": "Usuarios",
       "roles": "Roles",
-      "audit": "Auditoría"
+      "audit": "Auditoría",
+      "predictivePlanner": "Planificación Predictiva"
     }
   },
   "breadcrumbs": {
@@ -194,6 +195,7 @@
     "tasks": "Tareas",
     "orders": "Órdenes",
     "preventive-plans": "Planes preventivos",
+    "predictive-planner": "Planificación predictiva",
     "communication-templates": "Plantillas de Comunicación",
     "staff": "Personal",
     "employees": "Empleados",

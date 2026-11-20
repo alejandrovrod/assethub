@@ -628,5 +628,123 @@
     "applySuccess": "Triage applied successfully.",
     "applySuccessWithOrder": "Triage applied and corrective work order updated ({{parts}} part(s) added).",
     "applyError": "Could not apply triage decision."
+  },
+  "predictivePlanner": {
+    "title": "Predictive Planning & Spares",
+    "description": "Project services, stockouts, workshop saturation and budget from existing data, with no migrations and no automatic changes.",
+    "filters": {
+      "horizon": "Horizon",
+      "days30": "30 days",
+      "days60": "60 days",
+      "days90": "90 days",
+      "template": "Asset template",
+      "allTemplates": "All templates",
+      "warehouse": "Warehouse",
+      "allWarehouses": "All warehouses",
+      "meterInterval": "Meter interval",
+      "meterIntervalPlaceholder": "e.g. 250 hours or km",
+      "refresh": "Refresh"
+    },
+    "kpi": {
+      "projectedServices": "Projected services",
+      "projectedServicesHint": "Occurrences within {{days}} days",
+      "stockoutRisks": "Parts at risk",
+      "stockoutRisksHint": "Items that run out before the horizon ends",
+      "estimatedBudget": "Estimated budget",
+      "estimatedBudgetHint": "Covered parts, urgent purchase and labor",
+      "overloadedWeeks": "Overloaded weeks",
+      "overloadedWeeksHint": "Weeks with workshop saturation ≥ 90%"
+    },
+    "advisory": {
+      "earlyWarnings": "AI early warnings",
+      "earlyWarningsDescription": "Prioritized on top of the deterministic forecast and validated against real inventory.",
+      "unavailableTitle": "AI analysis unavailable",
+      "unavailableBody": "The full deterministic forecast is shown. The AI advisor could not generate recommendations right now.",
+      "executiveSummary": "Executive diagnosis",
+      "noWarnings": "No early warnings were detected for the selected horizon.",
+      "scheduleRecommendations": "Workshop rebalancing",
+      "scheduleRecommendationsDescription": "Suggested actions to stagger services and avoid saturation peaks.",
+      "noRecommendations": "No rebalancing recommendations for this horizon.",
+      "suggestedDate": "Suggested date",
+      "validationWarnings": "References discarded by the validator",
+      "inDays_one": "{{count}} day ahead",
+      "inDays_other": "{{count}} days ahead"
+    },
+    "severity": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium"
+    },
+    "warningType": {
+      "Stockout": "Stockout",
+      "WorkshopOverload": "Workshop overload",
+      "HealthRisk": "Health risk",
+      "BudgetSpike": "Budget spike"
+    },
+    "stockouts": {
+      "title": "Parts stockouts & suggested purchases",
+      "description": "Chronological crossing of projected services, available stock and stock committed to open orders.",
+      "code": "Code",
+      "label": "Part",
+      "daysUntilStockout": "Days to stockout",
+      "stockCurrent": "Free stock",
+      "required": "Required",
+      "shortfall": "Shortfall",
+      "restockCost": "Restock cost",
+      "affectedAssets": "Affected assets",
+      "exportCsv": "Export requisition CSV",
+      "empty": "No stockouts are projected for the selected horizon."
+    },
+    "budget": {
+      "title": "Budget projection",
+      "description": "Parts covered by stock, urgent purchase and projected historical cost.",
+      "coveredParts": "Parts covered by stock",
+      "urgentPurchase": "Urgent purchase for shortfall",
+      "labor": "Estimated labor",
+      "historicalRunRate": "Historical period reference",
+      "averagePerService": "Average cost per service",
+      "total": "Estimated total"
+    },
+    "workshop": {
+      "title": "Weekly workshop load",
+      "description": "Projected services and open backlog against the available technician hours.",
+      "week": "ISO week {{year}}-W{{week}}",
+      "services": "Services",
+      "backlog": "Backlog",
+      "projectedHours": "Projected hours",
+      "availableHours": "Available hours",
+      "empty": "No projected workshop load for the selected horizon."
+    },
+    "services": {
+      "title": "Projected services",
+      "description": "Preventive plans expanded by cron, meter burn-rate projection and critical failure risks.",
+      "asset": "Asset",
+      "label": "Service",
+      "source": "Source",
+      "dueDate": "Target date",
+      "daysUntilDue": "Days",
+      "meter": "Meter",
+      "empty": "No projected services for the selected horizon."
+    },
+    "source": {
+      "preventivePlan": "Preventive plan",
+      "meterBurnRate": "Hour meter / km",
+      "healthRisk": "Failure risk"
+    },
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
+    "csv": {
+      "code": "Code",
+      "label": "Part",
+      "quantity": "Quantity to buy",
+      "cost": "Estimated cost",
+      "neededBy": "Needed by",
+      "affectedAssets": "Affected assets",
+      "rationale": "Rationale"
+    },
+    "errors": {
+      "title": "The forecast could not be generated",
+      "body": "Check the server connection and try again."
+    }
   }
 }

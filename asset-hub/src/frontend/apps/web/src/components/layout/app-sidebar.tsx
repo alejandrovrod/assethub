@@ -29,6 +29,7 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   '/maintenance/tasks': 'tasks:read',
   '/maintenance/orders': 'maintenance:read',
   '/maintenance/preventive-plans': 'preventive-plans:read',
+  '/maintenance/predictive-planner': 'maintenance:read',
   '/maintenance/communication-templates': 'communication-templates:read',
   '/staff/employees': 'employees:read',
   '/staff/teams': 'teams:read',

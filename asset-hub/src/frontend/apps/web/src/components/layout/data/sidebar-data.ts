@@ -83,6 +83,10 @@ export const sidebarData: SidebarData = {
               url: '/maintenance/preventive-plans',
             },
             {
+              title: 'sidebar.items.predictivePlanner',
+              url: '/maintenance/predictive-planner',
+            },
+            {
               title: 'sidebar.items.communicationTemplates',
               url: '/maintenance/communication-templates',
             },
